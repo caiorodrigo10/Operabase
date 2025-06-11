@@ -142,8 +142,8 @@ export function Configuracoes() {
       addEventsToCalendar: string;
     }) => {
       const response = await apiRequest("PUT", `/api/calendar/integrations/${integrationId}/linked-calendar`, {
-        linkedCalendarId,
-        addEventsToCalendar: addEventsToCalendar === "none" ? null : addEventsToCalendar
+        linkedCalendarId: addEventsToCalendar === "google-account" ? linkedCalendarId : null,
+        addEventsToCalendar: addEventsToCalendar === "google-account" ? linkedCalendarId : null
       });
       return response.json();
     },
@@ -162,10 +162,11 @@ export function Configuracoes() {
     setSelectedIntegrationId(integrationId);
     
     // Find the integration and pre-populate settings
-    const integration = calendarIntegrations.find((int: any) => int.id === integrationId);
+    const integration = (calendarIntegrations as any[]).find((int: any) => int.id === integrationId);
     if (integration) {
       setLinkedCalendarId(integration.calendar_id || "");
-      setAddEventsToCalendar(integration.calendar_id || "");
+      // Set to google-account if calendar is linked, otherwise none
+      setAddEventsToCalendar(integration.calendar_id ? "google-account" : "none");
     }
     
     setShowLinkedCalendarDialog(true);
@@ -175,7 +176,7 @@ export function Configuracoes() {
     setSelectedIntegrationId(integrationId);
     
     // Find the integration and pre-populate with linked calendar
-    const integration = calendarIntegrations.find((int: any) => int.id === integrationId);
+    const integration = (calendarIntegrations as any[]).find((int: any) => int.id === integrationId);
     if (integration && integration.calendar_id) {
       setConflictCalendars([integration.calendar_id]);
     }
@@ -783,33 +784,30 @@ export function Configuracoes() {
                       <h4 className="font-medium text-slate-800 mb-3">Em qual calendário terceirizado devemos adicionar novos eventos?</h4>
                       
                       <div className="space-y-3">
-                        {(userCalendars as any[]).map((calendar: any) => (
-                          <div key={calendar.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
+                        {/* Google account option */}
+                        {(userCalendars as any[]).length > 0 && (
+                          <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
                             <input
                               type="radio"
-                              id={`add-events-${calendar.id}`}
+                              id="google-account"
                               name="add-events-calendar"
-                              value={calendar.id}
-                              checked={addEventsToCalendar === calendar.id}
+                              value="google-account"
+                              checked={addEventsToCalendar === "google-account"}
                               className="w-4 h-4 text-blue-600"
-                              onChange={() => setAddEventsToCalendar(calendar.id)}
+                              onChange={() => setAddEventsToCalendar("google-account")}
                             />
                             <div className="flex items-center space-x-2 flex-1">
-                              <div 
-                                className="w-4 h-4 rounded-full border-2 border-slate-300"
-                                style={{ backgroundColor: calendar.backgroundColor || '#4285f4' }}
-                              />
-                              <Label htmlFor={`add-events-${calendar.id}`} className="cursor-pointer flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="font-medium">{calendar.summary}</span>
-                                  {calendar.primary && (
-                                    <Badge variant="secondary" className="text-xs">Principal</Badge>
-                                  )}
-                                </div>
+                              <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                                <Calendar className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <Label htmlFor="google-account" className="cursor-pointer flex-1">
+                                <span className="font-medium text-slate-700">
+                                  {(userCalendars as any[])[0]?.email || 'caio@avanttocrm.com'}
+                                </span>
                               </Label>
                             </div>
                           </div>
-                        ))}
+                        )}
                         
                         <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
                           <input
@@ -831,31 +829,33 @@ export function Configuracoes() {
                       </div>
                     </div>
 
-                    <div>
-                      <h4 className="font-medium text-slate-800 mb-3">Selecione o Google Calendar onde você gostaria de adicionar novos eventos</h4>
-                      
-                      <Select value={linkedCalendarId} onValueChange={setLinkedCalendarId}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione um calendário" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(userCalendars as any[]).map((calendar: any) => (
-                            <SelectItem key={calendar.id} value={calendar.id}>
-                              <div className="flex items-center space-x-2">
-                                <div 
-                                  className="w-3 h-3 rounded-full border"
-                                  style={{ backgroundColor: calendar.backgroundColor || '#4285f4' }}
-                                />
-                                <span>{calendar.summary}</span>
-                                {calendar.primary && (
-                                  <Badge variant="secondary" className="text-xs ml-2">Principal</Badge>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {addEventsToCalendar === "google-account" && (
+                      <div>
+                        <h4 className="font-medium text-slate-800 mb-3">Selecione o Google Calendar onde você gostaria de adicionar novos eventos</h4>
+                        
+                        <Select value={linkedCalendarId} onValueChange={setLinkedCalendarId}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione um calendário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(userCalendars as any[]).map((calendar: any) => (
+                              <SelectItem key={calendar.id} value={calendar.id}>
+                                <div className="flex items-center space-x-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full border"
+                                    style={{ backgroundColor: calendar.backgroundColor || '#4285f4' }}
+                                  />
+                                  <span>{calendar.summary}</span>
+                                  {calendar.primary && (
+                                    <Badge variant="secondary" className="text-xs ml-2">Principal</Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                     {linkedCalendarId && (
                       <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
