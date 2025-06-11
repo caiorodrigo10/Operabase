@@ -88,14 +88,16 @@ export function Sidebar({ currentPage, isMobile, isOpen, onClose }: SidebarProps
 
       {/* AI Status */}
       <div className="p-4 border-t border-slate-200">
-        <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
-          <div className="w-3 h-3 bg-medical-green rounded-full animate-pulse" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-slate-800">Livia IA</p>
-            <p className="text-xs text-slate-500">Online e ativa</p>
+        <Link href="/livia-config">
+          <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
+            <div className="w-3 h-3 bg-medical-green rounded-full animate-pulse" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-800">Livia IA</p>
+              <p className="text-xs text-slate-500">Online e ativa</p>
+            </div>
+            <Bot className="w-4 h-4 text-medical-green" />
           </div>
-          <Bot className="w-4 h-4 text-medical-green" />
-        </div>
+        </Link>
       </div>
     </aside>
   );

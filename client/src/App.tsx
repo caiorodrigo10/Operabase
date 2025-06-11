@@ -11,6 +11,7 @@ import { Consultas } from "./pages/consultas";
 import { Contatos } from "./pages/contatos";
 import { Relatorios } from "./pages/relatorios";
 import { Configuracoes } from "./pages/configuracoes";
+import { LiviaConfig } from "./pages/livia-config";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
         <Route path="/contatos" component={Contatos} />
         <Route path="/relatorios" component={Relatorios} />
         <Route path="/configuracoes" component={Configuracoes} />
+        <Route path="/livia-config" component={LiviaConfig} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

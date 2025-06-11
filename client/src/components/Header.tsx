@@ -15,6 +15,7 @@ const pageTitles = {
   contatos: "Contatos",
   relatorios: "Relatórios",
   configuracoes: "Configurações",
+  "livia-config": "Configurações da Livia IA",
 };
 
 export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
