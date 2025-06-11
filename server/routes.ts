@@ -879,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/calendar/auth/google', isAuthenticated, initGoogleCalendarAuth);
   
   // Google Calendar OAuth callback
-  app.get('/api/calendar/auth/google/callback', isAuthenticated, handleGoogleCalendarCallback);
+  app.get('/api/calendar/callback/google', isAuthenticated, handleGoogleCalendarCallback);
   
   // Get user's calendar integrations
   app.get('/api/calendar/integrations', isAuthenticated, getUserCalendarIntegrations);

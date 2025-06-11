@@ -26,10 +26,16 @@ class GoogleCalendarService {
   private calendar: any;
 
   constructor() {
+    // Determine the redirect URI based on environment
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_DOMAINS;
+    const redirectUri = isProduction 
+      ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/api/calendar/callback/google`
+      : 'http://localhost:5000/api/calendar/callback/google';
+
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/calendar/auth/google/callback'
+      process.env.GOOGLE_REDIRECT_URI || redirectUri
     );
     
     this.calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
