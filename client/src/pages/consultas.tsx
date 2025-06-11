@@ -380,76 +380,86 @@ export function Consultas() {
               />
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_id">Paciente *</Label>
-                  <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={contactComboboxOpen}
-                        className="w-full justify-between"
-                      >
-                        {form.watch("contact_id")
-                          ? contacts.find((contact) => contact.id.toString() === form.watch("contact_id"))?.name
-                          : "Buscar paciente..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Digite o nome do paciente..." />
-                        <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {contacts.map((contact) => (
-                            <CommandItem
-                              key={contact.id}
-                              value={contact.name}
-                              onSelect={() => {
-                                handleContactSelect(contact.id.toString());
-                                setContactComboboxOpen(false);
-                              }}
+                <FormField
+                  control={form.control}
+                  name="contact_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Paciente *</FormLabel>
+                      <FormControl>
+                        <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={contactComboboxOpen}
+                              className="w-full justify-between"
                             >
-                              <Check
-                                className={`mr-2 h-4 w-4 ${
-                                  form.watch("contact_id") === contact.id.toString()
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                }`}
-                              />
-                              {contact.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {form.formState.errors.contact_id && (
-                    <p className="text-sm text-red-600">{form.formState.errors.contact_id.message}</p>
+                              {field.value
+                                ? contacts.find((contact) => contact.id.toString() === field.value)?.name
+                                : "Buscar paciente..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0">
+                            <Command>
+                              <CommandInput placeholder="Digite o nome do paciente..." />
+                              <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                {contacts.map((contact) => (
+                                  <CommandItem
+                                    key={contact.id}
+                                    value={contact.name}
+                                    onSelect={() => {
+                                      field.onChange(contact.id.toString());
+                                      handleContactSelect(contact.id.toString());
+                                      setContactComboboxOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${
+                                        field.value === contact.id.toString()
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      }`}
+                                    />
+                                    {contact.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="user_id">Usuário Responsável *</Label>
-                  <Select
-                    value={form.watch("user_id")}
-                    onValueChange={(value) => form.setValue("user_id", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o usuário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clinicUsers.map((user: any) => (
-                        <SelectItem key={user.user_id} value={user.user_id.toString()}>
-                          {user.user?.name || user.user?.email || `Usuário ${user.user_id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.user_id && (
-                    <p className="text-sm text-red-600">{form.formState.errors.user_id.message}</p>
+                <FormField
+                  control={form.control}
+                  name="user_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Usuário Responsável *</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o usuário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clinicUsers.map((user: any) => (
+                              <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                                {user.user?.name || user.user?.email || `Usuário ${user.user_id}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
               </div>
 
               {/* Informações de Contato do Paciente */}
@@ -494,84 +504,109 @@ export function Consultas() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo de Consulta</Label>
-                  <Select
-                    value={form.watch("type")}
-                    onValueChange={(value) => form.setValue("type", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="consulta">Consulta</SelectItem>
-                      <SelectItem value="retorno">Retorno</SelectItem>
-                      <SelectItem value="avaliacao">Avaliação</SelectItem>
-                      <SelectItem value="procedimento">Procedimento</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.type && (
-                    <p className="text-sm text-red-600">{form.formState.errors.type.message}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="scheduled_date">Data</Label>
-                  <Input
-                    type="date"
-                    {...form.register("scheduled_date")}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                  {form.formState.errors.scheduled_date && (
-                    <p className="text-sm text-red-600">{form.formState.errors.scheduled_date.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="scheduled_time">Horário</Label>
-                  <Input
-                    type="time"
-                    {...form.register("scheduled_time")}
-                  />
-                  {form.formState.errors.scheduled_time && (
-                    <p className="text-sm text-red-600">{form.formState.errors.scheduled_time.message}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duração (minutos)</Label>
-                <Select
-                  value={form.watch("duration")}
-                  onValueChange={(value) => form.setValue("duration", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a duração" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 minutos</SelectItem>
-                    <SelectItem value="45">45 minutos</SelectItem>
-                    <SelectItem value="60">1 hora</SelectItem>
-                    <SelectItem value="90">1h 30min</SelectItem>
-                    <SelectItem value="120">2 horas</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.duration && (
-                  <p className="text-sm text-red-600">{form.formState.errors.duration.message}</p>
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Consulta *</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="consulta">Consulta</SelectItem>
+                          <SelectItem value="retorno">Retorno</SelectItem>
+                          <SelectItem value="avaliacao">Avaliação</SelectItem>
+                          <SelectItem value="procedimento">Procedimento</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  {...form.register("notes")}
-                  placeholder="Observações sobre a consulta..."
-                  rows={3}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="scheduled_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          min={new Date().toISOString().split('T')[0]}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="scheduled_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Horário *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Duração (minutos) *</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a duração" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="30">30 minutos</SelectItem>
+                          <SelectItem value="45">45 minutos</SelectItem>
+                          <SelectItem value="60">1 hora</SelectItem>
+                          <SelectItem value="90">1h 30min</SelectItem>
+                          <SelectItem value="120">2 horas</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Observações sobre a consulta..."
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex justify-end space-x-2 pt-4">
                 <Button
