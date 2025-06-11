@@ -2,7 +2,9 @@ import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
+import { Skeleton } from "@/components/ui/skeleton";
 import { queryClient } from "./lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/dashboard";
 import { Conversas } from "./pages/conversas";
@@ -12,15 +14,38 @@ import { Contatos } from "./pages/contatos";
 import { Relatorios } from "./pages/relatorios";
 import { Configuracoes } from "./pages/configuracoes";
 import { LiviaConfig } from "./pages/livia-config";
+import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   const [location] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
   
   const getCurrentPage = () => {
     if (location === "/") return "dashboard";
     return location.substring(1);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="space-y-4 w-full max-w-md">
+          <Skeleton className="h-8 w-3/4 mx-auto" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3 mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route component={Landing} />
+      </Switch>
+    );
+  }
 
   return (
     <Layout currentPage={getCurrentPage()}>

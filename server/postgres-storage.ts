@@ -29,14 +29,139 @@ export class PostgreSQLStorage implements IStorage {
     return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const result = await db.insert(users).values(insertUser).returning();
     return result[0];
+  }
+
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ ...updates, updated_at: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // ============ CLINIC USERS & ACCESS CONTROL ============
+
+  async getUserClinics(userId: number): Promise<(ClinicUser & { clinic: Clinic })[]> {
+    const result = await db
+      .select()
+      .from(clinic_users)
+      .innerJoin(clinics, eq(clinic_users.clinic_id, clinics.id))
+      .where(and(
+        eq(clinic_users.user_id, userId),
+        eq(clinic_users.is_active, true)
+      ));
+    
+    return result.map(row => ({
+      ...row.clinic_users,
+      clinic: row.clinics
+    }));
+  }
+
+  async addUserToClinic(clinicUser: InsertClinicUser): Promise<ClinicUser> {
+    const result = await db.insert(clinic_users).values(clinicUser).returning();
+    return result[0];
+  }
+
+  async updateClinicUserRole(clinicId: number, userId: number, role: string, permissions?: any): Promise<ClinicUser | undefined> {
+    const result = await db.update(clinic_users)
+      .set({ role, permissions })
+      .where(and(
+        eq(clinic_users.clinic_id, clinicId),
+        eq(clinic_users.user_id, userId)
+      ))
+      .returning();
+    return result[0];
+  }
+
+  async removeUserFromClinic(clinicId: number, userId: number): Promise<boolean> {
+    const result = await db.delete(clinic_users)
+      .where(and(
+        eq(clinic_users.clinic_id, clinicId),
+        eq(clinic_users.user_id, userId)
+      ));
+    return result.rowCount > 0;
+  }
+
+  async userHasClinicAccess(userId: number, clinicId: number): Promise<boolean> {
+    const result = await db
+      .select({ id: clinic_users.id })
+      .from(clinic_users)
+      .where(and(
+        eq(clinic_users.user_id, userId),
+        eq(clinic_users.clinic_id, clinicId),
+        eq(clinic_users.is_active, true)
+      ))
+      .limit(1);
+    return result.length > 0;
+  }
+
+  // ============ CLINIC INVITATIONS ============
+
+  async createClinicInvitation(invitation: InsertClinicInvitation): Promise<ClinicInvitation> {
+    const result = await db.insert(clinic_invitations).values(invitation).returning();
+    return result[0];
+  }
+
+  async getClinicInvitation(token: string): Promise<ClinicInvitation | undefined> {
+    const result = await db
+      .select()
+      .from(clinic_invitations)
+      .where(eq(clinic_invitations.token, token))
+      .limit(1);
+    return result[0];
+  }
+
+  async acceptClinicInvitation(token: string, userId: number): Promise<ClinicUser | undefined> {
+    // Start transaction
+    return await db.transaction(async (tx) => {
+      // Get invitation
+      const invitation = await tx
+        .select()
+        .from(clinic_invitations)
+        .where(eq(clinic_invitations.token, token))
+        .limit(1);
+      
+      if (!invitation[0] || invitation[0].accepted_at || invitation[0].expires_at < new Date()) {
+        return undefined;
+      }
+
+      // Mark invitation as accepted
+      await tx.update(clinic_invitations)
+        .set({ accepted_at: new Date() })
+        .where(eq(clinic_invitations.token, token));
+
+      // Add user to clinic
+      const clinicUser = await tx.insert(clinic_users)
+        .values({
+          clinic_id: invitation[0].clinic_id,
+          user_id: userId,
+          role: invitation[0].role,
+          permissions: invitation[0].permissions,
+          invited_by: invitation[0].invited_by,
+          invited_at: invitation[0].created_at,
+          joined_at: new Date(),
+          is_active: true
+        })
+        .returning();
+
+      return clinicUser[0];
+    });
+  }
+
+  async getClinicInvitations(clinicId: number): Promise<ClinicInvitation[]> {
+    return await db
+      .select()
+      .from(clinic_invitations)
+      .where(eq(clinic_invitations.clinic_id, clinicId))
+      .orderBy(desc(clinic_invitations.created_at));
   }
 
   // ============ CLINICS ============

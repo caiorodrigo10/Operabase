@@ -1,13 +1,95 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated, hasClinicAccess } from "./replitAuth";
+import { nanoid } from "nanoid";
 import { 
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
   insertAnalyticsMetricSchema, insertClinicSettingSchema, insertAiTemplateSchema,
-  insertPipelineStageSchema, insertPipelineOpportunitySchema, insertPipelineActivitySchema
+  insertPipelineStageSchema, insertPipelineOpportunitySchema, insertPipelineActivitySchema,
+  insertClinicInvitationSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // ============ AUTHENTICATION ============
+  
+  // Setup Replit Auth
+  await setupAuth(app);
+
+  // Get current user
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.dbUser.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Get user's clinics
+      const userClinics = await storage.getUserClinics(userId);
+      
+      res.json({
+        ...user,
+        clinics: userClinics
+      });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  // Get user's accessible clinics
+  app.get('/api/auth/clinics', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.dbUser.id;
+      const userClinics = await storage.getUserClinics(userId);
+      res.json(userClinics);
+    } catch (error) {
+      console.error("Error fetching user clinics:", error);
+      res.status(500).json({ error: "Failed to fetch clinics" });
+    }
+  });
+
+  // Invite user to clinic
+  app.post('/api/clinics/:clinicId/invitations', isAuthenticated, hasClinicAccess(), async (req: any, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      const inviterId = req.user.dbUser.id;
+      
+      const validatedData = insertClinicInvitationSchema.parse({
+        ...req.body,
+        clinic_id: clinicId,
+        invited_by: inviterId,
+        token: nanoid(32),
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+      });
+
+      const invitation = await storage.createClinicInvitation(validatedData);
+      res.status(201).json(invitation);
+    } catch (error) {
+      console.error("Error creating invitation:", error);
+      res.status(500).json({ error: "Failed to create invitation" });
+    }
+  });
+
+  // Accept clinic invitation
+  app.post('/api/invitations/:token/accept', isAuthenticated, async (req: any, res) => {
+    try {
+      const token = req.params.token;
+      const userId = req.user.dbUser.id;
+      
+      const clinicUser = await storage.acceptClinicInvitation(token, userId);
+      if (!clinicUser) {
+        return res.status(400).json({ error: "Invalid or expired invitation" });
+      }
+      
+      res.json(clinicUser);
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      res.status(500).json({ error: "Failed to accept invitation" });
+    }
+  });
   
   // ============ CLINICS ============
   
