@@ -164,7 +164,12 @@ export function Consultas() {
     setIsLoading(contactsLoading || appointmentsLoading || usersLoading);
   }, [contactsLoading, appointmentsLoading, usersLoading]);
 
-  const getPatientName = (contactId: number | null) => {
+  const getPatientName = (contactId: number | null, appointment?: any) => {
+    // For Google Calendar events, show the event title instead of patient name
+    if (appointment?.is_google_calendar_event && appointment?.doctor_name) {
+      return appointment.doctor_name;
+    }
+    
     if (!contactId) return "Paciente não identificado";
     const contact = contacts.find(c => c.id === contactId);
     return contact ? contact.name : "Paciente não encontrado";
@@ -771,7 +776,7 @@ export function Consultas() {
                         
                         <div className="space-y-1">
                           {dayAppointments.slice(0, 2).map((appointment) => {
-                            const patientName = getPatientName(appointment.contact_id);
+                            const patientName = getPatientName(appointment.contact_id, appointment);
                             const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
                             const colors = getEventColor(appointment);
                             
