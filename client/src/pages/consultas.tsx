@@ -285,7 +285,7 @@ export function Consultas() {
                               key={contact.id}
                               value={contact.name}
                               onSelect={() => {
-                                form.setValue("contact_id", contact.id.toString());
+                                handleContactSelect(contact.id.toString());
                                 setContactComboboxOpen(false);
                               }}
                             >
@@ -330,6 +330,48 @@ export function Consultas() {
                   )}
                 </div>
               </div>
+
+              {/* Informações de Contato do Paciente */}
+              {form.watch("contact_id") && (
+                <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                  <h4 className="text-sm font-medium text-gray-700">Informações de Contato</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="contact_whatsapp"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>WhatsApp</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="(11) 99999-9999"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="contact_email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="email@exemplo.com"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
