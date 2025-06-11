@@ -27,6 +27,7 @@ const statusLabels = {
 
 const appointmentSchema = z.object({
   contact_id: z.string().min(1, "Selecione um paciente"),
+  user_id: z.string().min(1, "Selecione o usuário responsável"),
   scheduled_date: z.string().min(1, "Data é obrigatória"),
   scheduled_time: z.string().min(1, "Horário é obrigatório"),
   duration: z.string().min(1, "Duração é obrigatória"),
@@ -65,10 +66,21 @@ export function Consultas() {
     },
   });
 
+  // Buscar usuários da clínica para seleção obrigatória
+  const { data: clinicUsers = [], isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/clinic/1/users"],
+    queryFn: async () => {
+      const response = await fetch(`/api/clinic/1/users`);
+      if (!response.ok) throw new Error('Failed to fetch clinic users');
+      return response.json();
+    },
+  });
+
   const form = useForm<AppointmentForm>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       contact_id: "",
+      user_id: "",
       scheduled_date: "",
       scheduled_time: "",
       duration: "60",
@@ -81,6 +93,7 @@ export function Consultas() {
     mutationFn: async (data: AppointmentForm) => {
       const appointmentData = {
         contact_id: parseInt(data.contact_id),
+        user_id: parseInt(data.user_id),
         clinic_id: 1, // Assumindo clinic_id = 1 para agora
         scheduled_date: new Date(`${data.scheduled_date}T${data.scheduled_time}`),
         duration_minutes: parseInt(data.duration),
@@ -111,8 +124,8 @@ export function Consultas() {
 
   // Update loading state based on data loading
   useEffect(() => {
-    setIsLoading(contactsLoading || appointmentsLoading);
-  }, [contactsLoading, appointmentsLoading]);
+    setIsLoading(contactsLoading || appointmentsLoading || usersLoading);
+  }, [contactsLoading, appointmentsLoading, usersLoading]);
 
   const getPatientName = (contactId: number | null) => {
     if (!contactId) return "Paciente não identificado";
@@ -178,7 +191,7 @@ export function Consultas() {
             <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="contact_id">Paciente</Label>
+                  <Label htmlFor="contact_id">Paciente *</Label>
                   <Select
                     value={form.watch("contact_id")}
                     onValueChange={(value) => form.setValue("contact_id", value)}
@@ -199,6 +212,30 @@ export function Consultas() {
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="user_id">Usuário Responsável *</Label>
+                  <Select
+                    value={form.watch("user_id")}
+                    onValueChange={(value) => form.setValue("user_id", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o usuário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clinicUsers.map((user: any) => (
+                        <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                          {user.user?.name || user.user?.email || `Usuário ${user.user_id}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.user_id && (
+                    <p className="text-sm text-red-600">{form.formState.errors.user_id.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo de Consulta</Label>
                   <Select
