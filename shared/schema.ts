@@ -1,12 +1,64 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, date, jsonb, index, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Enhanced users table for multi-tenant authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: varchar("email").notNull().unique(),
+  name: varchar("name").notNull(),
+  role: varchar("role").notNull().default("user"), // super_admin, admin, manager, user
+  is_active: boolean("is_active").notNull().default(true),
+  last_login: timestamp("last_login"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
+
+// Clinic-User relationship table for multi-tenant access
+export const clinic_users = pgTable("clinic_users", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  user_id: integer("user_id").notNull(),
+  role: varchar("role").notNull().default("user"), // admin, manager, user, readonly
+  permissions: jsonb("permissions"), // Specific permissions for this clinic
+  is_active: boolean("is_active").notNull().default(true),
+  invited_by: integer("invited_by"),
+  invited_at: timestamp("invited_at"),
+  joined_at: timestamp("joined_at"),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  unique().on(table.clinic_id, table.user_id),
+  index("idx_clinic_users_clinic").on(table.clinic_id),
+  index("idx_clinic_users_user").on(table.user_id),
+]);
+
+// Clinic invitations for onboarding new team members
+export const clinic_invitations = pgTable("clinic_invitations", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  email: varchar("email").notNull(),
+  role: varchar("role").notNull(),
+  permissions: jsonb("permissions"),
+  token: varchar("token").notNull().unique(),
+  invited_by: integer("invited_by").notNull(),
+  expires_at: timestamp("expires_at").notNull(),
+  accepted_at: timestamp("accepted_at"),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_invitations_email").on(table.email),
+  index("idx_invitations_token").on(table.token),
+]);
 
 export const clinics = pgTable("clinics", {
   id: serial("id").primaryKey(),
@@ -180,9 +232,20 @@ export const pipeline_activities = pgTable("pipeline_activities", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertClinicUserSchema = createInsertSchema(clinic_users).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertClinicInvitationSchema = createInsertSchema(clinic_invitations).omit({
+  id: true,
+  created_at: true,
 });
 
 export const insertClinicSchema = createInsertSchema(clinics).omit({
@@ -255,6 +318,10 @@ export const insertPipelineActivitySchema = createInsertSchema(pipeline_activiti
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type ClinicUser = typeof clinic_users.$inferSelect;
+export type InsertClinicUser = z.infer<typeof insertClinicUserSchema>;
+export type ClinicInvitation = typeof clinic_invitations.$inferSelect;
+export type InsertClinicInvitation = z.infer<typeof insertClinicInvitationSchema>;
 export type Clinic = typeof clinics.$inferSelect;
 export type InsertClinic = z.infer<typeof insertClinicSchema>;
 export type Contact = typeof contacts.$inferSelect;

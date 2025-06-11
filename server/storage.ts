@@ -1,6 +1,7 @@
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
+  clinic_users, clinic_invitations,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -11,14 +12,30 @@ import {
   type PipelineStage, type InsertPipelineStage,
   type PipelineOpportunity, type InsertPipelineOpportunity,
   type PipelineHistory, type InsertPipelineHistory,
-  type PipelineActivity, type InsertPipelineActivity
+  type PipelineActivity, type InsertPipelineActivity,
+  type ClinicUser, type InsertClinicUser,
+  type ClinicInvitation, type InsertClinicInvitation
 } from "@shared/schema";
 
 export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+
+  // Clinic Users & Access Control
+  getUserClinics(userId: number): Promise<(ClinicUser & { clinic: Clinic })[]>;
+  addUserToClinic(clinicUser: InsertClinicUser): Promise<ClinicUser>;
+  updateClinicUserRole(clinicId: number, userId: number, role: string, permissions?: any): Promise<ClinicUser | undefined>;
+  removeUserFromClinic(clinicId: number, userId: number): Promise<boolean>;
+  userHasClinicAccess(userId: number, clinicId: number): Promise<boolean>;
+
+  // Clinic Invitations
+  createClinicInvitation(invitation: InsertClinicInvitation): Promise<ClinicInvitation>;
+  getClinicInvitation(token: string): Promise<ClinicInvitation | undefined>;
+  acceptClinicInvitation(token: string, userId: number): Promise<ClinicUser | undefined>;
+  getClinicInvitations(clinicId: number): Promise<ClinicInvitation[]>;
 
   // Clinics
   getClinic(id: number): Promise<Clinic | undefined>;
