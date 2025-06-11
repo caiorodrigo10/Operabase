@@ -36,10 +36,36 @@ export function Conversas() {
   const selectedContactData = mockContacts.find(c => c.id === selectedContact);
   const selectedContactMessages = mockMessages.filter(m => m.conversation_id === selectedContact);
 
+  const getLastMessagePreview = (contactId: number) => {
+    const lastMessage = mockMessages
+      .filter(m => m.conversation_id === contactId)
+      .sort((a, b) => new Date(b.timestamp!).getTime() - new Date(a.timestamp!).getTime())[0];
+    
+    if (!lastMessage) return "Sem mensagens";
+    
+    if (lastMessage.content.startsWith("[ÁUDIO]")) return "🎵 Mensagem de áudio";
+    if (lastMessage.content.startsWith("[IMAGEM]")) return "📷 Imagem enviada";
+    if (lastMessage.sender_type === "ai" && lastMessage.ai_action) return "🤖 Ação automática da IA";
+    
+    return lastMessage.content.length > 40 
+      ? lastMessage.content.substring(0, 40) + "..."
+      : lastMessage.content;
+  };
+
+  const getMessageCount = (contactId: number) => {
+    return mockMessages.filter(m => m.conversation_id === contactId).length;
+  };
+
   if (isLoading) {
     return (
       <div className="p-4 lg:p-6">
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
+        {/* Header Section */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Conversas</h1>
+          <p className="text-slate-600">Acompanhe todas as interações da Livia IA em tempo real</p>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-12rem)]">
           <div className="lg:w-1/2 xl:w-2/5">
             <Card className="h-full animate-pulse">
               <CardContent className="p-6">
@@ -61,7 +87,13 @@ export function Conversas() {
 
   return (
     <div className="p-4 lg:p-6">
-      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
+      {/* Header Section */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Conversas</h1>
+        <p className="text-slate-600">Acompanhe todas as interações da Livia IA em tempo real</p>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-12rem)]">
         {/* Conversations List */}
         <div className="lg:w-1/2 xl:w-2/5">
           <Card className="h-full">
@@ -88,26 +120,55 @@ export function Conversas() {
                     locale: ptBR 
                   });
 
+                  const lastMessagePreview = getLastMessagePreview(contact.id);
+                  const messageCount = getMessageCount(contact.id);
+
                   return (
                     <div
                       key={contact.id}
                       onClick={() => setSelectedContact(contact.id)}
-                      className={`p-4 hover:bg-slate-50 cursor-pointer ${
+                      className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors ${
                         isSelected ? "border-l-4 border-medical-blue bg-blue-50" : ""
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-slate-800">{contact.name}</h4>
-                        <span className="text-xs text-slate-500">{timeAgo}</span>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-medical-blue rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-medium">
+                              {contact.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-slate-800">{contact.name}</h4>
+                            <p className="text-xs text-slate-500">{contact.phone}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs text-slate-500">{timeAgo}</span>
+                          {messageCount > 0 && (
+                            <div className="inline-flex items-center justify-center w-5 h-5 bg-medical-blue text-white text-xs rounded-full mt-1">
+                              {messageCount}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-slate-600 mb-2">{contact.phone}</p>
-                      <div className="flex items-center justify-between">
+                      
+                      <div className="ml-13 mb-3">
+                        <p className="text-sm text-slate-600 line-clamp-2">{lastMessagePreview}</p>
+                      </div>
+                      
+                      <div className="flex items-center justify-between ml-13">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${status.color}`}>
                           {status.label}
                         </span>
-                        {contact.status === "agendado" && (
-                          <Bot className="w-4 h-4 text-medical-blue" title="Ação da IA" />
-                        )}
+                        <div className="flex items-center space-x-2">
+                          {contact.status === "agendado" && (
+                            <Bot className="w-4 h-4 text-medical-blue" />
+                          )}
+                          {contact.status === "em_conversa" && (
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
