@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
-    queryKey: ["/api/auth/user"],
+    queryKey: ["/api/user"],
     retry: false,
   });
 
@@ -16,7 +16,7 @@ export function useAuth() {
 
 export function useUserClinics() {
   const { data: clinics, isLoading } = useQuery({
-    queryKey: ["/api/auth/clinics"],
+    queryKey: ["/api/user/clinics"],
     retry: false,
   });
 
