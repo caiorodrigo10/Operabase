@@ -145,11 +145,6 @@ export function Conversas() {
                         </div>
                         <div className="text-right">
                           <span className="text-xs text-slate-500">{timeAgo}</span>
-                          {messageCount > 0 && (
-                            <div className="inline-flex items-center justify-center w-5 h-5 bg-medical-blue text-white text-xs rounded-full mt-1">
-                              {messageCount}
-                            </div>
-                          )}
                         </div>
                       </div>
                       
