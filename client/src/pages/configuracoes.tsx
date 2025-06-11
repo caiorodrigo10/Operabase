@@ -79,13 +79,36 @@ export function Configuracoes() {
   // Fetch calendar integrations using TanStack Query
   const { data: calendarIntegrations = [], refetch: refetchIntegrations } = useQuery({
     queryKey: ['/api/calendar/integrations'],
-    queryFn: getQueryFn,
+    queryFn: async () => {
+      const response = await fetch('/api/calendar/integrations', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          return [];
+        }
+        throw new Error('Failed to fetch calendar integrations');
+      }
+      return response.json();
+    },
   });
 
   // Fetch user calendars when integration is selected
   const { data: userCalendars = [], isLoading: isLoadingCalendars } = useQuery({
     queryKey: ['/api/calendar/integrations', selectedIntegrationId, 'calendars'],
-    queryFn: getQueryFn,
+    queryFn: async () => {
+      if (!selectedIntegrationId) return [];
+      const response = await fetch(`/api/calendar/integrations/${selectedIntegrationId}/calendars`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          return [];
+        }
+        throw new Error('Failed to fetch calendars');
+      }
+      return response.json();
+    },
     enabled: !!selectedIntegrationId,
   });
 
@@ -468,7 +491,7 @@ export function Configuracoes() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Não adicionar eventos</SelectItem>
-                  {calendarIntegrations.filter(integration => integration.provider === 'google' && integration.is_active).map(integration => (
+                  {(calendarIntegrations || []).filter(integration => integration.provider === 'google' && integration.is_active).map(integration => (
                     <SelectItem key={integration.id} value="google-account">
                       {integration.email} (Conta Google)
                     </SelectItem>
