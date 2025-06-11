@@ -4,6 +4,7 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import connectPg from "connect-pg-simple";
@@ -17,7 +18,6 @@ declare global {
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
-  const bcrypt = require('bcryptjs');
   return bcrypt.hash(password, 10);
 }
 
@@ -25,7 +25,6 @@ async function comparePasswords(supplied: string, stored: string) {
   try {
     // Check if it's a bcrypt hash (starts with $2b$)
     if (stored.startsWith('$2b$') || stored.startsWith('$2a$') || stored.startsWith('$2y$')) {
-      const bcrypt = require('bcryptjs');
       return await bcrypt.compare(supplied, stored);
     }
     
