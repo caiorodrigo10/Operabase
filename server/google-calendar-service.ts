@@ -107,6 +107,16 @@ class GoogleCalendarService {
     }
   }
 
+  async getUserCalendars(): Promise<any[]> {
+    try {
+      const calendarList = await this.calendar.calendarList.list();
+      return calendarList.data.items || [];
+    } catch (error) {
+      console.error('Error getting user calendars:', error);
+      throw new Error('Failed to get calendar list');
+    }
+  }
+
   async createEvent(calendarId: string, event: CalendarEvent): Promise<any> {
     try {
       const response = await this.calendar.events.insert({

@@ -313,3 +313,47 @@ export async function removeAppointmentFromCalendar(appointmentId: number, userI
     return false;
   }
 }
+
+export async function getUserCalendars(req: any, res: Response) {
+  try {
+    const integrationId = parseInt(req.params.integrationId);
+    if (isNaN(integrationId)) {
+      return res.status(400).json({ error: "Invalid integration ID" });
+    }
+
+    const integration = await storage.getCalendarIntegration(integrationId);
+    if (!integration || integration.user_id !== req.user.id) {
+      return res.status(404).json({ error: "Integration not found" });
+    }
+
+    if (!integration.is_active) {
+      return res.status(400).json({ error: "Integration is not active" });
+    }
+
+    // Set credentials for Google Calendar service
+    googleCalendarService.setCredentials(
+      integration.access_token!,
+      integration.refresh_token || undefined,
+      integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined
+    );
+
+    const calendars = await googleCalendarService.getUserCalendars();
+    
+    // Format calendars for frontend
+    const formattedCalendars = calendars.map((cal: any) => ({
+      id: cal.id,
+      summary: cal.summary,
+      description: cal.description,
+      primary: cal.primary || false,
+      accessRole: cal.accessRole,
+      backgroundColor: cal.backgroundColor,
+      foregroundColor: cal.foregroundColor,
+      selected: cal.selected || false
+    }));
+
+    res.json(formattedCalendars);
+  } catch (error) {
+    console.error("Error getting user calendars:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
