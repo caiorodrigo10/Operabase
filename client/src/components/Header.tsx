@@ -1,5 +1,10 @@
-import { Menu } from "lucide-react";
-import { mockClinic } from "@/lib/mock-data";
+import { Menu, LogOut, User } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   currentPage: string;
@@ -20,6 +25,42 @@ const pageTitles = {
 
 export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
   const pageTitle = pageTitles[currentPage as keyof typeof pageTitles] || "Dashboard";
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/logout");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(["/api/user"], null);
+      toast({
+        title: "Logout realizado com sucesso",
+        description: "Você foi desconectado do sistema",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro no logout",
+        description: error.message || "Erro ao fazer logout",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-4">
@@ -36,19 +77,49 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
           <div>
             <h1 className="text-xl font-semibold text-slate-800">{pageTitle}</h1>
             <p className="text-sm text-slate-500">
-              {mockClinic.name} - {mockClinic.responsible}
+              Taskmed - Sistema de Gestão de Clínicas
             </p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <p className="text-sm font-medium text-slate-800">{mockClinic.responsible}</p>
-            <p className="text-xs text-slate-500">Última atividade: agora</p>
+            <p className="text-sm font-medium text-slate-800">{user?.name || 'Usuário'}</p>
+            <p className="text-xs text-slate-500">{user?.email}</p>
           </div>
-          <div className="w-8 h-8 bg-medical-blue rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">MS</span>
-          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700">
+                <span className="text-white text-sm font-medium">
+                  {user?.name ? getInitials(user.name) : 'U'}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  <p className="font-medium">{user?.name}</p>
+                  <p className="w-[200px] truncate text-sm text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{logoutMutation.isPending ? "Saindo..." : "Sair"}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
