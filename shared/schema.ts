@@ -112,6 +112,74 @@ export const ai_templates = pgTable("ai_templates", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Tabela para estágios do pipeline
+export const pipeline_stages = pgTable("pipeline_stages", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id),
+  name: text("name").notNull(), // "Novos Contatos", "Qualificação", "Proposta", etc
+  description: text("description"),
+  order_position: integer("order_position").notNull(),
+  color: text("color").default("#3b82f6"), // cor para exibição visual
+  is_active: boolean("is_active").default(true),
+  target_days: integer("target_days"), // dias esperados neste estágio
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para oportunidades do pipeline
+export const pipeline_opportunities = pgTable("pipeline_opportunities", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id),
+  contact_id: integer("contact_id").references(() => contacts.id),
+  stage_id: integer("stage_id").references(() => pipeline_stages.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  value: integer("value"), // valor estimado em centavos
+  probability: integer("probability").default(50), // % de chance de conversão
+  expected_close_date: timestamp("expected_close_date"),
+  actual_close_date: timestamp("actual_close_date"),
+  status: text("status").notNull().default("active"), // active, won, lost, postponed
+  lost_reason: text("lost_reason"),
+  source: text("source"), // whatsapp, site, indicacao, marketing, etc
+  assigned_to: text("assigned_to"), // responsável pela oportunidade
+  tags: text("tags").array(), // tags personalizáveis
+  priority: text("priority").default("medium"), // low, medium, high, urgent
+  next_action: text("next_action"), // próxima ação a ser realizada
+  next_action_date: timestamp("next_action_date"),
+  stage_entered_at: timestamp("stage_entered_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para histórico de movimentações no pipeline
+export const pipeline_history = pgTable("pipeline_history", {
+  id: serial("id").primaryKey(),
+  opportunity_id: integer("opportunity_id").references(() => pipeline_opportunities.id),
+  from_stage_id: integer("from_stage_id").references(() => pipeline_stages.id),
+  to_stage_id: integer("to_stage_id").references(() => pipeline_stages.id),
+  changed_by: text("changed_by"),
+  notes: text("notes"),
+  duration_in_stage: integer("duration_in_stage"), // tempo em dias no estágio anterior
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para atividades relacionadas às oportunidades
+export const pipeline_activities = pgTable("pipeline_activities", {
+  id: serial("id").primaryKey(),
+  opportunity_id: integer("opportunity_id").references(() => pipeline_opportunities.id),
+  activity_type: text("activity_type").notNull(), // call, email, meeting, whatsapp, note, task
+  title: text("title").notNull(),
+  description: text("description"),
+  scheduled_date: timestamp("scheduled_date"),
+  completed_date: timestamp("completed_date"),
+  status: text("status").notNull().default("pending"), // pending, completed, cancelled
+  outcome: text("outcome"), // resultado da atividade
+  next_activity_suggested: text("next_activity_suggested"),
+  created_by: text("created_by"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -161,6 +229,30 @@ export const insertAiTemplateSchema = createInsertSchema(ai_templates).omit({
   updated_at: true,
 });
 
+export const insertPipelineStageSchema = createInsertSchema(pipeline_stages).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertPipelineOpportunitySchema = createInsertSchema(pipeline_opportunities).omit({
+  id: true,
+  stage_entered_at: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertPipelineHistorySchema = createInsertSchema(pipeline_history).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertPipelineActivitySchema = createInsertSchema(pipeline_activities).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Clinic = typeof clinics.$inferSelect;
@@ -179,3 +271,11 @@ export type ClinicSetting = typeof clinic_settings.$inferSelect;
 export type InsertClinicSetting = z.infer<typeof insertClinicSettingSchema>;
 export type AiTemplate = typeof ai_templates.$inferSelect;
 export type InsertAiTemplate = z.infer<typeof insertAiTemplateSchema>;
+export type PipelineStage = typeof pipeline_stages.$inferSelect;
+export type InsertPipelineStage = z.infer<typeof insertPipelineStageSchema>;
+export type PipelineOpportunity = typeof pipeline_opportunities.$inferSelect;
+export type InsertPipelineOpportunity = z.infer<typeof insertPipelineOpportunitySchema>;
+export type PipelineHistory = typeof pipeline_history.$inferSelect;
+export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
+export type PipelineActivity = typeof pipeline_activities.$inferSelect;
+export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;

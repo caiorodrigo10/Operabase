@@ -1,12 +1,17 @@
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
+  pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
   type Appointment, type InsertAppointment,
   type AnalyticsMetric, type InsertAnalyticsMetric,
   type ClinicSetting, type InsertClinicSetting,
-  type AiTemplate, type InsertAiTemplate
+  type AiTemplate, type InsertAiTemplate,
+  type PipelineStage, type InsertPipelineStage,
+  type PipelineOpportunity, type InsertPipelineOpportunity,
+  type PipelineHistory, type InsertPipelineHistory,
+  type PipelineActivity, type InsertPipelineActivity
 } from "@shared/schema";
 
 export interface IStorage {
@@ -48,6 +53,30 @@ export interface IStorage {
   getAiTemplate(id: number): Promise<AiTemplate | undefined>;
   createAiTemplate(template: InsertAiTemplate): Promise<AiTemplate>;
   updateAiTemplate(id: number, template: Partial<InsertAiTemplate>): Promise<AiTemplate | undefined>;
+
+  // Pipeline Stages
+  getPipelineStages(clinicId: number): Promise<PipelineStage[]>;
+  getPipelineStage(id: number): Promise<PipelineStage | undefined>;
+  createPipelineStage(stage: InsertPipelineStage): Promise<PipelineStage>;
+  updatePipelineStage(id: number, stage: Partial<InsertPipelineStage>): Promise<PipelineStage | undefined>;
+  deletePipelineStage(id: number): Promise<boolean>;
+
+  // Pipeline Opportunities
+  getPipelineOpportunities(clinicId: number, filters?: { stageId?: number; status?: string; assignedTo?: string }): Promise<PipelineOpportunity[]>;
+  getPipelineOpportunity(id: number): Promise<PipelineOpportunity | undefined>;
+  createPipelineOpportunity(opportunity: InsertPipelineOpportunity): Promise<PipelineOpportunity>;
+  updatePipelineOpportunity(id: number, opportunity: Partial<InsertPipelineOpportunity>): Promise<PipelineOpportunity | undefined>;
+  moveOpportunityToStage(opportunityId: number, newStageId: number, changedBy?: string, notes?: string): Promise<PipelineOpportunity | undefined>;
+
+  // Pipeline History
+  getPipelineHistory(opportunityId: number): Promise<PipelineHistory[]>;
+  createPipelineHistory(history: InsertPipelineHistory): Promise<PipelineHistory>;
+
+  // Pipeline Activities
+  getPipelineActivities(opportunityId: number): Promise<PipelineActivity[]>;
+  createPipelineActivity(activity: InsertPipelineActivity): Promise<PipelineActivity>;
+  updatePipelineActivity(id: number, activity: Partial<InsertPipelineActivity>): Promise<PipelineActivity | undefined>;
+  completePipelineActivity(id: number, outcome?: string): Promise<PipelineActivity | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -58,6 +87,10 @@ export class MemStorage implements IStorage {
   private analyticsMetrics: Map<number, AnalyticsMetric>;
   private clinicSettings: Map<string, ClinicSetting>; // key: `${clinicId}-${settingKey}`
   private aiTemplates: Map<number, AiTemplate>;
+  private pipelineStages: Map<number, PipelineStage>;
+  private pipelineOpportunities: Map<number, PipelineOpportunity>;
+  private pipelineHistory: Map<number, PipelineHistory>;
+  private pipelineActivities: Map<number, PipelineActivity>;
   private currentId: number;
 
   constructor() {
@@ -68,6 +101,10 @@ export class MemStorage implements IStorage {
     this.analyticsMetrics = new Map();
     this.clinicSettings = new Map();
     this.aiTemplates = new Map();
+    this.pipelineStages = new Map();
+    this.pipelineOpportunities = new Map();
+    this.pipelineHistory = new Map();
+    this.pipelineActivities = new Map();
     this.currentId = 1;
   }
 
