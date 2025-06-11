@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,11 +51,8 @@ const statusLabels = {
 export function Contatos() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
-  const [isEditingOverview, setIsEditingOverview] = useState(false);
-  const [overviewText, setOverviewText] = useState("");
+  const [, setLocation] = useLocation();
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -129,21 +127,7 @@ export function Contatos() {
   };
 
   const handleContactClick = (contact: Contact) => {
-    setSelectedContact(contact);
-    setOverviewText(`Paciente ${contact.name} iniciou contato via WhatsApp. Aguardando avaliação inicial da IA Livia para direcionamento adequado do caso.`);
-    setIsDialogOpen(true);
-  };
-
-  const handleSaveOverview = () => {
-    setIsEditingOverview(false);
-  };
-
-  const getContactAppointments = (contactId: number) => {
-    return mockAppointments.filter((appointment: any) => appointment.contact_id === contactId);
-  };
-
-  const getContactMessages = (contactId: number) => {
-    return mockMessages.filter((message: any) => message.conversation_id === contactId).slice(-5);
+    setLocation(`/contatos/${contact.id}`);
   };
 
   if (isLoading) {

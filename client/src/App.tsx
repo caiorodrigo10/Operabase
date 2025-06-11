@@ -14,6 +14,7 @@ import { Contatos } from "./pages/contatos";
 import { Relatorios } from "./pages/relatorios";
 import { Configuracoes } from "./pages/configuracoes";
 import { LiviaConfig } from "./pages/livia-config";
+import { ContatoDetalhes } from "./pages/contato-detalhes";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -55,6 +56,7 @@ function Router() {
         <Route path="/pipeline" component={Pipeline} />
         <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />
+        <Route path="/contatos/:id" component={ContatoDetalhes} />
         <Route path="/relatorios" component={Relatorios} />
         <Route path="/configuracoes" component={Configuracoes} />
         <Route path="/livia-config" component={LiviaConfig} />
