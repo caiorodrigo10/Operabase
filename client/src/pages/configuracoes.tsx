@@ -381,7 +381,7 @@ export function Configuracoes() {
 
                       {/* Connected Calendars */}
                       {(calendarIntegrations as any[]).map((integration) => (
-                        <div key={calendar.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
+                        <div key={integration.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -389,23 +389,48 @@ export function Configuracoes() {
                               </div>
                               <div>
                                 <div className="flex items-center space-x-2">
-                                  <p className="font-medium text-slate-800">{calendar.provider}</p>
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  <p className="font-medium text-slate-800">{integration.provider === 'google' ? 'Google Calendar' : integration.provider}</p>
+                                  {integration.is_active ? (
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                  ) : (
+                                    <AlertCircle className="w-4 h-4 text-orange-600" />
+                                  )}
                                 </div>
-                                <p className="text-sm text-slate-600">{calendar.email}</p>
+                                <p className="text-sm text-slate-600">{integration.email}</p>
+                                {integration.last_sync && (
+                                  <p className="text-xs text-slate-500">
+                                    Última sinc: {new Date(integration.last_sync).toLocaleString('pt-BR')}
+                                  </p>
+                                )}
+                                {integration.sync_errors && (
+                                  <p className="text-xs text-red-500">
+                                    Erro: {integration.sync_errors}
+                                  </p>
+                                )}
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDisconnectCalendar(calendar.id)}
-                              className="text-slate-500 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditSyncPreferences(integration.id, integration.sync_preference)}
+                              >
+                                <Settings className="w-4 h-4 mr-2" />
+                                Configurar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDisconnectCalendar(integration.id)}
+                                className="text-slate-500 hover:text-red-600"
+                                disabled={deleteCalendarMutation.isPending}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
 
-                          {calendar.isLinked && (
+                          {integration.is_active && (
                             <div className="mt-4 space-y-4">
                               <Separator />
                               
