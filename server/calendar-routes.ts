@@ -218,10 +218,45 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
       return;
     }
 
+    // Import and use the Google Calendar service
+    const { google } = require('googleapis');
+    
+    // Set up OAuth2 client
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
+
+    // Set credentials
+    oauth2Client.setCredentials({
+      access_token: googleIntegration.access_token,
+      refresh_token: googleIntegration.refresh_token,
+      expiry_date: new Date(googleIntegration.token_expires_at).getTime()
+    });
+
     // Refresh token if needed
-    const { GoogleCalendarService } = await import('./google-calendar-service');
-    const calendarService = new GoogleCalendarService();
-    await calendarService.refreshTokenIfNeeded(googleIntegration);
+    const now = new Date();
+    const expiryDate = new Date(googleIntegration.token_expires_at);
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+    if (expiryDate <= fiveMinutesFromNow) {
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        await storage.updateCalendarIntegration(googleIntegration.id, {
+          access_token: credentials.access_token!,
+          refresh_token: credentials.refresh_token || googleIntegration.refresh_token,
+          token_expires_at: new Date(credentials.expiry_date!)
+        });
+        console.log('Token refreshed successfully');
+      } catch (refreshError) {
+        console.error('Error refreshing token:', refreshError);
+        return;
+      }
+    }
+
+    // Create calendar service
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
     // Calculate end time
     const startDate = new Date(appointment.scheduled_date);
@@ -242,14 +277,17 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
       attendees: contact.email ? [{ email: contact.email }] : [],
     };
 
-    const createdEvent = await calendarService.createEvent(googleIntegration.calendar_id, event);
+    const response = await calendar.events.insert({
+      calendarId: googleIntegration.calendar_id || 'primary',
+      requestBody: event
+    });
     
     // Update appointment with Google Calendar event ID
-    if (createdEvent?.id) {
+    if (response.data?.id) {
       await storage.updateAppointment(appointment.id, {
-        google_calendar_event_id: createdEvent.id
+        google_calendar_event_id: response.data.id
       });
-      console.log('Appointment synced to Google Calendar:', createdEvent.id);
+      console.log('Appointment synced to Google Calendar:', response.data.id);
     }
 
   } catch (error) {

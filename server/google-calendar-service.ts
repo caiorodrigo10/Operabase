@@ -257,4 +257,5 @@ class GoogleCalendarService {
   }
 }
 
+export { GoogleCalendarService };
 export const googleCalendarService = new GoogleCalendarService();
