@@ -389,12 +389,13 @@ import { testConnection } from "./db";
 let storage: IStorage;
 
 async function initializeStorage() {
-  const isProduction = process.env.NODE_ENV === "production";
   const hasDatabase = await testConnection();
   
-  if (isProduction || hasDatabase) {
+  if (hasDatabase) {
     console.log("🔗 Using PostgreSQL storage");
     storage = postgresStorage;
+    // Initialize data for PostgreSQL if needed
+    await initializePostgreSQLData();
   } else {
     console.log("💾 Using in-memory storage for development");
     storage = new MemStorage();
@@ -404,156 +405,255 @@ async function initializeStorage() {
   }
 }
 
+// Initialize PostgreSQL with sample data if tables are empty
+async function initializePostgreSQLData() {
+  try {
+    // Check if we already have data
+    const existingClinics = await postgresStorage.getClinic(1);
+    if (existingClinics) {
+      console.log("✅ PostgreSQL already has data");
+      return;
+    }
+
+    console.log("📝 Initializing PostgreSQL with sample data...");
+    
+    // Create sample clinic
+    const clinic = await postgresStorage.createClinic({
+      name: "Centro de Psicologia Dr. Amanda Costa",
+      responsible: "Dra. Amanda Costa",
+      whatsapp_number: "(11) 99876-5432",
+      specialties: ["Psicologia Clínica", "TDAH em Adultos", "TDAH Infantil", "Terapia Cognitivo-Comportamental"],
+      working_hours: "Seg-Sex: 9h-19h | Sáb: 9h-13h"
+    });
+
+    // Create sample contacts
+    const contacts = await Promise.all([
+      postgresStorage.createContact({
+        clinic_id: clinic.id,
+        name: "Lucas Ferreira",
+        phone: "(11) 99123-4567",
+        status: "agendado",
+        age: 28,
+        profession: "Analista de Sistemas"
+      }),
+      postgresStorage.createContact({
+        clinic_id: clinic.id,
+        name: "Carla Mendes",
+        phone: "(11) 98765-4321",
+        status: "em_conversa",
+        age: 35,
+        profession: "Professora"
+      }),
+      postgresStorage.createContact({
+        clinic_id: clinic.id,
+        name: "Pedro Oliveira",
+        phone: "(11) 97654-3210",
+        status: "pos_atendimento",
+        age: 42,
+        profession: "Engenheiro"
+      }),
+      postgresStorage.createContact({
+        clinic_id: clinic.id,
+        name: "Sofia Almeida",
+        phone: "(11) 96543-2109",
+        status: "novo",
+        age: 22,
+        profession: "Estudante"
+      })
+    ]);
+
+    // Create sample appointment
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(15, 0, 0, 0);
+
+    await postgresStorage.createAppointment({
+      contact_id: contacts[0].id,
+      clinic_id: clinic.id,
+      doctor_name: "Dra. Amanda Costa",
+      specialty: "Psicologia Clínica",
+      appointment_type: "primeira_consulta",
+      scheduled_date: tomorrow,
+      status: "agendado",
+      duration_minutes: 60,
+      payment_status: "pendente",
+      payment_amount: 15000
+    });
+
+    // Create initial settings
+    await Promise.all([
+      postgresStorage.setClinicSetting({
+        clinic_id: clinic.id,
+        setting_key: "ai_enabled",
+        setting_value: "true",
+        setting_type: "boolean",
+        description: "Habilitar assistente de IA"
+      }),
+      postgresStorage.setClinicSetting({
+        clinic_id: clinic.id,
+        setting_key: "session_duration",
+        setting_value: "60",
+        setting_type: "number",
+        description: "Duração padrão da sessão em minutos"
+      })
+    ]);
+
+    // Create AI templates
+    await Promise.all([
+      postgresStorage.createAiTemplate({
+        clinic_id: clinic.id,
+        template_name: "Boas-vindas",
+        template_type: "greeting",
+        content: "Olá {{nome}}! Sou a assistente virtual da {{clinica}}. Como posso ajudá-lo hoje?",
+        variables: ["nome", "clinica"],
+        is_active: true
+      }),
+      postgresStorage.createAiTemplate({
+        clinic_id: clinic.id,
+        template_name: "Confirmação de Agendamento",
+        template_type: "appointment_confirmation",
+        content: "Perfeito, {{nome}}! Agendei sua consulta com {{doutor}} para {{data}} às {{hora}}. Você receberá uma confirmação em breve.",
+        variables: ["nome", "doutor", "data", "hora"],
+        is_active: true
+      })
+    ]);
+
+    // Create sample analytics metrics
+    const today = new Date();
+    const metrics = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+
+      metrics.push(
+        postgresStorage.createAnalyticsMetric({
+          clinic_id: clinic.id,
+          metric_type: "daily_messages",
+          value: Math.floor(Math.random() * 100) + 50,
+          date: date,
+          metadata: JSON.stringify({ source: "whatsapp" })
+        }),
+        postgresStorage.createAnalyticsMetric({
+          clinic_id: clinic.id,
+          metric_type: "daily_appointments",
+          value: Math.floor(Math.random() * 15) + 5,
+          date: date
+        }),
+        postgresStorage.createAnalyticsMetric({
+          clinic_id: clinic.id,
+          metric_type: "conversion_rate",
+          value: Math.floor(Math.random() * 30) + 60,
+          date: date
+        })
+      );
+    }
+
+    await Promise.all(metrics);
+    console.log("✅ PostgreSQL sample data initialized successfully");
+  } catch (error) {
+    console.error("❌ Error initializing PostgreSQL data:", error);
+  }
+}
+
 // Initialize storage
 initializeStorage();
 
 export { storage };
 
-// Initialize with sample data
+// Initialize with sample data for in-memory storage only
 async function initializeSampleData() {
-  // Create sample clinic
-  const clinic = await storage.createClinic({
-    name: "Centro de Psicologia Dr. Amanda Costa",
-    responsible: "Dra. Amanda Costa",
-    whatsapp_number: "(11) 99876-5432",
-    specialties: ["Psicologia Clínica", "TDAH em Adultos", "TDAH Infantil", "Terapia Cognitivo-Comportamental"],
-    working_hours: "Seg-Sex: 9h-19h | Sáb: 9h-13h"
-  });
-
-  // Create sample contacts
-  await storage.createContact({
-    clinic_id: clinic.id,
-    name: "Lucas Ferreira",
-    phone: "(11) 99123-4567",
-    status: "agendado",
-    age: 28,
-    profession: "Analista de Sistemas"
-  });
-
-  await storage.createContact({
-    clinic_id: clinic.id,
-    name: "Carla Mendes",
-    phone: "(11) 98765-4321",
-    status: "em_conversa",
-    age: 35,
-    profession: "Professora"
-  });
-
-  await storage.createContact({
-    clinic_id: clinic.id,
-    name: "Pedro Oliveira",
-    phone: "(11) 97654-3210",
-    status: "pos_atendimento",
-    age: 42,
-    profession: "Engenheiro"
-  });
-
-  await storage.createContact({
-    clinic_id: clinic.id,
-    name: "Sofia Almeida",
-    phone: "(11) 96543-2109",
-    status: "novo",
-    age: 22,
-    profession: "Estudante"
-  });
-
-  // Create sample appointments
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(15, 0, 0, 0);
-
-  await storage.createAppointment({
-    contact_id: 1,
-    clinic_id: clinic.id,
-    doctor_name: "Dra. Amanda Costa",
-    specialty: "Psicologia Clínica",
-    appointment_type: "primeira_consulta",
-    scheduled_date: tomorrow,
-    status: "agendado",
-    duration_minutes: 60,
-    payment_status: "pendente",
-    payment_amount: 15000 // R$ 150,00 em centavos
-  });
-
-  // Create initial settings
-  await storage.setClinicSetting({
-    clinic_id: clinic.id,
-    setting_key: "ai_enabled",
-    setting_value: "true",
-    setting_type: "boolean",
-    description: "Habilitar assistente de IA"
-  });
-
-  await storage.setClinicSetting({
-    clinic_id: clinic.id,
-    setting_key: "session_duration",
-    setting_value: "60",
-    setting_type: "number",
-    description: "Duração padrão da sessão em minutos"
-  });
-
-  // Create AI templates
-  await storage.createAiTemplate({
-    clinic_id: clinic.id,
-    template_name: "Boas-vindas",
-    template_type: "greeting",
-    content: "Olá {{nome}}! Sou a assistente virtual da {{clinica}}. Como posso ajudá-lo hoje?",
-    variables: ["nome", "clinica"],
-    is_active: true
-  });
-
-  await storage.createAiTemplate({
-    clinic_id: clinic.id,
-    template_name: "Confirmação de Agendamento",
-    template_type: "appointment_confirmation",
-    content: "Perfeito, {{nome}}! Agendei sua consulta com {{doutor}} para {{data}} às {{hora}}. Você receberá uma confirmação em breve.",
-    variables: ["nome", "doutor", "data", "hora"],
-    is_active: true
-  });
-
-  console.log("Sample data initialized successfully");
-}
-
-// Initialize sample data when starting the server
-initializeSampleData().catch(console.error);
-
-// Initialize additional sample data for analytics
-async function initializeAnalyticsData() {
-  const today = new Date();
-  const clinicId = 1;
-
-  // Create sample analytics metrics for the last 7 days
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-
-    // Daily messages metrics
-    await storage.createAnalyticsMetric({
-      clinic_id: clinicId,
-      metric_type: "daily_messages",
-      value: Math.floor(Math.random() * 100) + 50,
-      date: date,
-      metadata: JSON.stringify({ source: "whatsapp" })
+  try {
+    // Create sample clinic
+    const clinic = await storage.createClinic({
+      name: "Centro de Psicologia Dr. Amanda Costa",
+      responsible: "Dra. Amanda Costa",
+      whatsapp_number: "(11) 99876-5432",
+      specialties: ["Psicologia Clínica", "TDAH em Adultos", "TDAH Infantil", "Terapia Cognitivo-Comportamental"],
+      working_hours: "Seg-Sex: 9h-19h | Sáb: 9h-13h"
     });
 
-    // Daily appointments metrics
-    await storage.createAnalyticsMetric({
-      clinic_id: clinicId,
-      metric_type: "daily_appointments",
-      value: Math.floor(Math.random() * 15) + 5,
-      date: date
+    // Create sample contacts
+    await storage.createContact({
+      clinic_id: clinic.id,
+      name: "Lucas Ferreira",
+      phone: "(11) 99123-4567",
+      status: "agendado",
+      age: 28,
+      profession: "Analista de Sistemas"
     });
 
-    // Conversion rate metrics
-    await storage.createAnalyticsMetric({
-      clinic_id: clinicId,
-      metric_type: "conversion_rate",
-      value: Math.floor(Math.random() * 30) + 60, // 60-90%
-      date: date
+    await storage.createContact({
+      clinic_id: clinic.id,
+      name: "Carla Mendes",
+      phone: "(11) 98765-4321",
+      status: "em_conversa",
+      age: 35,
+      profession: "Professora"
     });
+
+    await storage.createContact({
+      clinic_id: clinic.id,
+      name: "Pedro Oliveira",
+      phone: "(11) 97654-3210",
+      status: "pos_atendimento",
+      age: 42,
+      profession: "Engenheiro"
+    });
+
+    await storage.createContact({
+      clinic_id: clinic.id,
+      name: "Sofia Almeida",
+      phone: "(11) 96543-2109",
+      status: "novo",
+      age: 22,
+      profession: "Estudante"
+    });
+
+    console.log("In-memory storage initialized successfully");
+  } catch (error) {
+    console.error("Error initializing in-memory storage:", error);
   }
-
-  console.log("Analytics data initialized successfully");
 }
 
-initializeAnalyticsData().catch(console.error);
+// Initialize additional sample data for analytics (in-memory only)
+async function initializeAnalyticsData() {
+  try {
+    const today = new Date();
+    const clinicId = 1;
+
+    // Create sample analytics metrics for the last 7 days
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+
+      // Daily messages metrics
+      await storage.createAnalyticsMetric({
+        clinic_id: clinicId,
+        metric_type: "daily_messages",
+        value: Math.floor(Math.random() * 100) + 50,
+        date: date,
+        metadata: JSON.stringify({ source: "whatsapp" })
+      });
+
+      // Daily appointments metrics
+      await storage.createAnalyticsMetric({
+        clinic_id: clinicId,
+        metric_type: "daily_appointments",
+        value: Math.floor(Math.random() * 15) + 5,
+        date: date
+      });
+
+      // Conversion rate metrics
+      await storage.createAnalyticsMetric({
+        clinic_id: clinicId,
+        metric_type: "conversion_rate",
+        value: Math.floor(Math.random() * 30) + 60, // 60-90%
+        date: date
+      });
+    }
+
+    console.log("In-memory analytics data initialized successfully");
+  } catch (error) {
+    console.error("Error initializing in-memory analytics:", error);
+  }
+}
