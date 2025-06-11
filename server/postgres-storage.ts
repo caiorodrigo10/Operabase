@@ -216,49 +216,27 @@ export class PostgreSQLStorage implements IStorage {
   // ============ CONTACTS ============
   
   async getContacts(clinicId: number, filters?: { status?: string; search?: string }): Promise<Contact[]> {
-    if (!filters || (!filters.status && !filters.search)) {
-      return db.select().from(contacts)
-        .where(eq(contacts.clinic_id, clinicId))
-        .orderBy(desc(contacts.last_interaction));
+    let conditions = [eq(contacts.clinic_id, clinicId)];
+
+    if (filters?.status) {
+      conditions.push(eq(contacts.status, filters.status));
     }
 
-    if (filters.status && filters.search) {
+    if (filters?.search) {
       const searchTerm = `%${filters.search}%`;
-      return db.select().from(contacts)
-        .where(and(
-          eq(contacts.clinic_id, clinicId),
-          eq(contacts.status, filters.status),
-          or(
-            like(contacts.name, searchTerm),
-            like(contacts.phone, searchTerm)
-          )
-        ))
-        .orderBy(desc(contacts.last_interaction));
+      conditions.push(
+        or(
+          like(contacts.name, searchTerm),
+          like(contacts.phone, searchTerm)
+        )!
+      );
     }
 
-    if (filters.status) {
-      return db.select().from(contacts)
-        .where(and(
-          eq(contacts.clinic_id, clinicId),
-          eq(contacts.status, filters.status)
-        ))
-        .orderBy(desc(contacts.last_interaction));
-    }
-
-    if (filters.search) {
-      const searchTerm = `%${filters.search}%`;
-      return db.select().from(contacts)
-        .where(and(
-          eq(contacts.clinic_id, clinicId),
-          or(
-            like(contacts.name, searchTerm),
-            like(contacts.phone, searchTerm)
-          )
-        ))
-        .orderBy(desc(contacts.last_interaction));
-    }
-
-    return [];
+    return db.select()
+      .from(contacts)
+      .where(and(...conditions))
+      .orderBy(desc(contacts.last_interaction))
+      .limit(200); // Limitar para melhor performance
   }
 
   async getContact(id: number): Promise<Contact | undefined> {
@@ -291,53 +269,29 @@ export class PostgreSQLStorage implements IStorage {
   // ============ APPOINTMENTS ============
   
   async getAppointments(clinicId: number, filters?: { status?: string; date?: Date }): Promise<Appointment[]> {
-    if (!filters || (!filters.status && !filters.date)) {
-      return db.select().from(appointments)
-        .where(eq(appointments.clinic_id, clinicId))
-        .orderBy(asc(appointments.scheduled_date));
+    let conditions = [eq(appointments.clinic_id, clinicId)];
+
+    if (filters?.status) {
+      conditions.push(eq(appointments.status, filters.status));
     }
 
-    if (filters.status && filters.date) {
+    if (filters?.date) {
       const startOfDay = new Date(filters.date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(filters.date);
       endOfDay.setHours(23, 59, 59, 999);
-
-      return db.select().from(appointments)
-        .where(and(
-          eq(appointments.clinic_id, clinicId),
-          eq(appointments.status, filters.status),
-          gte(appointments.scheduled_date, startOfDay),
-          lte(appointments.scheduled_date, endOfDay)
-        ))
-        .orderBy(asc(appointments.scheduled_date));
+      
+      conditions.push(
+        gte(appointments.scheduled_date, startOfDay),
+        lte(appointments.scheduled_date, endOfDay)
+      );
     }
 
-    if (filters.status) {
-      return db.select().from(appointments)
-        .where(and(
-          eq(appointments.clinic_id, clinicId),
-          eq(appointments.status, filters.status)
-        ))
-        .orderBy(asc(appointments.scheduled_date));
-    }
-
-    if (filters.date) {
-      const startOfDay = new Date(filters.date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(filters.date);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      return db.select().from(appointments)
-        .where(and(
-          eq(appointments.clinic_id, clinicId),
-          gte(appointments.scheduled_date, startOfDay),
-          lte(appointments.scheduled_date, endOfDay)
-        ))
-        .orderBy(asc(appointments.scheduled_date));
-    }
-
-    return [];
+    return db.select()
+      .from(appointments)
+      .where(and(...conditions))
+      .orderBy(asc(appointments.scheduled_date))
+      .limit(500); // Limitar para melhor performance
   }
 
   async getAppointment(id: number): Promise<Appointment | undefined> {
