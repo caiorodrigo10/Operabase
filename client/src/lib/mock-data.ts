@@ -202,6 +202,43 @@ export const mockMetrics = {
   tempoResposta: "1.2s",
 };
 
+export const weeklyPerformanceData = [
+  { day: "Dom", mensagens: 45, agendamentos: 8, conversoes: 17.8 },
+  { day: "Seg", mensagens: 89, agendamentos: 12, conversoes: 13.5 },
+  { day: "Ter", mensagens: 156, agendamentos: 23, conversoes: 14.7 },
+  { day: "Qua", mensagens: 143, agendamentos: 19, conversoes: 13.3 },
+  { day: "Qui", mensagens: 167, agendamentos: 28, conversoes: 16.8 },
+  { day: "Sex", mensagens: 134, agendamentos: 21, conversoes: 15.7 },
+  { day: "Sab", mensagens: 78, agendamentos: 11, conversoes: 14.1 },
+];
+
+export const conversionData = [
+  { name: "Novos Contatos", value: 45, fill: "#3b82f6" },
+  { name: "Em Conversa", value: 28, fill: "#8b5cf6" },
+  { name: "Agendados", value: 18, fill: "#10b981" },
+  { name: "Não Convertidos", value: 9, fill: "#6b7280" },
+];
+
+export const hourlyActivityData = [
+  { hour: "06:00", atividade: 12 },
+  { hour: "07:00", atividade: 19 },
+  { hour: "08:00", atividade: 35 },
+  { hour: "09:00", atividade: 58 },
+  { hour: "10:00", atividade: 67 },
+  { hour: "11:00", atividade: 72 },
+  { hour: "12:00", atividade: 43 },
+  { hour: "13:00", atividade: 38 },
+  { hour: "14:00", atividade: 89 },
+  { hour: "15:00", atividade: 94 },
+  { hour: "16:00", atividade: 87 },
+  { hour: "17:00", atividade: 76 },
+  { hour: "18:00", atividade: 54 },
+  { hour: "19:00", atividade: 32 },
+  { hour: "20:00", atividade: 21 },
+  { hour: "21:00", atividade: 15 },
+  { hour: "22:00", atividade: 8 },
+];
+
 export const mockActivities = [
   {
     id: 1,
