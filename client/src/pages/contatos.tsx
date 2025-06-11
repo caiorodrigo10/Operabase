@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -12,9 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { mockContacts, mockAppointments, mockMessages } from "@/lib/mock-data";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertContactSchema } from "@/../../shared/schema";
+import { mockAppointments, mockMessages } from "@/lib/mock-data";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 import { 
   User, 
   Phone, 
@@ -27,9 +33,11 @@ import {
   Heart,
   Brain,
   Edit3,
-  Save
+  Save,
+  Plus,
+  UserPlus
 } from "lucide-react";
-import type { Contact } from "@/../../shared/schema";
+import type { Contact, InsertContact } from "@/../../shared/schema";
 
 const statusLabels = {
   novo: { label: "Novo", color: "bg-slate-100 text-slate-800" },
@@ -40,47 +48,102 @@ const statusLabels = {
 };
 
 export function Contatos() {
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [overviewText, setOverviewText] = useState("");
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
+  // Fetch contacts from API
+  const { data: contacts = [], isLoading } = useQuery({
+    queryKey: ['/api/contacts', { clinic_id: 1 }],
+    queryFn: async () => {
+      const response = await fetch('/api/contacts?clinic_id=1');
+      if (!response.ok) throw new Error('Erro ao carregar contatos');
+      return response.json();
+    }
+  });
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Form for adding new contact
+  const form = useForm<InsertContact>({
+    resolver: zodResolver(insertContactSchema.extend({
+      age: insertContactSchema.shape.age.optional(),
+      profession: insertContactSchema.shape.profession.optional()
+    })),
+    defaultValues: {
+      clinic_id: 1,
+      name: "",
+      phone: "",
+      email: "",
+      age: undefined,
+      profession: "",
+      status: "novo",
+      priority: "normal",
+      source: "whatsapp"
+    }
+  });
 
-  const filteredContacts = mockContacts.filter(contact => {
+  // Mutation for creating contact
+  const createContactMutation = useMutation({
+    mutationFn: async (contactData: InsertContact) => {
+      const response = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactData)
+      });
+      if (!response.ok) throw new Error('Erro ao criar contato');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
+      setIsAddContactOpen(false);
+      form.reset();
+      toast({
+        title: "Contato adicionado",
+        description: "O novo contato foi criado com sucesso."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao adicionar contato",
+        description: "Não foi possível criar o contato. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const filteredContacts = contacts.filter((contact: Contact) => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contact.phone.includes(searchTerm);
     const matchesStatus = statusFilter === "all" || contact.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
+  const onSubmitContact = (data: InsertContact) => {
+    createContactMutation.mutate(data);
+  };
+
   const handleContactClick = (contact: Contact) => {
     setSelectedContact(contact);
-    // Set initial overview text - in real app this would come from database
     setOverviewText(`Paciente ${contact.name} iniciou contato via WhatsApp. Aguardando avaliação inicial da IA Livia para direcionamento adequado do caso.`);
     setIsDialogOpen(true);
   };
 
   const handleSaveOverview = () => {
-    // In real app, this would save to database
     setIsEditingOverview(false);
   };
 
   const getContactAppointments = (contactId: number) => {
-    return mockAppointments.filter(appointment => appointment.contact_id === contactId);
+    return mockAppointments.filter((appointment: any) => appointment.contact_id === contactId);
   };
 
   const getContactMessages = (contactId: number) => {
-    return mockMessages.filter(message => message.contact_id === contactId).slice(-5); // Last 5 messages
+    return mockMessages.filter((message: any) => message.conversation_id === contactId).slice(-5);
   };
 
   if (isLoading) {
@@ -149,9 +212,9 @@ export function Contatos() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {filteredContacts.map((contact) => {
+                {filteredContacts.map((contact: Contact) => {
                   const status = statusLabels[contact.status as keyof typeof statusLabels];
-                  const initials = contact.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                  const initials = contact.name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
                   const timeAgo = formatDistanceToNow(contact.first_contact!, { 
                     addSuffix: true, 
                     locale: ptBR 
@@ -200,7 +263,7 @@ export function Contatos() {
           <div className="px-6 py-4 border-t border-slate-200">
             <div className="flex items-center justify-between">
               <div className="text-sm text-slate-500">
-                Mostrando 1-{filteredContacts.length} de {mockContacts.length} contatos
+                Mostrando 1-{filteredContacts.length} de {contacts.length} contatos
               </div>
               <div className="flex space-x-2">
                 <Button variant="outline" size="sm" disabled>
