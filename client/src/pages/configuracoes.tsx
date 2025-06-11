@@ -8,8 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockClinic } from "@/lib/mock-data";
-import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info } from "lucide-react";
+import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 
 const integrations = [
   {
@@ -65,7 +68,6 @@ export function Configuracoes() {
   // Fetch calendar integrations using TanStack Query
   const { data: calendarIntegrations = [], refetch: refetchIntegrations } = useQuery({
     queryKey: ["/api/calendar/integrations"],
-    queryFn: getQueryFn(),
   });
 
   const connectCalendarMutation = useMutation({
@@ -300,7 +302,7 @@ export function Configuracoes() {
                     Conecte facilmente seus calendários de terceiros para verificar disponibilidade, atualizar agendamentos conforme são marcados e evitar duplas reservas.
                   </p>
 
-                  {!isCalendarConnected && connectedCalendars.length === 0 ? (
+                  {!isCalendarConnected ? (
                     <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
                       <div className="mx-auto w-24 h-24 mb-4 flex items-center justify-center">
                         <div className="relative">
@@ -378,7 +380,7 @@ export function Configuracoes() {
                       )}
 
                       {/* Connected Calendars */}
-                      {connectedCalendars.map((calendar) => (
+                      {(calendarIntegrations as any[]).map((integration) => (
                         <div key={calendar.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
