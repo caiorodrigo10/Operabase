@@ -1,13 +1,23 @@
 import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
 import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { Appointment } from "@/../../shared/schema";
+import type { Appointment, Contact } from "@/../../shared/schema";
 
 const statusLabels = {
   agendado: { label: "Agendado", color: "bg-green-100 text-green-800" },
@@ -15,12 +25,79 @@ const statusLabels = {
   cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
 };
 
+const appointmentSchema = z.object({
+  contact_id: z.string().min(1, "Selecione um paciente"),
+  scheduled_date: z.string().min(1, "Data é obrigatória"),
+  scheduled_time: z.string().min(1, "Horário é obrigatório"),
+  duration: z.string().min(1, "Duração é obrigatória"),
+  type: z.string().min(1, "Tipo de consulta é obrigatório"),
+  notes: z.string().optional(),
+});
+
+type AppointmentForm = z.infer<typeof appointmentSchema>;
+
 export function Consultas() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  // Buscar contatos reais da base de dados (usando clinic_id = 1 como padrão)
+  const { data: contacts = [], isLoading: contactsLoading } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts", { clinic_id: 1 }],
+    queryFn: async () => {
+      const response = await fetch(`/api/contacts?clinic_id=1`);
+      if (!response.ok) throw new Error('Failed to fetch contacts');
+      return response.json();
+    },
+  });
+
+  const form = useForm<AppointmentForm>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      contact_id: "",
+      scheduled_date: "",
+      scheduled_time: "",
+      duration: "60",
+      type: "consulta",
+      notes: "",
+    },
+  });
+
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (data: AppointmentForm) => {
+      const appointmentData = {
+        contact_id: parseInt(data.contact_id),
+        clinic_id: 1, // Assumindo clinic_id = 1 para agora
+        scheduled_date: new Date(`${data.scheduled_date}T${data.scheduled_time}`),
+        duration_minutes: parseInt(data.duration),
+        appointment_type: data.type,
+        status: "agendado",
+        session_notes: data.notes || null,
+      };
+      const res = await apiRequest("POST", "/api/appointments", appointmentData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      toast({
+        title: "Consulta criada",
+        description: "A consulta foi agendada com sucesso.",
+      });
+      setIsCreateDialogOpen(false);
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar consulta",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -75,9 +152,142 @@ export function Consultas() {
   return (
     <div className="p-4 lg:p-6">
       {/* Header Section */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Consultas</h1>
-        <p className="text-slate-600">Gerencie e visualize todas as sessões agendadas</p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Consultas</h1>
+          <p className="text-slate-600">Gerencie e visualize todas as sessões agendadas</p>
+        </div>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Nova Consulta
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Agendar Nova Consulta</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contact_id">Paciente</Label>
+                  <Select
+                    value={form.watch("contact_id")}
+                    onValueChange={(value) => form.setValue("contact_id", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um paciente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contacts.map((contact) => (
+                        <SelectItem key={contact.id} value={contact.id.toString()}>
+                          {contact.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.contact_id && (
+                    <p className="text-sm text-red-600">{form.formState.errors.contact_id.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo de Consulta</Label>
+                  <Select
+                    value={form.watch("type")}
+                    onValueChange={(value) => form.setValue("type", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="consulta">Consulta</SelectItem>
+                      <SelectItem value="retorno">Retorno</SelectItem>
+                      <SelectItem value="avaliacao">Avaliação</SelectItem>
+                      <SelectItem value="procedimento">Procedimento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.type && (
+                    <p className="text-sm text-red-600">{form.formState.errors.type.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="scheduled_date">Data</Label>
+                  <Input
+                    type="date"
+                    {...form.register("scheduled_date")}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                  {form.formState.errors.scheduled_date && (
+                    <p className="text-sm text-red-600">{form.formState.errors.scheduled_date.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="scheduled_time">Horário</Label>
+                  <Input
+                    type="time"
+                    {...form.register("scheduled_time")}
+                  />
+                  {form.formState.errors.scheduled_time && (
+                    <p className="text-sm text-red-600">{form.formState.errors.scheduled_time.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duração (minutos)</Label>
+                <Select
+                  value={form.watch("duration")}
+                  onValueChange={(value) => form.setValue("duration", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a duração" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 minutos</SelectItem>
+                    <SelectItem value="45">45 minutos</SelectItem>
+                    <SelectItem value="60">1 hora</SelectItem>
+                    <SelectItem value="90">1h 30min</SelectItem>
+                    <SelectItem value="120">2 horas</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.duration && (
+                  <p className="text-sm text-red-600">{form.formState.errors.duration.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Observações</Label>
+                <Textarea
+                  {...form.register("notes")}
+                  placeholder="Observações sobre a consulta..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createAppointmentMutation.isPending}
+                >
+                  {createAppointmentMutation.isPending ? "Agendando..." : "Agendar Consulta"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* View Toggle */}
