@@ -561,10 +561,10 @@ export function Consultas() {
               </div>
 
               {/* Notes */}
-              {selectedAppointment.notes && (
+              {selectedAppointment.session_notes && (
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-slate-800 mb-3">Observações</h3>
-                  <p className="text-slate-700">{selectedAppointment.notes}</p>
+                  <p className="text-slate-700">{selectedAppointment.session_notes}</p>
                 </div>
               )}
 
