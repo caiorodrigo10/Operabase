@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -159,6 +159,34 @@ export function Consultas() {
     },
   });
 
+  const deleteAppointmentMutation = useMutation({
+    mutationFn: async (appointmentId: number) => {
+      const response = await apiRequest("DELETE", `/api/appointments/${appointmentId}`);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Consulta excluída",
+        description: "A consulta foi excluída com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments", { clinic_id: 1 }] });
+      setIsDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir consulta",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteAppointment = (appointmentId: number) => {
+    if (confirm("Tem certeza que deseja excluir esta consulta?")) {
+      deleteAppointmentMutation.mutate(appointmentId);
+    }
+  };
+
   // Update loading state based on data loading
   useEffect(() => {
     setIsLoading(contactsLoading || appointmentsLoading || usersLoading);
@@ -188,6 +216,8 @@ export function Consultas() {
       form.setValue("contact_email", contact.email || "");
     }
   };
+
+
 
   const handleAppointmentClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
@@ -988,10 +1018,7 @@ export function Consultas() {
                       variant="ghost"
                       size="sm"
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => {
-                        // TODO: Implement delete functionality
-                        console.log('Delete appointment:', selectedAppointment?.id);
-                      }}
+                      onClick={() => handleDeleteAppointment(selectedAppointment!.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -1007,6 +1034,12 @@ export function Consultas() {
                 </Button>
               </div>
             </div>
+            <DialogDescription>
+              {selectedAppointment?.google_calendar_event_id 
+                ? "Visualize as informações do evento do Google Calendar"
+                : "Visualize e gerencie os detalhes da consulta agendada"
+              }
+            </DialogDescription>
           </DialogHeader>
           
           {selectedAppointment && (
