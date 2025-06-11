@@ -73,6 +73,8 @@ export function Configuracoes() {
   const [showConflictCalendarDialog, setShowConflictCalendarDialog] = useState(false);
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
   const [conflictCalendars, setConflictCalendars] = useState<string[]>([]);
+  const [linkedCalendarId, setLinkedCalendarId] = useState<string>("");
+  const [addEventsToCalendar, setAddEventsToCalendar] = useState<string>("");
 
   // Fetch calendar integrations using TanStack Query
   const { data: calendarIntegrations = [], refetch: refetchIntegrations } = useQuery({
@@ -121,6 +123,33 @@ export function Configuracoes() {
     onSuccess: () => {
       refetchIntegrations();
     },
+  });
+
+  const saveLinkedCalendarMutation = useMutation({
+    mutationFn: async ({ 
+      integrationId, 
+      linkedCalendarId, 
+      addEventsToCalendar 
+    }: { 
+      integrationId: number; 
+      linkedCalendarId: string; 
+      addEventsToCalendar: string;
+    }) => {
+      const response = await apiRequest("PUT", `/api/calendar/integrations/${integrationId}/linked-calendar`, {
+        linkedCalendarId,
+        addEventsToCalendar: addEventsToCalendar === "none" ? null : addEventsToCalendar
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchIntegrations();
+      setShowLinkedCalendarDialog(false);
+      setLinkedCalendarId("");
+      setAddEventsToCalendar("");
+    },
+    onError: (error) => {
+      console.error('Erro ao salvar configurações do calendário vinculado:', error);
+    }
   });
 
   const handleOpenLinkedCalendarDialog = (integrationId: number) => {
@@ -644,49 +673,150 @@ export function Configuracoes() {
 
         {/* Linked Calendar Selection Dialog */}
         <Dialog open={showLinkedCalendarDialog} onOpenChange={setShowLinkedCalendarDialog}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Linked Calendar</DialogTitle>
+              <DialogTitle>Calendário Vinculado</DialogTitle>
               <DialogDescription>
-                Selecione as agendas que deseja sincronizar com o sistema
+                Todos os novos eventos criados no sistema serão adicionados ao seu calendário vinculado e todos os eventos criados no calendário vinculado serão sincronizados com o sistema.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-6 py-4">
               {isLoadingCalendars ? (
                 <div className="text-center py-4">
                   <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
                   <p className="text-sm text-slate-600 mt-2">Carregando agendas...</p>
                 </div>
               ) : (userCalendars as any[]).length > 0 ? (
-                <div className="space-y-3">
-                  {(userCalendars as any[]).map((calendar: any) => (
-                    <div key={calendar.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <Checkbox
-                        id={calendar.id}
-                        checked={selectedCalendars.includes(calendar.id)}
-                        onCheckedChange={(checked) => handleCalendarSelection(calendar.id, checked as boolean)}
-                      />
-                      <div className="flex-1">
-                        <Label htmlFor={calendar.id} className="cursor-pointer">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium">{calendar.summary}</span>
-                            {calendar.primary && (
-                              <Badge variant="secondary" className="text-xs">Principal</Badge>
-                            )}
-                          </div>
-                          {calendar.description && (
-                            <p className="text-xs text-slate-600 mt-1">{calendar.description}</p>
-                          )}
-                        </Label>
+                <>
+                  {/* Bidirectional sync visualization */}
+                  <div className="bg-slate-50 rounded-lg p-6">
+                    <div className="flex items-center justify-center space-x-8">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                          <Calendar className="w-8 h-8 text-slate-600" />
+                          <Plus className="w-4 h-4 text-blue-600 ml-1" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-800">Sistema</p>
+                        <p className="text-xs text-blue-600 mt-1">Agendamentos do Sistema</p>
                       </div>
-                      <div 
-                        className="w-4 h-4 rounded-full border-2 border-slate-300"
-                        style={{ backgroundColor: calendar.backgroundColor || '#4285f4' }}
-                      />
+                      
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-12 h-0.5 bg-blue-400"></div>
+                          <div className="w-0 h-0 border-l-4 border-l-blue-400 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-0 h-0 border-r-4 border-r-blue-400 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
+                          <div className="w-12 h-0.5 bg-blue-400"></div>
+                        </div>
+                      </div>
+
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                          <Calendar className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-800">Calendário vinculado</p>
+                        <p className="text-xs text-blue-600 mt-1">Eventos do Calendário Vinculado</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  {/* Calendar selection options */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-slate-800 mb-3">Em qual calendário terceirizado devemos adicionar novos eventos?</h4>
+                      
+                      <div className="space-y-3">
+                        {(userCalendars as any[]).map((calendar: any) => (
+                          <div key={calendar.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
+                            <input
+                              type="radio"
+                              id={`add-events-${calendar.id}`}
+                              name="add-events-calendar"
+                              value={calendar.id}
+                              checked={addEventsToCalendar === calendar.id}
+                              className="w-4 h-4 text-blue-600"
+                              onChange={() => setAddEventsToCalendar(calendar.id)}
+                            />
+                            <div className="flex items-center space-x-2 flex-1">
+                              <div 
+                                className="w-4 h-4 rounded-full border-2 border-slate-300"
+                                style={{ backgroundColor: calendar.backgroundColor || '#4285f4' }}
+                              />
+                              <Label htmlFor={`add-events-${calendar.id}`} className="cursor-pointer flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium">{calendar.summary}</span>
+                                  {calendar.primary && (
+                                    <Badge variant="secondary" className="text-xs">Principal</Badge>
+                                  )}
+                                </div>
+                              </Label>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
+                          <input
+                            type="radio"
+                            id="no-add-events"
+                            name="add-events-calendar"
+                            value="none"
+                            checked={addEventsToCalendar === "none"}
+                            className="w-4 h-4 text-blue-600"
+                            onChange={() => setAddEventsToCalendar("none")}
+                          />
+                          <div className="flex items-center space-x-2 flex-1">
+                            <X className="w-4 h-4 text-slate-400" />
+                            <Label htmlFor="no-add-events" className="cursor-pointer">
+                              <span className="font-medium text-slate-700">Não adicionar novos eventos a nenhum calendário</span>
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-slate-800 mb-3">Selecione o Google Calendar onde você gostaria de adicionar novos eventos</h4>
+                      
+                      <Select value={linkedCalendarId} onValueChange={setLinkedCalendarId}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione um calendário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(userCalendars as any[]).map((calendar: any) => (
+                            <SelectItem key={calendar.id} value={calendar.id}>
+                              <div className="flex items-center space-x-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full border"
+                                  style={{ backgroundColor: calendar.backgroundColor || '#4285f4' }}
+                                />
+                                <span>{calendar.summary}</span>
+                                {calendar.primary && (
+                                  <Badge variant="secondary" className="text-xs ml-2">Principal</Badge>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {linkedCalendarId && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-blue-800">Calendário selecionado anteriormente</p>
+                            <p className="text-xs text-blue-700 mt-1">
+                              O calendário {(userCalendars as any[]).find(cal => cal.id === linkedCalendarId)?.summary} será removido dos calendários vinculado e de conflito.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
@@ -705,8 +835,20 @@ export function Configuracoes() {
               <Button variant="outline" onClick={() => setShowLinkedCalendarDialog(false)}>
                 Cancelar
               </Button>
-              <Button onClick={() => setShowLinkedCalendarDialog(false)} className="bg-blue-600 hover:bg-blue-700">
-                Salvar Seleção
+              <Button 
+                onClick={() => {
+                  if (selectedIntegrationId && (linkedCalendarId || addEventsToCalendar)) {
+                    saveLinkedCalendarMutation.mutate({
+                      integrationId: selectedIntegrationId,
+                      linkedCalendarId,
+                      addEventsToCalendar
+                    });
+                  }
+                }} 
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={saveLinkedCalendarMutation.isPending || (!linkedCalendarId && !addEventsToCalendar)}
+              >
+                {saveLinkedCalendarMutation.isPending ? "Salvando..." : "Salvar"}
               </Button>
             </DialogFooter>
           </DialogContent>
