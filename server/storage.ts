@@ -108,6 +108,8 @@ export class MemStorage implements IStorage {
   private pipelineOpportunities: Map<number, PipelineOpportunity>;
   private pipelineHistory: Map<number, PipelineHistory>;
   private pipelineActivities: Map<number, PipelineActivity>;
+  private clinicUsers: Map<number, ClinicUser>;
+  private clinicInvitations: Map<number, ClinicInvitation>;
   private currentId: number;
 
   constructor() {
@@ -122,6 +124,8 @@ export class MemStorage implements IStorage {
     this.pipelineOpportunities = new Map();
     this.pipelineHistory = new Map();
     this.pipelineActivities = new Map();
+    this.clinicUsers = new Map();
+    this.clinicInvitations = new Map();
     this.currentId = 1;
   }
 
@@ -130,17 +134,151 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === email,
     );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser: User = { 
+      ...user, 
+      ...updates, 
+      updated_at: new Date() 
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  // Clinic Users & Access Control
+  async getUserClinics(userId: number): Promise<(ClinicUser & { clinic: Clinic })[]> {
+    const result: (ClinicUser & { clinic: Clinic })[] = [];
+    for (const clinicUser of this.clinicUsers.values()) {
+      if (clinicUser.user_id === userId && clinicUser.is_active) {
+        const clinic = this.clinics.get(clinicUser.clinic_id);
+        if (clinic) {
+          result.push({ ...clinicUser, clinic });
+        }
+      }
+    }
+    return result;
+  }
+
+  async addUserToClinic(clinicUser: InsertClinicUser): Promise<ClinicUser> {
+    const id = this.currentId++;
+    const newClinicUser: ClinicUser = {
+      ...clinicUser,
+      id,
+      created_at: new Date()
+    };
+    this.clinicUsers.set(id, newClinicUser);
+    return newClinicUser;
+  }
+
+  async updateClinicUserRole(clinicId: number, userId: number, role: string, permissions?: any): Promise<ClinicUser | undefined> {
+    for (const [id, clinicUser] of this.clinicUsers.entries()) {
+      if (clinicUser.clinic_id === clinicId && clinicUser.user_id === userId) {
+        const updatedClinicUser: ClinicUser = {
+          ...clinicUser,
+          role,
+          permissions
+        };
+        this.clinicUsers.set(id, updatedClinicUser);
+        return updatedClinicUser;
+      }
+    }
+    return undefined;
+  }
+
+  async removeUserFromClinic(clinicId: number, userId: number): Promise<boolean> {
+    for (const [id, clinicUser] of this.clinicUsers.entries()) {
+      if (clinicUser.clinic_id === clinicId && clinicUser.user_id === userId) {
+        this.clinicUsers.delete(id);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async userHasClinicAccess(userId: number, clinicId: number): Promise<boolean> {
+    for (const clinicUser of this.clinicUsers.values()) {
+      if (clinicUser.user_id === userId && clinicUser.clinic_id === clinicId && clinicUser.is_active) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Clinic Invitations
+  async createClinicInvitation(invitation: InsertClinicInvitation): Promise<ClinicInvitation> {
+    const id = this.currentId++;
+    const newInvitation: ClinicInvitation = {
+      ...invitation,
+      id,
+      created_at: new Date()
+    };
+    this.clinicInvitations.set(id, newInvitation);
+    return newInvitation;
+  }
+
+  async getClinicInvitation(token: string): Promise<ClinicInvitation | undefined> {
+    for (const invitation of this.clinicInvitations.values()) {
+      if (invitation.token === token) {
+        return invitation;
+      }
+    }
+    return undefined;
+  }
+
+  async acceptClinicInvitation(token: string, userId: number): Promise<ClinicUser | undefined> {
+    const invitation = await this.getClinicInvitation(token);
+    if (!invitation || invitation.accepted_at || invitation.expires_at < new Date()) {
+      return undefined;
+    }
+
+    // Mark invitation as accepted
+    const updatedInvitation: ClinicInvitation = {
+      ...invitation,
+      accepted_at: new Date()
+    };
+    this.clinicInvitations.set(invitation.id, updatedInvitation);
+
+    // Add user to clinic
+    return await this.addUserToClinic({
+      clinic_id: invitation.clinic_id,
+      user_id: userId,
+      role: invitation.role,
+      permissions: invitation.permissions,
+      invited_by: invitation.invited_by,
+      invited_at: invitation.created_at,
+      joined_at: new Date(),
+      is_active: true
+    });
+  }
+
+  async getClinicInvitations(clinicId: number): Promise<ClinicInvitation[]> {
+    const result: ClinicInvitation[] = [];
+    for (const invitation of this.clinicInvitations.values()) {
+      if (invitation.clinic_id === clinicId) {
+        result.push(invitation);
+      }
+    }
+    return result;
   }
 
   // Clinics
