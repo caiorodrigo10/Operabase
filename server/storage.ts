@@ -417,6 +417,235 @@ export class MemStorage implements IStorage {
     this.aiTemplates.set(id, updatedTemplate);
     return updatedTemplate;
   }
+
+  // ============ PIPELINE STAGES ============
+  
+  async getPipelineStages(clinicId: number): Promise<PipelineStage[]> {
+    return Array.from(this.pipelineStages.values())
+      .filter(stage => stage.clinic_id === clinicId && stage.is_active)
+      .sort((a, b) => a.order_position - b.order_position);
+  }
+
+  async getPipelineStage(id: number): Promise<PipelineStage | undefined> {
+    return this.pipelineStages.get(id);
+  }
+
+  async createPipelineStage(insertStage: InsertPipelineStage): Promise<PipelineStage> {
+    const id = this.currentId++;
+    const now = new Date();
+    const stage: PipelineStage = {
+      id,
+      clinic_id: insertStage.clinic_id ?? null,
+      name: insertStage.name,
+      description: insertStage.description || null,
+      order_position: insertStage.order_position,
+      color: insertStage.color || null,
+      is_active: insertStage.is_active ?? null,
+      target_days: insertStage.target_days || null,
+      created_at: now,
+      updated_at: now
+    };
+    this.pipelineStages.set(id, stage);
+    return stage;
+  }
+
+  async updatePipelineStage(id: number, updates: Partial<InsertPipelineStage>): Promise<PipelineStage | undefined> {
+    const stage = this.pipelineStages.get(id);
+    if (!stage) return undefined;
+    
+    const updatedStage = { 
+      ...stage, 
+      ...updates,
+      updated_at: new Date()
+    };
+    this.pipelineStages.set(id, updatedStage);
+    return updatedStage;
+  }
+
+  async deletePipelineStage(id: number): Promise<boolean> {
+    return this.pipelineStages.delete(id);
+  }
+
+  // ============ PIPELINE OPPORTUNITIES ============
+  
+  async getPipelineOpportunities(clinicId: number, filters?: { stageId?: number; status?: string; assignedTo?: string }): Promise<PipelineOpportunity[]> {
+    let opportunities = Array.from(this.pipelineOpportunities.values())
+      .filter(opp => opp.clinic_id === clinicId);
+
+    if (filters?.stageId) {
+      opportunities = opportunities.filter(opp => opp.stage_id === filters.stageId);
+    }
+
+    if (filters?.status) {
+      opportunities = opportunities.filter(opp => opp.status === filters.status);
+    }
+
+    if (filters?.assignedTo) {
+      opportunities = opportunities.filter(opp => opp.assigned_to === filters.assignedTo);
+    }
+
+    return opportunities.sort((a, b) => 
+      new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime()
+    );
+  }
+
+  async getPipelineOpportunity(id: number): Promise<PipelineOpportunity | undefined> {
+    return this.pipelineOpportunities.get(id);
+  }
+
+  async createPipelineOpportunity(insertOpportunity: InsertPipelineOpportunity): Promise<PipelineOpportunity> {
+    const id = this.currentId++;
+    const now = new Date();
+    const opportunity: PipelineOpportunity = {
+      id,
+      clinic_id: insertOpportunity.clinic_id ?? null,
+      contact_id: insertOpportunity.contact_id ?? null,
+      stage_id: insertOpportunity.stage_id ?? null,
+      title: insertOpportunity.title,
+      description: insertOpportunity.description || null,
+      value: insertOpportunity.value || null,
+      probability: insertOpportunity.probability || null,
+      expected_close_date: insertOpportunity.expected_close_date || null,
+      actual_close_date: insertOpportunity.actual_close_date || null,
+      status: insertOpportunity.status || "active",
+      lost_reason: insertOpportunity.lost_reason || null,
+      source: insertOpportunity.source || null,
+      assigned_to: insertOpportunity.assigned_to || null,
+      tags: insertOpportunity.tags || null,
+      priority: insertOpportunity.priority || null,
+      next_action: insertOpportunity.next_action || null,
+      next_action_date: insertOpportunity.next_action_date || null,
+      stage_entered_at: now,
+      created_at: now,
+      updated_at: now
+    };
+    this.pipelineOpportunities.set(id, opportunity);
+    return opportunity;
+  }
+
+  async updatePipelineOpportunity(id: number, updates: Partial<InsertPipelineOpportunity>): Promise<PipelineOpportunity | undefined> {
+    const opportunity = this.pipelineOpportunities.get(id);
+    if (!opportunity) return undefined;
+    
+    const updatedOpportunity = { 
+      ...opportunity, 
+      ...updates,
+      updated_at: new Date()
+    };
+    this.pipelineOpportunities.set(id, updatedOpportunity);
+    return updatedOpportunity;
+  }
+
+  async moveOpportunityToStage(opportunityId: number, newStageId: number, changedBy?: string, notes?: string): Promise<PipelineOpportunity | undefined> {
+    const opportunity = this.pipelineOpportunities.get(opportunityId);
+    if (!opportunity) return undefined;
+
+    const oldStageId = opportunity.stage_id;
+    const now = new Date();
+    
+    // Calculate duration in previous stage
+    const durationInStage = opportunity.stage_entered_at 
+      ? Math.floor((now.getTime() - new Date(opportunity.stage_entered_at).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    // Create history record
+    if (oldStageId) {
+      await this.createPipelineHistory({
+        opportunity_id: opportunityId,
+        from_stage_id: oldStageId,
+        to_stage_id: newStageId,
+        changed_by: changedBy,
+        notes: notes,
+        duration_in_stage: durationInStage
+      });
+    }
+
+    // Update opportunity
+    const updatedOpportunity = {
+      ...opportunity,
+      stage_id: newStageId,
+      stage_entered_at: now,
+      updated_at: now
+    };
+    
+    this.pipelineOpportunities.set(opportunityId, updatedOpportunity);
+    return updatedOpportunity;
+  }
+
+  // ============ PIPELINE HISTORY ============
+  
+  async getPipelineHistory(opportunityId: number): Promise<PipelineHistory[]> {
+    return Array.from(this.pipelineHistory.values())
+      .filter(history => history.opportunity_id === opportunityId)
+      .sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
+  }
+
+  async createPipelineHistory(insertHistory: InsertPipelineHistory): Promise<PipelineHistory> {
+    const id = this.currentId++;
+    const history: PipelineHistory = {
+      id,
+      opportunity_id: insertHistory.opportunity_id ?? null,
+      from_stage_id: insertHistory.from_stage_id ?? null,
+      to_stage_id: insertHistory.to_stage_id ?? null,
+      changed_by: insertHistory.changed_by || null,
+      notes: insertHistory.notes || null,
+      duration_in_stage: insertHistory.duration_in_stage || null,
+      created_at: new Date()
+    };
+    this.pipelineHistory.set(id, history);
+    return history;
+  }
+
+  // ============ PIPELINE ACTIVITIES ============
+  
+  async getPipelineActivities(opportunityId: number): Promise<PipelineActivity[]> {
+    return Array.from(this.pipelineActivities.values())
+      .filter(activity => activity.opportunity_id === opportunityId)
+      .sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
+  }
+
+  async createPipelineActivity(insertActivity: InsertPipelineActivity): Promise<PipelineActivity> {
+    const id = this.currentId++;
+    const now = new Date();
+    const activity: PipelineActivity = {
+      id,
+      opportunity_id: insertActivity.opportunity_id ?? null,
+      activity_type: insertActivity.activity_type,
+      title: insertActivity.title,
+      description: insertActivity.description || null,
+      scheduled_date: insertActivity.scheduled_date || null,
+      completed_date: insertActivity.completed_date || null,
+      status: insertActivity.status || "pending",
+      outcome: insertActivity.outcome || null,
+      next_activity_suggested: insertActivity.next_activity_suggested || null,
+      created_by: insertActivity.created_by || null,
+      created_at: now,
+      updated_at: now
+    };
+    this.pipelineActivities.set(id, activity);
+    return activity;
+  }
+
+  async updatePipelineActivity(id: number, updates: Partial<InsertPipelineActivity>): Promise<PipelineActivity | undefined> {
+    const activity = this.pipelineActivities.get(id);
+    if (!activity) return undefined;
+    
+    const updatedActivity = { 
+      ...activity, 
+      ...updates,
+      updated_at: new Date()
+    };
+    this.pipelineActivities.set(id, updatedActivity);
+    return updatedActivity;
+  }
+
+  async completePipelineActivity(id: number, outcome?: string): Promise<PipelineActivity | undefined> {
+    return this.updatePipelineActivity(id, {
+      status: "completed",
+      completed_date: new Date(),
+      outcome: outcome
+    });
+  }
 }
 
 import { postgresStorage } from "./postgres-storage";
@@ -586,6 +815,141 @@ async function initializePostgreSQLData() {
     }
 
     await Promise.all(metrics);
+
+    // Create pipeline stages
+    const stages = await Promise.all([
+      postgresStorage.createPipelineStage({
+        clinic_id: clinic.id,
+        name: "Lead",
+        description: "Primeiro contato interessado",
+        order_position: 1,
+        color: "#3B82F6",
+        is_active: true,
+        target_days: 3
+      }),
+      postgresStorage.createPipelineStage({
+        clinic_id: clinic.id,
+        name: "Qualificação",
+        description: "Avaliação de necessidades",
+        order_position: 2,
+        color: "#F59E0B",
+        is_active: true,
+        target_days: 5
+      }),
+      postgresStorage.createPipelineStage({
+        clinic_id: clinic.id,
+        name: "Proposta",
+        description: "Apresentação de plano de tratamento",
+        order_position: 3,
+        color: "#8B5CF6",
+        is_active: true,
+        target_days: 7
+      }),
+      postgresStorage.createPipelineStage({
+        clinic_id: clinic.id,
+        name: "Negociação",
+        description: "Discussão de valores e agenda",
+        order_position: 4,
+        color: "#EC4899",
+        is_active: true,
+        target_days: 3
+      }),
+      postgresStorage.createPipelineStage({
+        clinic_id: clinic.id,
+        name: "Fechamento",
+        description: "Agendamento confirmado",
+        order_position: 5,
+        color: "#10B981",
+        is_active: true,
+        target_days: 2
+      })
+    ]);
+
+    // Create pipeline opportunities
+    const opportunities = await Promise.all([
+      postgresStorage.createPipelineOpportunity({
+        clinic_id: clinic.id,
+        contact_id: contacts[0].id,
+        stage_id: stages[2].id,
+        title: "Tratamento TDAH - Lucas Ferreira",
+        description: "Jovem profissional buscando tratamento para TDAH",
+        value: 2400.00,
+        probability: 75,
+        expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: "active",
+        source: "whatsapp",
+        assigned_to: "Dra. Amanda Costa",
+        priority: "alta",
+        next_action: "Enviar proposta de tratamento",
+        next_action_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+      }),
+      postgresStorage.createPipelineOpportunity({
+        clinic_id: clinic.id,
+        contact_id: contacts[1].id,
+        stage_id: stages[1].id,
+        title: "Terapia Familiar - Carla Mendes",
+        description: "Professora interessada em terapia para filhos",
+        value: 1800.00,
+        probability: 60,
+        expected_close_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+        status: "active",
+        source: "indicacao",
+        assigned_to: "Dra. Amanda Costa",
+        priority: "media",
+        next_action: "Agendar consulta de avaliação",
+        next_action_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+      }),
+      postgresStorage.createPipelineOpportunity({
+        clinic_id: clinic.id,
+        contact_id: contacts[2].id,
+        stage_id: stages[4].id,
+        title: "Acompanhamento Psicológico - Pedro Oliveira",
+        description: "Retorno após alta para acompanhamento",
+        value: 1200.00,
+        probability: 90,
+        expected_close_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        status: "active",
+        source: "retorno",
+        assigned_to: "Dra. Amanda Costa",
+        priority: "baixa",
+        next_action: "Confirmar disponibilidade de horários",
+        next_action_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000)
+      })
+    ]);
+
+    // Create pipeline activities
+    await Promise.all([
+      postgresStorage.createPipelineActivity({
+        opportunity_id: opportunities[0].id,
+        activity_type: "call",
+        title: "Ligação inicial de qualificação",
+        description: "Conversa para entender necessidades específicas de tratamento TDAH",
+        scheduled_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+        status: "pending",
+        created_by: "Dra. Amanda Costa"
+      }),
+      postgresStorage.createPipelineActivity({
+        opportunity_id: opportunities[1].id,
+        activity_type: "meeting",
+        title: "Reunião de apresentação",
+        description: "Apresentar metodologia de terapia familiar",
+        scheduled_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        status: "pending",
+        created_by: "Dra. Amanda Costa"
+      }),
+      postgresStorage.createPipelineActivity({
+        opportunity_id: opportunities[2].id,
+        activity_type: "email",
+        title: "Envio de proposta de retorno",
+        description: "Enviar opcões de horários para acompanhamento",
+        scheduled_date: new Date(),
+        completed_date: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        status: "completed",
+        outcome: "Proposta enviada com sucesso",
+        created_by: "Dra. Amanda Costa"
+      })
+    ]);
+
     console.log("✅ PostgreSQL sample data initialized successfully");
   } catch (error) {
     console.error("❌ Error initializing PostgreSQL data:", error);

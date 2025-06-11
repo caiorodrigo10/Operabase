@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
-  insertAnalyticsMetricSchema, insertClinicSettingSchema, insertAiTemplateSchema
+  insertAnalyticsMetricSchema, insertClinicSettingSchema, insertAiTemplateSchema,
+  insertPipelineStageSchema, insertPipelineOpportunitySchema, insertPipelineActivitySchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -487,6 +488,310 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid data", details: error.errors });
       }
       console.error("Error updating AI template:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ============ PIPELINE STAGES ============
+  
+  // Get pipeline stages
+  app.get("/api/clinics/:clinicId/pipeline-stages", async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const stages = await storage.getPipelineStages(clinicId);
+      res.json(stages);
+    } catch (error) {
+      console.error("Error fetching pipeline stages:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create pipeline stage
+  app.post("/api/clinics/:clinicId/pipeline-stages", async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const validatedData = insertPipelineStageSchema.parse({
+        ...req.body,
+        clinic_id: clinicId
+      });
+      
+      const stage = await storage.createPipelineStage(validatedData);
+      res.status(201).json(stage);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error creating pipeline stage:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update pipeline stage
+  app.put("/api/pipeline-stages/:id", async (req, res) => {
+    try {
+      const stageId = parseInt(req.params.id);
+      if (isNaN(stageId)) {
+        return res.status(400).json({ error: "Invalid stage ID" });
+      }
+      
+      const validatedData = insertPipelineStageSchema.partial().parse(req.body);
+      const stage = await storage.updatePipelineStage(stageId, validatedData);
+      
+      if (!stage) {
+        return res.status(404).json({ error: "Stage not found" });
+      }
+      
+      res.json(stage);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error updating pipeline stage:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Delete pipeline stage
+  app.delete("/api/pipeline-stages/:id", async (req, res) => {
+    try {
+      const stageId = parseInt(req.params.id);
+      if (isNaN(stageId)) {
+        return res.status(400).json({ error: "Invalid stage ID" });
+      }
+      
+      const success = await storage.deletePipelineStage(stageId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Stage not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting pipeline stage:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ============ PIPELINE OPPORTUNITIES ============
+  
+  // Get pipeline opportunities
+  app.get("/api/pipeline-opportunities", async (req, res) => {
+    try {
+      const { clinic_id, stage_id, status, assigned_to } = req.query;
+      
+      if (!clinic_id) {
+        return res.status(400).json({ error: "clinic_id is required" });
+      }
+      
+      const clinicId = parseInt(clinic_id as string);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const filters: any = {};
+      if (stage_id) filters.stageId = parseInt(stage_id as string);
+      if (status) filters.status = status as string;
+      if (assigned_to) filters.assignedTo = assigned_to as string;
+      
+      const opportunities = await storage.getPipelineOpportunities(clinicId, filters);
+      res.json(opportunities);
+    } catch (error) {
+      console.error("Error fetching pipeline opportunities:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get opportunity by ID
+  app.get("/api/pipeline-opportunities/:id", async (req, res) => {
+    try {
+      const opportunityId = parseInt(req.params.id);
+      if (isNaN(opportunityId)) {
+        return res.status(400).json({ error: "Invalid opportunity ID" });
+      }
+      
+      const opportunity = await storage.getPipelineOpportunity(opportunityId);
+      if (!opportunity) {
+        return res.status(404).json({ error: "Opportunity not found" });
+      }
+      
+      res.json(opportunity);
+    } catch (error) {
+      console.error("Error fetching pipeline opportunity:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create pipeline opportunity
+  app.post("/api/pipeline-opportunities", async (req, res) => {
+    try {
+      const validatedData = insertPipelineOpportunitySchema.parse(req.body);
+      const opportunity = await storage.createPipelineOpportunity(validatedData);
+      res.status(201).json(opportunity);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error creating pipeline opportunity:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update pipeline opportunity
+  app.put("/api/pipeline-opportunities/:id", async (req, res) => {
+    try {
+      const opportunityId = parseInt(req.params.id);
+      if (isNaN(opportunityId)) {
+        return res.status(400).json({ error: "Invalid opportunity ID" });
+      }
+      
+      const validatedData = insertPipelineOpportunitySchema.partial().parse(req.body);
+      const opportunity = await storage.updatePipelineOpportunity(opportunityId, validatedData);
+      
+      if (!opportunity) {
+        return res.status(404).json({ error: "Opportunity not found" });
+      }
+      
+      res.json(opportunity);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error updating pipeline opportunity:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Move opportunity to stage
+  app.patch("/api/pipeline-opportunities/:id/move", async (req, res) => {
+    try {
+      const opportunityId = parseInt(req.params.id);
+      if (isNaN(opportunityId)) {
+        return res.status(400).json({ error: "Invalid opportunity ID" });
+      }
+      
+      const { stage_id, changed_by, notes } = req.body;
+      if (!stage_id || isNaN(stage_id)) {
+        return res.status(400).json({ error: "Valid stage_id is required" });
+      }
+      
+      const opportunity = await storage.moveOpportunityToStage(
+        opportunityId, 
+        parseInt(stage_id), 
+        changed_by, 
+        notes
+      );
+      
+      if (!opportunity) {
+        return res.status(404).json({ error: "Opportunity not found" });
+      }
+      
+      res.json(opportunity);
+    } catch (error) {
+      console.error("Error moving opportunity:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get opportunity history
+  app.get("/api/pipeline-opportunities/:id/history", async (req, res) => {
+    try {
+      const opportunityId = parseInt(req.params.id);
+      if (isNaN(opportunityId)) {
+        return res.status(400).json({ error: "Invalid opportunity ID" });
+      }
+      
+      const history = await storage.getPipelineHistory(opportunityId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching opportunity history:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ============ PIPELINE ACTIVITIES ============
+  
+  // Get opportunity activities
+  app.get("/api/pipeline-opportunities/:id/activities", async (req, res) => {
+    try {
+      const opportunityId = parseInt(req.params.id);
+      if (isNaN(opportunityId)) {
+        return res.status(400).json({ error: "Invalid opportunity ID" });
+      }
+      
+      const activities = await storage.getPipelineActivities(opportunityId);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching pipeline activities:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create pipeline activity
+  app.post("/api/pipeline-activities", async (req, res) => {
+    try {
+      const validatedData = insertPipelineActivitySchema.parse(req.body);
+      const activity = await storage.createPipelineActivity(validatedData);
+      res.status(201).json(activity);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error creating pipeline activity:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update pipeline activity
+  app.put("/api/pipeline-activities/:id", async (req, res) => {
+    try {
+      const activityId = parseInt(req.params.id);
+      if (isNaN(activityId)) {
+        return res.status(400).json({ error: "Invalid activity ID" });
+      }
+      
+      const validatedData = insertPipelineActivitySchema.partial().parse(req.body);
+      const activity = await storage.updatePipelineActivity(activityId, validatedData);
+      
+      if (!activity) {
+        return res.status(404).json({ error: "Activity not found" });
+      }
+      
+      res.json(activity);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error updating pipeline activity:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Complete pipeline activity
+  app.patch("/api/pipeline-activities/:id/complete", async (req, res) => {
+    try {
+      const activityId = parseInt(req.params.id);
+      if (isNaN(activityId)) {
+        return res.status(400).json({ error: "Invalid activity ID" });
+      }
+      
+      const { outcome } = req.body;
+      const activity = await storage.completePipelineActivity(activityId, outcome);
+      
+      if (!activity) {
+        return res.status(404).json({ error: "Activity not found" });
+      }
+      
+      res.json(activity);
+    } catch (error) {
+      console.error("Error completing pipeline activity:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

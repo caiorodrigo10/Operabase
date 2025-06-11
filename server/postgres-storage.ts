@@ -2,13 +2,18 @@ import { eq, and, like, gte, lte, desc, asc, or } from "drizzle-orm";
 import { db } from "./db";
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
+  pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
   type Appointment, type InsertAppointment,
   type AnalyticsMetric, type InsertAnalyticsMetric,
   type ClinicSetting, type InsertClinicSetting,
-  type AiTemplate, type InsertAiTemplate
+  type AiTemplate, type InsertAiTemplate,
+  type PipelineStage, type InsertPipelineStage,
+  type PipelineOpportunity, type InsertPipelineOpportunity,
+  type PipelineHistory, type InsertPipelineHistory,
+  type PipelineActivity, type InsertPipelineActivity
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -340,6 +345,216 @@ export class PostgreSQLStorage implements IStorage {
       .where(eq(ai_templates.id, id))
       .returning();
     return result[0];
+  }
+
+  // ============ PIPELINE STAGES ============
+  
+  async getPipelineStages(clinicId: number): Promise<PipelineStage[]> {
+    return db.select().from(pipeline_stages)
+      .where(and(
+        eq(pipeline_stages.clinic_id, clinicId),
+        eq(pipeline_stages.is_active, true)
+      ))
+      .orderBy(asc(pipeline_stages.order_position));
+  }
+
+  async getPipelineStage(id: number): Promise<PipelineStage | undefined> {
+    const result = await db.select().from(pipeline_stages).where(eq(pipeline_stages.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createPipelineStage(insertStage: InsertPipelineStage): Promise<PipelineStage> {
+    const result = await db.insert(pipeline_stages).values(insertStage).returning();
+    return result[0];
+  }
+
+  async updatePipelineStage(id: number, updates: Partial<InsertPipelineStage>): Promise<PipelineStage | undefined> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date()
+    };
+
+    const result = await db.update(pipeline_stages)
+      .set(updateData)
+      .where(eq(pipeline_stages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePipelineStage(id: number): Promise<boolean> {
+    const result = await db.update(pipeline_stages)
+      .set({ is_active: false, updated_at: new Date() })
+      .where(eq(pipeline_stages.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // ============ PIPELINE OPPORTUNITIES ============
+  
+  async getPipelineOpportunities(clinicId: number, filters?: { stageId?: number; status?: string; assignedTo?: string }): Promise<PipelineOpportunity[]> {
+    if (!filters || (!filters.stageId && !filters.status && !filters.assignedTo)) {
+      return db.select().from(pipeline_opportunities)
+        .where(eq(pipeline_opportunities.clinic_id, clinicId))
+        .orderBy(desc(pipeline_opportunities.created_at));
+    }
+
+    if (filters.stageId && filters.status && filters.assignedTo) {
+      return db.select().from(pipeline_opportunities)
+        .where(and(
+          eq(pipeline_opportunities.clinic_id, clinicId),
+          eq(pipeline_opportunities.stage_id, filters.stageId),
+          eq(pipeline_opportunities.status, filters.status),
+          eq(pipeline_opportunities.assigned_to, filters.assignedTo)
+        ))
+        .orderBy(desc(pipeline_opportunities.created_at));
+    }
+
+    if (filters.stageId && filters.status) {
+      return db.select().from(pipeline_opportunities)
+        .where(and(
+          eq(pipeline_opportunities.clinic_id, clinicId),
+          eq(pipeline_opportunities.stage_id, filters.stageId),
+          eq(pipeline_opportunities.status, filters.status)
+        ))
+        .orderBy(desc(pipeline_opportunities.created_at));
+    }
+
+    if (filters.stageId) {
+      return db.select().from(pipeline_opportunities)
+        .where(and(
+          eq(pipeline_opportunities.clinic_id, clinicId),
+          eq(pipeline_opportunities.stage_id, filters.stageId)
+        ))
+        .orderBy(desc(pipeline_opportunities.created_at));
+    }
+
+    if (filters.status) {
+      return db.select().from(pipeline_opportunities)
+        .where(and(
+          eq(pipeline_opportunities.clinic_id, clinicId),
+          eq(pipeline_opportunities.status, filters.status)
+        ))
+        .orderBy(desc(pipeline_opportunities.created_at));
+    }
+
+    if (filters.assignedTo) {
+      return db.select().from(pipeline_opportunities)
+        .where(and(
+          eq(pipeline_opportunities.clinic_id, clinicId),
+          eq(pipeline_opportunities.assigned_to, filters.assignedTo)
+        ))
+        .orderBy(desc(pipeline_opportunities.created_at));
+    }
+
+    return [];
+  }
+
+  async getPipelineOpportunity(id: number): Promise<PipelineOpportunity | undefined> {
+    const result = await db.select().from(pipeline_opportunities).where(eq(pipeline_opportunities.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createPipelineOpportunity(insertOpportunity: InsertPipelineOpportunity): Promise<PipelineOpportunity> {
+    const result = await db.insert(pipeline_opportunities).values(insertOpportunity).returning();
+    return result[0];
+  }
+
+  async updatePipelineOpportunity(id: number, updates: Partial<InsertPipelineOpportunity>): Promise<PipelineOpportunity | undefined> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date()
+    };
+
+    const result = await db.update(pipeline_opportunities)
+      .set(updateData)
+      .where(eq(pipeline_opportunities.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async moveOpportunityToStage(opportunityId: number, newStageId: number, changedBy?: string, notes?: string): Promise<PipelineOpportunity | undefined> {
+    // Get current opportunity
+    const opportunity = await this.getPipelineOpportunity(opportunityId);
+    if (!opportunity) return undefined;
+
+    const oldStageId = opportunity.stage_id;
+    const now = new Date();
+    
+    // Calculate duration in previous stage
+    const durationInStage = opportunity.stage_entered_at 
+      ? Math.floor((now.getTime() - new Date(opportunity.stage_entered_at).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    // Create history record
+    if (oldStageId) {
+      await this.createPipelineHistory({
+        opportunity_id: opportunityId,
+        from_stage_id: oldStageId,
+        to_stage_id: newStageId,
+        changed_by: changedBy,
+        notes: notes,
+        duration_in_stage: durationInStage
+      });
+    }
+
+    // Update opportunity
+    const result = await db.update(pipeline_opportunities)
+      .set({
+        stage_id: newStageId,
+        stage_entered_at: now,
+        updated_at: now
+      })
+      .where(eq(pipeline_opportunities.id, opportunityId))
+      .returning();
+    
+    return result[0];
+  }
+
+  // ============ PIPELINE HISTORY ============
+  
+  async getPipelineHistory(opportunityId: number): Promise<PipelineHistory[]> {
+    return db.select().from(pipeline_history)
+      .where(eq(pipeline_history.opportunity_id, opportunityId))
+      .orderBy(desc(pipeline_history.created_at));
+  }
+
+  async createPipelineHistory(insertHistory: InsertPipelineHistory): Promise<PipelineHistory> {
+    const result = await db.insert(pipeline_history).values(insertHistory).returning();
+    return result[0];
+  }
+
+  // ============ PIPELINE ACTIVITIES ============
+  
+  async getPipelineActivities(opportunityId: number): Promise<PipelineActivity[]> {
+    return db.select().from(pipeline_activities)
+      .where(eq(pipeline_activities.opportunity_id, opportunityId))
+      .orderBy(desc(pipeline_activities.created_at));
+  }
+
+  async createPipelineActivity(insertActivity: InsertPipelineActivity): Promise<PipelineActivity> {
+    const result = await db.insert(pipeline_activities).values(insertActivity).returning();
+    return result[0];
+  }
+
+  async updatePipelineActivity(id: number, updates: Partial<InsertPipelineActivity>): Promise<PipelineActivity | undefined> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date()
+    };
+
+    const result = await db.update(pipeline_activities)
+      .set(updateData)
+      .where(eq(pipeline_activities.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async completePipelineActivity(id: number, outcome?: string): Promise<PipelineActivity | undefined> {
+    return this.updatePipelineActivity(id, {
+      status: "completed",
+      completed_date: new Date(),
+      outcome: outcome
+    });
   }
 }
 
