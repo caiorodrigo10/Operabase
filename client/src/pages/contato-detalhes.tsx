@@ -300,14 +300,21 @@ export function ContatoDetalhes() {
                     </label>
                     {isEditing ? (
                       <Textarea
-                        value={editData.current_medications || ""}
-                        onChange={(e) => setEditData({...editData, current_medications: e.target.value})}
-                        placeholder="Medicações em uso..."
+                        value={Array.isArray(editData.current_medications) 
+                          ? editData.current_medications.join('\n') 
+                          : editData.current_medications || ""}
+                        onChange={(e) => setEditData({
+                          ...editData, 
+                          current_medications: e.target.value.split('\n').filter(med => med.trim())
+                        })}
+                        placeholder="Uma medicação por linha..."
                         rows={3}
                       />
                     ) : (
                       <p className="text-slate-600 bg-slate-50 p-3 rounded">
-                        {contact.current_medications || "Nenhuma medicação registrada"}
+                        {Array.isArray(contact.current_medications) && contact.current_medications.length > 0
+                          ? contact.current_medications.join(', ')
+                          : "Nenhuma medicação registrada"}
                       </p>
                     )}
                   </div>
@@ -319,14 +326,21 @@ export function ContatoDetalhes() {
                     </label>
                     {isEditing ? (
                       <Textarea
-                        value={editData.allergies || ""}
-                        onChange={(e) => setEditData({...editData, allergies: e.target.value})}
-                        placeholder="Alergias conhecidas..."
+                        value={Array.isArray(editData.allergies) 
+                          ? editData.allergies.join('\n') 
+                          : editData.allergies || ""}
+                        onChange={(e) => setEditData({
+                          ...editData, 
+                          allergies: e.target.value.split('\n').filter(allergy => allergy.trim()) as any
+                        })}
+                        placeholder="Uma alergia por linha..."
                         rows={2}
                       />
                     ) : (
                       <p className="text-slate-600 bg-slate-50 p-3 rounded">
-                        {contact.allergies || "Nenhuma alergia registrada"}
+                        {Array.isArray(contact.allergies) && contact.allergies.length > 0
+                          ? contact.allergies.join(', ')
+                          : "Nenhuma alergia registrada"}
                       </p>
                     )}
                   </div>
