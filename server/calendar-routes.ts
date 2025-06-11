@@ -184,7 +184,7 @@ async function syncCalendarEventsToSystem(userId: number, integrationId: number)
           status: startDate > new Date() ? 'scheduled' : 'completed',
           payment_status: 'pending',
           payment_amount: 0,
-          notes: event.description || '',
+          description: event.description || '',
           google_calendar_event_id: event.id,
         });
       }
