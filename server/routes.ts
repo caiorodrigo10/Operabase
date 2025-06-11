@@ -312,7 +312,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create appointment
   app.post("/api/appointments", async (req, res) => {
     try {
-      const validatedData = insertAppointmentSchema.parse(req.body);
+      // Convert scheduled_date string to Date object if it's a string
+      const requestData = {
+        ...req.body,
+        scheduled_date: typeof req.body.scheduled_date === 'string' 
+          ? new Date(req.body.scheduled_date) 
+          : req.body.scheduled_date
+      };
+      
+      const validatedData = insertAppointmentSchema.parse(requestData);
       const appointment = await storage.createAppointment(validatedData);
       res.status(201).json(appointment);
     } catch (error: any) {
