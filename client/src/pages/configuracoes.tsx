@@ -69,6 +69,7 @@ export function Configuracoes() {
   // Fetch calendar integrations using TanStack Query
   const { data: calendarIntegrations = [], refetch: refetchIntegrations } = useQuery({
     queryKey: ["/api/calendar/integrations"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   const connectCalendarMutation = useMutation({
@@ -148,7 +149,7 @@ export function Configuracoes() {
     setShowSyncDialog(true);
   };
 
-  const isCalendarConnected = calendarIntegrations.length > 0;
+  const isCalendarConnected = Array.isArray(calendarIntegrations) && calendarIntegrations.length > 0;
 
   if (isLoading) {
     return (
@@ -408,7 +409,7 @@ export function Configuracoes() {
                                     </div>
                                     <div className="flex items-center space-x-2">
                                       <Calendar className="w-4 h-4 text-blue-600" />
-                                      <span className="text-sm text-slate-600">{calendar.email}</span>
+                                      <span className="text-sm text-slate-600">{integration.email}</span>
                                       <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
                                         <DialogTrigger asChild>
                                           <Button variant="ghost" size="sm">
@@ -500,7 +501,7 @@ export function Configuracoes() {
                                     </div>
                                     <div className="flex items-center space-x-2">
                                       <Calendar className="w-4 h-4 text-blue-600" />
-                                      <span className="text-sm text-slate-600">{calendar.email}</span>
+                                      <span className="text-sm text-slate-600">{integration.email}</span>
                                       <Button variant="ghost" size="sm">
                                         <Edit className="w-4 h-4" />
                                       </Button>
