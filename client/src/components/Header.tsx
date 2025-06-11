@@ -11,6 +11,7 @@ const pageTitles = {
   dashboard: "Dashboard",
   conversas: "Conversas",
   pipeline: "Pipeline",
+  consultas: "Consultas",
   contatos: "Contatos",
   relatorios: "Relatórios",
   configuracoes: "Configurações",
