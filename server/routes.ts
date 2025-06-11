@@ -142,6 +142,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get clinic users
+  app.get("/api/clinic/:id/users", async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.id);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const clinicUsers = await storage.getClinicUsers(clinicId);
+      res.json(clinicUsers);
+    } catch (error) {
+      console.error("Error fetching clinic users:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ============ CONTACTS ============
   
   // Get contacts with filters

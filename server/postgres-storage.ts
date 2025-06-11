@@ -116,6 +116,22 @@ export class PostgreSQLStorage implements IStorage {
     return result.length > 0;
   }
 
+  async getClinicUsers(clinicId: number): Promise<(ClinicUser & { user: User })[]> {
+    const result = await db
+      .select()
+      .from(clinic_users)
+      .innerJoin(users, eq(clinic_users.user_id, users.id))
+      .where(and(
+        eq(clinic_users.clinic_id, clinicId),
+        eq(clinic_users.is_active, true)
+      ));
+    
+    return result.map(row => ({
+      ...row.clinic_users,
+      user: row.users
+    }));
+  }
+
   // ============ CLINIC INVITATIONS ============
 
   async createClinicInvitation(invitation: InsertClinicInvitation): Promise<ClinicInvitation> {

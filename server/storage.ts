@@ -33,6 +33,7 @@ export interface IStorage {
 
   // Clinic Users & Access Control
   getUserClinics(userId: number): Promise<(ClinicUser & { clinic: Clinic })[]>;
+  getClinicUsers(clinicId: number): Promise<(ClinicUser & { user: User })[]>;
   addUserToClinic(clinicUser: InsertClinicUser): Promise<ClinicUser>;
   updateClinicUserRole(clinicId: number, userId: number, role: string, permissions?: any): Promise<ClinicUser | undefined>;
   removeUserFromClinic(clinicId: number, userId: number): Promise<boolean>;
@@ -296,6 +297,22 @@ export class MemStorage implements IStorage {
       }
     }
     return false;
+  }
+
+  async getClinicUsers(clinicId: number): Promise<(ClinicUser & { user: User })[]> {
+    const result: (ClinicUser & { user: User })[] = [];
+    for (const clinicUser of this.clinicUsers.values()) {
+      if (clinicUser.clinic_id === clinicId && clinicUser.is_active) {
+        const user = this.users.get(clinicUser.user_id);
+        if (user) {
+          result.push({
+            ...clinicUser,
+            user
+          });
+        }
+      }
+    }
+    return result;
   }
 
   // Clinic Invitations
