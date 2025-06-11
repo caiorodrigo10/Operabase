@@ -101,7 +101,7 @@ export class MemStorage implements IStorage {
       name: insertClinic.name,
       responsible: insertClinic.responsible,
       whatsapp_number: insertClinic.whatsapp_number,
-      specialties: insertClinic.specialties || null,
+      specialties: insertClinic.specialties ?? null,
       working_hours: insertClinic.working_hours || null,
       created_at: new Date()
     };
@@ -151,7 +151,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const contact: Contact = { 
       id,
-      clinic_id: insertContact.clinic_id || null,
+      clinic_id: insertContact.clinic_id ?? null,
       name: insertContact.name,
       phone: insertContact.phone,
       email: insertContact.email || null,
@@ -226,8 +226,8 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const appointment: Appointment = { 
       id,
-      contact_id: insertAppointment.contact_id || null,
-      clinic_id: insertAppointment.clinic_id || null,
+      contact_id: insertAppointment.contact_id ?? null,
+      clinic_id: insertAppointment.clinic_id ?? null,
       doctor_name: insertAppointment.doctor_name || null,
       specialty: insertAppointment.specialty || null,
       appointment_type: insertAppointment.appointment_type || null,
@@ -273,7 +273,7 @@ export class MemStorage implements IStorage {
     const id = this.currentId++;
     const metric: AnalyticsMetric = { 
       id,
-      clinic_id: insertMetric.clinic_id || null,
+      clinic_id: insertMetric.clinic_id ?? null,
       metric_type: insertMetric.metric_type,
       value: insertMetric.value,
       date: insertMetric.date,
@@ -322,7 +322,7 @@ export class MemStorage implements IStorage {
     
     const setting: ClinicSetting = { 
       id,
-      clinic_id: insertSetting.clinic_id || null,
+      clinic_id: insertSetting.clinic_id ?? null,
       setting_key: insertSetting.setting_key,
       setting_value: insertSetting.setting_value,
       setting_type: insertSetting.setting_type,
@@ -355,7 +355,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const template: AiTemplate = { 
       id,
-      clinic_id: insertTemplate.clinic_id || null,
+      clinic_id: insertTemplate.clinic_id ?? null,
       template_name: insertTemplate.template_name,
       template_type: insertTemplate.template_type,
       content: insertTemplate.content,
@@ -491,3 +491,44 @@ async function initializeSampleData() {
 
 // Initialize sample data when starting the server
 initializeSampleData().catch(console.error);
+
+// Initialize additional sample data for analytics
+async function initializeAnalyticsData() {
+  const today = new Date();
+  const clinicId = 1;
+
+  // Create sample analytics metrics for the last 7 days
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+
+    // Daily messages metrics
+    await storage.createAnalyticsMetric({
+      clinic_id: clinicId,
+      metric_type: "daily_messages",
+      value: Math.floor(Math.random() * 100) + 50,
+      date: date,
+      metadata: JSON.stringify({ source: "whatsapp" })
+    });
+
+    // Daily appointments metrics
+    await storage.createAnalyticsMetric({
+      clinic_id: clinicId,
+      metric_type: "daily_appointments",
+      value: Math.floor(Math.random() * 15) + 5,
+      date: date
+    });
+
+    // Conversion rate metrics
+    await storage.createAnalyticsMetric({
+      clinic_id: clinicId,
+      metric_type: "conversion_rate",
+      value: Math.floor(Math.random() * 30) + 60, // 60-90%
+      date: date
+    });
+  }
+
+  console.log("Analytics data initialized successfully");
+}
+
+initializeAnalyticsData().catch(console.error);
