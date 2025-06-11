@@ -27,6 +27,10 @@ const statusLabels = {
   cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800" },
   pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
   confirmed: { label: "Confirmado", color: "bg-green-100 text-green-800" },
+  agendado: { label: "Agendado", color: "bg-green-100 text-green-800" },
+  realizado: { label: "Realizado", color: "bg-blue-100 text-blue-800" },
+  cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
+  pendente: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
 };
 
 const appointmentSchema = z.object({

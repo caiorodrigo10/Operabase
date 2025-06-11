@@ -923,6 +923,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Update linked calendar settings
   app.put('/api/calendar/integrations/:integrationId/linked-calendar', isAuthenticated, updateLinkedCalendarSettings);
+  
+  // Manual sync from Google Calendar to system
+  app.post("/api/calendar/sync-from-google", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Não autenticado" });
+      }
+
+      const { syncCalendarEventsToSystem } = await import('./calendar-routes');
+      
+      // Get user's calendar integrations
+      const integrations = await storage.getCalendarIntegrations(userId);
+      const googleIntegration = integrations.find(i => i.provider === 'google' && i.is_active);
+      
+      if (!googleIntegration) {
+        return res.status(404).json({ error: "Nenhuma integração do Google Calendar encontrada" });
+      }
+
+      await syncCalendarEventsToSystem(userId, googleIntegration.id);
+      
+      res.json({ success: true, message: "Sincronização concluída com sucesso" });
+    } catch (error: any) {
+      console.error("Error syncing from Google Calendar:", error);
+      res.status(500).json({ error: "Erro na sincronização", details: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
