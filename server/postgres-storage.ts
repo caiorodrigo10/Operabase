@@ -697,6 +697,63 @@ export class PostgreSQLStorage implements IStorage {
       outcome: outcome
     });
   }
+
+  // ============ CALENDAR INTEGRATIONS ============
+
+  async getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]> {
+    return await db.select()
+      .from(calendar_integrations)
+      .where(eq(calendar_integrations.user_id, userId))
+      .orderBy(desc(calendar_integrations.created_at));
+  }
+
+  async getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined> {
+    const result = await db.select()
+      .from(calendar_integrations)
+      .where(eq(calendar_integrations.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getCalendarIntegrationByUserAndProvider(
+    userId: number, 
+    provider: string, 
+    email: string
+  ): Promise<CalendarIntegration | undefined> {
+    const result = await db.select()
+      .from(calendar_integrations)
+      .where(and(
+        eq(calendar_integrations.user_id, userId),
+        eq(calendar_integrations.provider, provider),
+        eq(calendar_integrations.email, email)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration> {
+    const result = await db.insert(calendar_integrations)
+      .values(integration)
+      .returning();
+    return result[0];
+  }
+
+  async updateCalendarIntegration(
+    id: number, 
+    updates: Partial<InsertCalendarIntegration>
+  ): Promise<CalendarIntegration | undefined> {
+    const result = await db.update(calendar_integrations)
+      .set({ ...updates, updated_at: new Date() })
+      .where(eq(calendar_integrations.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCalendarIntegration(id: number): Promise<boolean> {
+    const result = await db.delete(calendar_integrations)
+      .where(eq(calendar_integrations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
 }
 
 export const postgresStorage = new PostgreSQLStorage();

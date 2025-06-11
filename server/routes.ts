@@ -9,6 +9,15 @@ import {
   insertPipelineStageSchema, insertPipelineOpportunitySchema, insertPipelineActivitySchema,
   insertClinicInvitationSchema
 } from "@shared/schema";
+import {
+  initGoogleCalendarAuth,
+  handleGoogleCalendarCallback,
+  getUserCalendarIntegrations,
+  updateCalendarSyncPreferences,
+  deleteCalendarIntegration,
+  syncAppointmentToCalendar,
+  removeAppointmentFromCalendar
+} from "./calendar-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -863,6 +872,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  // ============ GOOGLE CALENDAR INTEGRATION ============
+  
+  // Initialize Google Calendar OAuth
+  app.get('/api/calendar/auth/google', isAuthenticated, initGoogleCalendarAuth);
+  
+  // Google Calendar OAuth callback
+  app.get('/api/calendar/auth/google/callback', isAuthenticated, handleGoogleCalendarCallback);
+  
+  // Get user's calendar integrations
+  app.get('/api/calendar/integrations', isAuthenticated, getUserCalendarIntegrations);
+  
+  // Update calendar sync preferences
+  app.put('/api/calendar/integrations/:integrationId/sync', isAuthenticated, updateCalendarSyncPreferences);
+  
+  // Delete calendar integration
+  app.delete('/api/calendar/integrations/:integrationId', isAuthenticated, deleteCalendarIntegration);
 
   const httpServer = createServer(app);
   return httpServer;

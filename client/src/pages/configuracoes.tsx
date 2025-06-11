@@ -58,48 +58,87 @@ const systemStatus = [
 
 export function Configuracoes() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
   const [syncPreference, setSyncPreference] = useState("one-way");
   const [showSyncDialog, setShowSyncDialog] = useState(false);
-  const [connectedCalendars, setConnectedCalendars] = useState<Array<{
-    id: number;
-    provider: string;
-    email: string;
-    isLinked: boolean;
-  }>>([]);
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null);
+
+  // Fetch calendar integrations using TanStack Query
+  const { data: calendarIntegrations = [], refetch: refetchIntegrations } = useQuery({
+    queryKey: ["/api/calendar/integrations"],
+    queryFn: getQueryFn(),
+  });
+
+  const connectCalendarMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("GET", "/api/calendar/auth/google");
+      const data = await response.json();
+      window.location.href = data.authUrl;
+    },
+    onError: (error) => {
+      console.error("Error connecting calendar:", error);
+    },
+  });
+
+  const updateSyncPreferencesMutation = useMutation({
+    mutationFn: async ({ integrationId, syncPreference }: { integrationId: number; syncPreference: string }) => {
+      const response = await apiRequest("PUT", `/api/calendar/integrations/${integrationId}/sync`, {
+        sync_preference: syncPreference,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchIntegrations();
+      setShowSyncDialog(false);
+    },
+  });
+
+  const deleteCalendarMutation = useMutation({
+    mutationFn: async (integrationId: number) => {
+      await apiRequest("DELETE", `/api/calendar/integrations/${integrationId}`);
+    },
+    onSuccess: () => {
+      refetchIntegrations();
+    },
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 800);
 
+    // Check for calendar connection status from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('calendar') === 'connected') {
+      refetchIntegrations();
+    }
+
     return () => clearTimeout(timer);
-  }, []);
+  }, [refetchIntegrations]);
 
   const handleConnectCalendar = () => {
-    // Simulate Google OAuth flow
-    setIsCalendarConnected(true);
-    setConnectedCalendars([
-      {
-        id: 1,
-        provider: "Google Calendar",
-        email: "admin@teste.com",
-        isLinked: true
-      }
-    ]);
+    connectCalendarMutation.mutate();
   };
 
-  const handleDisconnectCalendar = (calendarId: number) => {
-    setConnectedCalendars(prev => prev.filter(cal => cal.id !== calendarId));
-    if (connectedCalendars.length === 1) {
-      setIsCalendarConnected(false);
-    }
+  const handleDisconnectCalendar = (integrationId: number) => {
+    deleteCalendarMutation.mutate(integrationId);
   };
 
   const handleSaveSyncPreferences = () => {
-    setShowSyncDialog(false);
-    // Save sync preferences logic here
+    if (selectedIntegrationId) {
+      updateSyncPreferencesMutation.mutate({
+        integrationId: selectedIntegrationId,
+        syncPreference,
+      });
+    }
   };
+
+  const handleEditSyncPreferences = (integrationId: number, currentPreference: string) => {
+    setSelectedIntegrationId(integrationId);
+    setSyncPreference(currentPreference);
+    setShowSyncDialog(true);
+  };
+
+  const isCalendarConnected = calendarIntegrations.length > 0;
 
   if (isLoading) {
     return (
