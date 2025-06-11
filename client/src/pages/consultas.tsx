@@ -22,9 +22,11 @@ import { ptBR } from "date-fns/locale";
 import type { Appointment, Contact } from "@/../../shared/schema";
 
 const statusLabels = {
-  agendado: { label: "Agendado", color: "bg-green-100 text-green-800" },
-  realizado: { label: "Realizado", color: "bg-blue-100 text-blue-800" },
-  cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
+  scheduled: { label: "Agendado", color: "bg-green-100 text-green-800" },
+  completed: { label: "Realizado", color: "bg-blue-100 text-blue-800" },
+  cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800" },
+  pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
+  confirmed: { label: "Confirmado", color: "bg-green-100 text-green-800" },
 };
 
 const appointmentSchema = z.object({
@@ -434,7 +436,7 @@ export function Consultas() {
                 .sort((a, b) => new Date(a.scheduled_date!).getTime() - new Date(b.scheduled_date!).getTime())
                 .map((appointment) => {
                   const patientName = getPatientName(appointment.contact_id);
-                  const status = statusLabels[appointment.status as keyof typeof statusLabels];
+                  const status = statusLabels[appointment.status as keyof typeof statusLabels] || statusLabels.pending;
                   const appointmentDate = new Date(appointment.scheduled_date!);
                   const isToday = isSameDay(appointmentDate, new Date());
                   const isPast = appointmentDate < new Date();
