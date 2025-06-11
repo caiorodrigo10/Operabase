@@ -382,7 +382,32 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { postgresStorage } from "./postgres-storage";
+import { testConnection } from "./db";
+
+// Use PostgreSQL in production, MemStorage for development
+let storage: IStorage;
+
+async function initializeStorage() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const hasDatabase = await testConnection();
+  
+  if (isProduction || hasDatabase) {
+    console.log("🔗 Using PostgreSQL storage");
+    storage = postgresStorage;
+  } else {
+    console.log("💾 Using in-memory storage for development");
+    storage = new MemStorage();
+    // Initialize sample data only for in-memory storage
+    initializeSampleData().catch(console.error);
+    initializeAnalyticsData().catch(console.error);
+  }
+}
+
+// Initialize storage
+initializeStorage();
+
+export { storage };
 
 // Initialize with sample data
 async function initializeSampleData() {
