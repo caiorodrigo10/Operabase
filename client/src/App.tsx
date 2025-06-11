@@ -15,6 +15,7 @@ import { Relatorios } from "./pages/relatorios";
 import { Configuracoes } from "./pages/configuracoes";
 import { LiviaConfig } from "./pages/livia-config";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
+import FinanceiroPage from "./pages/financeiro";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 

@@ -14,7 +14,13 @@ import {
   type PipelineHistory, type InsertPipelineHistory,
   type PipelineActivity, type InsertPipelineActivity,
   type ClinicUser, type InsertClinicUser,
-  type ClinicInvitation, type InsertClinicInvitation
+  type ClinicInvitation, type InsertClinicInvitation,
+  type Customer, type InsertCustomer,
+  type Charge, type InsertCharge,
+  type Subscription, type InsertSubscription,
+  type Payment, type InsertPayment,
+  type FinancialTransaction, type InsertFinancialTransaction,
+  type FinancialReport, type InsertFinancialReport,
 } from "@shared/schema";
 
 export interface IStorage {

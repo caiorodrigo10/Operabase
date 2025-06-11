@@ -9,7 +9,8 @@ import {
   Stethoscope,
   X,
   Bot,
-  Calendar
+  Calendar,
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Pipeline", href: "/pipeline", icon: GitBranch, route: "pipeline" },
   { name: "Consultas", href: "/consultas", icon: Calendar, route: "consultas" },
   { name: "Contatos", href: "/contatos", icon: Users, route: "contatos" },
+  { name: "Financeiro", href: "/financeiro", icon: DollarSign, route: "financeiro" },
   { name: "Relatórios", href: "/relatorios", icon: FileBarChart, route: "relatorios" },
   { name: "Configurações", href: "/configuracoes", icon: Settings, route: "configuracoes" },
 ];
