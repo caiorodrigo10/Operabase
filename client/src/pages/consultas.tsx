@@ -243,15 +243,25 @@ export function Consultas() {
     );
   };
 
-  // Get event color based on source
+  // Get event color based on source and sync preference
   const getEventColor = (appointment: any) => {
     if (appointment.is_google_calendar_event) {
-      return {
-        bg: 'bg-purple-100',
-        border: 'border-purple-300',
-        text: 'text-purple-800',
-        dot: 'bg-purple-500'
-      };
+      // Different colors based on sync preference
+      if (appointment.sync_preference === 'bidirectional') {
+        return {
+          bg: 'bg-green-100',
+          border: 'border-green-300',
+          text: 'text-green-800',
+          dot: 'bg-green-500'
+        };
+      } else {
+        return {
+          bg: 'bg-purple-100',
+          border: 'border-purple-300',
+          text: 'text-purple-800',
+          dot: 'bg-purple-500'
+        };
+      }
     }
     return {
       bg: 'bg-blue-100',
@@ -722,7 +732,11 @@ export function Consultas() {
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span>Google Calendar</span>
+                <span>Google Calendar (Unidirecional)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span>Google Calendar (Bidirecional)</span>
               </div>
             </div>
           </CardHeader>

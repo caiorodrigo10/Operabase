@@ -305,6 +305,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const integration of integrations) {
             if (integration.calendar_id && integration.access_token) {
               try {
+                // Check sync preferences - only show Google Calendar events based on preference
+                const showGoogleEvents = integration.sync_preference === 'bidirectional' || integration.sync_preference === 'one-way';
+                
+                if (!showGoogleEvents) {
+                  continue; // Skip this integration if sync is disabled
+                }
+
                 // Set up Google Calendar service
                 googleCalendarService.setCredentials(
                   integration.access_token,
@@ -326,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   timeMax
                 );
 
-                // Convert Google Calendar events to appointment format
+                // Convert Google Calendar events to appointment format based on sync preference
                 for (const event of events) {
                   if (event.start?.dateTime && event.summary) {
                     const startDate = new Date(event.start.dateTime);
@@ -337,14 +344,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     const existsInDb = appointments.some(apt => apt.google_calendar_event_id === event.id);
                     
                     if (!existsInDb) {
+                      // For bidirectional sync, show events as system appointments
+                      // For one-way sync, show as external calendar events for conflict detection
                       googleEvents.push({
                         id: `gc_${event.id}`, // Prefix to distinguish from DB appointments
                         contact_id: null,
                         user_id: req.user.id,
                         clinic_id: clinicId,
                         doctor_name: event.summary,
-                        specialty: 'Evento do Google Calendar',
-                        appointment_type: 'google_calendar',
+                        specialty: integration.sync_preference === 'bidirectional' ? 'Evento Sincronizado' : 'Evento do Google Calendar',
+                        appointment_type: integration.sync_preference === 'bidirectional' ? 'bidirectional_sync' : 'google_calendar',
                         scheduled_date: startDate,
                         duration_minutes: durationMinutes,
                         status: 'scheduled',
@@ -354,7 +363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         created_at: new Date(),
                         updated_at: new Date(),
                         google_calendar_event_id: event.id,
-                        is_google_calendar_event: true // Flag to identify Google Calendar events
+                        is_google_calendar_event: true, // Flag to identify Google Calendar events
+                        sync_preference: integration.sync_preference // Track sync preference for UI rendering
                       });
                     }
                   }
