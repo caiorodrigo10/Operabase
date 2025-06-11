@@ -57,35 +57,40 @@ export function Pipeline() {
         <p className="text-slate-600">Acompanhe o fluxo dos pacientes em tempo real</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {Object.entries(mockPipelineData).map(([stageKey, contacts]) => {
-          const stage = stageLabels[stageKey as keyof typeof stageLabels];
-          const colorClass = stageColors[stageKey as keyof typeof stageColors];
-          
-          return (
-            <Card key={stageKey}>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base">{stage.title}</CardTitle>
-                <span className="text-sm text-slate-500">{contacts.length} pacientes</span>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {contacts.map((contact) => (
-                  <div key={contact.id} className={`${stage.color} rounded-lg p-3`}>
-                    <h4 className="font-medium text-slate-800 text-sm">{contact.name}</h4>
-                    <p className="text-xs text-slate-600">{contact.phone}</p>
-                    <p className="text-xs text-slate-500 mt-1">{contact.timeInStage}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className={`text-xs ${colorClass}`}>{contact.lastAction}</span>
-                      {contact.isAiAction && (
-                        <Bot className="w-3 h-3 text-medical-blue" />
-                      )}
+      <div className="overflow-x-auto">
+        <div className="flex gap-6 min-w-max pb-4">
+          {Object.entries(mockPipelineData).map(([stageKey, contacts]) => {
+            const stage = stageLabels[stageKey as keyof typeof stageLabels];
+            const colorClass = stageColors[stageKey as keyof typeof stageColors];
+            
+            return (
+              <Card key={stageKey} className="w-72 flex-shrink-0">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base">{stage.title}</CardTitle>
+                  <span className="text-sm text-slate-500">{contacts.length} pacientes</span>
+                </CardHeader>
+                <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+                  {contacts.map((contact) => (
+                    <div key={contact.id} className={`${stage.color} rounded-lg p-4 hover:shadow-sm transition-shadow cursor-pointer`}>
+                      <h4 className="font-medium text-slate-800 text-sm mb-1">{contact.name}</h4>
+                      <p className="text-xs text-slate-600 mb-2">{contact.phone}</p>
+                      <p className="text-xs text-slate-500 mb-3">{contact.timeInStage}</p>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-medium ${colorClass}`}>{contact.lastAction}</span>
+                        {contact.isAiAction && (
+                          <div className="flex items-center space-x-1">
+                            <Bot className="w-3 h-3 text-medical-blue" />
+                            <span className="text-xs text-medical-blue font-medium">IA</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          );
-        })}
+                  ))}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
