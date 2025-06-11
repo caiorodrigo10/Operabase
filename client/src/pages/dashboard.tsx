@@ -146,40 +146,45 @@ export function Dashboard() {
             <p className="text-sm text-slate-500">Distribuição do funil de conversão</p>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                  />
-                  <Pie
-                    data={conversionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {conversionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                </RechartsPieChart>
-              </ResponsiveContainer>
-              <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="h-64 flex">
+              <div className="flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                    />
+                    <Pie
+                      data={conversionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {conversionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-32 flex flex-col justify-center space-y-3 pl-4">
                 {conversionData.map((item, index) => (
-                  <div key={index} className="flex items-center text-sm">
+                  <div key={index} className="flex items-center">
                     <div 
-                      className="w-3 h-3 rounded-full mr-2" 
+                      className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
                       style={{ backgroundColor: item.fill }}
                     />
-                    <span className="text-slate-600">{item.name}: {item.value}%</span>
+                    <div className="text-xs">
+                      <div className="font-medium text-slate-800">{item.name}</div>
+                      <div className="text-slate-500">{item.value}%</div>
+                    </div>
                   </div>
                 ))}
               </div>
