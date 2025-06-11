@@ -228,7 +228,8 @@ export function Consultas() {
             <DialogHeader>
               <DialogTitle>Agendar Nova Consulta</DialogTitle>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
                 <div className="flex items-start space-x-2">
                   <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -468,6 +469,7 @@ export function Consultas() {
                 </Button>
               </div>
             </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
