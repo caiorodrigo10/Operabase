@@ -113,8 +113,9 @@ export const messages = pgTable("messages", {
 
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
-  contact_id: integer("contact_id").references(() => contacts.id),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
+  contact_id: integer("contact_id").references(() => contacts.id).notNull(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  user_id: integer("user_id").references(() => users.id).notNull(), // Required: user who created/owns the appointment
   doctor_name: text("doctor_name"),
   specialty: text("specialty"),
   appointment_type: text("appointment_type"), // primeira_consulta, retorno, avaliacao, emergencia
@@ -126,9 +127,14 @@ export const appointments = pgTable("appointments", {
   next_appointment_suggested: timestamp("next_appointment_suggested"),
   payment_status: text("payment_status").default("pendente"), // pendente, pago, isento
   payment_amount: integer("payment_amount"), // valor em centavos
+  google_calendar_event_id: text("google_calendar_event_id"), // Link to Google Calendar event
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_appointments_user").on(table.user_id),
+  index("idx_appointments_contact").on(table.contact_id),
+  index("idx_appointments_clinic").on(table.clinic_id),
+]);
 
 // Tabela para métricas e analytics
 export const analytics_metrics = pgTable("analytics_metrics", {
@@ -489,6 +495,29 @@ export const financial_reports = pgTable("financial_reports", {
   index("idx_reports_date").on(table.start_date, table.end_date),
 ]);
 
+// Google Calendar integrations table
+export const calendar_integrations = pgTable("calendar_integrations", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").references(() => users.id).notNull(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  provider: text("provider").notNull(), // google, outlook, icloud
+  email: text("email").notNull(),
+  access_token: text("access_token"),
+  refresh_token: text("refresh_token"),
+  token_expires_at: timestamp("token_expires_at"),
+  calendar_id: text("calendar_id"), // primary calendar ID
+  sync_preference: text("sync_preference").default("one-way"), // one-way, two-way
+  is_active: boolean("is_active").default(true),
+  last_sync: timestamp("last_sync"),
+  sync_errors: text("sync_errors"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_calendar_user").on(table.user_id),
+  index("idx_calendar_clinic").on(table.clinic_id),
+  unique().on(table.user_id, table.email, table.provider),
+]);
+
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   created_at: true,
@@ -523,6 +552,12 @@ export const insertFinancialReportSchema = createInsertSchema(financial_reports)
   created_at: true,
 });
 
+export const insertCalendarIntegrationSchema = createInsertSchema(calendar_integrations).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Charge = typeof charges.$inferSelect;
@@ -535,3 +570,5 @@ export type FinancialTransaction = typeof financial_transactions.$inferSelect;
 export type InsertFinancialTransaction = z.infer<typeof insertFinancialTransactionSchema>;
 export type FinancialReport = typeof financial_reports.$inferSelect;
 export type InsertFinancialReport = z.infer<typeof insertFinancialReportSchema>;
+export type CalendarIntegration = typeof calendar_integrations.$inferSelect;
+export type InsertCalendarIntegration = z.infer<typeof insertCalendarIntegrationSchema>;
