@@ -217,8 +217,6 @@ export function Consultas() {
     }
   };
 
-
-
   const handleAppointmentClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setIsDialogOpen(true);
@@ -715,7 +713,7 @@ export function Consultas() {
                           <div className="flex items-center space-x-3 mb-2">
                             <div className="w-10 h-10 bg-medical-blue rounded-full flex items-center justify-center">
                               <span className="text-white text-sm font-medium">
-                                {patientName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                {patientName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                               </span>
                             </div>
                             <div>
