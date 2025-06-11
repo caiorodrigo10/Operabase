@@ -87,6 +87,113 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
 }
 
 // Get user's calendar integrations
+// Function to sync calendar events to system (for bidirectional sync)
+async function syncCalendarEventsToSystem(userId: number, integrationId: number) {
+  try {
+    const integration = await storage.getCalendarIntegration(integrationId);
+    if (!integration || !integration.calendar_id) return;
+
+    // Set up Google Calendar service with integration tokens
+    googleCalendarService.setCredentials(
+      integration.access_token,
+      integration.refresh_token,
+      integration.token_expires_at?.getTime()
+    );
+
+    // Get events from the next 30 days
+    const timeMin = new Date().toISOString();
+    const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    
+    const events = await googleCalendarService.listEvents(
+      integration.calendar_id,
+      timeMin,
+      timeMax
+    );
+
+    // Get user's clinics to determine where to create contacts/appointments
+    const userClinics = await storage.getUserClinics(userId);
+    const primaryClinic = userClinics[0]?.clinic;
+    
+    if (!primaryClinic) return;
+
+    for (const event of events) {
+      if (!event.start?.dateTime || !event.summary) continue;
+
+      const startDate = new Date(event.start.dateTime);
+      const endDate = new Date(event.end?.dateTime || event.start.dateTime);
+      const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+
+      // Check if this event already exists as an appointment
+      const existingAppointments = await storage.getAppointments(primaryClinic.id, {
+        date: startDate
+      });
+      
+      const eventExists = existingAppointments.some(apt => 
+        apt.google_calendar_event_id === event.id
+      );
+
+      if (!eventExists) {
+        // Extract contact information from event
+        let contactName = event.summary;
+        let contactEmail = '';
+        let contactPhone = '';
+
+        // Try to extract contact info from attendees
+        if (event.attendees && event.attendees.length > 0) {
+          const attendee = event.attendees.find((att: any) => att.email !== integration.email);
+          if (attendee) {
+            contactEmail = attendee.email;
+            contactName = attendee.displayName || contactName;
+          }
+        }
+
+        // Extract phone from description if available
+        const phoneMatch = event.description?.match(/(?:tel|phone|telefone):\s*([+\d\s()-]+)/i);
+        if (phoneMatch) {
+          contactPhone = phoneMatch[1].replace(/\D/g, '');
+        }
+
+        // Create or find contact
+        let contact;
+        if (contactEmail) {
+          const contacts = await storage.getContacts(primaryClinic.id, { search: contactEmail });
+          contact = contacts.find(c => c.email === contactEmail);
+        }
+
+        if (!contact) {
+          contact = await storage.createContact({
+            clinic_id: primaryClinic.id,
+            name: contactName,
+            email: contactEmail || undefined,
+            phone: contactPhone || undefined,
+            status: 'lead',
+            source: 'google-calendar',
+          });
+        }
+
+        // Create appointment
+        await storage.createAppointment({
+          clinic_id: primaryClinic.id,
+          user_id: userId,
+          contact_id: contact.id,
+          doctor_name: integration.email || 'Sistema',
+          specialty: 'Consulta',
+          appointment_type: 'Consulta',
+          scheduled_date: startDate,
+          duration_minutes: durationMinutes || 60,
+          status: startDate > new Date() ? 'scheduled' : 'completed',
+          payment_status: 'pending',
+          payment_amount: 0,
+          notes: event.description || '',
+          google_calendar_event_id: event.id,
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing calendar events to system:', error);
+  }
+}
+
 export async function getUserCalendarIntegrations(req: any, res: Response) {
   try {
     const userId = req.user.id;
