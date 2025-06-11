@@ -92,6 +92,12 @@ export function Configuracoes() {
     enabled: !!selectedIntegrationId,
   });
 
+  // Helper function to get calendar name by ID
+  const getCalendarName = (calendarId: string, calendars: any[]) => {
+    const calendar = calendars.find((cal: any) => cal.id === calendarId);
+    return calendar ? calendar.summary || calendar.name || 'Calendário Padrão' : 'Calendário Principal';
+  };
+
   const connectCalendarMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("GET", "/api/calendar/auth/google");
@@ -154,11 +160,26 @@ export function Configuracoes() {
 
   const handleOpenLinkedCalendarDialog = (integrationId: number) => {
     setSelectedIntegrationId(integrationId);
+    
+    // Find the integration and pre-populate settings
+    const integration = calendarIntegrations.find((int: any) => int.id === integrationId);
+    if (integration) {
+      setLinkedCalendarId(integration.calendar_id || "");
+      setAddEventsToCalendar(integration.calendar_id || "");
+    }
+    
     setShowLinkedCalendarDialog(true);
   };
 
   const handleOpenConflictCalendarDialog = (integrationId: number) => {
     setSelectedIntegrationId(integrationId);
+    
+    // Find the integration and pre-populate with linked calendar
+    const integration = calendarIntegrations.find((int: any) => int.id === integrationId);
+    if (integration && integration.calendar_id) {
+      setConflictCalendars([integration.calendar_id]);
+    }
+    
     setShowConflictCalendarDialog(true);
   };
 
@@ -398,38 +419,66 @@ export function Configuracoes() {
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                                     <div className="flex items-center space-x-3">
-                                      <Calendar className="w-5 h-5 text-blue-600" />
-                                      <div>
+                                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <Calendar className="w-5 h-5 text-blue-600" />
+                                      </div>
+                                      <div className="flex-1">
                                         <p className="font-medium text-sm">Calendário Vinculado</p>
-                                        <p className="text-xs text-slate-600">Selecionar agendas para sincronização</p>
+                                        <p className="text-xs text-slate-600">Sincronizar agendamentos com seu calendário vinculado</p>
+                                        {integration.calendar_id && (
+                                          <div className="mt-1 flex items-center space-x-2">
+                                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            <span className="text-xs font-medium text-blue-700">{integration.email}</span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleOpenLinkedCalendarDialog(integration.id)}
-                                    >
-                                      <Calendar className="w-4 h-4 mr-2" />
-                                      Calendário Vinculado
-                                    </Button>
+                                    <div className="flex items-center space-x-2">
+                                      {integration.calendar_id && (
+                                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                                          Calendário Vinculado
+                                        </Badge>
+                                      )}
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleOpenLinkedCalendarDialog(integration.id)}
+                                      >
+                                        {integration.calendar_id ? "Editar" : "Configurar"}
+                                      </Button>
+                                    </div>
                                   </div>
 
                                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                                     <div className="flex items-center space-x-3">
-                                      <AlertCircle className="w-5 h-5 text-orange-600" />
-                                      <div>
+                                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                        <AlertCircle className="w-5 h-5 text-orange-600" />
+                                      </div>
+                                      <div className="flex-1">
                                         <p className="font-medium text-sm">Calendários de Conflito</p>
-                                        <p className="text-xs text-slate-600">Detectar conflitos com outras agendas</p>
+                                        <p className="text-xs text-slate-600">Adicionar calendários adicionais para verificar conflitos de agendamento duplo</p>
+                                        {integration.calendar_id && (
+                                          <div className="mt-1 flex items-center space-x-2">
+                                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            <span className="text-xs font-medium text-blue-700">{integration.email}</span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleOpenConflictCalendarDialog(integration.id)}
-                                    >
-                                      <AlertCircle className="w-4 h-4 mr-2" />
-                                      Calendários de Conflito
-                                    </Button>
+                                    <div className="flex items-center space-x-2">
+                                      {integration.calendar_id && (
+                                        <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                                          Detectando Conflitos
+                                        </Badge>
+                                      )}
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleOpenConflictCalendarDialog(integration.id)}
+                                      >
+                                        Editar
+                                      </Button>
+                                    </div>
                                   </div>
 
                                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">

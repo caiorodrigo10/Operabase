@@ -37,6 +37,10 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
 
     // Get calendar info
     const calendarInfo = await googleCalendarService.getUserCalendarInfo();
+    
+    // Get all calendars to find the primary one
+    const userCalendars = await googleCalendarService.getUserCalendars();
+    const primaryCalendar = userCalendars.find(cal => cal.primary) || userCalendars[0];
 
     // Check if integration already exists
     const existingIntegration = await storage.getCalendarIntegrationByUserAndProvider(
@@ -46,18 +50,19 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
     );
 
     if (existingIntegration) {
-      // Update existing integration
+      // Update existing integration with primary calendar
       await storage.updateCalendarIntegration(existingIntegration.id, {
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         token_expires_at: new Date(tokens.expiry_date),
-        calendar_id: calendarInfo.calendarId,
+        calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
         is_active: true,
         last_sync: new Date(),
         sync_errors: null,
+        sync_preference: 'bidirectional', // Set to bidirectional by default
       });
     } else {
-      // Create new integration
+      // Create new integration with primary calendar linked
       await storage.createCalendarIntegration({
         user_id: userId,
         clinic_id: clinicId,
@@ -66,8 +71,8 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         token_expires_at: new Date(tokens.expiry_date),
-        calendar_id: calendarInfo.calendarId,
-        sync_preference: 'one-way',
+        calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
+        sync_preference: 'bidirectional', // Set to bidirectional by default
         is_active: true,
         last_sync: new Date(),
       });
