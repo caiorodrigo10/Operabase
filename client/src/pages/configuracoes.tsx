@@ -426,9 +426,15 @@ export function Configuracoes() {
                                         <p className="font-medium text-sm">Calendário Vinculado</p>
                                         <p className="text-xs text-slate-600">Sincronizar agendamentos com seu calendário vinculado</p>
                                         {integration.calendar_id && (
-                                          <div className="mt-1 flex items-center space-x-2">
-                                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                            <span className="text-xs font-medium text-blue-700">{integration.email}</span>
+                                          <div className="mt-1 space-y-1">
+                                            <div className="flex items-center space-x-2">
+                                              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                              <span className="text-xs font-medium text-blue-700">{integration.email}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <Calendar className="w-3 h-3 text-slate-500" />
+                                              <span className="text-xs text-slate-600">Calendário Principal</span>
+                                            </div>
                                           </div>
                                         )}
                                       </div>
