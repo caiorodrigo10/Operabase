@@ -17,7 +17,8 @@ import {
   deleteCalendarIntegration,
   syncAppointmentToCalendar,
   removeAppointmentFromCalendar,
-  getUserCalendars
+  getUserCalendars,
+  updateLinkedCalendarSettings
 } from "./calendar-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -893,6 +894,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get user calendars from Google Calendar
   app.get('/api/calendar/integrations/:integrationId/calendars', isAuthenticated, getUserCalendars);
+  
+  // Update linked calendar settings
+  app.put('/api/calendar/integrations/:integrationId/linked-calendar', isAuthenticated, updateLinkedCalendarSettings);
 
   const httpServer = createServer(app);
   return httpServer;

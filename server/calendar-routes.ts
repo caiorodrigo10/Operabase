@@ -410,3 +410,31 @@ export async function getUserCalendars(req: any, res: Response) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
+
+export async function updateLinkedCalendarSettings(req: any, res: Response) {
+  try {
+    const integrationId = parseInt(req.params.integrationId);
+    const { linkedCalendarId, addEventsToCalendar } = req.body;
+
+    if (isNaN(integrationId)) {
+      return res.status(400).json({ error: "Invalid integration ID" });
+    }
+
+    const integration = await storage.getCalendarIntegration(integrationId);
+    if (!integration || integration.user_id !== req.user.id) {
+      return res.status(404).json({ error: "Integration not found" });
+    }
+
+    // Update the integration with linked calendar settings
+    await storage.updateCalendarIntegration(integrationId, {
+      calendar_id: linkedCalendarId || null,
+      sync_preference: addEventsToCalendar ? 'bidirectional' : 'none'
+    });
+
+    const updatedIntegration = await storage.getCalendarIntegration(integrationId);
+    res.json(updatedIntegration);
+  } catch (error) {
+    console.error("Error updating linked calendar settings:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
