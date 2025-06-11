@@ -1,0 +1,64 @@
+Quero que você desenvolva o front-end completo de um sistema chamado Painel Espelho da Livia, usando React + Tailwind + React Router (ou estrutura semelhante com separação de rotas). Não precisa conectar com banco de dados ainda, mas toda a estrutura de componentes, navegação e páginas deve estar pronta para integrar com Supabase no futuro.
+
+🧠 Contexto do Projeto:
+- A Livia é uma agente de IA que atua no WhatsApp, respondendo pacientes, agendando consultas e fazendo pós-atendimento para clínicas médicas.
+- O Painel Espelho é uma interface visual onde o cliente (dono da clínica) pode ver em tempo real o que a Livia está fazendo, sem interagir ou editar nada.
+- O foco é 100% no WhatsApp.
+
+🔧 Requisitos Gerais:
+- Interface tipo CRM moderna, leve, como Notion ou ClickUp.
+- Sidebar fixa com ícones e textos, responsiva (escondida no mobile).
+- Cabeçalho com logo da Taskmed e nome da clínica.
+- Todas as páginas devem estar preparadas para leitura baseada em `client_id` no futuro.
+
+🗂 Estrutura de Páginas e Componentes:
+
+1. /dashboard
+  - Cards com: mensagens hoje, agendamentos hoje, atendimentos ativos
+  - Gráficos placeholder (ex: linha ou barra) de performance semanal
+  - Status da IA (ativo, pausado, com erro)
+
+2. /conversas
+  - Lista de conversas recentes (nome, número, status, última mensagem, tempo)
+  - Campo de busca por número
+  - Ao clicar em um contato, abrir painel lateral com histórico completo de conversa estilo WhatsApp
+  - Destacar ações da IA como: “Consulta agendada”, “Mensagem ignorada”, etc.
+
+3. /pipeline
+  - Visual Kanban com colunas: Novo contato, Em conversa, Consulta marcada, Consulta realizada, Pós-atendimento
+  - Cada card mostra nome/número, tempo no estágio, última ação da IA
+  - Só leitura (sem drag and drop)
+
+4. /contatos
+  - Tabela com: nome, telefone, data do primeiro contato, status atual
+  - Filtros por: agendou, ignorado, pós-atendimento feito
+  - Botão para ver conversa diretamente
+
+5. /relatorios
+  - Gráficos por período: mensagens por dia, consultas marcadas, taxa de conversão
+  - Placeholder para exportação futura (CSV, PDF)
+
+6. /configuracoes
+  - Mostrar (somente leitura):
+    - Nome da clínica
+    - WhatsApp conectado
+    - Nome da agente (Livia)
+    - Integrações (ex: Webhook de CRM)
+    - Idioma e tom de voz da IA
+
+🎨 Design:
+- Estilo limpo, profissional, com visual médico/tecnológico (tons claros, azuis ou verdes claros)
+- Componentes com cantos arredondados, sombra leve, fontes elegantes
+- Responsivo para desktop e tablet
+
+📁 Organização:
+- Componentes reaproveitáveis (ex: CardInfo, Table, ChatViewer, PipelineColumn)
+- Separar rotas e páginas
+- Sidebar com navegação vertical
+
+⚠️ Lembre-se:
+- Não precisa de login ainda, mas todas as páginas devem simular carregamento com dados de exemplo (mock data)
+- Use useState e useEffect para simular carregamento real
+- Organize o código com clareza: pastas por componente, página e estilo
+
+Crie o projeto completo com base nisso.
