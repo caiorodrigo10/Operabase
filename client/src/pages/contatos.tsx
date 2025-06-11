@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -9,9 +12,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { mockContacts } from "@/lib/mock-data";
-import { formatDistanceToNow } from "date-fns";
+import { mockContacts, mockAppointments, mockMessages } from "@/lib/mock-data";
+import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { 
+  User, 
+  Phone, 
+  MessageCircle, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  FileText, 
+  Activity,
+  Heart,
+  Brain,
+  Edit3,
+  Save
+} from "lucide-react";
+import type { Contact } from "@/../../shared/schema";
 
 const statusLabels = {
   novo: { label: "Novo", color: "bg-slate-100 text-slate-800" },
@@ -25,6 +43,10 @@ export function Contatos() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditingOverview, setIsEditingOverview] = useState(false);
+  const [overviewText, setOverviewText] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -40,6 +62,26 @@ export function Contatos() {
     const matchesStatus = statusFilter === "all" || contact.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleContactClick = (contact: Contact) => {
+    setSelectedContact(contact);
+    // Set initial overview text - in real app this would come from database
+    setOverviewText(`Paciente ${contact.name} iniciou contato via WhatsApp. Aguardando avaliação inicial da IA Livia para direcionamento adequado do caso.`);
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveOverview = () => {
+    // In real app, this would save to database
+    setIsEditingOverview(false);
+  };
+
+  const getContactAppointments = (contactId: number) => {
+    return mockAppointments.filter(appointment => appointment.contact_id === contactId);
+  };
+
+  const getContactMessages = (contactId: number) => {
+    return mockMessages.filter(message => message.contact_id === contactId).slice(-5); // Last 5 messages
+  };
 
   if (isLoading) {
     return (
@@ -123,7 +165,12 @@ export function Contatos() {
                             <span className="text-white text-xs font-medium">{initials}</span>
                           </div>
                           <div className="ml-3">
-                            <div className="text-sm font-medium text-slate-900">{contact.name}</div>
+                            <button 
+                              onClick={() => handleContactClick(contact)}
+                              className="text-sm font-medium text-medical-blue hover:text-blue-700 hover:underline cursor-pointer"
+                            >
+                              {contact.name}
+                            </button>
                           </div>
                         </div>
                       </td>
@@ -170,6 +217,222 @@ export function Contatos() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Contact Details Modal */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-medical-blue" />
+              Perfil do Paciente
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas e visão geral do paciente
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedContact && (
+            <div className="space-y-6">
+              {/* Patient Basic Info */}
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Informações Básicas
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-600">Nome Completo</p>
+                    <p className="font-medium">{selectedContact.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Telefone</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <Phone className="w-3 h-3" />
+                      {selectedContact.phone}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Status Atual</p>
+                    <Badge className={statusLabels[selectedContact.status as keyof typeof statusLabels].color}>
+                      {statusLabels[selectedContact.status as keyof typeof statusLabels].label}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Primeiro Contato</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {selectedContact.first_contact ? format(selectedContact.first_contact, "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Última Interação</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <Activity className="w-3 h-3" />
+                      {selectedContact.last_interaction ? formatDistanceToNow(selectedContact.last_interaction, { addSuffix: true, locale: ptBR }) : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">WhatsApp</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <MessageCircle className="w-3 h-3 text-green-600" />
+                      Ativo
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Overview Section */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-medical-blue" />
+                    Visão Geral da IA Livia
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingOverview(!isEditingOverview)}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    {isEditingOverview ? 'Cancelar' : 'Editar'}
+                  </Button>
+                </div>
+                
+                {isEditingOverview ? (
+                  <div className="space-y-3">
+                    <Textarea
+                      value={overviewText}
+                      onChange={(e) => setOverviewText(e.target.value)}
+                      placeholder="Digite a visão geral do paciente..."
+                      className="min-h-24"
+                    />
+                    <Button onClick={handleSaveOverview} className="bg-medical-blue hover:bg-blue-700">
+                      <Save className="w-3 h-3 mr-1" />
+                      Salvar Visão Geral
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-slate-700 leading-relaxed">
+                    {overviewText || 'Nenhuma visão geral disponível. Clique em "Editar" para adicionar informações.'}
+                  </div>
+                )}
+              </div>
+
+              {/* Appointments History */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Histórico de Consultas
+                </h3>
+                {(() => {
+                  const appointments = getContactAppointments(selectedContact.id);
+                  return appointments.length > 0 ? (
+                    <div className="space-y-2">
+                      {appointments.slice(0, 3).map((appointment) => (
+                        <div key={appointment.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                          <div>
+                            <p className="font-medium text-sm">{appointment.specialty}</p>
+                            <p className="text-xs text-slate-600">Dr. {appointment.doctor_name}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm">{appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
+                            <Badge className={statusLabels[appointment.status as keyof typeof statusLabels]?.color || 'bg-gray-100 text-gray-800'}>
+                              {statusLabels[appointment.status as keyof typeof statusLabels]?.label || appointment.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      {appointments.length > 3 && (
+                        <p className="text-sm text-slate-500 text-center">
+                          +{appointments.length - 3} consultas anteriores
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-sm">Nenhuma consulta registrada</p>
+                  );
+                })()}
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Atividade Recente
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-slate-600">Última mensagem WhatsApp: há 2 horas</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-slate-600">Interação com IA Livia: há 3 horas</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-slate-600">Status atualizado para: {statusLabels[selectedContact.status as keyof typeof statusLabels].label}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Health Indicators */}
+              <div className="bg-red-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                  <Heart className="w-4 h-4" />
+                  Indicadores de Saúde Mental
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm font-medium text-slate-700">Urgência</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <span className="text-sm">Média</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm font-medium text-slate-700">Engajamento</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm">Alto</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm font-medium text-slate-700">Risco</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm">Baixo</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm font-medium text-slate-700">Adesão</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm">Boa</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Fechar
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  Abrir WhatsApp
+                </Button>
+                <Button className="bg-medical-blue hover:bg-blue-700">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  Agendar Consulta
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
