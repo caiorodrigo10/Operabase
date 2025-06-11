@@ -189,6 +189,18 @@ export function Consultas() {
               <DialogTitle>Agendar Nova Consulta</DialogTitle>
             </DialogHeader>
             <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                <div className="flex items-start space-x-2">
+                  <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">Sincronização com Google Calendar</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      É obrigatório selecionar um paciente e um usuário responsável para identificar qual conta Google Calendar receberá este agendamento.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contact_id">Paciente *</Label>
