@@ -14,6 +14,7 @@ import { mockClinic } from "@/lib/mock-data";
 import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const integrations = [
   {
@@ -128,6 +129,27 @@ export function Configuracoes() {
     },
     onSuccess: () => {
       refetchIntegrations();
+    },
+  });
+
+  const syncFromGoogleMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/calendar/sync-from-google");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Sincronização concluída",
+        description: "Eventos do Google Calendar foram sincronizados com sucesso",
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro na sincronização",
+        description: "Não foi possível sincronizar com o Google Calendar",
+        variant: "destructive",
+      });
     },
   });
 
