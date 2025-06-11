@@ -1250,7 +1250,7 @@ export function Consultas() {
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {dayEventsDialog.events.map((appointment) => {
               const colors = getEventColor(appointment);
-              const patientName = getPatientName(appointment.contact_id);
+              const patientName = getPatientName(appointment.contact_id, appointment);
               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
               
               return (
