@@ -56,7 +56,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <div className={`transition-all duration-500 ${metricsLoading ? 'opacity-50' : 'opacity-100'}`}>
           <CardInfo
-            title="Mensagens Hoje"
+            title="Interações Hoje"
             value={metrics.mensagensHoje}
             icon={Mail}
             iconColor="bg-blue-100 text-medical-blue"
@@ -65,7 +65,7 @@ export function Dashboard() {
         </div>
         <div className={`transition-all duration-500 delay-150 ${metricsLoading ? 'opacity-50' : 'opacity-100'}`}>
           <CardInfo
-            title="Agendamentos Hoje"
+            title="Sessões Agendadas"
             value={metrics.agendamentosHoje}
             icon={Calendar}
             iconColor="bg-green-100 text-medical-green"
@@ -74,7 +74,7 @@ export function Dashboard() {
         </div>
         <div className={`transition-all duration-500 delay-300 ${metricsLoading ? 'opacity-50' : 'opacity-100'}`}>
           <CardInfo
-            title="Atendimentos Ativos"
+            title="Triagens Ativas"
             value={metrics.atendimentosAtivos}
             icon={UserCheck}
             iconColor="bg-purple-100 text-medical-purple"
@@ -91,7 +91,7 @@ export function Dashboard() {
               <TrendingUp className="w-5 h-5" />
               Performance Semanal
             </CardTitle>
-            <p className="text-sm text-slate-500">Mensagens e agendamentos nos últimos 7 dias</p>
+            <p className="text-sm text-slate-500">Interações e sessões nos últimos 7 dias</p>
           </CardHeader>
           <CardContent>
             <div className="h-64">

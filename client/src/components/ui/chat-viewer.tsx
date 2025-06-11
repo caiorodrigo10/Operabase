@@ -18,38 +18,38 @@ function getAIActionComponent(action: string) {
     agendou_consulta: {
       icon: Calendar,
       color: "green",
-      title: "Consulta agendada automaticamente pela Livia IA",
-      details: "Dr. Maria Silva - Amanhã às 14:00"
+      title: "Sessão de TCC agendada automaticamente pela Livia IA",
+      details: "Dra. Amanda Costa - Amanhã às 15:00"
     },
     detectou_urgencia: {
       icon: AlertTriangle,
       color: "red",
-      title: "Urgência detectada pela IA",
-      details: "Consulta priorizada para hoje"
+      title: "Necessidade de avaliação urgente detectada",
+      details: "Sessão priorizada para hoje"
     },
-    analisou_exame: {
+    analisou_documento: {
       icon: FileText,
       color: "blue",
-      title: "Exame analisado pela IA",
-      details: "Encaminhado para avaliação médica"
+      title: "Relatório escolar analisado pela IA",
+      details: "Encaminhado para avaliação da psicóloga"
     },
     pos_consulta_followup: {
       icon: CheckCircle,
       color: "purple",
-      title: "Follow-up pós-consulta",
+      title: "Follow-up pós-sessão",
       details: "Acompanhamento automático da Livia"
     },
     agendou_retorno: {
       icon: Calendar,
       color: "green",
       title: "Retorno agendado",
-      details: "Consulta de acompanhamento em 30 dias"
+      details: "Sessão de acompanhamento em 15 dias"
     },
     primeira_interacao: {
       icon: Bot,
       color: "blue",
       title: "Primeira interação",
-      details: "Paciente recebido pela Livia IA"
+      details: "Paciente recebido pela Livia IA especializada em TDAH"
     }
   };
 
