@@ -317,6 +317,11 @@ export class PostgreSQLStorage implements IStorage {
     return result[0];
   }
 
+  async deleteAppointment(id: number): Promise<boolean> {
+    const result = await db.delete(appointments).where(eq(appointments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
   async getAppointmentsByContact(contactId: number): Promise<Appointment[]> {
     return db.select().from(appointments)
       .where(eq(appointments.contact_id, contactId))

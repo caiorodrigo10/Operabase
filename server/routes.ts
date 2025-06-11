@@ -487,6 +487,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete appointment
+  app.delete("/api/appointments/:id", async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      if (isNaN(appointmentId)) {
+        return res.status(400).json({ error: "Invalid appointment ID" });
+      }
+      
+      // Get appointment before deletion to check if it exists and for Google Calendar sync
+      const appointment = await storage.getAppointment(appointmentId);
+      if (!appointment) {
+        return res.status(404).json({ error: "Appointment not found" });
+      }
+
+      // Remove from Google Calendar if synced
+      if (appointment.google_calendar_event_id) {
+        try {
+          const { removeAppointmentFromCalendar } = await import('./calendar-routes');
+          await removeAppointmentFromCalendar(appointmentId, appointment.user_id);
+        } catch (syncError) {
+          console.error("Error removing appointment from Google Calendar:", syncError);
+          // Continue with deletion even if Google Calendar sync fails
+        }
+      }
+      
+      const success = await storage.deleteAppointment(appointmentId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Appointment not found" });
+      }
+      
+      res.json({ success: true, message: "Appointment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ============ ANALYTICS ============
   
   // Get analytics metrics

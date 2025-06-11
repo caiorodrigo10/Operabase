@@ -62,6 +62,7 @@ export interface IStorage {
   getAppointment(id: number): Promise<Appointment | undefined>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment | undefined>;
+  deleteAppointment(id: number): Promise<boolean>;
   getAppointmentsByContact(contactId: number): Promise<Appointment[]>;
 
   // Analytics
@@ -540,6 +541,14 @@ export class MemStorage implements IStorage {
     };
     this.appointments.set(id, updatedAppointment);
     return updatedAppointment;
+  }
+
+  async deleteAppointment(id: number): Promise<boolean> {
+    const exists = this.appointments.has(id);
+    if (exists) {
+      this.appointments.delete(id);
+    }
+    return exists;
   }
 
   async getAppointmentsByContact(contactId: number): Promise<Appointment[]> {
