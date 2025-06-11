@@ -648,6 +648,36 @@ export function Consultas() {
                 )}
               />
 
+              {/* Availability Check Display */}
+              {availabilityConflict && (
+                <div className={`p-3 rounded-lg border ${
+                  availabilityConflict.hasConflict 
+                    ? 'bg-red-50 border-red-200 text-red-800' 
+                    : 'bg-green-50 border-green-200 text-green-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {availabilityConflict.hasConflict ? (
+                      <X className="w-4 h-4 text-red-600" />
+                    ) : (
+                      <Check className="w-4 h-4 text-green-600" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {availabilityConflict.hasConflict ? 'Conflito detectado' : 'Horário disponível'}
+                    </span>
+                  </div>
+                  <p className="text-sm mt-1 ml-6">{availabilityConflict.message}</p>
+                </div>
+              )}
+
+              {availabilityCheck.isPending && (
+                <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm">Verificando disponibilidade...</span>
+                  </div>
+                </div>
+              )}
+
               <FormField
                 control={form.control}
                 name="notes"
@@ -676,7 +706,7 @@ export function Consultas() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createAppointmentMutation.isPending}
+                  disabled={createAppointmentMutation.isPending || (availabilityConflict?.hasConflict === true)}
                 >
                   {createAppointmentMutation.isPending ? "Agendando..." : "Agendar Consulta"}
                 </Button>
