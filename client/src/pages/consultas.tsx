@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown } from "lucide-react";
+import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
@@ -664,7 +664,7 @@ export function Consultas() {
           <CardContent>
             <div className="space-y-4">
               {appointments
-                .filter(appointment => !appointment.is_google_calendar_event) // Only show system appointments in the list
+                .filter(appointment => !appointment.google_calendar_event_id) // Only show system appointments in the list
                 .sort((a, b) => new Date(a.scheduled_date!).getTime() - new Date(b.scheduled_date!).getTime())
                 .map((appointment) => {
                   const patientName = getPatientName(appointment.contact_id);
@@ -954,25 +954,65 @@ export function Consultas() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedAppointment?.is_google_calendar_event ? (
-                <>
-                  <CalendarDays className="w-5 h-5 text-purple-600" />
-                  Detalhes do Evento
-                </>
-              ) : (
-                <>
-                  <Stethoscope className="w-5 h-5 text-medical-blue" />
-                  Detalhes da Consulta
-                </>
-              )}
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                {selectedAppointment?.google_calendar_event_id ? (
+                  <>
+                    <CalendarDays className="w-5 h-5 text-purple-600" />
+                    Detalhes do Evento
+                  </>
+                ) : (
+                  <>
+                    <Stethoscope className="w-5 h-5 text-medical-blue" />
+                    Detalhes da Consulta
+                  </>
+                )}
+              </DialogTitle>
+              
+              {/* Action buttons */}
+              <div className="flex items-center gap-2">
+                {!selectedAppointment?.google_calendar_event_id && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => {
+                        // TODO: Implement edit functionality
+                        console.log('Edit appointment:', selectedAppointment?.id);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        // TODO: Implement delete functionality
+                        console.log('Delete appointment:', selectedAppointment?.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-500 hover:text-slate-600"
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </DialogHeader>
           
           {selectedAppointment && (
             <div className="space-y-6">
               {/* Check if it's a Google Calendar event */}
-              {selectedAppointment.is_google_calendar_event ? (
+              {selectedAppointment.google_calendar_event_id ? (
                 /* Google Calendar Event Layout */
                 <div className="space-y-4">
                   {/* Event Header */}
@@ -1165,7 +1205,7 @@ export function Consultas() {
                       <div className={`text-sm opacity-75 ${colors.text}`}>
                         {appointment.specialty || appointment.doctor_name || 'Evento do Google Calendar'}
                       </div>
-                      {appointment.is_google_calendar_event && (
+                      {appointment.google_calendar_event_id && (
                         <div className="text-xs text-purple-600 mt-1">
                           📅 Google Calendar
                         </div>
