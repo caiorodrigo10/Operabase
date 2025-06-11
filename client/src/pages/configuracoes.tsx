@@ -72,6 +72,9 @@ export function Configuracoes() {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
+  // Type assertion for calendar integrations
+  const typedCalendarIntegrations = (calendarIntegrations as any[]) || [];
+
   const connectCalendarMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("GET", "/api/calendar/auth/google");
@@ -149,7 +152,7 @@ export function Configuracoes() {
     setShowSyncDialog(true);
   };
 
-  const isCalendarConnected = Array.isArray(calendarIntegrations) && calendarIntegrations.length > 0;
+  const isCalendarConnected = Array.isArray(typedCalendarIntegrations) && typedCalendarIntegrations.length > 0;
 
   if (isLoading) {
     return (
@@ -341,7 +344,7 @@ export function Configuracoes() {
 
 
                       {/* Connected Calendars */}
-                      {(calendarIntegrations as any[]).map((integration) => (
+                      {typedCalendarIntegrations.map((integration) => (
                         <div key={integration.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">

@@ -56,18 +56,23 @@ class GoogleCalendarService {
   }
 
   async getTokensFromCode(code: string): Promise<TokenResponse> {
-    const { tokens } = await this.oauth2Client.getAccessToken(code);
-    return {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expiry_date: tokens.expiry_date
-    };
+    try {
+      const { tokens } = await this.oauth2Client.getToken(code);
+      return {
+        access_token: tokens.access_token!,
+        refresh_token: tokens.refresh_token || undefined,
+        expiry_date: tokens.expiry_date || Date.now() + 3600000
+      };
+    } catch (error) {
+      console.error('Error getting tokens from code:', error);
+      throw new Error('Failed to exchange authorization code for tokens');
+    }
   }
 
   setCredentials(accessToken: string, refreshToken?: string, expiryDate?: number) {
     this.oauth2Client.setCredentials({
       access_token: accessToken,
-      refresh_token: refreshToken,
+      refresh_token: refreshToken || undefined,
       expiry_date: expiryDate
     });
   }
@@ -93,8 +98,8 @@ class GoogleCalendarService {
 
       return {
         calendarId: primaryCalendar?.id || 'primary',
-        email: userInfo.data.email!,
-        name: userInfo.data.name
+        email: userInfo.data.email || '',
+        name: userInfo.data.name || undefined
       };
     } catch (error) {
       console.error('Error getting user calendar info:', error);
