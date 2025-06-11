@@ -207,21 +207,48 @@ export function Consultas() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contact_id">Paciente *</Label>
-                  <Select
-                    value={form.watch("contact_id")}
-                    onValueChange={(value) => form.setValue("contact_id", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um paciente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contacts.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id.toString()}>
-                          {contact.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={contactComboboxOpen}
+                        className="w-full justify-between"
+                      >
+                        {form.watch("contact_id")
+                          ? contacts.find((contact) => contact.id.toString() === form.watch("contact_id"))?.name
+                          : "Buscar paciente..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Digite o nome do paciente..." />
+                        <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {contacts.map((contact) => (
+                            <CommandItem
+                              key={contact.id}
+                              value={contact.name}
+                              onSelect={() => {
+                                form.setValue("contact_id", contact.id.toString());
+                                setContactComboboxOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  form.watch("contact_id") === contact.id.toString()
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                }`}
+                              />
+                              {contact.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   {form.formState.errors.contact_id && (
                     <p className="text-sm text-red-600">{form.formState.errors.contact_id.message}</p>
                   )}
