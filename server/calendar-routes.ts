@@ -197,27 +197,52 @@ async function syncCalendarEventsToSystem(userId: number, integrationId: number)
 
 export async function syncAppointmentToGoogleCalendar(appointment: any) {
   try {
+    console.log('🔄 Iniciando sincronização com Google Calendar para appointment:', appointment.id);
+    console.log('📋 Dados do appointment:', JSON.stringify(appointment, null, 2));
+    
     // Get the user's Google Calendar integration
     const integrations = await storage.getCalendarIntegrations(appointment.user_id);
+    console.log('🔗 Integrações encontradas para usuário', appointment.user_id, ':', integrations.length);
+    
     const googleIntegration = integrations.find(i => i.provider === 'google' && i.is_active);
     
     if (!googleIntegration) {
-      console.log('No active Google Calendar integration found for user', appointment.user_id);
+      console.log('❌ Nenhuma integração ativa do Google Calendar encontrada para usuário', appointment.user_id);
+      console.log('📝 Integrações disponíveis:', integrations.map(i => ({
+        id: i.id,
+        provider: i.provider,
+        is_active: i.is_active,
+        sync_preference: i.sync_preference
+      })));
       return;
     }
 
+    console.log('✅ Integração do Google Calendar encontrada:', {
+      id: googleIntegration.id,
+      email: googleIntegration.email,
+      sync_preference: googleIntegration.sync_preference,
+      is_active: googleIntegration.is_active
+    });
+
     // Check if the integration allows two-way sync or only one-way from Google to system
     if (googleIntegration.sync_preference === 'one-way') {
-      console.log('Integration is set to one-way sync (Google to system only), skipping sync to Google');
+      console.log('⚠️ Integração configurada para sincronização unidirecional (Google → Sistema), pulando sincronização para o Google');
       return;
     }
 
     // Get contact information
     const contact = await storage.getContact(appointment.contact_id);
     if (!contact) {
-      console.error('Contact not found for appointment', appointment.id);
+      console.error('❌ Contato não encontrado para appointment', appointment.id);
       return;
     }
+    
+    console.log('👤 Contato encontrado:', {
+      id: contact.id,
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone
+    });
 
     // Use the imported Google Calendar service
     
@@ -255,6 +280,8 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
       }
     }
 
+    console.log('🗓️ Criando serviço do Google Calendar...');
+    
     // Create calendar service
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
@@ -262,10 +289,17 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
     const startDate = new Date(appointment.scheduled_date);
     const endDate = new Date(startDate.getTime() + (appointment.duration_minutes || 60) * 60000);
 
+    console.log('📅 Calculando horários do evento:', {
+      scheduled_date: appointment.scheduled_date,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      duration_minutes: appointment.duration_minutes
+    });
+
     // Create Google Calendar event
     const event = {
       summary: `${appointment.appointment_type || 'Consulta'} - ${contact.name}`,
-      description: `Paciente: ${contact.name}\nTelefone: ${contact.phone || 'Não informado'}\nEmail: ${contact.email || 'Não informado'}\nObservações: ${appointment.description || ''}`,
+      description: `Paciente: ${contact.name}\nTelefone: ${contact.phone || 'Não informado'}\nEmail: ${contact.email || 'Não informado'}\nObservações: ${appointment.session_notes || ''}`,
       start: {
         dateTime: startDate.toISOString(),
         timeZone: 'America/Sao_Paulo',
@@ -277,9 +311,19 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
       attendees: contact.email ? [{ email: contact.email }] : [],
     };
 
+    console.log('📝 Dados do evento para Google Calendar:', JSON.stringify(event, null, 2));
+    console.log('📍 Calendário de destino:', googleIntegration.calendar_id || 'primary');
+
     const response = await calendar.events.insert({
       calendarId: googleIntegration.calendar_id || 'primary',
       requestBody: event
+    });
+    
+    console.log('✅ Resposta da API do Google Calendar:', {
+      status: response.status,
+      statusText: response.statusText,
+      eventId: response.data?.id,
+      eventLink: response.data?.htmlLink
     });
     
     // Update appointment with Google Calendar event ID
@@ -287,7 +331,7 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
       await storage.updateAppointment(appointment.id, {
         google_calendar_event_id: response.data.id
       });
-      console.log('Appointment synced to Google Calendar:', response.data.id);
+      console.log('🔗 Appointment atualizado com Google Calendar event ID:', response.data.id);
     }
 
   } catch (error) {
