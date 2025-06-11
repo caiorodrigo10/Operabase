@@ -16,6 +16,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAvailabilityCheck, formatConflictMessage } from "@/hooks/useAvailability";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
 import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfDay, endOfDay } from "date-fns";
@@ -63,7 +64,80 @@ export function Consultas() {
     date: new Date(),
     events: []
   });
+  const [availabilityConflict, setAvailabilityConflict] = useState<{
+    hasConflict: boolean;
+    message: string;
+    conflictType?: string;
+  } | null>(null);
   const { toast } = useToast();
+  const availabilityCheck = useAvailabilityCheck();
+
+  const form = useForm<AppointmentForm>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      appointment_name: "",
+      contact_id: "",
+      user_id: "",
+      scheduled_date: "",
+      scheduled_time: "",
+      duration: "60",
+      type: "consulta",
+      notes: "",
+      contact_whatsapp: "",
+      contact_email: "",
+    },
+  });
+
+  // Função para verificar disponibilidade quando data/hora mudarem
+  const checkAvailability = async (date: string, time: string, duration: string) => {
+    if (!date || !time || !duration) {
+      setAvailabilityConflict(null);
+      return;
+    }
+
+    const startDateTime = new Date(`${date}T${time}`);
+    const durationMinutes = parseInt(duration);
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+
+    try {
+      const result = await availabilityCheck.mutateAsync({
+        startDateTime: startDateTime.toISOString(),
+        endDateTime: endDateTime.toISOString()
+      });
+
+      if (result.conflict) {
+        setAvailabilityConflict({
+          hasConflict: true,
+          message: formatConflictMessage(result.conflictType!, result.conflictDetails!),
+          conflictType: result.conflictType
+        });
+      } else {
+        setAvailabilityConflict({
+          hasConflict: false,
+          message: "Horário disponível",
+          conflictType: undefined
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade:', error);
+      setAvailabilityConflict(null);
+    }
+  };
+
+  // Watch dos campos do formulário para verificar disponibilidade
+  const watchedDate = form.watch("scheduled_date");
+  const watchedTime = form.watch("scheduled_time");
+  const watchedDuration = form.watch("duration");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (watchedDate && watchedTime && watchedDuration) {
+        checkAvailability(watchedDate, watchedTime, watchedDuration);
+      }
+    }, 500); // Debounce de 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedDate, watchedTime, watchedDuration]);
 
   // Buscar contatos reais da base de dados (usando clinic_id = 1 como padrão)
   const { data: contacts = [], isLoading: contactsLoading } = useQuery<Contact[]>({
@@ -92,22 +166,6 @@ export function Consultas() {
       const response = await fetch(`/api/clinic/1/users`);
       if (!response.ok) throw new Error('Failed to fetch clinic users');
       return response.json();
-    },
-  });
-
-  const form = useForm<AppointmentForm>({
-    resolver: zodResolver(appointmentSchema),
-    defaultValues: {
-      appointment_name: "",
-      contact_id: "",
-      user_id: "",
-      scheduled_date: "",
-      scheduled_time: "",
-      duration: "60",
-      type: "consulta",
-      notes: "",
-      contact_whatsapp: "",
-      contact_email: "",
     },
   });
 

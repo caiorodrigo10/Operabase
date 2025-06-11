@@ -1044,6 +1044,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check time slot availability
+  app.post("/api/calendar/check-availability", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const { startDateTime, endDateTime, excludeAppointmentId } = req.body;
+      
+      if (!startDateTime || !endDateTime) {
+        return res.status(400).json({ error: "Data e hora de início e fim são obrigatórias" });
+      }
+
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      // Get all appointments for the clinic in the time range
+      const appointments = await storage.getAppointments(1, { 
+        startDate: startDate, 
+        endDate: endDate 
+      });
+
+      // Filter out the appointment being edited (if any)
+      const conflictingAppointments = appointments.filter(apt => 
+        apt.id !== excludeAppointmentId && 
+        apt.status !== 'cancelled' &&
+        apt.scheduled_date
+      );
+
+      // Check for conflicts with existing appointments
+      const hasConflict = conflictingAppointments.some(apt => {
+        const aptStart = new Date(apt.scheduled_date!);
+        const aptDuration = apt.duration_minutes || 60;
+        const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
+
+        // Check if there's any overlap
+        return (startDate < aptEnd && endDate > aptStart);
+      });
+
+      if (hasConflict) {
+        const conflictingApt = conflictingAppointments.find(apt => {
+          const aptStart = new Date(apt.scheduled_date!);
+          const aptDuration = apt.duration_minutes || 60;
+          const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
+          return (startDate < aptEnd && endDate > aptStart);
+        });
+
+        return res.json({
+          available: false,
+          conflict: true,
+          conflictType: 'appointment',
+          conflictDetails: {
+            id: conflictingApt?.id,
+            title: `${conflictingApt?.appointment_type} - ${conflictingApt?.doctor_name}`,
+            startTime: conflictingApt?.scheduled_date,
+            endTime: new Date(new Date(conflictingApt?.scheduled_date!).getTime() + (conflictingApt?.duration_minutes || 60) * 60000)
+          }
+        });
+      }
+
+      // Check Google Calendar conflicts
+      try {
+        const integrations = await storage.getCalendarIntegrations(userId);
+        const googleIntegration = integrations.find(i => i.provider === 'google' && i.is_active);
+        
+        if (googleIntegration) {
+          const { google } = await import('googleapis');
+          
+          // Set up OAuth2 client
+          const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+          );
+
+          oauth2Client.setCredentials({
+            access_token: googleIntegration.access_token,
+            refresh_token: googleIntegration.refresh_token,
+            expiry_date: new Date(googleIntegration.token_expires_at || Date.now()).getTime()
+          });
+
+          // Refresh token if needed
+          const now = new Date();
+          const expiryDate = new Date(googleIntegration.token_expires_at || Date.now());
+          const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+          if (expiryDate <= fiveMinutesFromNow) {
+            try {
+              const { credentials } = await oauth2Client.refreshAccessToken();
+              await storage.updateCalendarIntegration(googleIntegration.id, {
+                access_token: credentials.access_token!,
+                refresh_token: credentials.refresh_token || googleIntegration.refresh_token,
+                token_expires_at: new Date(credentials.expiry_date!)
+              });
+            } catch (refreshError) {
+              console.error('Error refreshing token for availability check:', refreshError);
+            }
+          }
+
+          const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+          // Get events from Google Calendar for the time range
+          const calendarResponse = await calendar.events.list({
+            calendarId: googleIntegration.calendar_id || 'primary',
+            timeMin: startDate.toISOString(),
+            timeMax: endDate.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+          });
+
+          const googleEvents = calendarResponse.data.items || [];
+          
+          // Check for conflicts with Google Calendar events
+          const googleConflict = googleEvents.find(event => {
+            if (!event.start?.dateTime || !event.end?.dateTime) {
+              return false; // Skip all-day events
+            }
+
+            const eventStart = new Date(event.start.dateTime);
+            const eventEnd = new Date(event.end.dateTime);
+
+            // Check if this event is already synced to our system
+            const isSyncedEvent = conflictingAppointments.some(apt => 
+              apt.google_calendar_event_id === event.id
+            );
+
+            if (isSyncedEvent) {
+              return false; // Skip events that are already in our system
+            }
+
+            // Check for overlap
+            return (startDate < eventEnd && endDate > eventStart);
+          });
+
+          if (googleConflict) {
+            return res.json({
+              available: false,
+              conflict: true,
+              conflictType: 'google_calendar',
+              conflictDetails: {
+                id: googleConflict.id,
+                title: googleConflict.summary || 'Evento do Google Calendar',
+                startTime: googleConflict.start?.dateTime,
+                endTime: googleConflict.end?.dateTime,
+                location: googleConflict.location
+              }
+            });
+          }
+        }
+      } catch (googleError) {
+        console.error('Error checking Google Calendar availability:', googleError);
+        // Continue without Google Calendar check if there's an error
+      }
+
+      res.json({
+        available: true,
+        conflict: false
+      });
+
+    } catch (error: any) {
+      console.error("Error checking availability:", error);
+      res.status(500).json({ error: "Erro ao verificar disponibilidade" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
