@@ -85,7 +85,7 @@ export function Configuracoes() {
 
   // Fetch user calendars for selected integration
   const { data: userCalendars = [], isLoading: isLoadingCalendars } = useQuery({
-    queryKey: ["/api/calendar/integrations", selectedIntegrationId, "calendars"],
+    queryKey: [`/api/calendar/integrations/${selectedIntegrationId}/calendars`],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!selectedIntegrationId,
   });
@@ -381,7 +381,7 @@ export function Configuracoes() {
                                       onClick={() => handleOpenLinkedCalendarDialog(integration.id)}
                                     >
                                       <Calendar className="w-4 h-4 mr-2" />
-                                      Linked Calendar
+                                      Calendário Vinculado
                                     </Button>
                                   </div>
 
@@ -399,7 +399,7 @@ export function Configuracoes() {
                                       onClick={() => handleOpenConflictCalendarDialog(integration.id)}
                                     >
                                       <AlertCircle className="w-4 h-4 mr-2" />
-                                      Conflict Calendars
+                                      Calendários de Conflito
                                     </Button>
                                   </div>
 
@@ -658,7 +658,7 @@ export function Configuracoes() {
                   <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
                   <p className="text-sm text-slate-600 mt-2">Carregando agendas...</p>
                 </div>
-              ) : (
+              ) : userCalendars.length > 0 ? (
                 <div className="space-y-3">
                   {(userCalendars as any[]).map((calendar: any) => (
                     <div key={calendar.id} className="flex items-center space-x-3 p-3 border rounded-lg">
@@ -686,6 +686,17 @@ export function Configuracoes() {
                       />
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">Nenhuma agenda encontrada</h3>
+                  <p className="text-slate-600 mb-4">
+                    Para visualizar suas agendas, você precisa primeiro conectar com o Google Calendar através do botão "Conectar Calendário".
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Após conectar, você poderá selecionar quais agendas sincronizar com o sistema.
+                  </p>
                 </div>
               )}
             </div>

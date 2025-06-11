@@ -330,28 +330,81 @@ export async function getUserCalendars(req: any, res: Response) {
       return res.status(400).json({ error: "Integration is not active" });
     }
 
+    // Check if tokens are valid
+    if (!integration.access_token) {
+      return res.status(400).json({ error: "No valid access token found" });
+    }
+
     // Set credentials for Google Calendar service
     googleCalendarService.setCredentials(
-      integration.access_token!,
+      integration.access_token,
       integration.refresh_token || undefined,
       integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined
     );
 
-    const calendars = await googleCalendarService.getUserCalendars();
-    
-    // Format calendars for frontend
-    const formattedCalendars = calendars.map((cal: any) => ({
-      id: cal.id,
-      summary: cal.summary,
-      description: cal.description,
-      primary: cal.primary || false,
-      accessRole: cal.accessRole,
-      backgroundColor: cal.backgroundColor,
-      foregroundColor: cal.foregroundColor,
-      selected: cal.selected || false
-    }));
+    try {
+      const calendars = await googleCalendarService.getUserCalendars();
+      
+      // Format calendars for frontend
+      const formattedCalendars = calendars.map((cal: any) => ({
+        id: cal.id,
+        summary: cal.summary,
+        description: cal.description,
+        primary: cal.primary || false,
+        accessRole: cal.accessRole,
+        backgroundColor: cal.backgroundColor,
+        foregroundColor: cal.foregroundColor,
+        selected: cal.selected || false
+      }));
 
-    res.json(formattedCalendars);
+      res.json(formattedCalendars);
+    } catch (calendarError: any) {
+      console.error("Error fetching calendars from Google:", calendarError);
+      
+      // If token expired, try to refresh
+      if (calendarError.message && (calendarError.message.includes('invalid_grant') || calendarError.message.includes('401'))) {
+        if (integration.refresh_token) {
+          try {
+            const refreshedTokens = await googleCalendarService.refreshAccessToken();
+            
+            // Update integration with new tokens
+            await storage.updateCalendarIntegration(integration.id, {
+              access_token: refreshedTokens.access_token,
+              token_expires_at: new Date(refreshedTokens.expiry_date),
+              sync_errors: null,
+            });
+
+            // Retry with new token
+            googleCalendarService.setCredentials(
+              refreshedTokens.access_token,
+              integration.refresh_token,
+              refreshedTokens.expiry_date
+            );
+
+            const calendars = await googleCalendarService.getUserCalendars();
+            const formattedCalendars = calendars.map((cal: any) => ({
+              id: cal.id,
+              summary: cal.summary,
+              description: cal.description,
+              primary: cal.primary || false,
+              accessRole: cal.accessRole,
+              backgroundColor: cal.backgroundColor,
+              foregroundColor: cal.foregroundColor,
+              selected: cal.selected || false
+            }));
+
+            return res.json(formattedCalendars);
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            return res.status(401).json({ error: "Token expired and refresh failed. Please reconnect your calendar." });
+          }
+        } else {
+          return res.status(401).json({ error: "Token expired and no refresh token available. Please reconnect your calendar." });
+        }
+      } else {
+        return res.status(500).json({ error: "Failed to fetch calendars from Google Calendar" });
+      }
+    }
   } catch (error) {
     console.error("Error getting user calendars:", error);
     res.status(500).json({ error: "Internal server error" });
