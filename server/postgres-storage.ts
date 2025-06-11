@@ -4,7 +4,7 @@ import {
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   clinic_users, clinic_invitations, customers, charges, subscriptions, payments, 
-  financial_transactions, financial_reports,
+  financial_transactions, financial_reports, calendar_integrations,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -23,7 +23,8 @@ import {
   type Subscription, type InsertSubscription,
   type Payment, type InsertPayment,
   type FinancialTransaction, type InsertFinancialTransaction,
-  type FinancialReport, type InsertFinancialReport
+  type FinancialReport, type InsertFinancialReport,
+  type CalendarIntegration, type InsertCalendarIntegration
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 

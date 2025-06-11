@@ -1,7 +1,7 @@
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
-  clinic_users, clinic_invitations,
+  clinic_users, clinic_invitations, calendar_integrations,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -21,6 +21,7 @@ import {
   type Payment, type InsertPayment,
   type FinancialTransaction, type InsertFinancialTransaction,
   type FinancialReport, type InsertFinancialReport,
+  type CalendarIntegration, type InsertCalendarIntegration,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -159,6 +160,14 @@ export interface IStorage {
     recentTransactions: FinancialTransaction[];
     chargesByStatus: { status: string; count: number; value: number }[];
   }>;
+
+  // Calendar Integrations
+  getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]>;
+  getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined>;
+  getCalendarIntegrationByUserAndProvider(userId: number, provider: string, email: string): Promise<CalendarIntegration | undefined>;
+  createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration>;
+  updateCalendarIntegration(id: number, updates: Partial<InsertCalendarIntegration>): Promise<CalendarIntegration | undefined>;
+  deleteCalendarIntegration(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

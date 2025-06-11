@@ -70,7 +70,7 @@ export class GoogleCalendarService {
     refresh_token: string;
     expiry_date: number;
   }> {
-    const { tokens } = await this.oauth2Client.getAccessToken(code);
+    const { tokens } = await this.oauth2Client.getToken(code);
     
     if (!tokens.access_token || !tokens.refresh_token) {
       throw new Error('Failed to obtain valid tokens from Google');
