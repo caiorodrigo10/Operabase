@@ -59,7 +59,7 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
         is_active: true,
         last_sync: new Date(),
         sync_errors: null,
-        sync_preference: 'bidirectional', // Set to bidirectional by default
+        sync_preference: 'one-way', // Set to one-way by default
       });
     } else {
       // Create new integration with primary calendar linked
@@ -72,7 +72,7 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
         refresh_token: tokens.refresh_token,
         token_expires_at: new Date(tokens.expiry_date),
         calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
-        sync_preference: 'bidirectional', // Set to bidirectional by default
+        sync_preference: 'one-way', // Set to one-way by default
         is_active: true,
         last_sync: new Date(),
       });
@@ -128,6 +128,11 @@ export async function updateCalendarSyncPreferences(req: any, res: Response) {
     const updated = await storage.updateCalendarIntegration(integration.id, {
       sync_preference,
     });
+
+    // If switching to bidirectional, sync existing calendar events
+    if (sync_preference === 'bidirectional') {
+      await syncCalendarEventsToSystem(userId, integration.id);
+    }
 
     res.json(updated);
   } catch (error) {

@@ -218,7 +218,7 @@ export function Configuracoes() {
 
   const handleEditSyncPreferences = (integrationId: number, currentPreference: string) => {
     setSelectedIntegrationId(integrationId);
-    setSyncPreference(currentPreference);
+    setSyncPreference(currentPreference || 'one-way');
     setShowSyncDialog(true);
   };
 
@@ -986,6 +986,110 @@ export function Configuracoes() {
               </Button>
               <Button onClick={() => setShowConflictCalendarDialog(false)} className="bg-orange-600 hover:bg-orange-700">
                 Salvar Seleção
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Sync Preferences Dialog */}
+        <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Preferências de Sincronização</DialogTitle>
+              <DialogDescription>
+                Configure como os eventos serão sincronizados entre o sistema e seu calendário Google.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-4">
+                {/* One-way sync option */}
+                <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  syncPreference === 'one-way' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}>
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="radio"
+                      id="one-way-sync"
+                      name="sync-preference"
+                      value="one-way"
+                      checked={syncPreference === 'one-way'}
+                      onChange={() => setSyncPreference('one-way')}
+                      className="w-4 h-4 text-blue-600 mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Label htmlFor="one-way-sync" className="cursor-pointer font-medium">
+                          Sincronização Padrão (Unidirecional)
+                        </Label>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                          Recomendado
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-slate-600">
+                        Eventos do calendário vinculado são tratados como horários bloqueados.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bidirectional sync option */}
+                <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  syncPreference === 'bidirectional' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}>
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="radio"
+                      id="bidirectional-sync"
+                      name="sync-preference"
+                      value="bidirectional"
+                      checked={syncPreference === 'bidirectional'}
+                      onChange={() => setSyncPreference('bidirectional')}
+                      className="w-4 h-4 text-blue-600 mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="bidirectional-sync" className="cursor-pointer font-medium mb-2 block">
+                        Sincronização Bidirecional
+                      </Label>
+                      <p className="text-sm text-slate-600">
+                        Contatos são criados para convidados encontrados em eventos do calendário vinculado, e esses eventos são transformados em agendamentos do sistema.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Information box */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">Configuração de Sincronização</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      {syncPreference === 'one-way' 
+                        ? 'Os eventos do seu calendário Google aparecerão como horários ocupados, mas não serão criados agendamentos no sistema.'
+                        : 'Eventos do Google Calendar serão automaticamente convertidos em agendamentos no sistema, criando contatos quando necessário.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSyncDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveSyncPreferences}
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={updateSyncPreferencesMutation.isPending}
+              >
+                {updateSyncPreferencesMutation.isPending ? "Salvando..." : "Salvar Preferências"}
               </Button>
             </DialogFooter>
           </DialogContent>
