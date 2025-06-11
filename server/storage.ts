@@ -94,6 +94,65 @@ export interface IStorage {
   createPipelineActivity(activity: InsertPipelineActivity): Promise<PipelineActivity>;
   updatePipelineActivity(id: number, activity: Partial<InsertPipelineActivity>): Promise<PipelineActivity | undefined>;
   completePipelineActivity(id: number, outcome?: string): Promise<PipelineActivity | undefined>;
+
+  // Financial Operations
+  getCustomers(clinicId: number, filters?: { search?: string }): Promise<Customer[]>;
+  getCustomer(id: number): Promise<Customer | undefined>;
+  getCustomerByAsaasId(asaasCustomerId: string): Promise<Customer | undefined>;
+  createCustomer(insertCustomer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, updates: Partial<InsertCustomer>): Promise<Customer | undefined>;
+
+  getCharges(clinicId: number, filters?: { 
+    customerId?: number; 
+    status?: string; 
+    billingType?: string;
+    dateRange?: { start: Date; end: Date };
+  }): Promise<Charge[]>;
+  getCharge(id: number): Promise<Charge | undefined>;
+  getChargeByAsaasId(asaasChargeId: string): Promise<Charge | undefined>;
+  createCharge(insertCharge: InsertCharge): Promise<Charge>;
+  updateCharge(id: number, updates: Partial<InsertCharge>): Promise<Charge | undefined>;
+
+  getSubscriptions(clinicId: number, filters?: { customerId?: number; status?: string }): Promise<Subscription[]>;
+  getSubscription(id: number): Promise<Subscription | undefined>;
+  getSubscriptionByAsaasId(asaasSubscriptionId: string): Promise<Subscription | undefined>;
+  createSubscription(insertSubscription: InsertSubscription): Promise<Subscription>;
+  updateSubscription(id: number, updates: Partial<InsertSubscription>): Promise<Subscription | undefined>;
+
+  getPayments(clinicId: number, filters?: { 
+    chargeId?: number;
+    dateRange?: { start: Date; end: Date };
+  }): Promise<Payment[]>;
+  getPayment(id: number): Promise<Payment | undefined>;
+  createPayment(insertPayment: InsertPayment): Promise<Payment>;
+
+  getFinancialTransactions(clinicId: number, filters?: {
+    type?: string;
+    category?: string;
+    dateRange?: { start: Date; end: Date };
+  }): Promise<FinancialTransaction[]>;
+  getFinancialTransaction(id: number): Promise<FinancialTransaction | undefined>;
+  createFinancialTransaction(insertTransaction: InsertFinancialTransaction): Promise<FinancialTransaction>;
+  updateFinancialTransaction(id: number, updates: Partial<InsertFinancialTransaction>): Promise<FinancialTransaction | undefined>;
+
+  getFinancialReports(clinicId: number, filters?: {
+    reportType?: string;
+    dateRange?: { start: Date; end: Date };
+  }): Promise<FinancialReport[]>;
+  getFinancialReport(id: number): Promise<FinancialReport | undefined>;
+  createFinancialReport(insertReport: InsertFinancialReport): Promise<FinancialReport>;
+
+  // Financial dashboard methods
+  getFinancialDashboard(clinicId: number, dateRange?: { start: Date; end: Date }): Promise<{
+    totalRevenue: number;
+    totalExpenses: number;
+    netProfit: number;
+    pendingCharges: number;
+    overdueCharges: number;
+    monthlyRecurringRevenue: number;
+    recentTransactions: FinancialTransaction[];
+    chargesByStatus: { status: string; count: number; value: number }[];
+  }>;
 }
 
 export class MemStorage implements IStorage {

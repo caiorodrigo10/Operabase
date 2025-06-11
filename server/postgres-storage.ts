@@ -1,9 +1,10 @@
-import { eq, and, like, gte, lte, desc, asc, or } from "drizzle-orm";
+import { eq, and, like, gte, lte, desc, asc, or, ilike, sql } from "drizzle-orm";
 import { db } from "./db";
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
-  clinic_users, clinic_invitations,
+  clinic_users, clinic_invitations, customers, charges, subscriptions, payments, 
+  financial_transactions, financial_reports,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -16,7 +17,13 @@ import {
   type PipelineHistory, type InsertPipelineHistory,
   type PipelineActivity, type InsertPipelineActivity,
   type ClinicUser, type InsertClinicUser,
-  type ClinicInvitation, type InsertClinicInvitation
+  type ClinicInvitation, type InsertClinicInvitation,
+  type Customer, type InsertCustomer,
+  type Charge, type InsertCharge,
+  type Subscription, type InsertSubscription,
+  type Payment, type InsertPayment,
+  type FinancialTransaction, type InsertFinancialTransaction,
+  type FinancialReport, type InsertFinancialReport
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 

@@ -347,3 +347,191 @@ export type PipelineHistory = typeof pipeline_history.$inferSelect;
 export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
 export type PipelineActivity = typeof pipeline_activities.$inferSelect;
 export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;
+
+// Financial Module - Asaas Integration
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  contact_id: integer("contact_id").references(() => contacts.id),
+  asaas_customer_id: text("asaas_customer_id").unique(),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  cpf_cnpj: text("cpf_cnpj"),
+  address: text("address"),
+  address_number: text("address_number"),
+  complement: text("complement"),
+  province: text("province"),
+  city: text("city"),
+  postal_code: text("postal_code"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const charges = pgTable("charges", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  customer_id: integer("customer_id").references(() => customers.id).notNull(),
+  appointment_id: integer("appointment_id").references(() => appointments.id),
+  asaas_charge_id: text("asaas_charge_id").unique(),
+  billing_type: text("billing_type").notNull(), // BOLETO, CREDIT_CARD, PIX, UNDEFINED
+  value: integer("value").notNull(), // em centavos
+  net_value: integer("net_value"),
+  original_value: integer("original_value"),
+  interest_value: integer("interest_value"),
+  description: text("description"),
+  external_reference: text("external_reference"),
+  status: text("status").notNull(), // PENDING, CONFIRMED, RECEIVED, OVERDUE, REFUNDED, etc
+  due_date: date("due_date").notNull(),
+  original_due_date: date("original_due_date"),
+  payment_date: timestamp("payment_date"),
+  client_payment_date: date("client_payment_date"),
+  installment_number: integer("installment_number"),
+  installment_count: integer("installment_count"),
+  gross_value: integer("gross_value"),
+  invoice_url: text("invoice_url"),
+  bank_slip_url: text("bank_slip_url"),
+  transaction_receipt_url: text("transaction_receipt_url"),
+  invoice_number: text("invoice_number"),
+  credit_card: jsonb("credit_card"),
+  discount: jsonb("discount"),
+  fine: jsonb("fine"),
+  interest: jsonb("interest"),
+  deleted: boolean("deleted").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_charges_clinic").on(table.clinic_id),
+  index("idx_charges_customer").on(table.customer_id),
+  index("idx_charges_status").on(table.status),
+  index("idx_charges_due_date").on(table.due_date),
+]);
+
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  customer_id: integer("customer_id").references(() => customers.id).notNull(),
+  asaas_subscription_id: text("asaas_subscription_id").unique(),
+  billing_type: text("billing_type").notNull(),
+  value: integer("value").notNull(),
+  cycle: text("cycle").notNull(), // WEEKLY, BIWEEKLY, MONTHLY, QUARTERLY, SEMIANNUALLY, YEARLY
+  description: text("description"),
+  status: text("status").notNull(), // ACTIVE, EXPIRED, OVERDUE, etc
+  next_due_date: date("next_due_date"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_subscriptions_clinic").on(table.clinic_id),
+  index("idx_subscriptions_customer").on(table.customer_id),
+  index("idx_subscriptions_status").on(table.status),
+]);
+
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  charge_id: integer("charge_id").references(() => charges.id),
+  asaas_payment_id: text("asaas_payment_id").unique(),
+  value: integer("value").notNull(),
+  net_value: integer("net_value"),
+  payment_date: timestamp("payment_date").notNull(),
+  billing_type: text("billing_type").notNull(),
+  status: text("status").notNull(),
+  description: text("description"),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_payments_clinic").on(table.clinic_id),
+  index("idx_payments_charge").on(table.charge_id),
+  index("idx_payments_date").on(table.payment_date),
+]);
+
+export const financial_transactions = pgTable("financial_transactions", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  type: text("type").notNull(), // INCOME, EXPENSE
+  category: text("category").notNull(), // CONSULTATION_FEE, MEDICATION, EQUIPMENT, etc
+  description: text("description").notNull(),
+  amount: integer("amount").notNull(), // em centavos
+  payment_method: text("payment_method"), // CASH, CARD, PIX, TRANSFER
+  charge_id: integer("charge_id").references(() => charges.id),
+  appointment_id: integer("appointment_id").references(() => appointments.id),
+  contact_id: integer("contact_id").references(() => contacts.id),
+  reference_date: date("reference_date").notNull(),
+  notes: text("notes"),
+  created_by: integer("created_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_transactions_clinic").on(table.clinic_id),
+  index("idx_transactions_type").on(table.type),
+  index("idx_transactions_category").on(table.category),
+  index("idx_transactions_date").on(table.reference_date),
+]);
+
+export const financial_reports = pgTable("financial_reports", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  report_type: text("report_type").notNull(), // DAILY, WEEKLY, MONTHLY, YEARLY
+  start_date: date("start_date").notNull(),
+  end_date: date("end_date").notNull(),
+  total_income: integer("total_income").default(0),
+  total_expenses: integer("total_expenses").default(0),
+  net_profit: integer("net_profit").default(0),
+  total_charges: integer("total_charges").default(0),
+  pending_charges: integer("pending_charges").default(0),
+  received_charges: integer("received_charges").default(0),
+  overdue_charges: integer("overdue_charges").default(0),
+  report_data: jsonb("report_data"), // dados detalhados do relatório
+  generated_by: integer("generated_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_reports_clinic").on(table.clinic_id),
+  index("idx_reports_type").on(table.report_type),
+  index("idx_reports_date").on(table.start_date, table.end_date),
+]);
+
+export const insertCustomerSchema = createInsertSchema(customers).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertChargeSchema = createInsertSchema(charges).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertFinancialTransactionSchema = createInsertSchema(financial_transactions).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertFinancialReportSchema = createInsertSchema(financial_reports).omit({
+  id: true,
+  created_at: true,
+});
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+export type Charge = typeof charges.$inferSelect;
+export type InsertCharge = z.infer<typeof insertChargeSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type FinancialTransaction = typeof financial_transactions.$inferSelect;
+export type InsertFinancialTransaction = z.infer<typeof insertFinancialTransactionSchema>;
+export type FinancialReport = typeof financial_reports.$inferSelect;
+export type InsertFinancialReport = z.infer<typeof insertFinancialReportSchema>;
