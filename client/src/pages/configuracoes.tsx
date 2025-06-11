@@ -65,6 +65,7 @@ const systemStatus = [
 ];
 
 export function Configuracoes() {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [syncPreference, setSyncPreference] = useState("one-way");
   const [showSyncDialog, setShowSyncDialog] = useState(false);
