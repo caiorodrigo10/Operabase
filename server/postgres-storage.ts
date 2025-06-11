@@ -318,10 +318,10 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getAppointmentsByContact(contactId: number): Promise<Appointment[]> {
-    const result = await db.select().from(appointments)
+    return db.select().from(appointments)
       .where(eq(appointments.contact_id, contactId))
-      .orderBy(desc(appointments.scheduled_date));
-    return result;
+      .orderBy(desc(appointments.scheduled_date))
+      .limit(100); // Limitar para melhor performance
   }
 
   // ============ ANALYTICS ============
@@ -503,61 +503,25 @@ export class PostgreSQLStorage implements IStorage {
   // ============ PIPELINE OPPORTUNITIES ============
   
   async getPipelineOpportunities(clinicId: number, filters?: { stageId?: number; status?: string; assignedTo?: string }): Promise<PipelineOpportunity[]> {
-    if (!filters || (!filters.stageId && !filters.status && !filters.assignedTo)) {
-      return db.select().from(pipeline_opportunities)
-        .where(eq(pipeline_opportunities.clinic_id, clinicId))
-        .orderBy(desc(pipeline_opportunities.created_at));
+    let conditions = [eq(pipeline_opportunities.clinic_id, clinicId)];
+
+    if (filters?.stageId) {
+      conditions.push(eq(pipeline_opportunities.stage_id, filters.stageId));
     }
 
-    if (filters.stageId && filters.status && filters.assignedTo) {
-      return db.select().from(pipeline_opportunities)
-        .where(and(
-          eq(pipeline_opportunities.clinic_id, clinicId),
-          eq(pipeline_opportunities.stage_id, filters.stageId),
-          eq(pipeline_opportunities.status, filters.status),
-          eq(pipeline_opportunities.assigned_to, filters.assignedTo)
-        ))
-        .orderBy(desc(pipeline_opportunities.created_at));
+    if (filters?.status) {
+      conditions.push(eq(pipeline_opportunities.status, filters.status));
     }
 
-    if (filters.stageId && filters.status) {
-      return db.select().from(pipeline_opportunities)
-        .where(and(
-          eq(pipeline_opportunities.clinic_id, clinicId),
-          eq(pipeline_opportunities.stage_id, filters.stageId),
-          eq(pipeline_opportunities.status, filters.status)
-        ))
-        .orderBy(desc(pipeline_opportunities.created_at));
+    if (filters?.assignedTo) {
+      conditions.push(eq(pipeline_opportunities.assigned_to, filters.assignedTo));
     }
 
-    if (filters.stageId) {
-      return db.select().from(pipeline_opportunities)
-        .where(and(
-          eq(pipeline_opportunities.clinic_id, clinicId),
-          eq(pipeline_opportunities.stage_id, filters.stageId)
-        ))
-        .orderBy(desc(pipeline_opportunities.created_at));
-    }
-
-    if (filters.status) {
-      return db.select().from(pipeline_opportunities)
-        .where(and(
-          eq(pipeline_opportunities.clinic_id, clinicId),
-          eq(pipeline_opportunities.status, filters.status)
-        ))
-        .orderBy(desc(pipeline_opportunities.created_at));
-    }
-
-    if (filters.assignedTo) {
-      return db.select().from(pipeline_opportunities)
-        .where(and(
-          eq(pipeline_opportunities.clinic_id, clinicId),
-          eq(pipeline_opportunities.assigned_to, filters.assignedTo)
-        ))
-        .orderBy(desc(pipeline_opportunities.created_at));
-    }
-
-    return [];
+    return db.select()
+      .from(pipeline_opportunities)
+      .where(and(...conditions))
+      .orderBy(desc(pipeline_opportunities.created_at))
+      .limit(300); // Limitar para melhor performance
   }
 
   async getPipelineOpportunity(id: number): Promise<PipelineOpportunity | undefined> {
