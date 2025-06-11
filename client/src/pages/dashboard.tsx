@@ -46,29 +46,41 @@ export function Dashboard() {
 
   return (
     <div className="p-4 lg:p-6">
+      {/* Header Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
+        <p className="text-slate-600">Monitoramento em tempo real da Livia IA</p>
+      </div>
+
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <CardInfo
-          title="Mensagens Hoje"
-          value={metrics.mensagensHoje}
-          icon={Mail}
-          iconColor="bg-blue-100 text-medical-blue"
-          trend={{ value: "+12% vs ontem", isPositive: true }}
-        />
-        <CardInfo
-          title="Agendamentos Hoje"
-          value={metrics.agendamentosHoje}
-          icon={Calendar}
-          iconColor="bg-green-100 text-medical-green"
-          trend={{ value: "+5% vs ontem", isPositive: true }}
-        />
-        <CardInfo
-          title="Atendimentos Ativos"
-          value={metrics.atendimentosAtivos}
-          icon={UserCheck}
-          iconColor="bg-purple-100 text-medical-purple"
-          subtitle="Em andamento"
-        />
+        <div className={`transition-all duration-500 ${metricsLoading ? 'opacity-50' : 'opacity-100'}`}>
+          <CardInfo
+            title="Mensagens Hoje"
+            value={metrics.mensagensHoje}
+            icon={Mail}
+            iconColor="bg-blue-100 text-medical-blue"
+            trend={{ value: "+12% vs ontem", isPositive: true }}
+          />
+        </div>
+        <div className={`transition-all duration-500 delay-150 ${metricsLoading ? 'opacity-50' : 'opacity-100'}`}>
+          <CardInfo
+            title="Agendamentos Hoje"
+            value={metrics.agendamentosHoje}
+            icon={Calendar}
+            iconColor="bg-green-100 text-medical-green"
+            trend={{ value: "+5% vs ontem", isPositive: true }}
+          />
+        </div>
+        <div className={`transition-all duration-500 delay-300 ${metricsLoading ? 'opacity-50' : 'opacity-100'}`}>
+          <CardInfo
+            title="Atendimentos Ativos"
+            value={metrics.atendimentosAtivos}
+            icon={UserCheck}
+            iconColor="bg-purple-100 text-medical-purple"
+            subtitle="Em andamento"
+          />
+        </div>
       </div>
 
       {/* Charts Section */}
