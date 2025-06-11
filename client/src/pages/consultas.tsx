@@ -18,7 +18,7 @@ import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, Ch
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
-import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths } from "date-fns";
+import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Appointment, Contact } from "@/../../shared/schema";
 
@@ -52,11 +52,17 @@ type AppointmentForm = z.infer<typeof appointmentSchema>;
 export function Consultas() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [contactComboboxOpen, setContactComboboxOpen] = useState(false);
+  const [dayEventsDialog, setDayEventsDialog] = useState<{ open: boolean; date: Date; events: Appointment[] }>({
+    open: false,
+    date: new Date(),
+    events: []
+  });
   const { toast } = useToast();
 
   // Buscar contatos reais da base de dados (usando clinic_id = 1 como padrão)
@@ -183,15 +189,86 @@ export function Consultas() {
     setIsDialogOpen(true);
   };
 
+  // Calendar calculations based on view mode
+  const getCalendarPeriod = () => {
+    switch (calendarView) {
+      case 'day':
+        return {
+          start: startOfDay(currentDate),
+          end: endOfDay(currentDate),
+          days: [currentDate]
+        };
+      case 'week':
+        const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+        const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
+        return {
+          start: weekStart,
+          end: weekEnd,
+          days: eachDayOfInterval({ start: weekStart, end: weekEnd })
+        };
+      case 'month':
+      default:
+        const monthStart = startOfMonth(currentDate);
+        const monthEnd = endOfMonth(currentDate);
+        const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+        const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+        return {
+          start: calendarStart,
+          end: calendarEnd,
+          days: eachDayOfInterval({ start: calendarStart, end: calendarEnd })
+        };
+    }
+  };
+
+  const { start: periodStart, end: periodEnd, days: calendarDays } = getCalendarPeriod();
+
+  // Navigation functions
+  const navigateCalendar = (direction: 'prev' | 'next') => {
+    switch (calendarView) {
+      case 'day':
+        setCurrentDate(direction === 'prev' ? subDays(currentDate, 1) : addDays(currentDate, 1));
+        break;
+      case 'week':
+        setCurrentDate(direction === 'prev' ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
+        break;
+      case 'month':
+        setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
+        break;
+    }
+  };
+
   const getAppointmentsForDate = (date: Date) => {
     return appointments.filter(appointment => 
       appointment.scheduled_date && isSameDay(new Date(appointment.scheduled_date), date)
     );
   };
 
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  // Get event color based on source
+  const getEventColor = (appointment: any) => {
+    if (appointment.is_google_calendar_event) {
+      return {
+        bg: 'bg-purple-100',
+        border: 'border-purple-300',
+        text: 'text-purple-800',
+        dot: 'bg-purple-500'
+      };
+    }
+    return {
+      bg: 'bg-blue-100',
+      border: 'border-blue-300', 
+      text: 'text-blue-800',
+      dot: 'bg-blue-500'
+    };
+  };
+
+  // Show day events dialog
+  const showDayEvents = (date: Date, events: any[]) => {
+    setDayEventsDialog({
+      open: true,
+      date,
+      events
+    });
+  };
 
   if (isLoading) {
     return (
@@ -497,22 +574,65 @@ export function Consultas() {
 
         {viewMode === "calendar" && (
           <div className="flex items-center space-x-4">
+            {/* Calendar View Selector */}
+            <div className="flex space-x-1 bg-slate-100 rounded-lg p-1">
+              <Button
+                variant={calendarView === "day" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setCalendarView("day")}
+                className="text-xs"
+              >
+                Dia
+              </Button>
+              <Button
+                variant={calendarView === "week" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setCalendarView("week")}
+                className="text-xs"
+              >
+                Semana
+              </Button>
+              <Button
+                variant={calendarView === "month" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setCalendarView("month")}
+                className="text-xs"
+              >
+                Mês
+              </Button>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateCalendar('prev')}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <h2 className="text-lg font-semibold text-slate-800 min-w-[200px] text-center">
+                {calendarView === 'day' && format(currentDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                {calendarView === 'week' && `${format(startOfWeek(currentDate, { weekStartsOn: 0 }), "dd/MM", { locale: ptBR })} - ${format(endOfWeek(currentDate, { weekStartsOn: 0 }), "dd/MM/yyyy", { locale: ptBR })}`}
+                {calendarView === 'month' && format(currentDate, "MMMM yyyy", { locale: ptBR })}
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateCalendar('next')}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Today button */}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+              onClick={() => setCurrentDate(new Date())}
+              className="text-xs"
             >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <h2 className="text-lg font-semibold text-slate-800">
-              {format(currentDate, "MMMM yyyy", { locale: ptBR })}
-            </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-            >
-              <ChevronRight className="w-4 h-4" />
+              Hoje
             </Button>
           </div>
         )}
@@ -594,60 +714,218 @@ export function Consultas() {
               <CalendarDays className="w-5 h-5" />
               Calendário de Consultas
             </CardTitle>
+            {/* Legend for event colors */}
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span>Sistema</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span>Google Calendar</span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-7 gap-1 mb-4">
-              {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
-                <div key={day} className="p-2 text-center font-medium text-slate-600 text-sm">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day) => {
-                const dayAppointments = getAppointmentsForDate(day);
-                const isCurrentMonth = isSameMonth(day, currentDate);
-                const isToday = isSameDay(day, new Date());
-
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={`min-h-24 p-1 border border-slate-200 ${
-                      !isCurrentMonth ? "bg-slate-50 text-slate-400" : "bg-white"
-                    } ${isToday ? "border-medical-blue bg-blue-50" : ""}`}
-                  >
-                    <div className={`text-sm font-medium mb-1 ${isToday ? "text-medical-blue" : ""}`}>
-                      {format(day, "d")}
+            {/* Month View */}
+            {calendarView === 'month' && (
+              <>
+                <div className="grid grid-cols-7 gap-1 mb-4">
+                  {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
+                    <div key={day} className="p-2 text-center font-medium text-slate-600 text-sm">
+                      {day}
                     </div>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((day) => {
+                    const dayAppointments = getAppointmentsForDate(day);
+                    const isCurrentMonth = isSameMonth(day, currentDate);
+                    const isToday = isSameDay(day, new Date());
+
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        className={`min-h-24 p-1 border border-slate-200 ${
+                          !isCurrentMonth ? "bg-slate-50 text-slate-400" : "bg-white"
+                        } ${isToday ? "border-blue-500 bg-blue-50" : ""}`}
+                      >
+                        <div className={`text-sm font-medium mb-1 ${isToday ? "text-blue-600" : ""}`}>
+                          {format(day, "d")}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          {dayAppointments.slice(0, 2).map((appointment) => {
+                            const patientName = getPatientName(appointment.contact_id);
+                            const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
+                            const colors = getEventColor(appointment);
+                            
+                            return (
+                              <div
+                                key={appointment.id}
+                                className={`text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer hover:opacity-80 transition-opacity border ${colors.border}`}
+                                title={`${time} - ${patientName} - ${appointment.specialty || appointment.doctor_name}`}
+                                onClick={() => handleAppointmentClick(appointment)}
+                              >
+                                <div className="flex items-center gap-1">
+                                  <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                                  <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {dayAppointments.length > 2 && (
+                            <div 
+                              className="text-xs text-slate-600 font-medium cursor-pointer hover:text-blue-600 transition-colors"
+                              onClick={() => showDayEvents(day, dayAppointments)}
+                            >
+                              +{dayAppointments.length - 2} mais
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Week View */}
+            {calendarView === 'week' && (
+              <>
+                <div className="grid grid-cols-8 gap-1 mb-2">
+                  <div className="p-2 text-center font-medium text-slate-600 text-sm"></div>
+                  {calendarDays.map((day) => (
+                    <div key={day.toISOString()} className="p-2 text-center font-medium text-slate-600 text-sm">
+                      <div>{format(day, "EEE", { locale: ptBR })}</div>
+                      <div className={`text-lg ${isSameDay(day, new Date()) ? "text-blue-600 font-bold" : ""}`}>
+                        {format(day, "d")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-8 gap-1 min-h-96">
+                  <div className="flex flex-col">
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <div key={i} className="h-12 border-b border-slate-200 text-xs text-slate-500 p-1">
+                        {String(i).padStart(2, '0')}:00
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {calendarDays.map((day) => {
+                    const dayAppointments = getAppointmentsForDate(day);
+                    const isToday = isSameDay(day, new Date());
                     
+                    return (
+                      <div key={day.toISOString()} className={`border-l border-slate-200 ${isToday ? 'bg-blue-50' : ''}`}>
+                        {Array.from({ length: 24 }, (_, hour) => {
+                          const hourAppointments = dayAppointments.filter(apt => {
+                            if (!apt.scheduled_date) return false;
+                            const aptHour = new Date(apt.scheduled_date).getHours();
+                            return aptHour === hour;
+                          });
+                          
+                          return (
+                            <div key={hour} className="h-12 border-b border-slate-200 p-1 relative">
+                              {hourAppointments.map((appointment, idx) => {
+                                const colors = getEventColor(appointment);
+                                const patientName = getPatientName(appointment.contact_id);
+                                const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
+                                
+                                return (
+                                  <div
+                                    key={appointment.id}
+                                    className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer border ${colors.border}`}
+                                    style={{ top: `${idx * 20}px`, zIndex: 10 + idx }}
+                                    title={`${time} - ${patientName} - ${appointment.specialty || appointment.doctor_name}`}
+                                    onClick={() => handleAppointmentClick(appointment)}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                                      <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Day View */}
+            {calendarView === 'day' && (
+              <>
+                <div className="mb-4 p-3 bg-slate-50 rounded-lg">
+                  <h3 className="font-semibold text-slate-800">
+                    {format(currentDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-slate-700">Horários</h4>
                     <div className="space-y-1">
-                      {dayAppointments.slice(0, 3).map((appointment) => {
-                        const patientName = getPatientName(appointment.contact_id);
-                        const time = format(new Date(appointment.scheduled_date!), "HH:mm");
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <div key={i} className="h-12 border-b border-slate-200 text-sm text-slate-500 p-2 flex items-center">
+                          {String(i).padStart(2, '0')}:00
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-slate-700">Compromissos</h4>
+                    <div className="space-y-1 relative">
+                      {Array.from({ length: 24 }, (_, hour) => {
+                        const dayAppointments = getAppointmentsForDate(currentDate);
+                        const hourAppointments = dayAppointments.filter(apt => {
+                          if (!apt.scheduled_date) return false;
+                          const aptHour = new Date(apt.scheduled_date).getHours();
+                          return aptHour === hour;
+                        });
                         
                         return (
-                          <div
-                            key={appointment.id}
-                            className="text-xs p-1 bg-medical-blue text-white rounded truncate cursor-pointer hover:bg-blue-700 transition-colors"
-                            title={`${time} - ${patientName} - ${appointment.specialty}`}
-                            onClick={() => handleAppointmentClick(appointment)}
-                          >
-                            {time} {patientName.split(' ')[0]}
+                          <div key={hour} className="h-12 border-b border-slate-200 p-2 relative">
+                            {hourAppointments.map((appointment, idx) => {
+                              const colors = getEventColor(appointment);
+                              const patientName = getPatientName(appointment.contact_id);
+                              const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
+                              
+                              return (
+                                <div
+                                  key={appointment.id}
+                                  className={`absolute left-2 right-2 text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-pointer border ${colors.border} shadow-sm`}
+                                  style={{ top: `${idx * 25}px`, zIndex: 10 + idx }}
+                                  title={`${time} - ${patientName} - ${appointment.specialty || appointment.doctor_name}`}
+                                  onClick={() => handleAppointmentClick(appointment)}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                                    <div className="truncate">
+                                      <div className="font-medium">{time} - {patientName}</div>
+                                      <div className="text-xs opacity-75">{appointment.specialty || appointment.doctor_name}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         );
                       })}
-                      
-                      {dayAppointments.length > 3 && (
-                        <div className="text-xs text-slate-500 font-medium">
-                          +{dayAppointments.length - 3} mais
-                        </div>
-                      )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
@@ -756,6 +1034,70 @@ export function Consultas() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Events Dialog - Popup for multiple events */}
+      <Dialog open={dayEventsDialog.open} onOpenChange={(open) => setDayEventsDialog({...dayEventsDialog, open})}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-semibold text-slate-800">
+                {format(dayEventsDialog.date, "EEEE", { locale: ptBR }).toUpperCase()}
+              </DialogTitle>
+              <button 
+                onClick={() => setDayEventsDialog({...dayEventsDialog, open: false})}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-2xl font-bold text-slate-900">
+              {format(dayEventsDialog.date, "dd", { locale: ptBR })}
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {dayEventsDialog.events.map((appointment) => {
+              const colors = getEventColor(appointment);
+              const patientName = getPatientName(appointment.contact_id);
+              const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
+              
+              return (
+                <div
+                  key={appointment.id}
+                  className={`p-3 rounded-lg border cursor-pointer hover:opacity-80 transition-opacity ${colors.bg} ${colors.border}`}
+                  onClick={() => {
+                    handleAppointmentClick(appointment);
+                    setDayEventsDialog({...dayEventsDialog, open: false});
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                    <div className="flex-1">
+                      <div className={`font-medium ${colors.text}`}>
+                        {time} {patientName}
+                      </div>
+                      <div className={`text-sm opacity-75 ${colors.text}`}>
+                        {appointment.specialty || appointment.doctor_name || 'Evento do Google Calendar'}
+                      </div>
+                      {appointment.is_google_calendar_event && (
+                        <div className="text-xs text-purple-600 mt-1">
+                          📅 Google Calendar
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {dayEventsDialog.events.length === 0 && (
+              <div className="text-center py-8 text-slate-500">
+                Nenhum compromisso encontrado para este dia.
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
