@@ -349,6 +349,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertAppointmentSchema.parse(requestData);
       const appointment = await storage.createAppointment(validatedData);
+
+      // Sync with Google Calendar if user has active integration
+      try {
+        const { syncAppointmentToGoogleCalendar } = await import('./calendar-routes');
+        await syncAppointmentToGoogleCalendar(appointment);
+      } catch (syncError) {
+        console.error("Error syncing appointment to Google Calendar:", syncError);
+        // Don't fail the appointment creation if sync fails
+      }
+
       res.status(201).json(appointment);
     } catch (error: any) {
       if (error.name === 'ZodError') {

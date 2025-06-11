@@ -86,6 +86,48 @@ class GoogleCalendarService {
     };
   }
 
+  async refreshTokenIfNeeded(integration: any): Promise<void> {
+    // Check if token is expired or will expire soon (within 5 minutes)
+    const now = new Date();
+    const expiryDate = new Date(integration.token_expires_at);
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+    if (expiryDate <= fiveMinutesFromNow) {
+      console.log('Token expired or expiring soon, refreshing...');
+      
+      // Set credentials for refresh
+      this.oauth2Client.setCredentials({
+        access_token: integration.access_token,
+        refresh_token: integration.refresh_token,
+        expiry_date: expiryDate.getTime()
+      });
+
+      try {
+        const newTokens = await this.refreshAccessToken();
+        
+        // Update integration with new tokens
+        const { storage } = await import('./storage');
+        await storage.updateCalendarIntegration(integration.id, {
+          access_token: newTokens.access_token,
+          refresh_token: newTokens.refresh_token || integration.refresh_token,
+          token_expires_at: new Date(newTokens.expiry_date)
+        });
+
+        console.log('Token refreshed successfully');
+      } catch (error) {
+        console.error('Error refreshing token:', error);
+        throw new Error('Failed to refresh access token');
+      }
+    } else {
+      // Set current credentials
+      this.oauth2Client.setCredentials({
+        access_token: integration.access_token,
+        refresh_token: integration.refresh_token,
+        expiry_date: expiryDate.getTime()
+      });
+    }
+  }
+
   async getUserCalendarInfo(): Promise<CalendarInfo> {
     try {
       // Get user info

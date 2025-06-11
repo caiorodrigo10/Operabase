@@ -194,6 +194,69 @@ async function syncCalendarEventsToSystem(userId: number, integrationId: number)
   }
 }
 
+export async function syncAppointmentToGoogleCalendar(appointment: any) {
+  try {
+    // Get the user's Google Calendar integration
+    const integrations = await storage.getCalendarIntegrations(appointment.user_id);
+    const googleIntegration = integrations.find(i => i.provider === 'google' && i.is_active);
+    
+    if (!googleIntegration) {
+      console.log('No active Google Calendar integration found for user', appointment.user_id);
+      return;
+    }
+
+    // Check if the integration allows two-way sync or only one-way from Google to system
+    if (googleIntegration.sync_preference === 'one-way') {
+      console.log('Integration is set to one-way sync (Google to system only), skipping sync to Google');
+      return;
+    }
+
+    // Get contact information
+    const contact = await storage.getContact(appointment.contact_id);
+    if (!contact) {
+      console.error('Contact not found for appointment', appointment.id);
+      return;
+    }
+
+    // Refresh token if needed
+    const { GoogleCalendarService } = await import('./google-calendar-service');
+    const calendarService = new GoogleCalendarService();
+    await calendarService.refreshTokenIfNeeded(googleIntegration);
+
+    // Calculate end time
+    const startDate = new Date(appointment.scheduled_date);
+    const endDate = new Date(startDate.getTime() + (appointment.duration_minutes || 60) * 60000);
+
+    // Create Google Calendar event
+    const event = {
+      summary: `${appointment.appointment_type || 'Consulta'} - ${contact.name}`,
+      description: `Paciente: ${contact.name}\nTelefone: ${contact.phone || 'Não informado'}\nEmail: ${contact.email || 'Não informado'}\nObservações: ${appointment.description || ''}`,
+      start: {
+        dateTime: startDate.toISOString(),
+        timeZone: 'America/Sao_Paulo',
+      },
+      end: {
+        dateTime: endDate.toISOString(),
+        timeZone: 'America/Sao_Paulo',
+      },
+      attendees: contact.email ? [{ email: contact.email }] : [],
+    };
+
+    const createdEvent = await calendarService.createEvent(googleIntegration.calendar_id, event);
+    
+    // Update appointment with Google Calendar event ID
+    if (createdEvent?.id) {
+      await storage.updateAppointment(appointment.id, {
+        google_calendar_event_id: createdEvent.id
+      });
+      console.log('Appointment synced to Google Calendar:', createdEvent.id);
+    }
+
+  } catch (error) {
+    console.error('Error syncing appointment to Google Calendar:', error);
+  }
+}
+
 export async function getUserCalendarIntegrations(req: any, res: Response) {
   try {
     const userId = req.user.id;
