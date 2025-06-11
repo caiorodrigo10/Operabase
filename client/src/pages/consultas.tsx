@@ -664,6 +664,7 @@ export function Consultas() {
           <CardContent>
             <div className="space-y-4">
               {appointments
+                .filter(appointment => !appointment.is_google_calendar_event) // Only show system appointments in the list
                 .sort((a, b) => new Date(a.scheduled_date!).getTime() - new Date(b.scheduled_date!).getTime())
                 .map((appointment) => {
                   const patientName = getPatientName(appointment.contact_id);
