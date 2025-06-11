@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,6 +35,7 @@ const statusLabels = {
 };
 
 const appointmentSchema = z.object({
+  appointment_name: z.string().min(1, "Nome do compromisso é obrigatório"),
   contact_id: z.string().min(1, "Selecione um paciente"),
   user_id: z.string().min(1, "Selecione o usuário responsável"),
   scheduled_date: z.string().min(1, "Data é obrigatória"),
@@ -41,6 +43,8 @@ const appointmentSchema = z.object({
   duration: z.string().min(1, "Duração é obrigatória"),
   type: z.string().min(1, "Tipo de consulta é obrigatório"),
   notes: z.string().optional(),
+  contact_whatsapp: z.string().optional(),
+  contact_email: z.string().optional(),
 });
 
 type AppointmentForm = z.infer<typeof appointmentSchema>;
@@ -88,6 +92,7 @@ export function Consultas() {
   const form = useForm<AppointmentForm>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
+      appointment_name: "",
       contact_id: "",
       user_id: "",
       scheduled_date: "",
@@ -95,19 +100,36 @@ export function Consultas() {
       duration: "60",
       type: "consulta",
       notes: "",
+      contact_whatsapp: "",
+      contact_email: "",
     },
   });
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentForm) => {
+      // Atualizar dados do contato se foram modificados
+      if (data.contact_whatsapp || data.contact_email) {
+        const contactUpdates: any = {};
+        if (data.contact_whatsapp) contactUpdates.phone = data.contact_whatsapp;
+        if (data.contact_email) contactUpdates.email = data.contact_email;
+        
+        if (Object.keys(contactUpdates).length > 0) {
+          await apiRequest("PUT", `/api/contacts/${data.contact_id}`, contactUpdates);
+        }
+      }
+
       const appointmentData = {
         contact_id: parseInt(data.contact_id),
         user_id: parseInt(data.user_id),
-        clinic_id: 1, // Assumindo clinic_id = 1 para agora
+        clinic_id: 1,
+        doctor_name: data.appointment_name, // Usar o nome do compromisso como nome do doutor
+        specialty: data.type,
+        appointment_type: data.type,
         scheduled_date: new Date(`${data.scheduled_date}T${data.scheduled_time}`),
         duration_minutes: parseInt(data.duration),
-        appointment_type: data.type,
-        status: "agendado",
+        status: "scheduled",
+        payment_status: "pending",
+        payment_amount: 0,
         session_notes: data.notes || null,
       };
       const res = await apiRequest("POST", "/api/appointments", appointmentData);
@@ -145,6 +167,15 @@ export function Consultas() {
   const getPatientInfo = (contactId: number | null) => {
     if (!contactId) return null;
     return contacts.find(c => c.id === contactId);
+  };
+
+  const handleContactSelect = (contactId: string) => {
+    form.setValue("contact_id", contactId);
+    const contact = contacts.find(c => c.id === parseInt(contactId));
+    if (contact) {
+      form.setValue("contact_whatsapp", contact.phone || "");
+      form.setValue("contact_email", contact.email || "");
+    }
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -209,6 +240,23 @@ export function Consultas() {
                   </div>
                 </div>
               </div>
+
+              <FormField
+                control={form.control}
+                name="appointment_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do compromisso *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: Consulta com João Silva"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
