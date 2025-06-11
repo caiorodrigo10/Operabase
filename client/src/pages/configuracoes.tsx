@@ -63,6 +63,7 @@ export function Configuracoes() {
   const [isLoading, setIsLoading] = useState(true);
   const [syncPreference, setSyncPreference] = useState("one-way");
   const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [showProviderDialog, setShowProviderDialog] = useState(false);
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null);
 
   // Fetch calendar integrations using TanStack Query
@@ -118,7 +119,14 @@ export function Configuracoes() {
   }, [refetchIntegrations]);
 
   const handleConnectCalendar = () => {
-    connectCalendarMutation.mutate();
+    setShowProviderDialog(true);
+  };
+
+  const handleSelectProvider = (provider: string) => {
+    setShowProviderDialog(false);
+    if (provider === 'google') {
+      connectCalendarMutation.mutate();
+    }
   };
 
   const handleDisconnectCalendar = (integrationId: number) => {
@@ -329,55 +337,7 @@ export function Configuracoes() {
                         </Button>
                       </div>
 
-                      {/* Available Calendar Providers */}
-                      {!isCalendarConnected && (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Calendar className="w-5 h-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-slate-800">Google Calendar</p>
-                                <p className="text-sm text-slate-600">Conecte seu Google Calendar</p>
-                              </div>
-                            </div>
-                            <Button onClick={handleConnectCalendar} className="bg-blue-600 hover:bg-blue-700">
-                              Conectar
-                            </Button>
-                          </div>
 
-                          <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Mail className="w-5 h-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-slate-800">Outlook Calendar</p>
-                                <p className="text-sm text-slate-600">Conecte seu Office 365, Outlook.com, live.com, ou hotmail calendar</p>
-                              </div>
-                            </div>
-                            <Button variant="outline" disabled>
-                              Conectar
-                            </Button>
-                          </div>
-
-                          <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Calendar className="w-5 h-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-slate-800">iCloud Calendar</p>
-                                <p className="text-sm text-slate-600">Conecte seu iCloud Calendar</p>
-                              </div>
-                            </div>
-                            <Button variant="outline" disabled>
-                              Conectar
-                            </Button>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Connected Calendars */}
                       {(calendarIntegrations as any[]).map((integration) => (
@@ -617,6 +577,80 @@ export function Configuracoes() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Calendar Provider Selection Modal */}
+        <Dialog open={showProviderDialog} onOpenChange={setShowProviderDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Conectar Calendário</DialogTitle>
+              <DialogDescription>
+                Selecione o provedor de calendário que deseja conectar
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-4">
+              <div 
+                className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                onClick={() => handleSelectProvider('google')}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-800">Google Calendar</p>
+                    <p className="text-sm text-slate-600">Conecte seu Google Calendar</p>
+                  </div>
+                </div>
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectProvider('google');
+                  }}
+                >
+                  Conectar
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg opacity-50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-800">Outlook Calendar</p>
+                    <p className="text-sm text-slate-600">Em breve</p>
+                  </div>
+                </div>
+                <Button variant="outline" disabled>
+                  Em breve
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg opacity-50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-800">iCloud Calendar</p>
+                    <p className="text-sm text-slate-600">Em breve</p>
+                  </div>
+                </div>
+                <Button variant="outline" disabled>
+                  Em breve
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowProviderDialog(false)}>
+                Cancelar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
