@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { googleCalendarService } from './google-calendar-service';
 import { storage } from './storage';
 import { isAuthenticated } from './auth';
+import { google } from 'googleapis';
 
 // Google Calendar OAuth initialization
 export async function initGoogleCalendarAuth(req: any, res: Response) {
@@ -218,8 +219,7 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
       return;
     }
 
-    // Import and use the Google Calendar service
-    const { google } = require('googleapis');
+    // Use the imported Google Calendar service
     
     // Set up OAuth2 client
     const oauth2Client = new google.auth.OAuth2(
@@ -232,12 +232,12 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
     oauth2Client.setCredentials({
       access_token: googleIntegration.access_token,
       refresh_token: googleIntegration.refresh_token,
-      expiry_date: new Date(googleIntegration.token_expires_at).getTime()
+      expiry_date: new Date(googleIntegration.token_expires_at || Date.now()).getTime()
     });
 
     // Refresh token if needed
     const now = new Date();
-    const expiryDate = new Date(googleIntegration.token_expires_at);
+    const expiryDate = new Date(googleIntegration.token_expires_at || Date.now());
     const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
     if (expiryDate <= fiveMinutesFromNow) {
