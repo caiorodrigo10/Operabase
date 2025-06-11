@@ -658,7 +658,7 @@ export function Configuracoes() {
                   <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
                   <p className="text-sm text-slate-600 mt-2">Carregando agendas...</p>
                 </div>
-              ) : userCalendars.length > 0 ? (
+              ) : (userCalendars as any[]).length > 0 ? (
                 <div className="space-y-3">
                   {(userCalendars as any[]).map((calendar: any) => (
                     <div key={calendar.id} className="flex items-center space-x-3 p-3 border rounded-lg">
@@ -728,7 +728,7 @@ export function Configuracoes() {
                   <div className="animate-spin w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full mx-auto"></div>
                   <p className="text-sm text-slate-600 mt-2">Carregando agendas...</p>
                 </div>
-              ) : (
+              ) : (userCalendars as any[]).length > 0 ? (
                 <div className="space-y-3">
                   {(userCalendars as any[]).map((calendar: any) => (
                     <div key={calendar.id} className="flex items-center space-x-3 p-3 border rounded-lg">
@@ -756,6 +756,17 @@ export function Configuracoes() {
                       />
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">Nenhuma agenda encontrada</h3>
+                  <p className="text-slate-600 mb-4">
+                    Para configurar detecção de conflitos, você precisa primeiro conectar com o Google Calendar através do botão "Conectar Calendário".
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Após conectar, você poderá selecionar agendas adicionais para verificar conflitos de horário.
+                  </p>
                 </div>
               )}
 
