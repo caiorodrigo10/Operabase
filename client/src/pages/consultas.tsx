@@ -916,7 +916,7 @@ export function Consultas() {
                             <div key={hour} className="h-12 border-b border-slate-200 p-1 relative">
                               {hourAppointments.map((appointment, idx) => {
                                 const colors = getEventColor(appointment);
-                                const patientName = getPatientName(appointment.contact_id);
+                                const patientName = getPatientName(appointment.contact_id, appointment);
                                 const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
                                 
                                 return (
@@ -980,7 +980,7 @@ export function Consultas() {
                           <div key={hour} className="h-12 border-b border-slate-200 p-2 relative">
                             {hourAppointments.map((appointment, idx) => {
                               const colors = getEventColor(appointment);
-                              const patientName = getPatientName(appointment.contact_id);
+                              const patientName = getPatientName(appointment.contact_id, appointment);
                               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
                               
                               return (
