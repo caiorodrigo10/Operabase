@@ -13,12 +13,13 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Enhanced users table for multi-tenant authentication
+// Enhanced users table for email/password authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email").notNull().unique(),
+  password: varchar("password").notNull(),
   name: varchar("name").notNull(),
-  role: varchar("role").notNull().default("user"), // super_admin, admin, manager, user
+  role: varchar("role").notNull().default("admin"), // super_admin, admin, manager, user
   is_active: boolean("is_active").notNull().default(true),
   last_login: timestamp("last_login"),
   created_at: timestamp("created_at").defaultNow(),

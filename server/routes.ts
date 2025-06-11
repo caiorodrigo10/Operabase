@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, hasClinicAccess } from "./replitAuth";
+import { setupAuth, isAuthenticated, hasClinicAccess } from "./auth";
 import { nanoid } from "nanoid";
 import { 
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
@@ -14,35 +14,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ============ AUTHENTICATION ============
   
-  // Setup Replit Auth
-  await setupAuth(app);
-
-  // Get current user
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.dbUser.id;
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      // Get user's clinics
-      const userClinics = await storage.getUserClinics(userId);
-      
-      res.json({
-        ...user,
-        clinics: userClinics
-      });
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ error: "Failed to fetch user" });
-    }
-  });
+  // Setup traditional email/password auth
+  setupAuth(app);
 
   // Get user's accessible clinics
-  app.get('/api/auth/clinics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/clinics', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.dbUser.id;
+      const userId = req.user.id;
       const userClinics = await storage.getUserClinics(userId);
       res.json(userClinics);
     } catch (error) {
