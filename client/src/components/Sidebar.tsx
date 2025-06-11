@@ -8,7 +8,8 @@ import {
   Settings,
   Stethoscope,
   X,
-  Bot
+  Bot,
+  Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3, route: "dashboard" },
   { name: "Conversas", href: "/conversas", icon: MessageCircle, route: "conversas" },
   { name: "Pipeline", href: "/pipeline", icon: GitBranch, route: "pipeline" },
+  { name: "Consultas", href: "/consultas", icon: Calendar, route: "consultas" },
   { name: "Contatos", href: "/contatos", icon: Users, route: "contatos" },
   { name: "Relatórios", href: "/relatorios", icon: FileBarChart, route: "relatorios" },
   { name: "Configurações", href: "/configuracoes", icon: Settings, route: "configuracoes" },

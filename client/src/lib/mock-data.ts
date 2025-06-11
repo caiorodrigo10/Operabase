@@ -196,6 +196,56 @@ export const mockAppointments: Appointment[] = [
     status: "agendado",
     created_at: new Date(Date.now() - 620000),
   },
+  {
+    id: 3,
+    contact_id: 3,
+    clinic_id: 1,
+    doctor_name: "Dra. Amanda Costa",
+    specialty: "TCC - Acompanhamento",
+    scheduled_date: new Date(Date.now() + 172800000), // day after tomorrow
+    status: "agendado",
+    created_at: new Date(Date.now() - 1340000),
+  },
+  {
+    id: 4,
+    contact_id: 4,
+    clinic_id: 1,
+    doctor_name: "Dra. Amanda Costa",
+    specialty: "Avaliação Inicial TDAH",
+    scheduled_date: new Date(Date.now() + 259200000), // 3 days from now
+    status: "agendado",
+    created_at: new Date(Date.now() - 100000),
+  },
+  {
+    id: 5,
+    contact_id: 5,
+    clinic_id: 1,
+    doctor_name: "Dra. Amanda Costa",
+    specialty: "TDAH em Adultos",
+    scheduled_date: new Date(Date.now() + 345600000), // 4 days from now
+    status: "agendado",
+    created_at: new Date(Date.now() - 50000),
+  },
+  {
+    id: 6,
+    contact_id: 1,
+    clinic_id: 1,
+    doctor_name: "Dra. Amanda Costa",
+    specialty: "TCC - Sessão de Retorno",
+    scheduled_date: new Date(Date.now() - 86400000), // yesterday
+    status: "realizado",
+    created_at: new Date(Date.now() - 200000),
+  },
+  {
+    id: 7,
+    contact_id: 3,
+    clinic_id: 1,
+    doctor_name: "Dra. Amanda Costa",
+    specialty: "TDAH Infantil",
+    scheduled_date: new Date(Date.now() - 172800000), // 2 days ago
+    status: "realizado",
+    created_at: new Date(Date.now() - 300000),
+  },
 ];
 
 export const mockPipelineData = {

@@ -7,6 +7,7 @@ import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/dashboard";
 import { Conversas } from "./pages/conversas";
 import { Pipeline } from "./pages/pipeline";
+import { Consultas } from "./pages/consultas";
 import { Contatos } from "./pages/contatos";
 import { Relatorios } from "./pages/relatorios";
 import { Configuracoes } from "./pages/configuracoes";
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/conversas" component={Conversas} />
         <Route path="/pipeline" component={Pipeline} />
+        <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />
         <Route path="/relatorios" component={Relatorios} />
         <Route path="/configuracoes" component={Configuracoes} />
