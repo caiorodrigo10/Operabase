@@ -2,8 +2,14 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import { mockClinic } from "@/lib/mock-data";
-import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot } from "lucide-react";
+import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info } from "lucide-react";
 
 const integrations = [
   {
@@ -52,6 +58,15 @@ const systemStatus = [
 
 export function Configuracoes() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+  const [syncPreference, setSyncPreference] = useState("one-way");
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [connectedCalendars, setConnectedCalendars] = useState<Array<{
+    id: number;
+    provider: string;
+    email: string;
+    isLinked: boolean;
+  }>>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,6 +75,31 @@ export function Configuracoes() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  const handleConnectCalendar = () => {
+    // Simulate Google OAuth flow
+    setIsCalendarConnected(true);
+    setConnectedCalendars([
+      {
+        id: 1,
+        provider: "Google Calendar",
+        email: "admin@teste.com",
+        isLinked: true
+      }
+    ]);
+  };
+
+  const handleDisconnectCalendar = (calendarId: number) => {
+    setConnectedCalendars(prev => prev.filter(cal => cal.id !== calendarId));
+    if (connectedCalendars.length === 1) {
+      setIsCalendarConnected(false);
+    }
+  };
+
+  const handleSaveSyncPreferences = () => {
+    setShowSyncDialog(false);
+    // Save sync preferences logic here
+  };
 
   if (isLoading) {
     return (
@@ -202,33 +242,295 @@ export function Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Integrations */}
+        {/* Calendar Integration */}
         <Card>
           <CardHeader>
-            <CardTitle>Integrações</CardTitle>
+            <CardTitle>Integração de Calendário</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {integrations.map((integration) => {
-                const Icon = integration.icon;
-                return (
-                  <div key={integration.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+            <Tabs defaultValue="calendars" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="calendars">Calendários</TabsTrigger>
+                <TabsTrigger value="video">Video Conferencing</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="calendars" className="space-y-6 mt-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Calendários Conectados</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Conecte facilmente seus calendários de terceiros para verificar disponibilidade, atualizar agendamentos conforme são marcados e evitar duplas reservas.
+                  </p>
+
+                  {!isCalendarConnected && connectedCalendars.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                      <div className="mx-auto w-24 h-24 mb-4 flex items-center justify-center">
+                        <div className="relative">
+                          <Calendar className="w-12 h-12 text-slate-400" />
+                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                            <Calendar className="w-3 h-3 text-orange-600" />
+                          </div>
+                        </div>
+                      </div>
+                      <h4 className="text-lg font-medium text-slate-700 mb-2">Nenhuma conexão encontrada</h4>
+                      <p className="text-slate-500 mb-6">Conecte seus calendários de terceiros para sincronizar agendamentos e verificar disponibilidade</p>
+                      <Button onClick={handleConnectCalendar} className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar Novo
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <div></div>
+                        <Button onClick={handleConnectCalendar} variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar Novo
+                        </Button>
+                      </div>
+
+                      {/* Available Calendar Providers */}
+                      {!isCalendarConnected && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <Calendar className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800">Google Calendar</p>
+                                <p className="text-sm text-slate-600">Conecte seu Google Calendar</p>
+                              </div>
+                            </div>
+                            <Button onClick={handleConnectCalendar} className="bg-blue-600 hover:bg-blue-700">
+                              Conectar
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <Mail className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800">Outlook Calendar</p>
+                                <p className="text-sm text-slate-600">Conecte seu Office 365, Outlook.com, live.com, ou hotmail calendar</p>
+                              </div>
+                            </div>
+                            <Button variant="outline" disabled>
+                              Conectar
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <Calendar className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800">iCloud Calendar</p>
+                                <p className="text-sm text-slate-600">Conecte seu iCloud Calendar</p>
+                              </div>
+                            </div>
+                            <Button variant="outline" disabled>
+                              Conectar
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Connected Calendars */}
+                      {connectedCalendars.map((calendar) => (
+                        <div key={calendar.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <Calendar className="w-5 h-5 text-green-600" />
+                              </div>
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <p className="font-medium text-slate-800">{calendar.provider}</p>
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                </div>
+                                <p className="text-sm text-slate-600">{calendar.email}</p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDisconnectCalendar(calendar.id)}
+                              className="text-slate-500 hover:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          {calendar.isLinked && (
+                            <div className="mt-4 space-y-4">
+                              <Separator />
+                              
+                              <div>
+                                <h4 className="font-medium text-slate-800 mb-3">Configuração do Calendário</h4>
+                                
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                    <div className="flex items-center space-x-3">
+                                      <Calendar className="w-5 h-5 text-blue-600" />
+                                      <div>
+                                        <p className="font-medium text-sm">Calendário Vinculado</p>
+                                        <p className="text-xs text-slate-600">Sincronizar agendamentos com seu calendário vinculado</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Calendar className="w-4 h-4 text-blue-600" />
+                                      <span className="text-sm text-slate-600">{calendar.email}</span>
+                                      <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
+                                        <DialogTrigger asChild>
+                                          <Button variant="ghost" size="sm">
+                                            <Edit className="w-4 h-4" />
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-2xl">
+                                          <DialogHeader>
+                                            <DialogTitle>Preferências de Sincronização</DialogTitle>
+                                            <DialogDescription>
+                                              Como você gostaria de sincronizar os eventos do seu calendário vinculado?
+                                            </DialogDescription>
+                                          </DialogHeader>
+
+                                          <div className="space-y-6 py-4">
+                                            <div className="text-center">
+                                              <h3 className="text-lg font-medium mb-4">Sincronização Padrão (Unidirecional)</h3>
+                                              <div className="flex items-center justify-center space-x-8 mb-6">
+                                                <div className="text-center">
+                                                  <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                    <Calendar className="w-8 h-8 text-blue-600" />
+                                                  </div>
+                                                  <p className="text-sm font-medium">Eventos do Calendário Vinculado</p>
+                                                </div>
+                                                <div className="flex-1 h-px bg-blue-300 relative">
+                                                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-blue-600 rounded-full"></div>
+                                                </div>
+                                                <div className="text-center">
+                                                  <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                                    <Calendar className="w-8 h-8 text-slate-600" />
+                                                  </div>
+                                                  <p className="text-sm font-medium">Tratados como Horários Bloqueados</p>
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            <RadioGroup value={syncPreference} onValueChange={setSyncPreference}>
+                                              <div className="space-y-4">
+                                                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                                                  <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="one-way" id="one-way" />
+                                                    <Label htmlFor="one-way" className="flex-1">
+                                                      <div className="flex items-center justify-between">
+                                                        <span className="font-medium">Sincronização Padrão (Unidirecional)</span>
+                                                        <Badge variant="secondary">Recomendado</Badge>
+                                                      </div>
+                                                      <p className="text-sm text-slate-600 mt-1">
+                                                        Eventos do calendário vinculado são sincronizados como horários bloqueados, e nenhum contato é criado para os convidados.
+                                                      </p>
+                                                    </Label>
+                                                  </div>
+                                                </div>
+
+                                                <div className="border border-slate-200 rounded-lg p-4">
+                                                  <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="two-way" id="two-way" />
+                                                    <Label htmlFor="two-way" className="flex-1">
+                                                      <span className="font-medium">Sincronização Bidirecional</span>
+                                                      <p className="text-sm text-slate-600 mt-1">
+                                                        Contatos são criados para convidados encontrados em eventos do calendário vinculado, e esses eventos são transformados em agendamentos do sistema.
+                                                      </p>
+                                                    </Label>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </RadioGroup>
+                                          </div>
+
+                                          <DialogFooter>
+                                            <Button variant="outline" onClick={() => setShowSyncDialog(false)}>
+                                              Cancelar
+                                            </Button>
+                                            <Button onClick={handleSaveSyncPreferences} className="bg-blue-600 hover:bg-blue-700">
+                                              Salvar
+                                            </Button>
+                                          </DialogFooter>
+                                        </DialogContent>
+                                      </Dialog>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                    <div className="flex items-center space-x-3">
+                                      <Calendar className="w-5 h-5 text-blue-600" />
+                                      <div>
+                                        <p className="font-medium text-sm">Calendários de Conflito</p>
+                                        <p className="text-xs text-slate-600">Adicione calendários adicionais para verificar e prevenir agendamentos duplos</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Calendar className="w-4 h-4 text-blue-600" />
+                                      <span className="text-sm text-slate-600">{calendar.email}</span>
+                                      <Button variant="ghost" size="sm">
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex justify-end">
+                                <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                                  <Settings className="w-4 h-4 mr-2" />
+                                  Configurações Avançadas
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="video" className="space-y-6 mt-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Video Conferencing</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Gere automaticamente links únicos de reunião e compartilhe-os sempre que um agendamento for marcado.
+                  </p>
+
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 text-orange-600" />
+                      <p className="text-sm text-orange-800">
+                        Google Meet requer que o Google Calendar esteja conectado. Por favor, conecte seu Google Calendar para prosseguir.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-blue-600" />
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-slate-800">{integration.name}</p>
-                        <p className="text-sm text-slate-600">{integration.description}</p>
+                        <p className="font-medium text-slate-800">Google Meet</p>
+                        <p className="text-sm text-slate-600">Conecte Google Meet para gerar um link único de reunião a cada vez</p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${integration.statusColor}`}>
-                      {integration.status === "active" ? "Ativo" : "Inativo"}
-                    </span>
+                    <Button className="bg-blue-600 hover:bg-blue-700" disabled={!isCalendarConnected}>
+                      {isCalendarConnected ? "Conectar Google Calendar" : "Conectar Google Calendar"}
+                    </Button>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
