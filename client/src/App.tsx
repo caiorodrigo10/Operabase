@@ -58,6 +58,7 @@ function Router() {
         <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
+        <Route path="/financeiro" component={FinanceiroPage} />
         <Route path="/relatorios" component={Relatorios} />
         <Route path="/configuracoes" component={Configuracoes} />
         <Route path="/livia-config" component={LiviaConfig} />
