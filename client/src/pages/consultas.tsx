@@ -55,6 +55,16 @@ export function Consultas() {
     },
   });
 
+  // Buscar consultas reais da base de dados
+  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({
+    queryKey: ["/api/appointments", { clinic_id: 1 }],
+    queryFn: async () => {
+      const response = await fetch(`/api/appointments?clinic_id=1`);
+      if (!response.ok) throw new Error('Failed to fetch appointments');
+      return response.json();
+    },
+  });
+
   const form = useForm<AppointmentForm>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
@@ -82,7 +92,7 @@ export function Consultas() {
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments", { clinic_id: 1 }] });
       toast({
         title: "Consulta criada",
         description: "A consulta foi agendada com sucesso.",
@@ -99,23 +109,20 @@ export function Consultas() {
     },
   });
 
+  // Update loading state based on data loading
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
+    setIsLoading(contactsLoading || appointmentsLoading);
+  }, [contactsLoading, appointmentsLoading]);
 
   const getPatientName = (contactId: number | null) => {
     if (!contactId) return "Paciente não identificado";
-    const contact = mockContacts.find(c => c.id === contactId);
+    const contact = contacts.find(c => c.id === contactId);
     return contact ? contact.name : "Paciente não encontrado";
   };
 
   const getPatientInfo = (contactId: number | null) => {
     if (!contactId) return null;
-    return mockContacts.find(c => c.id === contactId);
+    return contacts.find(c => c.id === contactId);
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -124,8 +131,8 @@ export function Consultas() {
   };
 
   const getAppointmentsForDate = (date: Date) => {
-    return mockAppointments.filter(appointment => 
-      isSameDay(new Date(appointment.scheduled_date!), date)
+    return appointments.filter(appointment => 
+      appointment.scheduled_date && isSameDay(new Date(appointment.scheduled_date), date)
     );
   };
 
@@ -344,7 +351,7 @@ export function Consultas() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockAppointments
+              {appointments
                 .sort((a, b) => new Date(a.scheduled_date!).getTime() - new Date(b.scheduled_date!).getTime())
                 .map((appointment) => {
                   const patientName = getPatientName(appointment.contact_id);
@@ -501,17 +508,17 @@ export function Consultas() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600">WhatsApp</p>
+                        <p className="text-sm text-slate-600">Email</p>
                         <p className="font-medium flex items-center gap-1">
-                          <MessageCircle className="w-3 h-3 text-green-600" />
-                          {getPatientInfo(selectedAppointment.contact_id)?.whatsapp_number}
+                          <MessageCircle className="w-3 h-3 text-blue-600" />
+                          {getPatientInfo(selectedAppointment.contact_id)?.email || 'Não informado'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600">Localização</p>
+                        <p className="text-sm text-slate-600">Endereço</p>
                         <p className="font-medium flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
-                          {getPatientInfo(selectedAppointment.contact_id)?.location || 'Não informado'}
+                          {getPatientInfo(selectedAppointment.contact_id)?.address || 'Não informado'}
                         </p>
                       </div>
                     </>
