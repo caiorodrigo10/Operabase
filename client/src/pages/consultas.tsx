@@ -1355,31 +1355,36 @@ export function Consultas() {
               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
               
               return (
-                <div
+                <EventTooltip 
                   key={appointment.id}
-                  className={`p-3 rounded-lg border cursor-pointer hover:opacity-80 transition-opacity ${colors.bg} ${colors.border}`}
-                  onClick={() => {
-                    handleAppointmentClick(appointment);
-                    setDayEventsDialog({...dayEventsDialog, open: false});
-                  }}
+                  appointment={appointment} 
+                  patientName={patientName}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                    <div className="flex-1">
-                      <div className={`font-medium ${colors.text}`}>
-                        {time} {patientName}
-                      </div>
-                      <div className={`text-sm opacity-75 ${colors.text}`}>
-                        {appointment.specialty || appointment.doctor_name || 'Evento do Google Calendar'}
-                      </div>
-                      {appointment.google_calendar_event_id && (
-                        <div className="text-xs text-purple-600 mt-1">
-                          📅 Google Calendar
+                  <div
+                    className={`p-3 rounded-lg border cursor-pointer hover:opacity-80 transition-opacity ${colors.bg} ${colors.border}`}
+                    onClick={() => {
+                      handleAppointmentClick(appointment);
+                      setDayEventsDialog({...dayEventsDialog, open: false});
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                      <div className="flex-1">
+                        <div className={`font-medium ${colors.text}`}>
+                          {time} {patientName}
                         </div>
-                      )}
+                        <div className={`text-sm opacity-75 ${colors.text}`}>
+                          {appointment.specialty || appointment.doctor_name || 'Evento do Google Calendar'}
+                        </div>
+                        {appointment.google_calendar_event_id && (
+                          <div className="text-xs text-purple-600 mt-1">
+                            📅 Google Calendar
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </EventTooltip>
               );
             })}
             
