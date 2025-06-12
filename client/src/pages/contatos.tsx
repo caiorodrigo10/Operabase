@@ -52,9 +52,9 @@ export function Contatos() {
 
   // Fetch contacts from API
   const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ['/api/contacts', { clinic_id: 1 }],
+    queryKey: ['/api/contacts', { clinic_id: 2 }],
     queryFn: async () => {
-      const response = await fetch('/api/contacts?clinic_id=1');
+      const response = await fetch('/api/contacts?clinic_id=2');
       if (!response.ok) throw new Error('Erro ao carregar contatos');
       return response.json();
     }
@@ -67,7 +67,7 @@ export function Contatos() {
       profession: insertContactSchema.shape.profession.optional()
     })),
     defaultValues: {
-      clinic_id: 1,
+      clinic_id: 2,
       name: "",
       phone: "",
       email: "",

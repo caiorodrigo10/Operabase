@@ -1241,7 +1241,9 @@ async function initializeSampleData() {
     });
 
     // Create sample contacts
-    await storage.createContact({
+    console.log("Creating contacts for clinic ID:", clinic.id);
+    
+    const contact1 = await storage.createContact({
       clinic_id: clinic.id,
       name: "Lucas Ferreira",
       phone: "(11) 99123-4567",
@@ -1249,8 +1251,9 @@ async function initializeSampleData() {
       age: 28,
       profession: "Analista de Sistemas"
     });
+    console.log("Created contact 1:", contact1);
 
-    await storage.createContact({
+    const contact2 = await storage.createContact({
       clinic_id: clinic.id,
       name: "Carla Mendes",
       phone: "(11) 98765-4321",
@@ -1258,8 +1261,9 @@ async function initializeSampleData() {
       age: 35,
       profession: "Professora"
     });
+    console.log("Created contact 2:", contact2);
 
-    await storage.createContact({
+    const contact3 = await storage.createContact({
       clinic_id: clinic.id,
       name: "Pedro Oliveira",
       phone: "(11) 97654-3210",
@@ -1267,8 +1271,9 @@ async function initializeSampleData() {
       age: 42,
       profession: "Engenheiro"
     });
+    console.log("Created contact 3:", contact3);
 
-    await storage.createContact({
+    const contact4 = await storage.createContact({
       clinic_id: clinic.id,
       name: "Sofia Almeida",
       phone: "(11) 96543-2109",
@@ -1276,6 +1281,11 @@ async function initializeSampleData() {
       age: 22,
       profession: "Estudante"
     });
+    console.log("Created contact 4:", contact4);
+    
+    // Test retrieval immediately
+    const allContacts = await storage.getContacts(clinic.id);
+    console.log("All contacts for clinic", clinic.id, ":", allContacts);
 
     console.log("In-memory storage initialized successfully");
   } catch (error) {
