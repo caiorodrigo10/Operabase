@@ -30,6 +30,14 @@ import type { IStorage } from "./storage";
 
 export class PostgreSQLStorage implements IStorage {
   
+  async testConnection(): Promise<void> {
+    try {
+      await db.select().from(users).limit(1);
+    } catch (error) {
+      throw new Error(`PostgreSQL connection test failed: ${error}`);
+    }
+  }
+  
   // ============ USERS ============
   
   async getUser(id: number): Promise<User | undefined> {
