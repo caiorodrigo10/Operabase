@@ -570,7 +570,7 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
                         {/* Conteúdo da Nota */}
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <div className="whitespace-pre-wrap text-sm text-gray-800 font-mono leading-relaxed">
-                            {record.observations || record.chief_complaint || "Nota vazia"}
+                            {record.content || record.observations || record.chief_complaint || "Nota vazia"}
                           </div>
                         </div>
 
