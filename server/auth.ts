@@ -46,16 +46,11 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const PostgresSessionStore = connectPg(session);
-  
+  // Use memory store instead of PostgreSQL due to connection issues
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'default-session-secret-for-dev',
     resave: false,
     saveUninitialized: false,
-    store: new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
-    }),
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

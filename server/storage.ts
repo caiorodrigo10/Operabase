@@ -910,20 +910,13 @@ import { testConnection } from "./db";
 let storage: IStorage;
 
 async function initializeStorage() {
-  const hasDatabase = await testConnection();
-  
-  if (hasDatabase) {
-    console.log("🔗 Using PostgreSQL storage");
-    storage = postgresStorage;
-    // Initialize data for PostgreSQL if needed
-    await initializePostgreSQLData();
-  } else {
-    console.log("💾 Using in-memory storage for development");
-    storage = new MemStorage();
-    // Initialize sample data only for in-memory storage
-    initializeSampleData().catch(console.error);
-    initializeAnalyticsData().catch(console.error);
-  }
+  // Force in-memory storage due to PostgreSQL connection issues
+  console.log("💾 Using in-memory storage");
+  storage = new MemStorage();
+  // Initialize sample data only for in-memory storage
+  await initializeSampleData();
+  await initializeAnalyticsData();
+  console.log("In-memory storage initialized successfully");
 }
 
 // Initialize PostgreSQL with sample data if tables are empty
