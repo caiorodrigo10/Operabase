@@ -91,86 +91,99 @@ interface ProntuarioMedicoProps {
 
 const medicalTemplates = [
   {
-    id: "consulta_geral",
-    name: "Consulta Geral",
-    template: `QUEIXA PRINCIPAL:
-[Descrever o motivo da consulta]
+    id: "nota_livre",
+    name: "📝 Nota Livre",
+    template: `📅 ${new Date().toLocaleDateString('pt-BR')} - ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
 
-HISTÓRIA DA DOENÇA ATUAL:
-[Detalhar os sintomas, início, evolução, fatores de melhora/piora]
-
-REVISÃO DE SISTEMAS:
-- Cardiovascular:
-- Respiratório:
-- Gastrointestinal:
-- Neurológico:
-- Outros:
-
-EXAME FÍSICO:
-- Estado geral:
-- Sinais vitais:
-- Exame específico:
-
-HIPÓTESE DIAGNÓSTICA:
-[Principais suspeitas diagnósticas]
-
-CONDUTA:
-- Medicações:
-- Exames solicitados:
-- Orientações:
-- Retorno:`
+`
   },
   {
-    id: "pediatria",
-    name: "Consulta Pediátrica",
-    template: `QUEIXA PRINCIPAL:
-[Motivo da consulta relatado pelos responsáveis]
+    id: "consulta_geral",
+    name: "🩺 Consulta Médica",
+    template: `📅 ${new Date().toLocaleDateString('pt-BR')} - Consulta Médica
 
-DESENVOLVIMENTO:
-- Peso: ___kg (P___) 
-- Altura: ___cm (P___)
-- Perímetro cefálico: ___cm (P___)
-- Marcos do desenvolvimento:
+**Queixa Principal:**
 
-ALIMENTAÇÃO:
-[Descrever padrão alimentar atual]
 
-SONO:
-[Padrão de sono, dificuldades]
+**História da Doença Atual:**
 
-VACINAÇÃO:
-[Status vacinal conforme calendário]
 
-EXAME FÍSICO:
-- Estado geral:
-- Sinais vitais:
-- Exame por sistemas:
+**Exame Físico:**
+• Estado geral:
+• Sinais vitais: PA ___ mmHg | FC ___ bpm | T ___°C
+• Específico:
 
-ORIENTAÇÕES:
-- Alimentação:
-- Cuidados:
-- Próxima consulta:`
+
+**Hipótese Diagnóstica:**
+
+
+**Conduta:**
+• Medicações:
+• Exames:
+• Orientações:
+
+
+**Retorno:**`
   },
   {
     id: "retorno",
-    name: "Consulta de Retorno",
-    template: `EVOLUÇÃO DESDE ÚLTIMA CONSULTA:
-[Descrever melhora, piora ou estabilidade dos sintomas]
+    name: "🔄 Retorno",
+    template: `📅 ${new Date().toLocaleDateString('pt-BR')} - Consulta de Retorno
 
-ADERÊNCIA AO TRATAMENTO:
-- Medicações: [tomando corretamente / dificuldades]
-- Orientações: [seguindo / dificuldades]
+**Evolução:**
 
-EXAMES REALIZADOS:
-[Resultados de exames solicitados]
 
-EXAME FÍSICO ATUAL:
-[Focar nos achados relevantes para o acompanhamento]
+**Adesão ao tratamento:**
 
-AJUSTES NO TRATAMENTO:
-- Medicações:
-- Orientações:
-- Próximo retorno:`
+
+**Exame físico atual:**
+
+
+**Avaliação:**
+
+
+**Ajustes:**
+
+
+**Próximo retorno:**`
+  },
+  {
+    id: "urgencia",
+    name: "🚨 Urgência",
+    template: `⏰ ${new Date().toLocaleString('pt-BR')} - Atendimento de Urgência
+
+**Motivo:**
+
+
+**Sinais vitais:**
+PA: ___ mmHg | FC: ___ bpm | T: ___°C | SatO2: ___%
+
+**Exame físico:**
+
+
+**Conduta:**
+
+
+**Evolução:**`
+  },
+  {
+    id: "procedimento",
+    name: "⚕️ Procedimento",
+    template: `📅 ${new Date().toLocaleDateString('pt-BR')} - Procedimento
+
+**Procedimento realizado:**
+
+
+**Indicação:**
+
+
+**Técnica:**
+
+
+**Intercorrências:**
+
+
+**Orientações pós-procedimento:**`
   }
 ];
 
@@ -180,22 +193,7 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
   const [selectedAppointment, setSelectedAppointment] = useState<number | null>(null);
   const [newRecord, setNewRecord] = useState({
     record_type: "consultation",
-    chief_complaint: "",
-    history_present_illness: "",
-    physical_examination: "",
-    diagnosis: "",
-    treatment_plan: "",
-    follow_up_instructions: "",
-    observations: "",
-    vital_signs: {
-      blood_pressure: "",
-      heart_rate: "",
-      temperature: "",
-      respiratory_rate: "",
-      oxygen_saturation: "",
-      weight: "",
-      height: ""
-    }
+    content: ""
   });
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   
@@ -228,22 +226,7 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
       setIsCreating(false);
       setNewRecord({
         record_type: "consultation",
-        chief_complaint: "",
-        history_present_illness: "",
-        physical_examination: "",
-        diagnosis: "",
-        treatment_plan: "",
-        follow_up_instructions: "",
-        observations: "",
-        vital_signs: {
-          blood_pressure: "",
-          heart_rate: "",
-          temperature: "",
-          respiratory_rate: "",
-          oxygen_saturation: "",
-          weight: "",
-          height: ""
-        }
+        content: ""
       });
       toast({
         title: "Prontuário criado",
@@ -313,7 +296,7 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
     if (template) {
       setNewRecord(prev => ({
         ...prev,
-        observations: template.template
+        content: template.template
       }));
       setSelectedTemplate(templateId);
     }
@@ -482,138 +465,19 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
                 )}
               </div>
 
-              {/* Campos do Prontuário */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="chief_complaint">Queixa Principal</Label>
-                  <Textarea
-                    id="chief_complaint"
-                    value={newRecord.chief_complaint}
-                    onChange={(e) => setNewRecord(prev => ({ ...prev, chief_complaint: e.target.value }))}
-                    placeholder="Motivo principal da consulta..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="diagnosis">Diagnóstico</Label>
-                  <Textarea
-                    id="diagnosis"
-                    value={newRecord.diagnosis}
-                    onChange={(e) => setNewRecord(prev => ({ ...prev, diagnosis: e.target.value }))}
-                    placeholder="Hipóteses diagnósticas..."
-                    rows={3}
-                  />
-                </div>
-              </div>
-
+              {/* Nota Livre */}
               <div>
-                <Label htmlFor="history_present_illness">História da Doença Atual</Label>
+                <Label className="text-sm font-medium mb-2 block">Conteúdo da Nota</Label>
                 <Textarea
-                  id="history_present_illness"
-                  value={newRecord.history_present_illness}
-                  onChange={(e) => setNewRecord(prev => ({ ...prev, history_present_illness: e.target.value }))}
-                  placeholder="Detalhes sobre a evolução dos sintomas..."
-                  rows={4}
+                  value={newRecord.content}
+                  onChange={(e) => setNewRecord(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="Digite sua nota médica aqui... Use os templates acima para facilitar o preenchimento."
+                  rows={20}
+                  className="font-mono text-sm resize-none"
                 />
-              </div>
-
-              {/* Sinais Vitais */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Sinais Vitais</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="blood_pressure" className="text-xs">Pressão Arterial</Label>
-                    <Input
-                      id="blood_pressure"
-                      value={newRecord.vital_signs.blood_pressure}
-                      onChange={(e) => setNewRecord(prev => ({
-                        ...prev,
-                        vital_signs: { ...prev.vital_signs, blood_pressure: e.target.value }
-                      }))}
-                      placeholder="120/80"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="heart_rate" className="text-xs">Freq. Cardíaca</Label>
-                    <Input
-                      id="heart_rate"
-                      value={newRecord.vital_signs.heart_rate}
-                      onChange={(e) => setNewRecord(prev => ({
-                        ...prev,
-                        vital_signs: { ...prev.vital_signs, heart_rate: e.target.value }
-                      }))}
-                      placeholder="72 bpm"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="temperature" className="text-xs">Temperatura</Label>
-                    <Input
-                      id="temperature"
-                      value={newRecord.vital_signs.temperature}
-                      onChange={(e) => setNewRecord(prev => ({
-                        ...prev,
-                        vital_signs: { ...prev.vital_signs, temperature: e.target.value }
-                      }))}
-                      placeholder="36.5°C"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="weight" className="text-xs">Peso</Label>
-                    <Input
-                      id="weight"
-                      value={newRecord.vital_signs.weight}
-                      onChange={(e) => setNewRecord(prev => ({
-                        ...prev,
-                        vital_signs: { ...prev.vital_signs, weight: e.target.value }
-                      }))}
-                      placeholder="70 kg"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="physical_examination">Exame Físico</Label>
-                <Textarea
-                  id="physical_examination"
-                  value={newRecord.physical_examination}
-                  onChange={(e) => setNewRecord(prev => ({ ...prev, physical_examination: e.target.value }))}
-                  placeholder="Achados do exame físico..."
-                  rows={4}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="treatment_plan">Plano de Tratamento</Label>
-                <Textarea
-                  id="treatment_plan"
-                  value={newRecord.treatment_plan}
-                  onChange={(e) => setNewRecord(prev => ({ ...prev, treatment_plan: e.target.value }))}
-                  placeholder="Medicações, procedimentos, orientações..."
-                  rows={4}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="follow_up_instructions">Instruções de Retorno</Label>
-                <Textarea
-                  id="follow_up_instructions"
-                  value={newRecord.follow_up_instructions}
-                  onChange={(e) => setNewRecord(prev => ({ ...prev, follow_up_instructions: e.target.value }))}
-                  placeholder="Quando e em que situações retornar..."
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="observations">Observações Gerais</Label>
-                <Textarea
-                  id="observations"
-                  value={newRecord.observations}
-                  onChange={(e) => setNewRecord(prev => ({ ...prev, observations: e.target.value }))}
-                  placeholder="Informações adicionais, evolução, anotações..."
-                  rows={6}
-                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Dica: Use markdown para formatação (**, *, -, etc.)
+                </p>
               </div>
 
               <div className="flex justify-end gap-4 pt-4 border-t">
@@ -703,69 +567,11 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
                           </Badge>
                         </div>
 
-                        {/* Resumo do Prontuário */}
-                        <div className="space-y-3">
-                          {record.diagnosis && (
-                            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                              <p className="text-sm font-medium text-blue-800">Diagnóstico</p>
-                              <p className="text-sm text-blue-700">{record.diagnosis}</p>
-                            </div>
-                          )}
-
-                          {record.treatment_plan && (
-                            <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded">
-                              <p className="text-sm font-medium text-green-800">Tratamento</p>
-                              <p className="text-sm text-green-700">{record.treatment_plan}</p>
-                            </div>
-                          )}
-
-                          {record.vital_signs && Object.keys(record.vital_signs).some(key => record.vital_signs[key]) && (
-                            <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
-                              <p className="text-sm font-medium text-orange-800 mb-2">Sinais Vitais</p>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                                {record.vital_signs.blood_pressure && (
-                                  <div className="flex items-center gap-1">
-                                    <Heart className="w-3 h-3 text-red-500" />
-                                    <span>PA: {record.vital_signs.blood_pressure}</span>
-                                  </div>
-                                )}
-                                {record.vital_signs.heart_rate && (
-                                  <div className="flex items-center gap-1">
-                                    <Activity className="w-3 h-3 text-blue-500" />
-                                    <span>FC: {record.vital_signs.heart_rate}</span>
-                                  </div>
-                                )}
-                                {record.vital_signs.temperature && (
-                                  <div className="flex items-center gap-1">
-                                    <Thermometer className="w-3 h-3 text-orange-500" />
-                                    <span>T: {record.vital_signs.temperature}</span>
-                                  </div>
-                                )}
-                                {record.vital_signs.weight && (
-                                  <div className="flex items-center gap-1">
-                                    <span>Peso: {record.vital_signs.weight}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {record.ai_summary && (
-                            <div className="bg-purple-50 border-l-4 border-purple-400 p-3 rounded">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Sparkles className="w-4 h-4 text-purple-600" />
-                                <p className="text-sm font-medium text-purple-800">Resumo IA</p>
-                              </div>
-                              <p className="text-sm text-purple-700">{record.ai_summary}</p>
-                            </div>
-                          )}
-
-                          {record.observations && (
-                            <div className="bg-gray-50 p-3 rounded">
-                              <p className="text-sm font-medium text-gray-800 mb-1">Observações</p>
-                              <p className="text-sm text-gray-600">{record.observations}</p>
-                            </div>
-                          )}
+                        {/* Conteúdo da Nota */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="whitespace-pre-wrap text-sm text-gray-800 font-mono leading-relaxed">
+                            {record.observations || record.chief_complaint || "Nota vazia"}
+                          </div>
                         </div>
 
                         {/* Ações */}
