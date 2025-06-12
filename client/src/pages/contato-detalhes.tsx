@@ -267,97 +267,10 @@ export function ContatoDetalhes() {
             </TabsList>
 
             <TabsContent value="prontuario" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Informações Médicas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                      <Heart className="w-4 h-4" />
-                      Histórico Médico
-                    </label>
-                    {isEditing ? (
-                      <Textarea
-                        value={editData.medical_history || ""}
-                        onChange={(e) => setEditData({...editData, medical_history: e.target.value})}
-                        placeholder="Histórico médico do paciente..."
-                        rows={4}
-                      />
-                    ) : (
-                      <p className="text-slate-600 bg-slate-50 p-3 rounded">
-                        {contact.medical_history || "Nenhum histórico médico registrado"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                      <Pill className="w-4 h-4" />
-                      Medicações Atuais
-                    </label>
-                    {isEditing ? (
-                      <Textarea
-                        value={Array.isArray(editData.current_medications) 
-                          ? editData.current_medications.join('\n') 
-                          : editData.current_medications || ""}
-                        onChange={(e) => setEditData({
-                          ...editData, 
-                          current_medications: e.target.value.split('\n').filter(med => med.trim())
-                        })}
-                        placeholder="Uma medicação por linha..."
-                        rows={3}
-                      />
-                    ) : (
-                      <p className="text-slate-600 bg-slate-50 p-3 rounded">
-                        {Array.isArray(contact.current_medications) && contact.current_medications.length > 0
-                          ? contact.current_medications.join(', ')
-                          : "Nenhuma medicação registrada"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Alergias
-                    </label>
-                    {isEditing ? (
-                      <Textarea
-                        value={Array.isArray(editData.allergies) 
-                          ? editData.allergies.join('\n') 
-                          : editData.allergies || ""}
-                        onChange={(e) => setEditData({
-                          ...editData, 
-                          allergies: e.target.value.split('\n').filter(allergy => allergy.trim()) as any
-                        })}
-                        placeholder="Uma alergia por linha..."
-                        rows={2}
-                      />
-                    ) : (
-                      <p className="text-slate-600 bg-slate-50 p-3 rounded">
-                        {Array.isArray(contact.allergies) && contact.allergies.length > 0
-                          ? contact.allergies.join(', ')
-                          : "Nenhuma alergia registrada"}
-                      </p>
-                    )}
-                  </div>
-
-                  {contact.emergency_contact && (
-                    <div>
-                      <label className="text-sm font-medium text-slate-700 mb-2 block">
-                        Contato de Emergência
-                      </label>
-                      <p className="text-slate-600 bg-slate-50 p-3 rounded">
-                        {contact.emergency_contact}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <ProntuarioMedico 
+                contactId={contact.id} 
+                appointments={appointments}
+              />
             </TabsContent>
 
             <TabsContent value="consultas" className="space-y-4">
