@@ -1,0 +1,99 @@
+Estratégia de Design – Prontuário Inteligente Taskmed
+⚙️ Princípios-chave
+✅ Escrita natural e livre como ponto de partida
+
+🤖 Ações com IA como melhoria assistida, nunca como substituição automática
+
+🔁 Controle total do profissional com gestão de versões temporárias
+
+🧼 Interface minimalista, responsiva e focada no fluxo real de consulta médica
+
+🧭 Fluxo sugerido passo a passo
+1. Iniciar consulta
+Botão “➕ Nova Consulta” dentro do perfil do paciente
+
+Abre editor em tela cheia, com cabeçalho (nome do paciente, idade, última consulta)
+
+2. Selecionar template (opcional)
+Drop-down “Selecionar Template” (ex: SOAP, Pediatria, Pré-Natal)
+
+Templates customizáveis e salvos por usuário
+
+3. Captura da consulta
+Opção 1: Texto livre
+Profissional digita naturalmente no editor
+
+Opção 2: Transcrição com IA
+Botão 🎙️ “Gravar IA”
+
+Mostra onda de áudio em tempo real
+
+Ao parar gravação, exibe texto bruto automaticamente no editor
+
+4. Organizar com IA (versão assistida)
+Botão ✨ “Organizar com IA” reestrutura o conteúdo no padrão do template escolhido
+
+O conteúdo do editor é substituído, mas:
+
+Histórico de versões salvas em memória local (navegação com setas 🔙 🔜)
+
+Versões perdidas ao sair da página ou salvar definitivamente
+
+5. Sugestões com IA (opcional)
+Botão 💡 “Sugestões da IA”
+
+Sugestão de exames, condutas ou orientações com base no texto atual
+
+Ex: “Paciente relata febre e tosse → sugerir Raio-X, Amoxicilina, retorno em 3 dias”
+
+6. Edição final e salvamento
+Profissional pode editar livremente o texto final
+
+Ao clicar em 💾 “Salvar Consulta”:
+
+Texto final salvo no banco
+
+Tags automáticas geradas (ex: “lombalgia”, “anti-inflamatório”)
+
+Versões temporárias descartadas
+
+📂 Organização das consultas (Timeline do paciente)
+Cards com:
+
+📅 Data da consulta
+
+🩺 Diagnóstico principal (detectado por IA ou inserido manualmente)
+
+🔖 Tags (automáticas ou editáveis)
+
+Filtros por:
+
+Data
+
+Diagnóstico
+
+Tipo de consulta (ex: retorno, avaliação inicial, teleconsulta)
+
+🧑‍⚕️ Interface do Editor (wireframe textual)
+less
+Copiar
+Editar
+[Header com nome do paciente | botão "Voltar à lista"]
+-----------------------------------------------------
+[Toolbar superior]
+[Selecionar Template] | [🎙️ Gravar IA] | [✨ Organizar com IA] | [💡 Sugestões] | 
+[🔙] [🔜] | [💾 Salvar]
+
+[Editor de texto único – grande e centralizado]
+- Texto editável com IA atuando sobre ele
+- Aviso discreto: “Última versão gerada com IA – 10:43h”
+- Badge visível se houver alterações não salvas
+
+[Rodapé]
+Botão: “📤 Enviar instruções ao paciente (opcional)”
+🛡️ Segurança e Técnica
+Histórico de versões salvo em memória (estado local) — não persistido no banco de dados
+
+IA via OpenAI (para organização e sugestões)
+
+Transcrição com Whisper

@@ -15,6 +15,7 @@ import { Relatorios } from "./pages/relatorios";
 import { Configuracoes } from "./pages/configuracoes";
 import { LiviaConfig } from "./pages/livia-config";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
+import { SmartNote } from "./pages/smart-note";
 import FinanceiroPage from "./pages/financeiro";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -58,6 +59,7 @@ function Router() {
         <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
+        <Route path="/smart-note/:id?" component={SmartNote} />
         <Route path="/financeiro" component={FinanceiroPage} />
         <Route path="/relatorios" component={Relatorios} />
         <Route path="/configuracoes" component={Configuracoes} />

@@ -1,0 +1,65 @@
+PROMPT:
+
+Crie uma interface chamada SmartNote.vue para um sistema de prontuário médico com os seguintes elementos e comportamentos:
+
+🧭 Estrutura geral da interface:
+Header superior fixo
+
+Exibe nome do paciente, idade e última consulta
+
+Botão de voltar à lista de pacientes
+
+Toolbar com botões de ação:
+
+Dropdown: Selecionar Template (ex: SOAP, Pediatria, Pré-Natal)
+
+Botão 🎙️: Gravar IA → inicia transcrição com onda de áudio em tempo real
+
+Botão ✨: Organizar com IA → reestrutura texto com base no template
+
+Botão 💡: Sugestões da IA → traz sugestões médicas baseadas no texto
+
+Botões 🔙 🔜: navegação entre versões temporárias (armazenadas localmente)
+
+Botão 💾: Salvar Consulta
+
+Editor de texto central (grande):
+
+Campo de texto livre com edição direta
+
+Badge: "Última versão gerada com IA – hh:mm"
+
+Aviso de alterações não salvas
+
+Rodapé:
+
+Botão opcional: “📤 Enviar instruções ao paciente”
+
+💾 Lógica de versões temporárias:
+Use Pinia ou Composition API para armazenar localmente as versões temporárias.
+
+Sempre que o conteúdo for reestruturado por IA, salve uma nova versão no histórico (máximo 10 versões).
+
+Mostre setas 🔙 🔜 para navegar entre versões.
+
+Essas versões não são salvas no banco, apenas no estado local.
+
+🤖 Integrações com IA:
+Transcrição (Whisper): Ao clicar em “Gravar IA”, inicie uma função que captura áudio e mostra a onda em tempo real. Exiba o texto bruto no editor após a gravação.
+
+Organização com IA: Envie o conteúdo atual e o template escolhido à API do OpenAI para gerar a nota reestruturada.
+
+Sugestões com IA: Gere sugestões de conduta, exames ou orientações com base no conteúdo.
+
+📅 Timeline por paciente:
+Em outro componente separado, crie cards organizados por data da consulta, com:
+
+Data
+
+Diagnóstico principal (detectado por IA ou manual)
+
+Tags automáticas (editáveis)
+
+Filtros por data, tipo de consulta e diagnóstico
+
+Estilo: Interface minimalista e médica, responsiva e clara, focada no fluxo real de consulta. Evite excesso de cores. Use roxo escuro ou azul como cor de ação principal.
