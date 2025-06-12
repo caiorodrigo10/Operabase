@@ -1,7 +1,7 @@
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
-  clinic_users, clinic_invitations, calendar_integrations,
+  clinic_users, clinic_invitations, calendar_integrations, medical_records,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -22,6 +22,7 @@ import {
   type FinancialTransaction, type InsertFinancialTransaction,
   type FinancialReport, type InsertFinancialReport,
   type CalendarIntegration, type InsertCalendarIntegration,
+  type MedicalRecord, type InsertMedicalRecord,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -170,6 +171,13 @@ export interface IStorage {
   createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration>;
   updateCalendarIntegration(id: number, updates: Partial<InsertCalendarIntegration>): Promise<CalendarIntegration | undefined>;
   deleteCalendarIntegration(id: number): Promise<boolean>;
+
+  // Medical Records
+  getMedicalRecords(contactId: number): Promise<MedicalRecord[]>;
+  getMedicalRecord(id: number): Promise<MedicalRecord | undefined>;
+  getMedicalRecordByAppointment(appointmentId: number): Promise<MedicalRecord | undefined>;
+  createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord>;
+  updateMedicalRecord(id: number, updates: Partial<InsertMedicalRecord>): Promise<MedicalRecord | undefined>;
 }
 
 export class MemStorage implements IStorage {

@@ -572,3 +572,45 @@ export type FinancialReport = typeof financial_reports.$inferSelect;
 export type InsertFinancialReport = z.infer<typeof insertFinancialReportSchema>;
 export type CalendarIntegration = typeof calendar_integrations.$inferSelect;
 export type InsertCalendarIntegration = z.infer<typeof insertCalendarIntegrationSchema>;
+
+// Tabela para prontuários médicos vinculados às consultas
+export const medical_records = pgTable("medical_records", {
+  id: serial("id").primaryKey(),
+  appointment_id: integer("appointment_id").references(() => appointments.id).notNull(),
+  contact_id: integer("contact_id").references(() => contacts.id).notNull(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  record_type: text("record_type").notNull().default("consultation"), // consultation, exam, prescription, note
+  chief_complaint: text("chief_complaint"), // queixa principal
+  history_present_illness: text("history_present_illness"), // história da doença atual
+  physical_examination: text("physical_examination"), // exame físico
+  diagnosis: text("diagnosis"), // diagnóstico
+  treatment_plan: text("treatment_plan"), // plano de tratamento
+  prescriptions: jsonb("prescriptions"), // receitas médicas
+  exam_requests: jsonb("exam_requests"), // solicitações de exames
+  follow_up_instructions: text("follow_up_instructions"), // instruções de retorno
+  observations: text("observations"), // observações gerais
+  vital_signs: jsonb("vital_signs"), // sinais vitais (pressão, temperatura, etc)
+  attachments: text("attachments").array(), // URLs de anexos (imagens, PDFs, etc)
+  voice_transcription: text("voice_transcription"), // transcrição de áudio
+  ai_summary: text("ai_summary"), // resumo gerado por IA
+  templates_used: text("templates_used").array(), // templates médicos utilizados
+  version: integer("version").default(1), // controle de versão
+  is_active: boolean("is_active").default(true),
+  created_by: integer("created_by").references(() => users.id),
+  updated_by: integer("updated_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_medical_records_appointment").on(table.appointment_id),
+  index("idx_medical_records_contact").on(table.contact_id),
+  index("idx_medical_records_clinic").on(table.clinic_id),
+]);
+
+export const insertMedicalRecordSchema = createInsertSchema(medical_records).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export type MedicalRecord = typeof medical_records.$inferSelect;
+export type InsertMedicalRecord = z.infer<typeof insertMedicalRecordSchema>;
