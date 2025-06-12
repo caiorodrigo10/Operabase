@@ -45,10 +45,11 @@ import { ptBR } from "date-fns/locale";
 
 interface MedicalRecord {
   id: number;
-  appointment_id: number;
+  appointment_id?: number;
   contact_id: number;
   clinic_id: number;
   record_type: string;
+  content?: string;
   chief_complaint?: string;
   history_present_illness?: string;
   physical_examination?: string;
@@ -188,20 +189,8 @@ PA: ___ mmHg | FC: ___ bpm | T: ___°C | SatO2: ___%
 ];
 
 export default function ProntuarioMedico({ contactId, appointments }: ProntuarioMedicoProps) {
-  const [isCreating, setIsCreating] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<number | null>(null);
-  const [newRecord, setNewRecord] = useState({
-    record_type: "consultation",
-    content: ""
-  });
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  
+  const [showEditor, setShowEditor] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Buscar prontuários do contato
   const { data: medicalRecords = [], isLoading } = useQuery({

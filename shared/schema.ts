@@ -576,10 +576,11 @@ export type InsertCalendarIntegration = z.infer<typeof insertCalendarIntegration
 // Tabela para prontuários médicos vinculados às consultas
 export const medical_records = pgTable("medical_records", {
   id: serial("id").primaryKey(),
-  appointment_id: integer("appointment_id").references(() => appointments.id).notNull(),
+  appointment_id: integer("appointment_id").references(() => appointments.id),
   contact_id: integer("contact_id").references(() => contacts.id).notNull(),
   clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
   record_type: text("record_type").notNull().default("consultation"), // consultation, exam, prescription, note
+  content: text("content"), // nota livre em formato markdown
   chief_complaint: text("chief_complaint"), // queixa principal
   history_present_illness: text("history_present_illness"), // história da doença atual
   physical_examination: text("physical_examination"), // exame físico
