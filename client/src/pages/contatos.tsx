@@ -231,9 +231,23 @@ export function Contatos() {
                       <MessageCircle className="w-3 h-3" />
                       {contact.source || 'WhatsApp'}
                     </div>
-                    <span className="text-xs text-slate-500">
-                      Ver detalhes →
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLocation(`/smart-note/${contact.id}`);
+                        }}
+                        className="h-7 px-2 text-xs text-purple-600 border-purple-200 hover:bg-purple-50"
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        Prontuário
+                      </Button>
+                      <span className="text-xs text-slate-500">
+                        Ver detalhes →
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
