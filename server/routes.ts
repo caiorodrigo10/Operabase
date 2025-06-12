@@ -7,7 +7,7 @@ import {
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
   insertAnalyticsMetricSchema, insertClinicSettingSchema, insertAiTemplateSchema,
   insertPipelineStageSchema, insertPipelineOpportunitySchema, insertPipelineActivitySchema,
-  insertClinicInvitationSchema
+  insertClinicInvitationSchema, insertMedicalRecordSchema
 } from "@shared/schema";
 import {
   initGoogleCalendarAuth,
@@ -1241,6 +1241,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error checking availability:", error);
       res.status(500).json({ error: "Erro ao verificar disponibilidade" });
+    }
+  });
+
+  // ============ MEDICAL RECORDS ============
+
+  // Get medical records for a contact
+  app.get("/api/contacts/:contactId/medical-records", isAuthenticated, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      if (isNaN(contactId)) {
+        return res.status(400).json({ error: "Invalid contact ID" });
+      }
+      
+      const records = await storage.getMedicalRecords(contactId);
+      res.json(records);
+    } catch (error) {
+      console.error("Error fetching medical records:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get medical record by appointment
+  app.get("/api/appointments/:appointmentId/medical-record", isAuthenticated, async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.appointmentId);
+      if (isNaN(appointmentId)) {
+        return res.status(400).json({ error: "Invalid appointment ID" });
+      }
+      
+      const record = await storage.getMedicalRecordByAppointment(appointmentId);
+      if (!record) {
+        return res.status(404).json({ error: "Medical record not found" });
+      }
+      
+      res.json(record);
+    } catch (error) {
+      console.error("Error fetching medical record:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create medical record
+  app.post("/api/medical-records", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const validatedData = insertMedicalRecordSchema.parse({
+        ...req.body,
+        created_by: userId,
+        updated_by: userId
+      });
+      
+      const record = await storage.createMedicalRecord(validatedData);
+      res.status(201).json(record);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error creating medical record:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update medical record
+  app.put("/api/medical-records/:id", isAuthenticated, async (req, res) => {
+    try {
+      const recordId = parseInt(req.params.id);
+      if (isNaN(recordId)) {
+        return res.status(400).json({ error: "Invalid medical record ID" });
+      }
+      
+      const userId = (req as any).user?.id;
+      const validatedData = insertMedicalRecordSchema.partial().parse({
+        ...req.body,
+        updated_by: userId
+      });
+      
+      const record = await storage.updateMedicalRecord(recordId, validatedData);
+      if (!record) {
+        return res.status(404).json({ error: "Medical record not found" });
+      }
+      
+      res.json(record);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error updating medical record:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get specific medical record
+  app.get("/api/medical-records/:id", isAuthenticated, async (req, res) => {
+    try {
+      const recordId = parseInt(req.params.id);
+      if (isNaN(recordId)) {
+        return res.status(400).json({ error: "Invalid medical record ID" });
+      }
+      
+      const record = await storage.getMedicalRecord(recordId);
+      if (!record) {
+        return res.status(404).json({ error: "Medical record not found" });
+      }
+      
+      res.json(record);
+    } catch (error) {
+      console.error("Error fetching medical record:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

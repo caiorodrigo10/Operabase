@@ -4,7 +4,7 @@ import {
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   clinic_users, clinic_invitations, customers, charges, subscriptions, payments, 
-  financial_transactions, financial_reports, calendar_integrations,
+  financial_transactions, financial_reports, calendar_integrations, medical_records,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -24,7 +24,8 @@ import {
   type Payment, type InsertPayment,
   type FinancialTransaction, type InsertFinancialTransaction,
   type FinancialReport, type InsertFinancialReport,
-  type CalendarIntegration, type InsertCalendarIntegration
+  type CalendarIntegration, type InsertCalendarIntegration,
+  type MedicalRecord, type InsertMedicalRecord
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -700,6 +701,52 @@ export class PostgreSQLStorage implements IStorage {
     const result = await db.delete(calendar_integrations)
       .where(eq(calendar_integrations.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // ============ MEDICAL RECORDS ============
+
+  async getMedicalRecords(contactId: number): Promise<MedicalRecord[]> {
+    return await db.select()
+      .from(medical_records)
+      .where(and(
+        eq(medical_records.contact_id, contactId),
+        eq(medical_records.is_active, true)
+      ))
+      .orderBy(desc(medical_records.created_at));
+  }
+
+  async getMedicalRecord(id: number): Promise<MedicalRecord | undefined> {
+    const result = await db.select()
+      .from(medical_records)
+      .where(eq(medical_records.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getMedicalRecordByAppointment(appointmentId: number): Promise<MedicalRecord | undefined> {
+    const result = await db.select()
+      .from(medical_records)
+      .where(and(
+        eq(medical_records.appointment_id, appointmentId),
+        eq(medical_records.is_active, true)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord> {
+    const result = await db.insert(medical_records)
+      .values(record)
+      .returning();
+    return result[0];
+  }
+
+  async updateMedicalRecord(id: number, updates: Partial<InsertMedicalRecord>): Promise<MedicalRecord | undefined> {
+    const result = await db.update(medical_records)
+      .set({ ...updates, updated_at: new Date() })
+      .where(eq(medical_records.id, id))
+      .returning();
+    return result[0];
   }
 }
 
