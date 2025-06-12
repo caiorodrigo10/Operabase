@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { PatientTimeline } from "@/components/PatientTimeline";
 import { 
   ArrowLeft, 
   Mic, 
@@ -20,7 +21,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Save,
-  Send
+  Send,
+  History
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -69,6 +71,9 @@ export function SmartNote() {
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Controle de visualização
+  const [activeTab, setActiveTab] = useState<'editor' | 'timeline'>('editor');
   
   // Referências
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -138,18 +143,6 @@ export function SmartNote() {
       
       mediaRecorder.start();
       setAudioState({ isRecording: true, volume: 0 });
-      
-      // Simulação de visualização de áudio
-      const volumeInterval = setInterval(() => {
-        setAudioState(prev => ({
-          ...prev,
-          volume: Math.random() * 100
-        }));
-      }, 100);
-      
-      setTimeout(() => {
-        clearInterval(volumeInterval);
-      }, 10000); // Para após 10 segundos para demo
       
     } catch (error) {
       console.error('Erro ao acessar microfone:', error);
@@ -425,88 +418,119 @@ PLANO TERAPÊUTICO:
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Selecionar Template" />
-              </SelectTrigger>
-              <SelectContent>
-                {templates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={audioState.isRecording ? stopRecording : startRecording}
-              className={audioState.isRecording ? "bg-red-50 border-red-200 text-red-700" : ""}
+      {/* Tab Navigation */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-6">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('editor')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'editor'
+                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
             >
-              <Mic className={`h-4 w-4 mr-2 ${audioState.isRecording ? "text-red-500" : ""}`} />
-              {audioState.isRecording ? "Parar" : "Gravar IA"}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={organizeWithAI}
-              disabled={isOrganizing}
+              Editor de Prontuário
+            </button>
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                activeTab === 'timeline'
+                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {isOrganizing ? "Organizando..." : "Organizar com IA"}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={generateSuggestions}
-              disabled={isGeneratingSuggestions}
-            >
-              <Lightbulb className="h-4 w-4 mr-2" />
-              {isGeneratingSuggestions ? "Gerando..." : "Sugestões da IA"}
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateHistory('prev')}
-                disabled={currentHistoryIndex === 0}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateHistory('next')}
-                disabled={currentHistoryIndex === noteHistory.length - 1}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <Button
-              onClick={saveConsultation}
-              disabled={isSaving}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? "Salvando..." : "Salvar Consulta"}
-            </Button>
+              <History className="h-4 w-4" />
+              Histórico do Paciente
+            </button>
           </div>
         </div>
       </div>
 
+      {/* Toolbar (only shown in editor tab) */}
+      {activeTab === 'editor' && (
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Selecionar Template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={audioState.isRecording ? stopRecording : startRecording}
+                className={audioState.isRecording ? "bg-red-50 border-red-200 text-red-700" : ""}
+              >
+                <Mic className={`h-4 w-4 mr-2 ${audioState.isRecording ? "text-red-500" : ""}`} />
+                {audioState.isRecording ? "Parar" : "Gravar IA"}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={organizeWithAI}
+                disabled={isOrganizing}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {isOrganizing ? "Organizando..." : "Organizar com IA"}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={generateSuggestions}
+                disabled={isGeneratingSuggestions}
+              >
+                <Lightbulb className="h-4 w-4 mr-2" />
+                {isGeneratingSuggestions ? "Gerando..." : "Sugestões da IA"}
+              </Button>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigateHistory('prev')}
+                  disabled={currentHistoryIndex === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigateHistory('next')}
+                  disabled={currentHistoryIndex === noteHistory.length - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <Button
+                onClick={saveConsultation}
+                disabled={isSaving}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isSaving ? "Salvando..." : "Salvar Consulta"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Audio Visualization */}
-      {audioState.isRecording && (
+      {activeTab === 'editor' && audioState.isRecording && (
         <div className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 px-6 py-3">
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-1">
@@ -516,7 +540,7 @@ PLANO TERAPÊUTICO:
                   className="bg-red-400 rounded-full"
                   style={{
                     width: '3px',
-                    height: `${Math.random() * audioState.volume / 5 + 5}px`,
+                    height: `${Math.random() * 20 + 5}px`,
                     minHeight: '5px'
                   }}
                 />
@@ -529,47 +553,53 @@ PLANO TERAPÊUTICO:
         </div>
       )}
 
-      {/* Main Editor */}
+      {/* Main Content */}
       <div className="flex-1 p-6">
-        <Card className="h-full">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Prontuário da Consulta</CardTitle>
-              <div className="flex items-center space-x-2">
-                {lastAIGeneration && (
-                  <Badge variant="secondary" className="text-xs">
-                    Última versão gerada com IA – {format(lastAIGeneration, "HH:mm")}
-                  </Badge>
-                )}
-                {hasUnsavedChanges && (
-                  <Badge variant="destructive" className="text-xs">
-                    Alterações não salvas
-                  </Badge>
-                )}
+        {activeTab === 'editor' ? (
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Prontuário da Consulta</CardTitle>
+                <div className="flex items-center space-x-2">
+                  {lastAIGeneration && (
+                    <Badge variant="secondary" className="text-xs">
+                      Última versão gerada com IA – {format(lastAIGeneration, "HH:mm")}
+                    </Badge>
+                  )}
+                  {hasUnsavedChanges && (
+                    <Badge variant="destructive" className="text-xs">
+                      Alterações não salvas
+                    </Badge>
+                  )}
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <Textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Digite suas observações da consulta aqui ou use a transcrição por voz..."
-              className="min-h-[500px] resize-none text-base leading-relaxed"
-            />
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Textarea
+                ref={textareaRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Digite suas observações da consulta aqui ou use a transcrição por voz..."
+                className="min-h-[500px] resize-none text-base leading-relaxed"
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <PatientTimeline patientId={patient.id} />
+        )}
       </div>
 
       {/* Footer */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex justify-center">
-          <Button variant="outline" size="sm">
-            <Send className="h-4 w-4 mr-2" />
-            Enviar instruções ao paciente
-          </Button>
+      {activeTab === 'editor' && (
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+          <div className="flex justify-center">
+            <Button variant="outline" size="sm">
+              <Send className="h-4 w-4 mr-2" />
+              Enviar instruções ao paciente
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
