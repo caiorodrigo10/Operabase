@@ -29,7 +29,8 @@ import {
   Clock, 
   Save,
   Plus,
-  UserPlus
+  UserPlus,
+  FileText
 } from "lucide-react";
 import type { Contact, InsertContact } from "@/../../shared/schema";
 
