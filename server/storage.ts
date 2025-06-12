@@ -1212,6 +1212,15 @@ export { storage };
 // Initialize with sample data for in-memory storage only
 async function initializeSampleData() {
   try {
+    // Create admin user
+    const adminUser = await storage.createUser({
+      name: "Administrador",
+      email: "admin@teste.com",
+      password: "$2b$10$GgXKO626wv8pBBqW10JGfO4VZBvfWauvTpEBawvwKua8suxAwap6i", // Password: 123456
+      role: "admin",
+      is_active: true
+    });
+
     // Create sample clinic
     const clinic = await storage.createClinic({
       name: "Centro de Psicologia Dr. Amanda Costa",
@@ -1219,6 +1228,16 @@ async function initializeSampleData() {
       whatsapp_number: "(11) 99876-5432",
       specialties: ["Psicologia Clínica", "TDAH em Adultos", "TDAH Infantil", "Terapia Cognitivo-Comportamental"],
       working_hours: "Seg-Sex: 9h-19h | Sáb: 9h-13h"
+    });
+
+    // Associate admin user with clinic
+    await storage.addUserToClinic({
+      user_id: adminUser.id,
+      clinic_id: clinic.id,
+      role: "admin",
+      is_active: true,
+      permissions: {},
+      invited_by: null
     });
 
     // Create sample contacts
