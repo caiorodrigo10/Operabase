@@ -237,7 +237,7 @@ export function Contatos() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLocation(`/smart-note/${contact.id}`);
+                          setLocation(`/prontuario/${contact.id}`);
                         }}
                         className="h-7 px-2 text-xs text-purple-600 border-purple-200 hover:bg-purple-50"
                       >

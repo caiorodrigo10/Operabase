@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { PatientTimeline } from "@/components/PatientTimeline";
+import { useQuery } from "@tanstack/react-query";
 import { 
   ArrowLeft, 
   Mic, 
@@ -47,9 +48,21 @@ const templates = [
   { id: "livre", name: "Texto Livre" }
 ];
 
-export function SmartNote() {
+export function Prontuario() {
   const [, setLocation] = useLocation();
+  const { id: contactId } = useParams();
   const { toast } = useToast();
+  
+  // Buscar dados do contato
+  const { data: contact, isLoading: isLoadingContact } = useQuery({
+    queryKey: ['/api/contacts', contactId],
+    queryFn: async () => {
+      const response = await fetch(`/api/contacts/${contactId}`);
+      if (!response.ok) throw new Error('Erro ao carregar contato');
+      return response.json();
+    },
+    enabled: !!contactId
+  });
   
   // Estado do editor
   const [content, setContent] = useState("");
@@ -79,14 +92,6 @@ export function SmartNote() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  // Dados do paciente (simulado - em produção viria da rota)
-  const patient = {
-    id: 1,
-    name: "Lucas Ferreira",
-    age: 28,
-    lastVisit: new Date("2025-06-10")
-  };
 
   // Criar nova versão no histórico
   const addToHistory = (content: string, generatedByAI: boolean = false) => {
@@ -391,6 +396,31 @@ PLANO TERAPÊUTICO:
     }
   }, [content, noteHistory, currentHistoryIndex]);
 
+  if (isLoadingContact) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Carregando prontuário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!contact && contactId) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Paciente não encontrado</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">O paciente solicitado não foi encontrado.</p>
+          <Button onClick={() => setLocation('/contatos')}>
+            Voltar aos Contatos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -408,11 +438,13 @@ PLANO TERAPÊUTICO:
             </Button>
             <div>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {patient.name}
+                {contact?.name || 'Prontuário'}
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {patient.age} anos • Última consulta: {format(patient.lastVisit, "dd/MM/yyyy", { locale: ptBR })}
-              </p>
+              {contact && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {contact.age && `${contact.age} anos`} {contact.profession && `• ${contact.profession}`}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -585,7 +617,7 @@ PLANO TERAPÊUTICO:
             </CardContent>
           </Card>
         ) : (
-          <PatientTimeline patientId={patient.id} />
+          <PatientTimeline patientId={contact?.id || 1} />
         )}
       </div>
 
