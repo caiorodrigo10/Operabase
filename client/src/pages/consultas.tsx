@@ -21,6 +21,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
 import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { EventTooltip } from "@/components/EventTooltip";
 import type { Appointment, Contact } from "@/../../shared/schema";
 
 const statusLabels = {
@@ -933,17 +934,21 @@ export function Consultas() {
                             const colors = getEventColor(appointment);
                             
                             return (
-                              <div
+                              <EventTooltip 
                                 key={appointment.id}
-                                className={`text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer hover:opacity-80 transition-opacity border ${colors.border}`}
-                                title={`${time} - ${patientName} - ${appointment.specialty || appointment.doctor_name}`}
-                                onClick={() => handleAppointmentClick(appointment)}
+                                appointment={appointment} 
+                                patientName={patientName}
                               >
-                                <div className="flex items-center gap-1">
-                                  <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                  <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                <div
+                                  className={`text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer hover:opacity-80 transition-opacity border ${colors.border}`}
+                                  onClick={() => handleAppointmentClick(appointment)}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                                    <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                  </div>
                                 </div>
-                              </div>
+                              </EventTooltip>
                             );
                           })}
                           
@@ -1008,18 +1013,22 @@ export function Consultas() {
                                 const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
                                 
                                 return (
-                                  <div
+                                  <EventTooltip 
                                     key={appointment.id}
-                                    className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer border ${colors.border}`}
-                                    style={{ top: `${idx * 20}px`, zIndex: 10 + idx }}
-                                    title={`${time} - ${patientName} - ${appointment.specialty || appointment.doctor_name}`}
-                                    onClick={() => handleAppointmentClick(appointment)}
+                                    appointment={appointment} 
+                                    patientName={patientName}
                                   >
-                                    <div className="flex items-center gap-1">
-                                      <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                      <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                    <div
+                                      className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer border ${colors.border}`}
+                                      style={{ top: `${idx * 20}px`, zIndex: 10 + idx }}
+                                      onClick={() => handleAppointmentClick(appointment)}
+                                    >
+                                      <div className="flex items-center gap-1">
+                                        <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                                        <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                      </div>
                                     </div>
-                                  </div>
+                                  </EventTooltip>
                                 );
                               })}
                             </div>
@@ -1072,21 +1081,25 @@ export function Consultas() {
                               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "HH:mm") : "";
                               
                               return (
-                                <div
+                                <EventTooltip 
                                   key={appointment.id}
-                                  className={`absolute left-2 right-2 text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-pointer border ${colors.border} shadow-sm`}
-                                  style={{ top: `${idx * 25}px`, zIndex: 10 + idx }}
-                                  title={`${time} - ${patientName} - ${appointment.specialty || appointment.doctor_name}`}
-                                  onClick={() => handleAppointmentClick(appointment)}
+                                  appointment={appointment} 
+                                  patientName={patientName}
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                    <div className="truncate">
-                                      <div className="font-medium">{time} - {patientName}</div>
-                                      <div className="text-xs opacity-75">{appointment.specialty || appointment.doctor_name}</div>
+                                  <div
+                                    className={`absolute left-2 right-2 text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-pointer border ${colors.border} shadow-sm`}
+                                    style={{ top: `${idx * 25}px`, zIndex: 10 + idx }}
+                                    onClick={() => handleAppointmentClick(appointment)}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                                      <div className="truncate">
+                                        <div className="font-medium">{time} - {patientName}</div>
+                                        <div className="text-xs opacity-75">{appointment.specialty || appointment.doctor_name}</div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                </EventTooltip>
                               );
                             })}
                           </div>
