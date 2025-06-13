@@ -653,18 +653,21 @@ export class PostgreSQLStorage implements IStorage {
   // ============ CALENDAR INTEGRATIONS ============
 
   async getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]> {
-    return await db.select()
-      .from(calendar_integrations)
-      .where(eq(calendar_integrations.user_id, userId))
-      .orderBy(desc(calendar_integrations.created_at));
+    const result = await db.execute(sql`
+      SELECT * FROM calendar_integrations 
+      WHERE user_id = ${userId} 
+      ORDER BY created_at DESC
+    `);
+    return result.rows as CalendarIntegration[];
   }
 
   async getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined> {
-    const result = await db.select()
-      .from(calendar_integrations)
-      .where(eq(calendar_integrations.id, id))
-      .limit(1);
-    return result[0];
+    const result = await db.execute(sql`
+      SELECT * FROM calendar_integrations 
+      WHERE id = ${id}
+      LIMIT 1
+    `);
+    return result.rows[0] as CalendarIntegration | undefined;
   }
 
   async getCalendarIntegrationByUserAndProvider(
@@ -672,38 +675,54 @@ export class PostgreSQLStorage implements IStorage {
     provider: string, 
     email: string
   ): Promise<CalendarIntegration | undefined> {
-    const result = await db.select()
-      .from(calendar_integrations)
-      .where(and(
-        eq(calendar_integrations.user_id, userId),
-        eq(calendar_integrations.provider, provider),
-        eq(calendar_integrations.email, email)
-      ))
-      .limit(1);
-    return result[0];
+    const result = await db.execute(sql`
+      SELECT * FROM calendar_integrations 
+      WHERE user_id = ${userId} 
+      AND provider = ${provider} 
+      AND email = ${email}
+      LIMIT 1
+    `);
+    return result.rows[0] as CalendarIntegration | undefined;
   }
 
   async createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration> {
-    const result = await db.insert(calendar_integrations)
-      .values(integration)
-      .returning();
-    return result[0];
+    const result = await db.execute(sql`
+      INSERT INTO calendar_integrations 
+      (user_id, clinic_id, provider, email, access_token, refresh_token, token_expires_at, calendar_id, sync_preference, is_active, last_sync, sync_errors, created_at, updated_at, calendar_name, ical_uid)
+      VALUES (${integration.user_id}, ${integration.clinic_id}, ${integration.provider || 'google'}, ${integration.email}, ${integration.access_token}, ${integration.refresh_token}, ${integration.token_expires_at}, ${integration.calendar_id}, ${integration.sync_preference || 'one-way'}, ${integration.is_active !== false}, ${integration.last_sync}, ${integration.sync_errors}, NOW(), NOW(), ${integration.calendar_name}, ${integration.ical_uid})
+      RETURNING *
+    `);
+    return result.rows[0] as CalendarIntegration;
   }
 
   async updateCalendarIntegration(
     id: number, 
     updates: Partial<InsertCalendarIntegration>
   ): Promise<CalendarIntegration | undefined> {
-    const result = await db.update(calendar_integrations)
-      .set({ ...updates, updated_at: new Date() })
-      .where(eq(calendar_integrations.id, id))
-      .returning();
-    return result[0];
+    // Simplified update using template literal
+    const result = await db.execute(sql`
+      UPDATE calendar_integrations 
+      SET 
+        access_token = COALESCE(${updates.access_token}, access_token),
+        refresh_token = COALESCE(${updates.refresh_token}, refresh_token),
+        token_expires_at = COALESCE(${updates.token_expires_at}, token_expires_at),
+        calendar_id = COALESCE(${updates.calendar_id}, calendar_id),
+        sync_preference = COALESCE(${updates.sync_preference}, sync_preference),
+        is_active = COALESCE(${updates.is_active}, is_active),
+        calendar_name = COALESCE(${updates.calendar_name}, calendar_name),
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `);
+    
+    return result.rows[0] as CalendarIntegration | undefined;
   }
 
   async deleteCalendarIntegration(id: number): Promise<boolean> {
-    const result = await db.delete(calendar_integrations)
-      .where(eq(calendar_integrations.id, id));
+    const result = await db.execute(sql`
+      DELETE FROM calendar_integrations 
+      WHERE id = ${id}
+    `);
     return (result.rowCount || 0) > 0;
   }
 
