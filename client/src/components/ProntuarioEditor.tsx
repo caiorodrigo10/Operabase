@@ -200,7 +200,7 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
   const queryClient = useQueryClient();
 
   const createRecordMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/contacts/${contactId}/medical-records`, "POST", data),
+    mutationFn: (data: any) => apiRequest("POST", `/api/contacts/${contactId}/medical-records`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId, "medical-records"] });
       toast({
