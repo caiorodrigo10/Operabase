@@ -8,7 +8,12 @@ import { supabaseAdmin } from './supabase-client';
 // Google Calendar OAuth initialization
 export async function initGoogleCalendarAuth(req: any, res: Response) {
   try {
+    // Store user ID in session for callback
+    const userId = req.user.id;
+    req.session.oauthUserId = userId;
+    
     const authUrl = googleCalendarService.generateAuthUrl();
+    console.log('🔗 Generated OAuth URL for user:', userId);
     res.json({ authUrl });
   } catch (error) {
     console.error('Error generating auth URL:', error);
@@ -19,13 +24,36 @@ export async function initGoogleCalendarAuth(req: any, res: Response) {
 // Google Calendar OAuth callback
 export async function handleGoogleCalendarCallback(req: any, res: Response) {
   try {
-    const { code } = req.query;
-    const userId = req.user.id;
-    const clinicId = req.user.clinicId || 1; // Default clinic
-
+    const { code, state } = req.query;
+    
     if (!code) {
-      return res.status(400).json({ error: 'Authorization code required' });
+      return res.redirect('/configuracoes?calendar=error&reason=no_code');
     }
+
+    // Get user from session (stored during OAuth initiation)
+    const userId = req.session?.oauthUserId || req.session?.passport?.user?.id || req.user?.id;
+    
+    console.log('📥 OAuth callback received:', {
+      code: code ? 'present' : 'missing',
+      sessionUserId: req.session?.oauthUserId,
+      passportUserId: req.session?.passport?.user?.id,
+      requestUserId: req.user?.id
+    });
+
+    if (!userId) {
+      console.error('❌ No user ID found in OAuth callback');
+      return res.redirect('/configuracoes?calendar=error&reason=no_user');
+    }
+
+    // Get user info from storage
+    const user = await storage.getUser(userId);
+    if (!user) {
+      console.error('❌ User not found:', userId);
+      return res.redirect('/configuracoes?calendar=error&reason=user_not_found');
+    }
+
+    const clinicId = user.clinic_id || 1; // Default clinic
+    console.log('✅ Processing OAuth for user:', { userId, email: user.email, clinicId });
 
     // Exchange code for tokens
     const tokens = await googleCalendarService.getTokensFromCode(code as string);
