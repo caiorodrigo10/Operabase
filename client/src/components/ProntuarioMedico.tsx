@@ -70,7 +70,7 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
 
   // Buscar prontuários do contato
   const { data: medicalRecords = [], isLoading } = useQuery({
-    queryKey: ["/api/contacts", contactId, "medical-records"],
+    queryKey: [`/api/contacts/${contactId}/medical-records`],
     enabled: !!contactId
   });
 
