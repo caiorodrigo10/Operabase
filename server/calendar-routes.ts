@@ -678,6 +678,12 @@ export async function updateLinkedCalendarSettings(req: any, res: Response) {
     const integrationId = parseInt(req.params.integrationId);
     const { linkedCalendarId, addEventsToCalendar } = req.body;
 
+    console.log('🔄 Atualizando configurações do calendário vinculado:', {
+      integrationId,
+      linkedCalendarId,
+      addEventsToCalendar
+    });
+
     if (isNaN(integrationId)) {
       return res.status(400).json({ error: "Invalid integration ID" });
     }
@@ -687,13 +693,81 @@ export async function updateLinkedCalendarSettings(req: any, res: Response) {
       return res.status(404).json({ error: "Integration not found" });
     }
 
+    // Validate the calendar ID by checking if it exists in the user's available calendars
+    if (linkedCalendarId) {
+      try {
+        // Set credentials to validate calendar access
+        googleCalendarService.setCredentials(
+          integration.access_token!,
+          integration.refresh_token || undefined,
+          integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined
+        );
+
+        // Get user's calendars to validate the selected calendar ID
+        const availableCalendars = await googleCalendarService.getUserCalendars();
+        const selectedCalendar = availableCalendars.find((cal: any) => cal.id === linkedCalendarId);
+
+        if (!selectedCalendar) {
+          console.log('❌ Calendário selecionado não encontrado na lista de calendários disponíveis');
+          return res.status(400).json({ 
+            error: "Selected calendar not found in available calendars",
+            availableCalendars: availableCalendars.map((cal: any) => ({
+              id: cal.id,
+              summary: cal.summary
+            }))
+          });
+        }
+
+        console.log('✅ Calendário validado:', {
+          id: selectedCalendar.id,
+          summary: selectedCalendar.summary,
+          primary: selectedCalendar.primary
+        });
+
+      } catch (validationError) {
+        console.error('❌ Erro ao validar calendário:', validationError);
+        // Continue with the update even if validation fails (might be a temporary issue)
+      }
+    }
+
     // Update the integration with linked calendar settings
-    await storage.updateCalendarIntegration(integrationId, {
+    const updateData = {
       calendar_id: linkedCalendarId || null,
-      sync_preference: addEventsToCalendar ? 'bidirectional' : 'none'
-    });
+      sync_preference: addEventsToCalendar ? 'bidirectional' : 'none',
+      updated_at: new Date()
+    };
+
+    console.log('💾 Atualizando integração com dados:', updateData);
+
+    await storage.updateCalendarIntegration(integrationId, updateData);
+
+    // Also update in Supabase to keep in sync
+    try {
+      const { error: supabaseError } = await supabaseAdmin
+        .from('calendar_integrations')
+        .update({
+          calendar_id: linkedCalendarId || null,
+          sync_enabled: addEventsToCalendar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', integrationId);
+
+      if (supabaseError) {
+        console.error('⚠️ Erro ao atualizar no Supabase:', supabaseError);
+      } else {
+        console.log('✅ Atualizado com sucesso no Supabase');
+      }
+    } catch (supabaseUpdateError) {
+      console.error('⚠️ Erro na atualização do Supabase:', supabaseUpdateError);
+    }
 
     const updatedIntegration = await storage.getCalendarIntegration(integrationId);
+    
+    console.log('✅ Configuração atualizada com sucesso:', {
+      calendar_id: updatedIntegration?.calendar_id,
+      sync_preference: updatedIntegration?.sync_preference
+    });
+
     res.json(updatedIntegration);
   } catch (error) {
     console.error("Error updating linked calendar settings:", error);
