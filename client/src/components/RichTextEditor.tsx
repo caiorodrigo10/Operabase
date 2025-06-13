@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -10,53 +10,7 @@ interface RichTextEditorProps {
 }
 
 export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
-  const [editorHtml, setEditorHtml] = useState(() => {
-    // Se o valor já é HTML, usar diretamente
-    if (value && (value.includes('<h1>') || value.includes('<p>') || value.includes('<strong>'))) {
-      return value;
-    }
-    // Se é markdown, converter para HTML básico
-    if (value && value.includes('#')) {
-      return value
-        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/^- (.*$)/gm, '<li>$1</li>')
-        .replace(/(\n<li>.*<\/li>)+/g, '<ul>$&</ul>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/^(.*)$/gm, '<p>$1</p>');
-    }
-    return value || "";
-  });
-
-  // Atualizar quando o value externo muda (templates)
-  useEffect(() => {
-    if (value !== editorHtml) {
-      // Se o valor já é HTML, usar diretamente
-      if (value && (value.includes('<h1>') || value.includes('<p>') || value.includes('<strong>'))) {
-        setEditorHtml(value);
-      }
-      // Se é markdown, converter para HTML básico
-      else if (value && value.includes('#')) {
-        const htmlValue = value
-          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\*(.*?)\*/g, '<em>$1</em>')
-          .replace(/^- (.*$)/gm, '<li>$1</li>')
-          .replace(/(\n<li>.*<\/li>)+/g, '<ul>$&</ul>')
-          .replace(/\n\n/g, '</p><p>')
-          .replace(/^(.*)$/gm, '<p>$1</p>');
-        setEditorHtml(htmlValue);
-      }
-      else {
-        setEditorHtml(value || "");
-      }
-    }
-  }, [value, editorHtml]);
+  const [editorHtml, setEditorHtml] = useState(value || "");
 
   // Configuração simplificada da toolbar
   const modules = {

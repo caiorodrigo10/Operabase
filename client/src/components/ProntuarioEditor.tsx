@@ -194,6 +194,7 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
   const [recordType, setRecordType] = useState("consultation");
   const [selectedAppointment, setSelectedAppointment] = useState<number | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [editorKey, setEditorKey] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -223,6 +224,7 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
       setContent(template.template);
       setSelectedTemplate(templateId);
       setRecordType(templateId);
+      setEditorKey(prev => prev + 1); // Força recriação do editor
     }
   };
 
@@ -316,6 +318,7 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
           <div>
             <Label className="text-sm font-medium mb-3 block">Conteúdo da Nota</Label>
             <RichTextEditor
+              key={editorKey}
               value={content}
               onChange={setContent}
               placeholder="Digite sua nota médica aqui... Use os templates acima para facilitar o preenchimento."
