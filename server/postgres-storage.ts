@@ -748,15 +748,25 @@ export class PostgreSQLStorage implements IStorage {
       console.log('📋 Generated SQL query:', query);
       console.log('📋 Query parameters:', values);
 
-      // Remove sync_preference from update since it doesn't exist in actual Supabase table
-      const queryWithoutSync = query.replace(/sync_preference = \$\d+,?\s*/, '');
-      const valuesWithoutSync = values.filter((_, index) => index !== 1); // Remove sync_preference value
+      // Remove sync_preference field from the update completely
+      let fixedQuery = query;
+      let fixedValues = [...values];
       
-      console.log('📋 Fixed SQL query:', queryWithoutSync);
-      console.log('📋 Fixed parameters:', valuesWithoutSync);
+      // If sync_preference is in the query, remove it and adjust parameter numbers
+      if (query.includes('sync_preference')) {
+        // Remove sync_preference from the SET clause
+        fixedQuery = query.replace(/sync_preference = \$\d+,?\s*/, '');
+        // Remove the sync_preference value (index 1)
+        fixedValues = [values[0], values[2]]; // calendar_id and id
+        // Fix parameter numbering in WHERE clause
+        fixedQuery = fixedQuery.replace('WHERE id = $3', 'WHERE id = $2');
+      }
+      
+      console.log('📋 Fixed SQL query:', fixedQuery);
+      console.log('📋 Fixed parameters:', fixedValues);
       
       const pool = (db as any)._.session.client;
-      const result = await pool.query(queryWithoutSync, valuesWithoutSync);
+      const result = await pool.query(fixedQuery, fixedValues);
       console.log('✅ Update result:', result.rows[0]);
       
       return result.rows[0] as CalendarIntegration | undefined;
