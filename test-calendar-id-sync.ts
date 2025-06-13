@@ -3,6 +3,7 @@
 import { db } from './server/db.js';
 import { supabaseAdmin } from './server/supabase-client.js';
 import * as schema from './shared/schema.js';
+import { eq } from 'drizzle-orm';
 
 async function testCalendarIdSync() {
   console.log('🧪 Testando sincronização de IDs de calendário...');
@@ -42,7 +43,7 @@ async function testCalendarIdSync() {
           calendar_id: newCalendarId,
           updated_at: new Date()
         })
-        .where(schema.calendar_integrations.id.eq(testIntegration.id));
+        .where(eq(schema.calendar_integrations.id, testIntegration.id));
       
       // Atualizar no Supabase
       const { error } = await supabaseAdmin
@@ -65,7 +66,7 @@ async function testCalendarIdSync() {
       const updatedLocal = await db
         .select()
         .from(schema.calendar_integrations)
-        .where(schema.calendar_integrations.id.eq(testIntegration.id));
+        .where(eq(schema.calendar_integrations.id, testIntegration.id));
       
       const { data: updatedSupabase } = await supabaseAdmin
         .from('calendar_integrations')
@@ -93,7 +94,7 @@ async function testCalendarIdSync() {
           calendar_id: testIntegration.calendar_id,
           updated_at: new Date()
         })
-        .where({ id: testIntegration.id });
+        .where(eq(schema.calendar_integrations.id, testIntegration.id));
       
       await supabaseAdmin
         .from('calendar_integrations')
