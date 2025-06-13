@@ -73,6 +73,17 @@ export class PostgreSQLStorage implements IStorage {
   // ============ CLINIC USERS & ACCESS CONTROL ============
 
   async getUserClinics(userId: number): Promise<(ClinicUser & { clinic: Clinic })[]> {
+    console.log('🔍 getUserClinics called for userId:', userId);
+    
+    // First test simple query to clinic_users
+    const simpleTest = await db
+      .select()
+      .from(clinic_users)
+      .where(eq(clinic_users.user_id, userId));
+    
+    console.log('🔍 Simple clinic_users query result:', simpleTest);
+    
+    // Then test the full join query
     const result = await db
       .select()
       .from(clinic_users)
@@ -82,10 +93,16 @@ export class PostgreSQLStorage implements IStorage {
         eq(clinic_users.is_active, true)
       ));
     
-    return result.map(row => ({
+    console.log('🔍 getUserClinics raw result:', result);
+    
+    const mapped = result.map(row => ({
       ...row.clinic_users,
       clinic: row.clinics
     }));
+    
+    console.log('🔍 getUserClinics mapped result:', mapped);
+    
+    return mapped;
   }
 
   async addUserToClinic(clinicUser: InsertClinicUser): Promise<ClinicUser> {
