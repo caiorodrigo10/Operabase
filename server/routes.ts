@@ -1032,6 +1032,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ MARA AI INTEGRATION ============
+  
+  // Import and setup Mara AI routes
+  const { setupMaraRoutes } = await import('./mara-routes.js');
+  setupMaraRoutes(app, storage);
+
   // ============ GOOGLE CALENDAR INTEGRATION ============
   
   // Initialize Google Calendar OAuth
