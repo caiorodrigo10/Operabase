@@ -23,9 +23,16 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
+    console.log('🔍 Password comparison debug:');
+    console.log('  Supplied password:', supplied);
+    console.log('  Stored hash:', stored);
+    console.log('  Hash starts with $2b$:', stored.startsWith('$2b$'));
+    
     // Check if it's a bcrypt hash (starts with $2b$)
     if (stored.startsWith('$2b$') || stored.startsWith('$2a$') || stored.startsWith('$2y$')) {
-      return await bcrypt.compare(supplied, stored);
+      const result = await bcrypt.compare(supplied, stored);
+      console.log('  Bcrypt compare result:', result);
+      return result;
     }
     
     // Fallback to scrypt for legacy passwords
