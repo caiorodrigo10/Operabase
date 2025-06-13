@@ -1055,9 +1055,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar permissão do usuário para acessar este contato
       const userClinics = await storage.getUserClinics(req.user.id);
-      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
+        console.log('Acesso negado - usuário não tem permissão para esta clínica');
         return res.status(403).json({ error: 'Acesso negado a este contato' });
       }
 
@@ -1094,7 +1095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar permissão do usuário para acessar este contato
       const userClinics = await storage.getUserClinics(req.user.id);
-      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
         return res.status(403).json({ error: 'Acesso negado a este contato' });
