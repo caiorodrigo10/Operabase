@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { MaraAIService } from './mara-ai-service.js';
 import { IStorage } from './storage.js';
+import { isAuthenticated } from './auth.js';
 
 export function setupMaraRoutes(app: any, storage: IStorage) {
   const maraService = new MaraAIService(storage);
 
   // Chat com Mara AI sobre um contato específico
-  app.post('/api/contacts/:contactId/mara/chat', async (req: Request, res: Response) => {
+  app.post('/api/contacts/:contactId/mara/chat', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
       const { question } = req.body;
@@ -53,7 +54,7 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
   });
 
   // Gerar resumo inteligente do paciente
-  app.get('/api/contacts/:contactId/mara/summary', async (req: Request, res: Response) => {
+  app.get('/api/contacts/:contactId/mara/summary', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
 
@@ -91,7 +92,7 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
   });
 
   // Sugestões de perguntas para Mara
-  app.get('/api/contacts/:contactId/mara/suggestions', async (req: Request, res: Response) => {
+  app.get('/api/contacts/:contactId/mara/suggestions', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
 

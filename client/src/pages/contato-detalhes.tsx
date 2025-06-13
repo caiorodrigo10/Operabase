@@ -118,8 +118,29 @@ export function ContatoDetalhes() {
     },
   });
 
+  const [isMaraLoading, setIsMaraLoading] = useState(false);
+  const [maraSuggestions, setMaraSuggestions] = useState<string[]>([]);
+  const [maraError, setMaraError] = useState<string>("");
+
+  // Buscar sugestões da Mara AI
+  const { data: suggestions } = useQuery({
+    queryKey: ["/api/contacts", contactId, "mara", "suggestions"],
+    queryFn: async () => {
+      const response = await fetch(`/api/contacts/${contactId}/mara/suggestions`);
+      if (!response.ok) return { suggestions: [] };
+      return response.json();
+    },
+    enabled: !!contactId
+  });
+
+  useEffect(() => {
+    if (suggestions?.suggestions) {
+      setMaraSuggestions(suggestions.suggestions);
+    }
+  }, [suggestions]);
+
   const sendMaraMessage = async () => {
-    if (!maraMessage.trim()) return;
+    if (!maraMessage.trim() || isMaraLoading) return;
     
     const userMessage = {
       role: 'user' as const,
@@ -129,16 +150,55 @@ export function ContatoDetalhes() {
     
     setMaraConversation(prev => [...prev, userMessage]);
     setMaraMessage("");
+    setIsMaraLoading(true);
+    setMaraError("");
     
-    // Simulated AI response (in real implementation, this would call your AI API)
-    setTimeout(() => {
+    try {
+      const response = await fetch(`/api/contacts/${contactId}/mara/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question: userMessage.content }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao processar pergunta');
+      }
+
+      const data = await response.json();
+      
       const aiResponse = {
         role: 'assistant' as const,
-        content: `Baseado no perfil de ${contact?.name}, posso observar que se trata de um paciente de ${contact?.age} anos, ${contact?.profession}. Precisa de mais informações específicas sobre algum aspecto do histórico médico ou gostaria de sugestões de abordagem terapêutica?`,
+        content: data.response,
+        timestamp: new Date(),
+        confidence: data.confidence,
+        sources: data.sources,
+        recommendations: data.recommendations,
+        attention_points: data.attention_points
+      };
+      
+      setMaraConversation(prev => [...prev, aiResponse]);
+      
+    } catch (error: any) {
+      console.error('Erro na Mara AI:', error);
+      setMaraError(error.message);
+      
+      const errorResponse = {
+        role: 'assistant' as const,
+        content: `Desculpe, ocorreu um erro: ${error.message}. Tente novamente.`,
         timestamp: new Date()
       };
-      setMaraConversation(prev => [...prev, aiResponse]);
-    }, 1000);
+      
+      setMaraConversation(prev => [...prev, errorResponse]);
+    } finally {
+      setIsMaraLoading(false);
+    }
+  };
+
+  const sendSuggestion = (suggestion: string) => {
+    setMaraMessage(suggestion);
   };
 
   if (contactLoading) {
@@ -331,35 +391,163 @@ export function ContatoDetalhes() {
                     Conversa com Mara IA
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-96 border rounded-lg p-4 overflow-y-auto mb-4 bg-slate-50">
+                <CardContent className="space-y-4">
+                  {/* Sugestões de perguntas */}
+                  {maraSuggestions.length > 0 && (
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4" />
+                        Sugestões para conversar com a Mara
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {maraSuggestions.slice(0, 4).map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => sendSuggestion(suggestion)}
+                            className="text-xs bg-white/80 hover:bg-white border border-purple-200 hover:border-purple-300 px-3 py-1 rounded-full transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Área de conversa */}
+                  <div className="h-96 border rounded-lg p-4 overflow-y-auto bg-slate-50 space-y-4">
                     {maraConversation.map((message, index) => (
-                      <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                        <div className={`inline-block p-3 rounded-lg max-w-[80%] ${
+                      <div key={index} className={`${message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}>
+                        <div className={`max-w-[85%] ${
                           message.role === 'user' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-white border'
-                        }`}>
-                          <p className="text-sm">{message.content}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.role === 'user' ? 'text-blue-100' : 'text-slate-500'
+                            ? 'bg-medical-blue text-white' 
+                            : 'bg-white border border-slate-200'
+                        } rounded-lg p-3 shadow-sm`}>
+                          {/* Avatar da Mara */}
+                          {message.role === 'assistant' && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                M
+                              </div>
+                              <span className="text-xs font-medium text-slate-600">Mara AI</span>
+                              {message.confidence && (
+                                <span className="text-xs text-slate-500">
+                                  • {Math.round(message.confidence * 100)}% confiança
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          <p className={`text-sm ${message.role === 'user' ? 'text-white' : 'text-slate-800'}`}>
+                            {message.content}
+                          </p>
+                          
+                          {/* Recomendações */}
+                          {message.recommendations && message.recommendations.length > 0 && (
+                            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
+                              <p className="text-xs font-medium text-green-800 mb-1 flex items-center gap-1">
+                                <Heart className="w-3 h-3" />
+                                Recomendações:
+                              </p>
+                              <ul className="text-xs text-green-700 space-y-1">
+                                {message.recommendations.map((rec, i) => (
+                                  <li key={i} className="flex items-start gap-1">
+                                    <span className="text-green-500 mt-0.5">•</span>
+                                    {rec}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {/* Pontos de atenção */}
+                          {message.attention_points && message.attention_points.length > 0 && (
+                            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                              <p className="text-xs font-medium text-yellow-800 mb-1 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                Pontos de atenção:
+                              </p>
+                              <ul className="text-xs text-yellow-700 space-y-1">
+                                {message.attention_points.map((point, i) => (
+                                  <li key={i} className="flex items-start gap-1">
+                                    <span className="text-yellow-500 mt-0.5">•</span>
+                                    {point}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {/* Fontes */}
+                          {message.sources && message.sources.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-slate-200">
+                              <p className="text-xs text-slate-500">
+                                <FileText className="w-3 h-3 inline mr-1" />
+                                Fontes: {message.sources.join(", ")}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <p className={`text-xs mt-2 ${
+                            message.role === 'user' ? 'text-blue-100' : 'text-slate-400'
                           }`}>
                             {format(message.timestamp, "HH:mm")}
                           </p>
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Indicador de carregamento */}
+                    {isMaraLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                              M
+                            </div>
+                            <span className="text-xs font-medium text-slate-600">Mara AI está pensando...</span>
+                          </div>
+                          <div className="flex items-center space-x-1 mt-2">
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Input
-                      value={maraMessage}
-                      onChange={(e) => setMaraMessage(e.target.value)}
-                      placeholder="Pergunte algo sobre o paciente..."
-                      onKeyPress={(e) => e.key === 'Enter' && sendMaraMessage()}
-                    />
-                    <Button onClick={sendMaraMessage}>
-                      Enviar
-                    </Button>
+
+                  {/* Área de input */}
+                  <div className="space-y-2">
+                    {maraError && (
+                      <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                        {maraError}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Input
+                        value={maraMessage}
+                        onChange={(e) => setMaraMessage(e.target.value)}
+                        placeholder="Pergunte algo sobre o paciente..."
+                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMaraMessage()}
+                        disabled={isMaraLoading}
+                        className="flex-1"
+                      />
+                      <Button 
+                        onClick={sendMaraMessage}
+                        disabled={isMaraLoading || !maraMessage.trim()}
+                        className="bg-medical-blue hover:bg-blue-700"
+                      >
+                        {isMaraLoading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          "Enviar"
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      A Mara pode analisar prontuários, histórico de consultas e dados do paciente. 
+                      Pressione Enter para enviar ou Shift+Enter para quebrar linha.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
