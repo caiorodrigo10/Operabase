@@ -232,7 +232,4 @@ Seja conciso e objetivo.`;
   }
 }
 
-export const maraAIService = new MaraAIService(
-  // Storage será injetado via DI no arquivo de rotas
-  {} as IStorage
-);
+// Export da classe para instanciação nas rotas

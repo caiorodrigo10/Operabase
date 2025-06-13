@@ -12,11 +12,21 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       const contactId = parseInt(req.params.contactId);
       const { question } = req.body;
 
+      console.log('🤖 Mara AI: Iniciando chat para contato', contactId);
+      console.log('📝 Pergunta:', question);
+      console.log('👤 Usuário:', req.user?.id);
+
       if (!question || question.trim().length === 0) {
         return res.status(400).json({ error: 'Pergunta é obrigatória' });
       }
 
+      if (!storage || typeof storage.getContact !== 'function') {
+        console.error('❌ Storage não está disponível ou não tem método getContact');
+        return res.status(500).json({ error: 'Erro de configuração do servidor' });
+      }
+
       // Verificar se o contato existe e pertence ao usuário
+      console.log('🔍 Buscando contato no storage...');
       const contact = await storage.getContact(contactId);
       if (!contact) {
         return res.status(404).json({ error: 'Contato não encontrado' });

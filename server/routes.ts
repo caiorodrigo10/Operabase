@@ -1034,9 +1034,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ MARA AI INTEGRATION ============
   
-  // Import and setup Mara AI routes
-  const { setupMaraRoutes } = await import('./mara-routes.js');
-  setupMaraRoutes(app, storage);
+  const { MaraAIService } = await import('./mara-ai-service.js');
+  const maraService = new MaraAIService(storage);
+  
+  // Chat com Mara AI sobre um contato específico
+  app.post('/api/contacts/:contactId/mara/chat', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const { question } = req.body;
+
+      if (!question || question.trim().length === 0) {
+        return res.status(400).json({ error: 'Pergunta é obrigatória' });
+      }
+
+      // Verificar se o contato existe e pertence ao usuário
+      const contact = await storage.getContact(contactId);
+      if (!contact) {
+        return res.status(404).json({ error: 'Contato não encontrado' });
+      }
+
+      // Verificar permissão do usuário para acessar este contato
+      const userClinics = await storage.getUserClinics(req.user.id);
+      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'Acesso negado a este contato' });
+      }
+
+      // Analisar com Mara AI
+      const result = await maraService.analyzeContact(contactId, question);
+      
+      res.json({
+        response: result.response,
+        confidence: result.confidence,
+        sources: result.sources,
+        recommendations: result.recommendations,
+        attention_points: result.attention_points
+      });
+      
+    } catch (error) {
+      console.error('Erro no chat com Mara AI:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  // Gerar resumo do paciente com Mara AI
+  app.get('/api/contacts/:contactId/mara/summary', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+
+      // Verificar se o contato existe e pertence ao usuário
+      const contact = await storage.getContact(contactId);
+      if (!contact) {
+        return res.status(404).json({ error: 'Contato não encontrado' });
+      }
+
+      // Verificar permissão do usuário para acessar este contato
+      const userClinics = await storage.getUserClinics(req.user.id);
+      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'Acesso negado a este contato' });
+      }
+
+      // Gerar resumo com Mara AI
+      const summary = await maraService.generatePatientSummary(contactId);
+      
+      res.json({ summary });
+      
+    } catch (error) {
+      console.error('Erro ao gerar resumo com Mara AI:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  // Sugestões da Mara AI para o paciente
+  app.get('/api/contacts/:contactId/mara/suggestions', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+
+      // Verificar se o contato existe e pertence ao usuário
+      const contact = await storage.getContact(contactId);
+      if (!contact) {
+        return res.status(404).json({ error: 'Contato não encontrado' });
+      }
+
+      // Verificar permissão do usuário para acessar este contato
+      const userClinics = await storage.getUserClinics(req.user.id);
+      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'Acesso negado a este contato' });
+      }
+
+      // Gerar sugestões com Mara AI
+      const result = await maraService.analyzeContact(contactId, 
+        'Com base no histórico deste paciente, quais são suas principais recomendações para próximos passos e cuidados?'
+      );
+      
+      res.json({
+        suggestions: result.recommendations,
+        attention_points: result.attention_points
+      });
+      
+    } catch (error) {
+      console.error('Erro ao gerar sugestões com Mara AI:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
 
   // ============ GOOGLE CALENDAR INTEGRATION ============
   
