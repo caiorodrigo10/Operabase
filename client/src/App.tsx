@@ -11,13 +11,10 @@ import { Conversas } from "./pages/conversas";
 import { Pipeline } from "./pages/pipeline";
 import { Consultas } from "./pages/consultas";
 import { Contatos } from "./pages/contatos";
-import { Relatorios } from "./pages/relatorios";
 import { Configuracoes } from "./pages/configuracoes";
 import { LiviaConfig } from "./pages/livia-config";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
 // import { Prontuario } from "./pages/prontuario";
-import FinanceiroPage from "./pages/financeiro";
-import ErrorGuidePage from "./pages/error-guide";
 import { Perfil } from "./pages/perfil";
 import { RecuperarSenha } from "./pages/recuperar-senha";
 import Landing from "@/pages/landing";
@@ -64,11 +61,8 @@ function Router() {
         <Route path="/contatos" component={Contatos} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
         {/* <Route path="/prontuario/:id?" component={Prontuario} /> */}
-        <Route path="/financeiro" component={FinanceiroPage} />
-        <Route path="/relatorios" component={Relatorios} />
         <Route path="/configuracoes" component={Configuracoes} />
         <Route path="/livia-config" component={LiviaConfig} />
-        <Route path="/error-guide" component={ErrorGuidePage} />
         <Route path="/perfil" component={Perfil} />
         <Route component={NotFound} />
       </Switch>
