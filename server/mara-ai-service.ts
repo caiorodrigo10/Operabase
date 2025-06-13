@@ -125,25 +125,9 @@ INSTRUÇÕES:
 - Responda diretamente o que foi perguntado`;
   }
 
-  private formatUserQuestion(question: string, context: ContactContext): string {
-    return `Pergunta sobre o paciente ${context.contact?.name}: ${question}
-
-Analise os dados disponíveis e forneça uma resposta útil e fundamentada.`;
-  }
-
   async generatePatientSummary(contactId: number): Promise<string> {
     try {
-      const context = await this.getContactContext(contactId);
-      
-      const prompt = `Com base nos dados do paciente, gere um resumo executivo focando em:
-1. Perfil geral do paciente
-2. Padrões de consultas
-3. Pontos de atenção médica
-4. Recomendações de acompanhamento
-
-Seja conciso e objetivo.`;
-
-      const result = await this.analyzeContact(contactId, prompt);
+      const result = await this.analyzeContact(contactId, 'Faça um resumo geral deste paciente destacando os pontos principais do histórico médico.');
       return result.response;
       
     } catch (error) {

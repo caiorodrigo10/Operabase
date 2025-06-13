@@ -1139,8 +1139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       res.json({
-        suggestions: result.recommendations,
-        attention_points: result.attention_points
+        suggestions: [result.response]
       });
       
     } catch (error) {
