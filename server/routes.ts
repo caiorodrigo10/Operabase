@@ -1524,13 +1524,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid contact ID" });
       }
 
+      // Use clinic_id 1 as default (main clinic) since there's a data sync issue
+      const clinicId = 1;
+
       const userId = (req as any).user?.id;
-      const validatedData = insertMedicalRecordSchema.parse({
+      const dataToValidate = {
         ...req.body,
         contact_id: contactId,
+        clinic_id: clinicId,
         created_by: userId,
         updated_by: userId
-      });
+      };
+      
+      console.log('🔍 Data before validation:', dataToValidate);
+      const validatedData = insertMedicalRecordSchema.parse(dataToValidate);
       
       console.log('💾 Creating medical record:', validatedData);
       const record = await storage.createMedicalRecord(validatedData);
