@@ -149,22 +149,25 @@ export function PipelineHistory() {
   }
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-4">
+    <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/30">
+      <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg border-b border-blue-100">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Activity className="w-5 h-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Activity className="w-6 h-6 text-blue-600" />
+            </div>
             Histórico do Funil
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
-            className="text-blue-600 hover:text-blue-700"
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200"
           >
-            <RefreshCw className="w-4 h-4 mr-1" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             Atualizar
           </Button>
         </div>
+        <p className="text-sm text-gray-600 mt-2">Acompanhe todas as movimentações e atividades do seu funil de atendimento</p>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-4">
@@ -173,33 +176,33 @@ export function PipelineHistory() {
             const isLast = index === displayItems.length - 1;
             
             return (
-              <div key={item.id} className="relative">
+              <div key={item.id} className="relative animate-in slide-in-from-left-2 duration-500" style={{ animationDelay: `${index * 100}ms` }}>
                 {/* Timeline Line */}
                 {!isLast && (
-                  <div className="absolute left-5 top-12 w-px h-16 bg-gray-200" />
+                  <div className="absolute left-5.5 top-12 w-0.5 h-20 bg-gradient-to-b from-blue-300 via-gray-200 to-gray-100 rounded-full opacity-60" />
                 )}
                 
                 {/* Activity Card */}
                 <div className="flex items-start gap-4">
                   {/* Icon */}
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${activityColors[item.type]}`}>
-                    <IconComponent className="w-4 h-4" />
+                  <div className={`flex-shrink-0 w-11 h-11 rounded-full border-2 flex items-center justify-center shadow-sm ${activityColors[item.type]}`}>
+                    <IconComponent className="w-5 h-5" />
                   </div>
                   
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between mb-2">
+                    <div className="bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-200/60 transition-all duration-300 group">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900 text-sm">
+                          <h4 className="font-semibold text-gray-900 text-sm mb-1 group-hover:text-blue-700 transition-colors">
                             {item.title}
                           </h4>
-                          <p className="text-gray-600 text-sm mt-1">
+                          <p className="text-gray-600 text-sm leading-relaxed">
                             {item.description}
                           </p>
                         </div>
-                        <div className="ml-4 text-right">
-                          <Badge variant="secondary" className="text-xs">
+                        <div className="ml-4 flex flex-col items-end gap-1">
+                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                             {item.contact_name || 'Sistema'}
                           </Badge>
                         </div>
@@ -207,12 +210,14 @@ export function PipelineHistory() {
                       
                       {/* Stage Change Visual */}
                       {item.type === 'stage_change' && item.from_stage && item.to_stage && (
-                        <div className="flex items-center gap-2 mt-3 p-2 bg-gray-50 rounded-md">
-                          <Badge variant="outline" className="text-xs">
+                        <div className="flex items-center gap-3 mt-4 p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-100">
+                          <Badge variant="outline" className="text-xs font-medium bg-white border-gray-300 text-gray-700">
                             {stageLabels[item.from_stage as keyof typeof stageLabels] || item.from_stage}
                           </Badge>
-                          <ArrowRight className="w-3 h-3 text-gray-400" />
-                          <Badge variant="outline" className="text-xs">
+                          <div className="flex items-center">
+                            <ArrowRight className="w-4 h-4 text-blue-500" />
+                          </div>
+                          <Badge variant="outline" className="text-xs font-medium bg-blue-600 text-white border-blue-600">
                             {stageLabels[item.to_stage as keyof typeof stageLabels] || item.to_stage}
                           </Badge>
                         </div>
@@ -220,32 +225,34 @@ export function PipelineHistory() {
                       
                       {/* Appointment Details */}
                       {item.appointment_date && (
-                        <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
-                          <Calendar className="w-3 h-3" />
-                          <span>{format(new Date(item.appointment_date), "dd 'de' MMM, yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                        <div className="flex items-center gap-2 mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <Calendar className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-700">
+                            {format(new Date(item.appointment_date), "dd 'de' MMM, yyyy 'às' HH:mm", { locale: ptBR })}
+                          </span>
                         </div>
                       )}
                       
                       {/* Opportunity Title */}
                       {item.opportunity_title && (
-                        <div className="flex items-center gap-2 mt-2 text-sm">
-                          <span className="font-medium text-blue-600">{item.opportunity_title}</span>
-                          <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 text-xs">
+                        <div className="flex items-center justify-between mt-3 p-2 bg-blue-50 rounded-lg">
+                          <span className="font-semibold text-blue-700 text-sm">{item.opportunity_title}</span>
+                          <Button variant="link" size="sm" className="h-auto p-1 text-blue-600 text-xs hover:text-blue-800 transition-colors">
                             Ver oportunidade
                           </Button>
                         </div>
                       )}
                       
                       {/* Footer */}
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200/60">
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Clock className="w-3 h-3" />
-                          <span>{formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}</span>
+                          <span className="font-medium">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}</span>
                         </div>
                         {item.created_by && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <User className="w-3 h-3" />
-                            <span>{item.created_by}</span>
+                          <div className="flex items-center gap-1 text-xs">
+                            <User className="w-3 h-3 text-gray-400" />
+                            <span className="text-gray-600 font-medium">{item.created_by}</span>
                           </div>
                         )}
                       </div>
@@ -271,10 +278,28 @@ export function PipelineHistory() {
         )}
         
         {displayItems.length === 0 && (
-          <div className="text-center py-8">
-            <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 mb-2">Nenhuma atividade encontrada</p>
-            <p className="text-sm text-gray-400">As atividades do funil aparecerão aqui</p>
+          <div className="text-center py-12">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+              <Activity className="w-10 h-10 text-blue-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Histórico do Funil Vazio</h3>
+            <p className="text-gray-500 mb-4 max-w-md mx-auto">
+              Quando você começar a movimentar contatos no pipeline, todas as atividades aparecerão aqui
+            </p>
+            <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span>Mudanças de estágio</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span>Consultas criadas</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                <span>Notas adicionadas</span>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

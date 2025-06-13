@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockPipelineData } from "@/lib/mock-data";
 import { Bot } from "lucide-react";
+import { PipelineHistory } from "@/components/PipelineHistory";
 
 const stageLabels = {
   novo_contato: { title: "Novo Contato", color: "bg-slate-50" },
@@ -51,7 +52,7 @@ export function Pipeline() {
   }
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6 space-y-8">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Pipeline de Atendimento</h2>
         <p className="text-slate-600">Acompanhe o fluxo dos pacientes em tempo real</p>
@@ -91,6 +92,11 @@ export function Pipeline() {
             );
           })}
         </div>
+      </div>
+
+      {/* Histórico do Funil */}
+      <div className="max-w-2xl">
+        <PipelineHistory />
       </div>
     </div>
   );
