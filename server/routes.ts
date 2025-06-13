@@ -1135,8 +1135,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Se está alterando senha, validar senha atual
-      if (newPassword) {
-        if (!currentPassword) {
+      if (newPassword && newPassword.trim()) {
+        if (!currentPassword || !currentPassword.trim()) {
           return res.status(400).json({ error: 'Senha atual é obrigatória para alterar a senha' });
         }
 
@@ -1155,7 +1155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updated_at: new Date(),
         });
       } else {
-        // Apenas atualizar nome e email
+        // Apenas atualizar nome e email (sem alterar senha)
         await storage.updateUser(userId, {
           name,
           email,

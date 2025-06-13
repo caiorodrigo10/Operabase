@@ -652,16 +652,18 @@ export const updateUserProfileSchema = createInsertSchema(users).omit({
   newPassword: z.string().min(6).optional(),
   confirmPassword: z.string().optional(),
 }).refine((data) => {
+  // Se está tentando alterar senha, deve fornecer senha atual
   if (data.newPassword && !data.currentPassword) {
     return false;
   }
+  // Se forneceu nova senha, deve confirmar
   if (data.newPassword && data.newPassword !== data.confirmPassword) {
     return false;
   }
   return true;
 }, {
-  message: "Password confirmation doesn't match",
-  path: ["confirmPassword"],
+  message: "Para alterar a senha, forneça a senha atual e confirme a nova senha",
+  path: ["newPassword"],
 });
 
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;

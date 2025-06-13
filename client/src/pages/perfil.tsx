@@ -33,6 +33,7 @@ export function Perfil() {
       newPassword: "",
       confirmPassword: "",
     },
+    mode: "onChange",
   });
 
   // Atualizar valores padrão quando user carregar
@@ -72,7 +73,16 @@ export function Perfil() {
   });
 
   const onSubmit = (data: UpdateUserProfile) => {
-    updateProfileMutation.mutate(data);
+    // Limpar campos de senha vazios antes de enviar
+    const cleanData = {
+      name: data.name,
+      email: data.email,
+      currentPassword: data.currentPassword?.trim() || undefined,
+      newPassword: data.newPassword?.trim() || undefined,
+      confirmPassword: data.confirmPassword?.trim() || undefined,
+    };
+    
+    updateProfileMutation.mutate(cleanData);
   };
 
   if (isLoading) {
@@ -156,10 +166,10 @@ export function Perfil() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-              <span className="text-sm text-amber-700">
-                Para alterar a senha, você deve informar sua senha atual
+            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-blue-600" />
+              <span className="text-sm text-blue-700">
+                Os campos de senha são opcionais. Preencha apenas se quiser alterar sua senha atual.
               </span>
             </div>
 
