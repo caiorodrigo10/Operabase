@@ -69,9 +69,22 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
   const [showEditor, setShowEditor] = useState(false);
 
   // Buscar prontuários do contato
-  const { data: medicalRecords = [], isLoading } = useQuery({
+  const { data: medicalRecords = [], isLoading, refetch } = useQuery({
     queryKey: [`/api/contacts/${contactId}/medical-records`],
-    enabled: !!contactId
+    enabled: !!contactId,
+    onSuccess: (data) => {
+      console.log('📋 Medical records loaded:', data);
+    },
+    onError: (error) => {
+      console.error('❌ Error loading medical records:', error);
+    }
+  });
+
+  console.log('🔍 ProntuarioMedico render:', {
+    contactId,
+    recordsCount: medicalRecords.length,
+    isLoading,
+    records: medicalRecords
   });
 
   // Obter nome do contato para o editor - buscar em appointments ou usar padrão

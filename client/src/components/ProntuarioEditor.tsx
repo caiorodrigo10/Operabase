@@ -201,9 +201,15 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
 
   const createRecordMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", `/api/contacts/${contactId}/medical-records`, data),
-    onSuccess: () => {
+    onSuccess: (savedRecord) => {
+      console.log('✅ Medical record saved successfully:', savedRecord);
+      
+      // Invalidate and refetch the medical records query
       queryClient.invalidateQueries({ queryKey: [`/api/contacts/${contactId}/medical-records`] });
       queryClient.refetchQueries({ queryKey: [`/api/contacts/${contactId}/medical-records`] });
+      
+      console.log('🔄 Cache invalidated and refetch triggered for contactId:', contactId);
+      
       toast({
         title: "Prontuário criado",
         description: "Prontuário médico salvo com sucesso.",
@@ -211,6 +217,7 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
       onClose();
     },
     onError: (error: any) => {
+      console.error('❌ Error saving medical record:', error);
       toast({
         title: "Erro ao criar prontuário",
         description: error.message || "Ocorreu um erro ao salvar o prontuário.",

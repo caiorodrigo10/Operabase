@@ -1508,9 +1508,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const records = await storage.getMedicalRecords(contactId);
+      console.log(`📋 Retrieved ${records.length} medical records for contact ${contactId}`);
       res.json(records);
     } catch (error) {
       console.error("Error fetching medical records:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create medical record for a contact
+  app.post("/api/contacts/:contactId/medical-records", isAuthenticated, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      if (isNaN(contactId)) {
+        return res.status(400).json({ error: "Invalid contact ID" });
+      }
+
+      const userId = (req as any).user?.id;
+      const validatedData = insertMedicalRecordSchema.parse({
+        ...req.body,
+        contact_id: contactId,
+        created_by: userId,
+        updated_by: userId
+      });
+      
+      console.log('💾 Creating medical record:', validatedData);
+      const record = await storage.createMedicalRecord(validatedData);
+      console.log('✅ Medical record created successfully:', record);
+      res.status(201).json(record);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        console.error('❌ Validation error creating medical record:', error.errors);
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error creating medical record:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
