@@ -9,8 +9,26 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { User, Lock, Mail, Save, Eye, EyeOff, AlertTriangle } from "lucide-react";
-import { updateUserProfileSchema, type UpdateUserProfile } from "@shared/schema";
+import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
+
+// Esquemas separados para cada funcionalidade
+const updateProfileSchema = z.object({
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+  newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string().min(1, "Confirmação é obrigatória"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+type UpdateProfile = z.infer<typeof updateProfileSchema>;
+type ChangePassword = z.infer<typeof changePasswordSchema>;
 
 export function Perfil() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -24,31 +42,35 @@ export function Perfil() {
     queryKey: ["/api/user"],
   });
 
-  const form = useForm<UpdateUserProfile>({
-    resolver: zodResolver(updateUserProfileSchema),
+  // Form para informações pessoais
+  const profileForm = useForm<UpdateProfile>({
+    resolver: zodResolver(updateProfileSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
+    },
+  });
+
+  // Form para alteração de senha
+  const passwordForm = useForm<ChangePassword>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
-    mode: "onChange",
   });
 
   // Atualizar valores padrão quando user carregar
-  if (user && !form.getValues().name) {
-    form.reset({
+  if (user && !profileForm.getValues().name) {
+    profileForm.reset({
       name: user.name,
       email: user.email,
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
     });
   }
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: UpdateUserProfile) => {
+    mutationFn: async (data: UpdateProfile) => {
       const res = await apiRequest("PUT", "/api/user/profile", data);
       return await res.json();
     },
@@ -58,10 +80,6 @@ export function Perfil() {
         title: "Perfil atualizado",
         description: "Suas informações foram salvas com sucesso.",
       });
-      // Limpar campos de senha
-      form.setValue("currentPassword", "");
-      form.setValue("newPassword", "");
-      form.setValue("confirmPassword", "");
     },
     onError: (error: Error) => {
       toast({
@@ -72,17 +90,39 @@ export function Perfil() {
     },
   });
 
-  const onSubmit = (data: UpdateUserProfile) => {
-    // Limpar campos de senha vazios antes de enviar
-    const cleanData = {
-      name: data.name,
-      email: data.email,
-      currentPassword: data.currentPassword?.trim() || undefined,
-      newPassword: data.newPassword?.trim() || undefined,
-      confirmPassword: data.confirmPassword?.trim() || undefined,
-    };
-    
-    updateProfileMutation.mutate(cleanData);
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: ChangePassword) => {
+      const requestData = {
+        name: user?.name,
+        email: user?.email,
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      };
+      const res = await apiRequest("PUT", "/api/user/profile", requestData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Senha alterada",
+        description: "Sua senha foi alterada com sucesso.",
+      });
+      passwordForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onProfileSubmit = (data: UpdateProfile) => {
+    updateProfileMutation.mutate(data);
+  };
+
+  const onPasswordSubmit = (data: ChangePassword) => {
+    changePasswordMutation.mutate(data);
   };
 
   if (isLoading) {
@@ -103,7 +143,7 @@ export function Perfil() {
         <h1 className="text-2xl font-bold">Meu Perfil</h1>
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <div className="space-y-6">
         {/* Informações pessoais */}
         <Card>
           <CardHeader>
@@ -115,40 +155,53 @@ export function Perfil() {
               Atualize suas informações básicas de perfil
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome completo</Label>
-                <Input
-                  id="name"
-                  {...form.register("name")}
-                  placeholder="Seu nome completo"
-                />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
-                )}
+          <CardContent>
+            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome completo</Label>
+                  <Input
+                    id="name"
+                    {...profileForm.register("name")}
+                    placeholder="Seu nome completo"
+                  />
+                  {profileForm.formState.errors.name && (
+                    <p className="text-sm text-red-600">{profileForm.formState.errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...profileForm.register("email")}
+                    placeholder="seu@email.com"
+                  />
+                  {profileForm.formState.errors.email && (
+                    <p className="text-sm text-red-600">{profileForm.formState.errors.email.message}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...form.register("email")}
-                  placeholder="seu@email.com"
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
-                )}
+              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                <Mail className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-blue-700">
+                  Função: {user?.role === "admin" ? "Administrador" : "Usuário"}
+                </span>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-              <Mail className="w-4 h-4 text-blue-600" />
-              <span className="text-sm text-blue-700">
-                Função: {user?.role === "admin" ? "Administrador" : "Usuário"}
-              </span>
-            </div>
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={updateProfileMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {updateProfileMutation.isPending ? "Salvando..." : "Salvar informações"}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
 
@@ -162,117 +215,111 @@ export function Perfil() {
               Alterar Senha
             </CardTitle>
             <CardDescription>
-              Deixe os campos em branco se não quiser alterar a senha
+              Para sua segurança, todos os campos são obrigatórios para alterar a senha
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-blue-600" />
-              <span className="text-sm text-blue-700">
-                Os campos de senha são opcionais. Preencha apenas se quiser alterar sua senha atual.
-              </span>
-            </div>
+          <CardContent>
+            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Senha atual</Label>
+                <div className="relative">
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPassword ? "text" : "password"}
+                    {...passwordForm.register("currentPassword")}
+                    placeholder="Digite sua senha atual"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+                {passwordForm.formState.errors.currentPassword && (
+                  <p className="text-sm text-red-600">{passwordForm.formState.errors.currentPassword.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Senha atual</Label>
-              <div className="relative">
-                <Input
-                  id="currentPassword"
-                  type={showCurrentPassword ? "text" : "password"}
-                  {...form.register("currentPassword")}
-                  placeholder="Digite sua senha atual"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                >
-                  {showCurrentPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      {...passwordForm.register("newPassword")}
+                      placeholder="Digite a nova senha"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {passwordForm.formState.errors.newPassword && (
+                    <p className="text-sm text-red-600">{passwordForm.formState.errors.newPassword.message}</p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      {...passwordForm.register("confirmPassword")}
+                      placeholder="Confirme a nova senha"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {passwordForm.formState.errors.confirmPassword && (
+                    <p className="text-sm text-red-600">{passwordForm.formState.errors.confirmPassword.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={changePasswordMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Lock className="w-4 h-4" />
+                  {changePasswordMutation.isPending ? "Alterando..." : "Alterar senha"}
                 </Button>
               </div>
-              {form.formState.errors.currentPassword && (
-                <p className="text-sm text-red-600">{form.formState.errors.currentPassword.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">Nova senha</Label>
-                <div className="relative">
-                  <Input
-                    id="newPassword"
-                    type={showNewPassword ? "text" : "password"}
-                    {...form.register("newPassword")}
-                    placeholder="Digite a nova senha"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-                {form.formState.errors.newPassword && (
-                  <p className="text-sm text-red-600">{form.formState.errors.newPassword.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    {...form.register("confirmPassword")}
-                    placeholder="Confirme a nova senha"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-                {form.formState.errors.confirmPassword && (
-                  <p className="text-sm text-red-600">{form.formState.errors.confirmPassword.message}</p>
-                )}
-              </div>
-            </div>
+            </form>
           </CardContent>
         </Card>
-
-        {/* Botão de salvar */}
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={updateProfileMutation.isPending}
-            className="flex items-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            {updateProfileMutation.isPending ? "Salvando..." : "Salvar alterações"}
-          </Button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
