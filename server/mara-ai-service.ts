@@ -25,6 +25,14 @@ export class MaraAIService {
       apiKey: process.env.OPENAI_API_KEY
     });
     this.storage = storage;
+    
+    // Bind storage methods to preserve context
+    if (storage) {
+      this.storage.getContact = storage.getContact.bind(storage);
+      this.storage.getContactAppointments = storage.getContactAppointments.bind(storage);
+      this.storage.getContactMedicalRecords = storage.getContactMedicalRecords.bind(storage);
+      this.storage.getClinic = storage.getClinic.bind(storage);
+    }
   }
 
   async analyzeContact(contactId: number, question: string): Promise<MaraResponse> {
@@ -71,21 +79,38 @@ export class MaraAIService {
   }
 
   private async getContactContext(contactId: number): Promise<ContactContext> {
-    const contact = await this.storage.getContact(contactId);
-    const appointments = await this.storage.getContactAppointments(contactId);
-    const medicalRecords = await this.storage.getContactMedicalRecords(contactId);
-    
-    let clinicInfo = null;
-    if (contact?.clinic_id) {
-      clinicInfo = await this.storage.getClinic(contact.clinic_id);
-    }
+    try {
+      if (!this.storage) {
+        throw new Error('Storage not initialized');
+      }
 
-    return {
-      contact,
-      appointments,
-      medicalRecords,
-      clinicInfo
-    };
+      if (!this.storage.getContact) {
+        throw new Error('Storage.getContact method not available');
+      }
+
+      const contact = await this.storage.getContact(contactId);
+      if (!contact) {
+        throw new Error(`Contact ${contactId} not found`);
+      }
+
+      const appointments = await this.storage.getContactAppointments(contactId);
+      const medicalRecords = await this.storage.getContactMedicalRecords(contactId);
+      
+      let clinicInfo = null;
+      if (contact?.clinic_id) {
+        clinicInfo = await this.storage.getClinic(contact.clinic_id);
+      }
+
+      return {
+        contact,
+        appointments,
+        medicalRecords,
+        clinicInfo
+      };
+    } catch (error) {
+      console.error('Error in getContactContext:', error);
+      throw error;
+    }
   }
 
   private createSystemPrompt(context: ContactContext): string {
