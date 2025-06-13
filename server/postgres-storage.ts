@@ -53,13 +53,8 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    try {
-      const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-      return result[0];
-    } catch (error) {
-      console.error("Error getting user by email:", error);
-      return undefined;
-    }
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
