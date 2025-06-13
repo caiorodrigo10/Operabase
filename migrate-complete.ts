@@ -72,19 +72,14 @@ async function migrateToSupabaseComplete() {
       console.log(`✅ ${appointments.length} agendamentos migrados`);
     }
 
-    // 5. Medical records (depends on contacts)
-    console.log('Migrando prontuários...');
-    const medicalRecords = await localDb.select().from(schema.medicalRecords);
-    if (medicalRecords.length > 0) {
-      await supabaseDb.insert(schema.medicalRecords).values(medicalRecords);
-      console.log(`✅ ${medicalRecords.length} prontuários migrados`);
-    }
+    // 5. Medical records - skip as table doesn't exist in current schema
+    console.log('Pulando prontuários (tabela não existe no schema atual)...');
 
     // 6. Calendar integrations (depends on users)
     console.log('Migrando integrações de calendário...');
-    const calendarIntegrations = await localDb.select().from(schema.calendarIntegrations);
+    const calendarIntegrations = await localDb.select().from(schema.calendar_integrations);
     if (calendarIntegrations.length > 0) {
-      await supabaseDb.insert(schema.calendarIntegrations).values(calendarIntegrations);
+      await supabaseDb.insert(schema.calendar_integrations).values(calendarIntegrations);
       console.log(`✅ ${calendarIntegrations.length} integrações de calendário migradas`);
     }
 
@@ -106,25 +101,25 @@ async function migrateToSupabaseComplete() {
 
     // 9. Pipeline opportunities (depends on contacts)
     console.log('Migrando oportunidades do pipeline...');
-    const pipelineOpportunities = await localDb.select().from(schema.pipelineOpportunities);
+    const pipelineOpportunities = await localDb.select().from(schema.pipeline_opportunities);
     if (pipelineOpportunities.length > 0) {
-      await supabaseDb.insert(schema.pipelineOpportunities).values(pipelineOpportunities);
+      await supabaseDb.insert(schema.pipeline_opportunities).values(pipelineOpportunities);
       console.log(`✅ ${pipelineOpportunities.length} oportunidades do pipeline migradas`);
     }
 
     // 10. Pipeline activities (depends on pipeline opportunities)
     console.log('Migrando atividades do pipeline...');
-    const pipelineActivities = await localDb.select().from(schema.pipelineActivities);
+    const pipelineActivities = await localDb.select().from(schema.pipeline_activities);
     if (pipelineActivities.length > 0) {
-      await supabaseDb.insert(schema.pipelineActivities).values(pipelineActivities);
+      await supabaseDb.insert(schema.pipeline_activities).values(pipelineActivities);
       console.log(`✅ ${pipelineActivities.length} atividades do pipeline migradas`);
     }
 
     // 11. Pipeline history (depends on pipeline opportunities)
     console.log('Migrando histórico do pipeline...');
-    const pipelineHistory = await localDb.select().from(schema.pipelineHistory);
+    const pipelineHistory = await localDb.select().from(schema.pipeline_history);
     if (pipelineHistory.length > 0) {
-      await supabaseDb.insert(schema.pipelineHistory).values(pipelineHistory);
+      await supabaseDb.insert(schema.pipeline_history).values(pipelineHistory);
       console.log(`✅ ${pipelineHistory.length} registros de histórico migrados`);
     }
 
