@@ -821,12 +821,13 @@ export class PostgreSQLStorage implements IStorage {
       return result[0];
     } catch (error: any) {
       if (error.code === '23505' && error.constraint === 'medical_records_pkey') {
-        // Find the next available ID manually
-        const maxIdResult = await db.raw('SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM medical_records');
+        // Find the next available ID manually using pool directly
+        const { pool } = await import('./db');
+        const maxIdResult = await pool.query('SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM medical_records');
         const nextId = maxIdResult.rows[0].next_id;
         
         // Update sequence to the correct value
-        await db.raw('SELECT setval(\'medical_records_id_seq\', ?, true)', [nextId]);
+        await pool.query('SELECT setval($1, $2, true)', ['medical_records_id_seq', nextId]);
         
         // Try insertion again
         const retryResult = await db.insert(medical_records)
