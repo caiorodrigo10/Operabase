@@ -748,8 +748,12 @@ export class PostgreSQLStorage implements IStorage {
       console.log('📋 Generated SQL query:', query);
       console.log('📋 Query parameters:', values);
 
-      // Execute query using pool directly to avoid Drizzle SQL parsing issues
+      // Test direct connection first
+      console.log('🔍 Testing direct table existence...');
       const pool = (db as any)._.session.client;
+      const testResult = await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'calendar_integrations' AND column_name = 'sync_preference'");
+      console.log('🔍 Column exists in current connection:', testResult.rows.length > 0);
+      
       const result = await pool.query(query, values);
       console.log('✅ Update result:', result.rows[0]);
       
