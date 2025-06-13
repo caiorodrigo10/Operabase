@@ -28,7 +28,7 @@ export class SupabaseStorage implements IStorage {
     return user;
   }
 
-  async getUserByEmail(email: string): Promise<User | null> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('*')
@@ -38,10 +38,10 @@ export class SupabaseStorage implements IStorage {
     if (error && error.code !== 'PGRST116') {
       throw new Error(`Erro ao buscar usuário: ${error.message}`);
     }
-    return user || null;
+    return user || undefined;
   }
 
-  async getUserById(id: number): Promise<User | null> {
+  async getUserById(id: number): Promise<User | undefined> {
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('*')
@@ -51,7 +51,7 @@ export class SupabaseStorage implements IStorage {
     if (error && error.code !== 'PGRST116') {
       throw new Error(`Erro ao buscar usuário: ${error.message}`);
     }
-    return user || null;
+    return user || undefined;
   }
 
   // Clinics
