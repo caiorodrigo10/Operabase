@@ -119,25 +119,7 @@ export function ContatoDetalhes() {
   });
 
   const [isMaraLoading, setIsMaraLoading] = useState(false);
-  const [maraSuggestions, setMaraSuggestions] = useState<string[]>([]);
   const [maraError, setMaraError] = useState<string>("");
-
-  // Buscar sugestões da Mara AI
-  const { data: suggestions } = useQuery({
-    queryKey: ["/api/contacts", contactId, "mara", "suggestions"],
-    queryFn: async () => {
-      const response = await fetch(`/api/contacts/${contactId}/mara/suggestions`);
-      if (!response.ok) return { suggestions: [] };
-      return response.json();
-    },
-    enabled: !!contactId
-  });
-
-  useEffect(() => {
-    if (suggestions?.suggestions) {
-      setMaraSuggestions(suggestions.suggestions);
-    }
-  }, [suggestions]);
 
   const sendMaraMessage = async () => {
     if (!maraMessage.trim() || isMaraLoading) return;
@@ -172,11 +154,7 @@ export function ContatoDetalhes() {
       const aiResponse = {
         role: 'assistant' as const,
         content: data.response,
-        timestamp: new Date(),
-        confidence: data.confidence,
-        sources: data.sources,
-        recommendations: data.recommendations,
-        attention_points: data.attention_points
+        timestamp: new Date()
       };
       
       setMaraConversation(prev => [...prev, aiResponse]);
@@ -197,9 +175,7 @@ export function ContatoDetalhes() {
     }
   };
 
-  const sendSuggestion = (suggestion: string) => {
-    setMaraMessage(suggestion);
-  };
+
 
   if (contactLoading) {
     return (
@@ -392,26 +368,7 @@ export function ContatoDetalhes() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Sugestões de perguntas */}
-                  {maraSuggestions.length > 0 && (
-                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4" />
-                        Sugestões para conversar com a Mara
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {maraSuggestions.slice(0, 4).map((suggestion, index) => (
-                          <button
-                            key={index}
-                            onClick={() => sendSuggestion(suggestion)}
-                            className="text-xs bg-white/80 hover:bg-white border border-purple-200 hover:border-purple-300 px-3 py-1 rounded-full transition-colors"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Área de conversa */}
                   <div className="h-96 border rounded-lg p-4 overflow-y-auto bg-slate-50 space-y-4">

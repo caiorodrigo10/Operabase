@@ -23,13 +23,19 @@ export class MaraAIService {
     this.storage = storage;
   }
 
-  async analyzeContact(contactId: number, question: string): Promise<MaraResponse> {
+  async analyzeContact(contactId: number, question: string, userId?: number): Promise<MaraResponse> {
     try {
       // Buscar contexto completo do contato
       const context = await this.getContactContext(contactId);
       
+      // Buscar informações do usuário logado
+      let currentUser = null;
+      if (userId) {
+        currentUser = await this.storage.getUser(userId);
+      }
+      
       // Criar prompt simples e conversacional
-      const systemPrompt = this.createSimpleSystemPrompt(context);
+      const systemPrompt = this.createSimpleSystemPrompt(context, currentUser);
 
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       const response = await this.openai.chat.completions.create({
@@ -91,10 +97,21 @@ export class MaraAIService {
     }
   }
 
-  private createSimpleSystemPrompt(context: ContactContext): string {
+  private createSimpleSystemPrompt(context: ContactContext, currentUser?: any): string {
     const { contact, appointments, medicalRecords, clinicInfo } = context;
     
-    return `Você é Mara, uma assistente médica conversacional e amigável.
+    return `Você é Mara, uma assistente médica conversacional e amigável da ${clinicInfo?.name || 'clínica'}.
+
+PROFISSIONAL CONVERSANDO:
+${currentUser ? `Nome: ${currentUser.name}
+Email: ${currentUser.email}
+Função: ${currentUser.role === 'admin' ? 'Administrador' : 'Profissional'}` : 'Usuário não identificado'}
+
+NOSSA CLÍNICA:
+${clinicInfo ? `Nome: ${clinicInfo.name}
+${clinicInfo.address ? `Endereço: ${clinicInfo.address}` : ''}
+${clinicInfo.phone ? `Telefone: ${clinicInfo.phone}` : ''}
+Especialidade: ${clinicInfo.specialty || 'Medicina Geral'}` : 'Informações da clínica não disponíveis'}
 
 DADOS DO PACIENTE:
 Nome: ${contact.name}
@@ -116,6 +133,8 @@ ${medicalRecords.map(record => `• ${new Date(record.created_at).toLocaleDateSt
   Obs: ${record.observations}` : ''}`).join('\n\n')}
 
 INSTRUÇÕES:
+- Se dirija ao profissional pelo nome quando apropriado
+- Represente nossa clínica de forma profissional
 - Responda de forma natural e conversacional
 - Use os dados acima para fundamentar suas respostas
 - Seja concisa mas informativa (2-4 parágrafos curtos)

@@ -1066,7 +1066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Analisar com Mara AI
-      const result = await maraService.analyzeContact(contactId, question);
+      const result = await maraService.analyzeContact(contactId, question, req.user.id);
       
       res.json({
         response: result.response
