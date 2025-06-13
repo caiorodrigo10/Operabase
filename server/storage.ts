@@ -918,6 +918,197 @@ export class MemStorage implements IStorage {
       outcome: outcome
     });
   }
+
+  // Medical Records (stub implementations for MemStorage)
+  async getMedicalRecords(contactId: number): Promise<MedicalRecord[]> {
+    return [];
+  }
+
+  async getMedicalRecord(id: number): Promise<MedicalRecord | undefined> {
+    return undefined;
+  }
+
+  async getMedicalRecordByAppointment(appointmentId: number): Promise<MedicalRecord | undefined> {
+    return undefined;
+  }
+
+  async createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord> {
+    const id = this.currentId++;
+    const newRecord: MedicalRecord = {
+      id,
+      ...record,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    return newRecord;
+  }
+
+  async updateMedicalRecord(id: number, updates: Partial<InsertMedicalRecord>): Promise<MedicalRecord | undefined> {
+    return undefined;
+  }
+
+  // Password Reset Tokens
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const id = this.currentId++;
+    const newToken: PasswordResetToken = {
+      id,
+      ...token,
+      created_at: new Date(),
+    };
+    this.passwordResetTokens.set(id, newToken);
+    return newToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    return Array.from(this.passwordResetTokens.values()).find(
+      (resetToken) => resetToken.token === token
+    );
+  }
+
+  async markPasswordResetTokenAsUsed(id: number): Promise<void> {
+    const token = this.passwordResetTokens.get(id);
+    if (token) {
+      this.passwordResetTokens.set(id, { ...token, used: true });
+    }
+  }
+
+  // Financial Operations (stub implementations for MemStorage)
+  async getCustomers(clinicId: number, filters?: { search?: string }): Promise<Customer[]> {
+    return [];
+  }
+  
+  async getCustomer(id: number): Promise<Customer | undefined> {
+    return undefined;
+  }
+  
+  async getCustomerByAsaasId(asaasCustomerId: string): Promise<Customer | undefined> {
+    return undefined;
+  }
+  
+  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
+    throw new Error("MemStorage does not support financial operations");
+  }
+  
+  async updateCustomer(id: number, updates: Partial<InsertCustomer>): Promise<Customer | undefined> {
+    return undefined;
+  }
+
+  async getCharges(clinicId: number, filters?: any): Promise<Charge[]> {
+    return [];
+  }
+  
+  async getCharge(id: number): Promise<Charge | undefined> {
+    return undefined;
+  }
+  
+  async getChargeByAsaasId(asaasChargeId: string): Promise<Charge | undefined> {
+    return undefined;
+  }
+  
+  async createCharge(insertCharge: InsertCharge): Promise<Charge> {
+    throw new Error("MemStorage does not support financial operations");
+  }
+  
+  async updateCharge(id: number, updates: Partial<InsertCharge>): Promise<Charge | undefined> {
+    return undefined;
+  }
+
+  async getSubscriptions(clinicId: number, filters?: any): Promise<Subscription[]> {
+    return [];
+  }
+  
+  async getSubscription(id: number): Promise<Subscription | undefined> {
+    return undefined;
+  }
+  
+  async getSubscriptionByAsaasId(asaasSubscriptionId: string): Promise<Subscription | undefined> {
+    return undefined;
+  }
+  
+  async createSubscription(insertSubscription: InsertSubscription): Promise<Subscription> {
+    throw new Error("MemStorage does not support financial operations");
+  }
+  
+  async updateSubscription(id: number, updates: Partial<InsertSubscription>): Promise<Subscription | undefined> {
+    return undefined;
+  }
+
+  async getPayments(clinicId: number, filters?: any): Promise<Payment[]> {
+    return [];
+  }
+  
+  async getPayment(id: number): Promise<Payment | undefined> {
+    return undefined;
+  }
+  
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    throw new Error("MemStorage does not support financial operations");
+  }
+
+  async getFinancialTransactions(clinicId: number, filters?: any): Promise<FinancialTransaction[]> {
+    return [];
+  }
+  
+  async getFinancialTransaction(id: number): Promise<FinancialTransaction | undefined> {
+    return undefined;
+  }
+  
+  async createFinancialTransaction(insertTransaction: InsertFinancialTransaction): Promise<FinancialTransaction> {
+    throw new Error("MemStorage does not support financial operations");
+  }
+  
+  async updateFinancialTransaction(id: number, updates: Partial<InsertFinancialTransaction>): Promise<FinancialTransaction | undefined> {
+    return undefined;
+  }
+
+  async getFinancialReports(clinicId: number, filters?: any): Promise<FinancialReport[]> {
+    return [];
+  }
+  
+  async getFinancialReport(id: number): Promise<FinancialReport | undefined> {
+    return undefined;
+  }
+  
+  async createFinancialReport(insertReport: InsertFinancialReport): Promise<FinancialReport> {
+    throw new Error("MemStorage does not support financial operations");
+  }
+
+  async getFinancialSummary(clinicId: number, dateRange: { start: Date; end: Date }): Promise<any> {
+    return {
+      totalIncome: 0,
+      totalExpenses: 0,
+      netProfit: 0,
+      pendingCharges: 0,
+      overdueCharges: 0,
+      monthlyRecurringRevenue: 0,
+      recentTransactions: [],
+      chargesByStatus: []
+    };
+  }
+
+  async getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]> {
+    return [];
+  }
+  
+  async getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined> {
+    return undefined;
+  }
+  
+  async getCalendarIntegrationByUserAndProvider(userId: number, provider: string, email: string): Promise<CalendarIntegration | undefined> {
+    return undefined;
+  }
+  
+  async createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration> {
+    throw new Error("MemStorage does not support calendar integrations");
+  }
+  
+  async updateCalendarIntegration(id: number, updates: Partial<InsertCalendarIntegration>): Promise<CalendarIntegration | undefined> {
+    return undefined;
+  }
+  
+  async deleteCalendarIntegration(id: number): Promise<boolean> {
+    return false;
+  }
 }
 
 import { postgresStorage } from "./postgres-storage";
