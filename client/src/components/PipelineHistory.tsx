@@ -284,7 +284,7 @@ export function PipelineHistory() {
             </div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Histórico do Funil Vazio</h3>
             <p className="text-gray-500 mb-4 max-w-md mx-auto">
-              Quando você começar a movimentar contatos no pipeline, todas as atividades aparecerão aqui
+              Quando você começar a movimentar contatos no funil, todas as atividades aparecerão aqui
             </p>
             <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
               <div className="flex items-center gap-1">

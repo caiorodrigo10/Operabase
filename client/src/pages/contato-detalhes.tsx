@@ -515,7 +515,7 @@ export function ContatoDetalhes() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Activity className="w-5 h-5" />
-                    Histórico do Pipeline
+                    Histórico do Funil
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
