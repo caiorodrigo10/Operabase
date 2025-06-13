@@ -26,16 +26,14 @@ const pageTitles = {
 
 export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
   const pageTitle = pageTitles[currentPage as keyof typeof pageTitles] || "Dashboard";
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/logout");
-      return response.json();
+      await signOut();
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Logout realizado com sucesso",
         description: "Você foi desconectado do sistema",
