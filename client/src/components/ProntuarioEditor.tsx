@@ -1,29 +1,16 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import MarkdownRenderer from "./MarkdownRenderer";
+import RichTextEditor from "./RichTextEditor";
 import { 
-  Bold, 
-  Italic, 
-  Underline, 
-  List, 
-  ListOrdered, 
-  Quote,
-  Heading1,
-  Heading2,
-  Heading3,
   Save,
   X,
-  FileText,
-  Eye,
-  Edit
+  FileText
 } from "lucide-react";
 
 interface ProntuarioEditorProps {
@@ -231,28 +218,6 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
     }
   };
 
-  const insertFormatting = (prefix: string, suffix: string = "") => {
-    if (!textareaRef.current) return;
-    
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    
-    const newText = content.substring(0, start) + 
-                   prefix + selectedText + suffix + 
-                   content.substring(end);
-    
-    setContent(newText);
-    
-    // Restaurar posição do cursor
-    setTimeout(() => {
-      textarea.focus();
-      const newPosition = start + prefix.length + selectedText.length + suffix.length;
-      textarea.setSelectionRange(newPosition, newPosition);
-    }, 0);
-  };
-
   const handleSave = () => {
     if (!content.trim()) {
       toast({
@@ -280,18 +245,6 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
 
     createRecordMutation.mutate(recordData);
   };
-
-  const formatButtons = [
-    { icon: <Bold className="w-4 h-4" />, action: () => insertFormatting("**", "**"), title: "Negrito" },
-    { icon: <Italic className="w-4 h-4" />, action: () => insertFormatting("*", "*"), title: "Itálico" },
-    { icon: <Underline className="w-4 h-4" />, action: () => insertFormatting("<u>", "</u>"), title: "Sublinhado" },
-    { icon: <Heading1 className="w-4 h-4" />, action: () => insertFormatting("# "), title: "Título 1" },
-    { icon: <Heading2 className="w-4 h-4" />, action: () => insertFormatting("## "), title: "Título 2" },
-    { icon: <Heading3 className="w-4 h-4" />, action: () => insertFormatting("### "), title: "Título 3" },
-    { icon: <List className="w-4 h-4" />, action: () => insertFormatting("- "), title: "Lista" },
-    { icon: <ListOrdered className="w-4 h-4" />, action: () => insertFormatting("1. "), title: "Lista Numerada" },
-    { icon: <Quote className="w-4 h-4" />, action: () => insertFormatting("> "), title: "Citação" },
-  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -351,87 +304,18 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
             </div>
           )}
 
-          {/* Barra de Formatação */}
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Formatação de Texto</Label>
-            <div className="flex flex-wrap gap-1 p-2 bg-gray-50 rounded-lg border">
-              {formatButtons.map((button, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  size="sm"
-                  onClick={button.action}
-                  title={button.title}
-                  className="h-8 w-8 p-0"
-                >
-                  {button.icon}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Editor com Tabs */}
+          {/* Editor Rico */}
           <div>
             <Label className="text-sm font-medium mb-3 block">Conteúdo da Nota</Label>
-            <Tabs defaultValue="editor" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="editor" className="flex items-center gap-2">
-                  <Edit className="w-4 h-4" />
-                  Editar
-                </TabsTrigger>
-                <TabsTrigger value="preview" className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  Visualizar
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="editor" className="mt-4">
-                <div>
-                  {/* Barra de Formatação */}
-                  <div className="flex flex-wrap gap-1 p-2 bg-gray-50 rounded-t-lg border border-b-0">
-                    {formatButtons.map((button, index) => (
-                      <Button
-                        key={index}
-                        variant="ghost"
-                        size="sm"
-                        onClick={button.action}
-                        title={button.title}
-                        className="h-8 w-8 p-0"
-                      >
-                        {button.icon}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  {/* Área de Texto */}
-                  <Textarea
-                    ref={textareaRef}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Digite sua nota médica aqui... Use os templates acima para facilitar o preenchimento."
-                    rows={25}
-                    className="font-mono text-sm resize-none rounded-t-none border-t-0"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Dica: Use markdown para formatação (**, *, -, etc.) ou os botões de formatação acima
-                  </p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="preview" className="mt-4">
-                <div className="min-h-[400px] max-h-[600px] overflow-y-auto border rounded-lg p-4 bg-white">
-                  {content ? (
-                    <MarkdownRenderer content={content} />
-                  ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p>Nenhum conteúdo para visualizar</p>
-                      <p className="text-sm">Digite algum texto na aba "Editar" para ver a prévia aqui</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
+            <RichTextEditor
+              value={content}
+              onChange={setContent}
+              placeholder="Digite sua nota médica aqui... Use os templates acima para facilitar o preenchimento."
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Use os botões de formatação ou digite diretamente. O texto será formatado automaticamente.
+            </p>
           </div>
 
           {/* Ações */}
