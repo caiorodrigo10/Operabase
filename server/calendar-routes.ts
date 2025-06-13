@@ -681,7 +681,10 @@ export async function updateLinkedCalendarSettings(req: any, res: Response) {
     console.log('🔄 Atualizando configurações do calendário vinculado:', {
       integrationId,
       linkedCalendarId,
-      addEventsToCalendar
+      addEventsToCalendar,
+      body: req.body,
+      method: req.method,
+      url: req.url
     });
 
     if (isNaN(integrationId)) {

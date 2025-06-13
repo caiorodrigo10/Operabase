@@ -166,18 +166,28 @@ export function Configuracoes() {
     }) => {
       const response = await apiRequest("PUT", `/api/calendar/integrations/${integrationId}/linked-calendar`, {
         linkedCalendarId: addEventsToCalendar === "google-account" ? linkedCalendarId : null,
-        addEventsToCalendar: addEventsToCalendar === "google-account" ? linkedCalendarId : null
+        addEventsToCalendar: addEventsToCalendar
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Configuração do calendário salva com sucesso:', data);
       refetchIntegrations();
       setShowLinkedCalendarDialog(false);
       setLinkedCalendarId("");
       setAddEventsToCalendar("");
+      toast({
+        title: "Configuração salva",
+        description: "As configurações do calendário foram atualizadas com sucesso.",
+      });
     },
     onError: (error) => {
-      console.error('Erro ao salvar configurações do calendário vinculado:', error);
+      console.error('❌ Erro ao salvar configurações do calendário vinculado:', error);
+      toast({
+        title: "Erro ao salvar configuração",
+        description: "Não foi possível atualizar as configurações do calendário.",
+        variant: "destructive",
+      });
     }
   });
 
