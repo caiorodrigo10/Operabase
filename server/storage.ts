@@ -15,12 +15,6 @@ import {
   type PipelineActivity, type InsertPipelineActivity,
   type ClinicUser, type InsertClinicUser,
   type ClinicInvitation, type InsertClinicInvitation,
-  type Customer, type InsertCustomer,
-  type Charge, type InsertCharge,
-  type Subscription, type InsertSubscription,
-  type Payment, type InsertPayment,
-  type FinancialTransaction, type InsertFinancialTransaction,
-  type FinancialReport, type InsertFinancialReport,
   type CalendarIntegration, type InsertCalendarIntegration,
   type MedicalRecord, type InsertMedicalRecord,
   type PasswordResetToken, type InsertPasswordResetToken,
@@ -106,64 +100,7 @@ export interface IStorage {
   updatePipelineActivity(id: number, activity: Partial<InsertPipelineActivity>): Promise<PipelineActivity | undefined>;
   completePipelineActivity(id: number, outcome?: string): Promise<PipelineActivity | undefined>;
 
-  // Financial Operations
-  getCustomers(clinicId: number, filters?: { search?: string }): Promise<Customer[]>;
-  getCustomer(id: number): Promise<Customer | undefined>;
-  getCustomerByAsaasId(asaasCustomerId: string): Promise<Customer | undefined>;
-  createCustomer(insertCustomer: InsertCustomer): Promise<Customer>;
-  updateCustomer(id: number, updates: Partial<InsertCustomer>): Promise<Customer | undefined>;
 
-  getCharges(clinicId: number, filters?: { 
-    customerId?: number; 
-    status?: string; 
-    billingType?: string;
-    dateRange?: { start: Date; end: Date };
-  }): Promise<Charge[]>;
-  getCharge(id: number): Promise<Charge | undefined>;
-  getChargeByAsaasId(asaasChargeId: string): Promise<Charge | undefined>;
-  createCharge(insertCharge: InsertCharge): Promise<Charge>;
-  updateCharge(id: number, updates: Partial<InsertCharge>): Promise<Charge | undefined>;
-
-  getSubscriptions(clinicId: number, filters?: { customerId?: number; status?: string }): Promise<Subscription[]>;
-  getSubscription(id: number): Promise<Subscription | undefined>;
-  getSubscriptionByAsaasId(asaasSubscriptionId: string): Promise<Subscription | undefined>;
-  createSubscription(insertSubscription: InsertSubscription): Promise<Subscription>;
-  updateSubscription(id: number, updates: Partial<InsertSubscription>): Promise<Subscription | undefined>;
-
-  getPayments(clinicId: number, filters?: { 
-    chargeId?: number;
-    dateRange?: { start: Date; end: Date };
-  }): Promise<Payment[]>;
-  getPayment(id: number): Promise<Payment | undefined>;
-  createPayment(insertPayment: InsertPayment): Promise<Payment>;
-
-  getFinancialTransactions(clinicId: number, filters?: {
-    type?: string;
-    category?: string;
-    dateRange?: { start: Date; end: Date };
-  }): Promise<FinancialTransaction[]>;
-  getFinancialTransaction(id: number): Promise<FinancialTransaction | undefined>;
-  createFinancialTransaction(insertTransaction: InsertFinancialTransaction): Promise<FinancialTransaction>;
-  updateFinancialTransaction(id: number, updates: Partial<InsertFinancialTransaction>): Promise<FinancialTransaction | undefined>;
-
-  getFinancialReports(clinicId: number, filters?: {
-    reportType?: string;
-    dateRange?: { start: Date; end: Date };
-  }): Promise<FinancialReport[]>;
-  getFinancialReport(id: number): Promise<FinancialReport | undefined>;
-  createFinancialReport(insertReport: InsertFinancialReport): Promise<FinancialReport>;
-
-  // Financial dashboard methods
-  getFinancialDashboard(clinicId: number, dateRange?: { start: Date; end: Date }): Promise<{
-    totalRevenue: number;
-    totalExpenses: number;
-    netProfit: number;
-    pendingCharges: number;
-    overdueCharges: number;
-    monthlyRecurringRevenue: number;
-    recentTransactions: FinancialTransaction[];
-    chargesByStatus: { status: string; count: number; value: number }[];
-  }>;
 
   // Calendar Integrations
   getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]>;
@@ -972,119 +909,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  // Financial Operations (stub implementations for MemStorage)
-  async getCustomers(clinicId: number, filters?: { search?: string }): Promise<Customer[]> {
-    return [];
-  }
-  
-  async getCustomer(id: number): Promise<Customer | undefined> {
-    return undefined;
-  }
-  
-  async getCustomerByAsaasId(asaasCustomerId: string): Promise<Customer | undefined> {
-    return undefined;
-  }
-  
-  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
-    throw new Error("MemStorage does not support financial operations");
-  }
-  
-  async updateCustomer(id: number, updates: Partial<InsertCustomer>): Promise<Customer | undefined> {
-    return undefined;
-  }
 
-  async getCharges(clinicId: number, filters?: any): Promise<Charge[]> {
-    return [];
-  }
-  
-  async getCharge(id: number): Promise<Charge | undefined> {
-    return undefined;
-  }
-  
-  async getChargeByAsaasId(asaasChargeId: string): Promise<Charge | undefined> {
-    return undefined;
-  }
-  
-  async createCharge(insertCharge: InsertCharge): Promise<Charge> {
-    throw new Error("MemStorage does not support financial operations");
-  }
-  
-  async updateCharge(id: number, updates: Partial<InsertCharge>): Promise<Charge | undefined> {
-    return undefined;
-  }
-
-  async getSubscriptions(clinicId: number, filters?: any): Promise<Subscription[]> {
-    return [];
-  }
-  
-  async getSubscription(id: number): Promise<Subscription | undefined> {
-    return undefined;
-  }
-  
-  async getSubscriptionByAsaasId(asaasSubscriptionId: string): Promise<Subscription | undefined> {
-    return undefined;
-  }
-  
-  async createSubscription(insertSubscription: InsertSubscription): Promise<Subscription> {
-    throw new Error("MemStorage does not support financial operations");
-  }
-  
-  async updateSubscription(id: number, updates: Partial<InsertSubscription>): Promise<Subscription | undefined> {
-    return undefined;
-  }
-
-  async getPayments(clinicId: number, filters?: any): Promise<Payment[]> {
-    return [];
-  }
-  
-  async getPayment(id: number): Promise<Payment | undefined> {
-    return undefined;
-  }
-  
-  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
-    throw new Error("MemStorage does not support financial operations");
-  }
-
-  async getFinancialTransactions(clinicId: number, filters?: any): Promise<FinancialTransaction[]> {
-    return [];
-  }
-  
-  async getFinancialTransaction(id: number): Promise<FinancialTransaction | undefined> {
-    return undefined;
-  }
-  
-  async createFinancialTransaction(insertTransaction: InsertFinancialTransaction): Promise<FinancialTransaction> {
-    throw new Error("MemStorage does not support financial operations");
-  }
-  
-  async updateFinancialTransaction(id: number, updates: Partial<InsertFinancialTransaction>): Promise<FinancialTransaction | undefined> {
-    return undefined;
-  }
-
-  async getFinancialReports(clinicId: number, filters?: any): Promise<FinancialReport[]> {
-    return [];
-  }
-  
-  async getFinancialReport(id: number): Promise<FinancialReport | undefined> {
-    return undefined;
-  }
-  
-  async createFinancialReport(insertReport: InsertFinancialReport): Promise<FinancialReport> {
-    throw new Error("MemStorage does not support financial operations");
-  }
-
-  async getFinancialSummary(clinicId: number, dateRange: { start: Date; end: Date }): Promise<any> {
-    return {
-      totalIncome: 0,
-      totalExpenses: 0,
-      netProfit: 0,
-      pendingCharges: 0,
-      overdueCharges: 0,
-      monthlyRecurringRevenue: 0,
-      recentTransactions: [],
-      chargesByStatus: []
-    };
-  }
 
   async getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]> {
     return [];
