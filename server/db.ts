@@ -5,11 +5,19 @@ import * as schema from "@shared/schema";
 // Create database connection - use Supabase if URL is provided
 let connectionString = process.env.DATABASE_URL;
 
-if (process.env.SUPABASE_DATABASE_URL) {
-  // Use Supabase URL directly, just encode the # character
-  connectionString = process.env.SUPABASE_DATABASE_URL.replace('#', '%23');
-  console.log('🔗 Conectando ao Supabase database...');
+if (process.env.SUPABASE_POOLER_URL) {
+  // Use Supabase pooler URL (preferred)
+  connectionString = process.env.SUPABASE_POOLER_URL;
+  console.log('🔗 Conectando ao Supabase database (pooler)...');
   console.log('🔍 Connection string format:', connectionString.split('@')[0] + '@[hidden]');
+} else if (process.env.SUPABASE_CONNECTION_STRING) {
+  // Use Supabase connection string
+  connectionString = process.env.SUPABASE_CONNECTION_STRING;
+  console.log('🔗 Conectando ao Supabase database...');
+} else if (process.env.SUPABASE_DATABASE_URL) {
+  // Fallback to old URL with encoding
+  connectionString = process.env.SUPABASE_DATABASE_URL.replace('#', '%23');
+  console.log('🔗 Conectando ao Supabase database (fallback)...');
 } else {
   console.log('🔗 Usando PostgreSQL local...');
 }
