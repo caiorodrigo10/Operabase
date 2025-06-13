@@ -1069,11 +1069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await maraService.analyzeContact(contactId, question);
       
       res.json({
-        response: result.response,
-        confidence: result.confidence,
-        sources: result.sources,
-        recommendations: result.recommendations,
-        attention_points: result.attention_points
+        response: result.response
       });
       
     } catch (error) {
