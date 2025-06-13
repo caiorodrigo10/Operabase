@@ -374,23 +374,24 @@ export const calendar_integrations = pgTable("calendar_integrations", {
   id: serial("id").primaryKey(),
   user_id: integer("user_id").references(() => users.id).notNull(),
   clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
-  provider: text("provider").notNull().default("google"), // google, outlook, icloud
-  provider_user_id: text("provider_user_id"),
+  provider: text("provider").notNull(),
   email: text("email"),
-  calendar_id: text("calendar_id"),
-  calendar_name: text("calendar_name"),
   access_token: text("access_token"),
   refresh_token: text("refresh_token"),
   token_expires_at: timestamp("token_expires_at"),
+  calendar_id: text("calendar_id"),
+  sync_preference: text("sync_preference").default("one-way"),
   is_active: boolean("is_active").default(true),
-  sync_enabled: boolean("sync_enabled").default(true),
-  last_sync_at: timestamp("last_sync_at"),
-  sync_errors: text("sync_errors"), // Changed from jsonb to text to match Supabase
+  last_sync: timestamp("last_sync"),
+  sync_errors: text("sync_errors"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
+  calendar_name: text("calendar_name"),
+  ical_uid: text("ical_uid"),
 }, (table) => [
   index("idx_calendar_user").on(table.user_id),
   index("idx_calendar_clinic").on(table.clinic_id),
+  unique().on(table.user_id, table.email, table.provider),
 ]);
 
 export const insertCalendarIntegrationSchema = createInsertSchema(calendar_integrations).omit({
