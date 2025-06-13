@@ -1114,42 +1114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sugestões da Mara AI para o paciente
-  app.get('/api/contacts/:contactId/mara/suggestions', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const contactId = parseInt(req.params.contactId);
 
-      // Verificar se o contato existe e pertence ao usuário
-      const contact = await storage.getContact(contactId);
-      if (!contact) {
-        return res.status(404).json({ error: 'Contato não encontrado' });
-      }
-
-      // Verificar permissão do usuário para acessar este contato
-      const userClinics = await storage.getUserClinics(req.user.id);
-      const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
-      
-      if (!hasAccess) {
-        return res.status(403).json({ error: 'Acesso negado a este contato' });
-      }
-
-      // Gerar sugestões com Mara AI
-      const result = await maraService.analyzeContact(contactId, 
-        'Com base no histórico deste paciente, quais são suas principais recomendações para próximos passos e cuidados?'
-      );
-      
-      res.json({
-        suggestions: [result.response]
-      });
-      
-    } catch (error) {
-      console.error('Erro ao gerar sugestões com Mara AI:', error);
-      res.status(500).json({ 
-        error: 'Erro interno do servidor',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
-      });
-    }
-  });
 
   // ============ GOOGLE CALENDAR INTEGRATION ============
   
