@@ -29,155 +29,163 @@ const medicalTemplates = [
   {
     id: "consultation",
     name: "Consulta Médica",
-    template: `# Consulta Médica
+    template: `<h1>Consulta Médica</h1>
+<p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
 
-**Data:** ${new Date().toLocaleDateString('pt-BR')}
+<h2>Queixa Principal</h2>
+<p><br></p>
 
-## Queixa Principal
+<h2>História da Doença Atual</h2>
+<p><br></p>
 
+<h2>Exame Físico</h2>
+<ul>
+<li><strong>Geral:</strong> </li>
+<li><strong>Sinais Vitais:</strong> PA: ___/___mmHg | FC: ___bpm | T: ___°C | Peso: ___kg</li>
+<li><strong>Específico:</strong> </li>
+</ul>
 
-## História da Doença Atual
+<h2>Hipóteses Diagnósticas</h2>
+<ol>
+<li></li>
+<li></li>
+</ol>
 
+<h2>Conduta</h2>
+<ul>
+<li><strong>Medicações:</strong> </li>
+<li><strong>Exames:</strong> </li>
+<li><strong>Orientações:</strong> </li>
+</ul>
 
-## Exame Físico
-- **Geral:** 
-- **Sinais Vitais:** PA: ___/___mmHg | FC: ___bpm | T: ___°C | Peso: ___kg
-- **Específico:** 
-
-## Hipóteses Diagnósticas
-1. 
-2. 
-
-## Conduta
-- **Medicações:** 
-- **Exames:** 
-- **Orientações:** 
-
-## Retorno
-`
+<h2>Retorno</h2>
+<p><br></p>`
   },
   {
     id: "followup",
     name: "Consulta de Retorno",
-    template: `# Consulta de Retorno
+    template: `<h1>Consulta de Retorno</h1>
+<p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
 
-**Data:** ${new Date().toLocaleDateString('pt-BR')}
+<h2>Evolução</h2>
+<p><br></p>
 
-## Evolução
+<h2>Adesão ao Tratamento</h2>
+<p><br></p>
 
+<h2>Exame Atual</h2>
+<p><br></p>
 
-## Adesão ao Tratamento
+<h2>Ajustes na Conduta</h2>
+<p><br></p>
 
-
-## Exame Atual
-
-
-## Ajustes na Conduta
-
-
-## Próximo Retorno
-`
+<h2>Próximo Retorno</h2>
+<p><br></p>`
   },
   {
     id: "pediatric",
     name: "Consulta Pediátrica",
-    template: `# Consulta Pediátrica
+    template: `<h1>Consulta Pediátrica</h1>
+<p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+<p><strong>Idade:</strong> </p>
 
-**Data:** ${new Date().toLocaleDateString('pt-BR')}
-**Idade:** 
+<h2>Queixa dos Responsáveis</h2>
+<p><br></p>
 
-## Queixa dos Responsáveis
+<h2>Desenvolvimento</h2>
+<ul>
+<li><strong>Peso:</strong> ___kg (P___)</li>
+<li><strong>Altura:</strong> ___cm (P___)</li>
+<li><strong>PC:</strong> ___cm (P___)</li>
+<li><strong>Marcos do desenvolvimento:</strong> </li>
+</ul>
 
+<h2>Exame Físico</h2>
+<p><br></p>
 
-## Desenvolvimento
-- **Peso:** ___kg (P___)
-- **Altura:** ___cm (P___)
-- **PC:** ___cm (P___)
-- **Marcos do desenvolvimento:** 
+<h2>Vacinas</h2>
+<ul>
+<li><strong>Em dia:</strong> Sim / Não</li>
+<li><strong>Observações:</strong> </li>
+</ul>
 
-## Exame Físico
+<h2>Conduta</h2>
+<p><br></p>
 
-
-## Vacinas
-- **Em dia:** Sim / Não
-- **Observações:** 
-
-## Conduta
-
-
-## Retorno
-`
+<h2>Retorno</h2>
+<p><br></p>`
   },
   {
     id: "emergency",
     name: "Atendimento de Emergência",
-    template: `# Atendimento de Emergência
+    template: `<h1>Atendimento de Emergência</h1>
+<p><strong>Data/Hora:</strong> ${new Date().toLocaleString('pt-BR')}</p>
 
-**Data/Hora:** ${new Date().toLocaleString('pt-BR')}
+<h2>Motivo da Consulta</h2>
+<p><br></p>
 
-## Motivo da Consulta
+<h2>Estado Geral</h2>
+<ul>
+<li><strong>Consciente:</strong> Sim / Não</li>
+<li><strong>Orientado:</strong> Sim / Não</li>
+<li><strong>Sinais Vitais:</strong> PA: ___/___mmHg | FC: ___bpm | T: ___°C | SatO2: ___%</li>
+</ul>
 
+<h2>Avaliação Inicial</h2>
+<p><br></p>
 
-## Estado Geral
-- **Consciente:** Sim / Não
-- **Orientado:** Sim / Não
-- **Sinais Vitais:** PA: ___/___mmHg | FC: ___bpm | T: ___°C | SatO2: ___%
+<h2>Hipótese Diagnóstica</h2>
+<p><br></p>
 
-## Avaliação Inicial
+<h2>Conduta Imediata</h2>
+<p><br></p>
 
-
-## Hipótese Diagnóstica
-
-
-## Conduta Imediata
-
-
-## Evolução/Desfecho
-`
+<h2>Evolução/Desfecho</h2>
+<p><br></p>`
   },
   {
     id: "procedure",
     name: "Procedimento",
-    template: `# Procedimento
+    template: `<h1>Procedimento</h1>
+<p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+<p><strong>Procedimento:</strong> </p>
 
-**Data:** ${new Date().toLocaleDateString('pt-BR')}
-**Procedimento:** 
+<h2>Indicação</h2>
+<p><br></p>
 
-## Indicação
+<h2>Técnica Utilizada</h2>
+<p><br></p>
 
+<h2>Intercorrências</h2>
+<p><br></p>
 
-## Técnica Utilizada
+<h2>Orientações Pós-procedimento</h2>
+<p><br></p>
 
-
-## Intercorrências
-
-
-## Orientações Pós-procedimento
-
-
-## Retorno
-`
+<h2>Retorno</h2>
+<p><br></p>`
   },
   {
     id: "exam",
     name: "Solicitação de Exames",
-    template: `# Solicitação de Exames
+    template: `<h1>Solicitação de Exames</h1>
+<p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
 
-**Data:** ${new Date().toLocaleDateString('pt-BR')}
+<h2>Indicação Clínica</h2>
+<p><br></p>
 
-## Indicação Clínica
+<h2>Exames Solicitados</h2>
+<ul>
+<li></li>
+<li></li>
+<li></li>
+</ul>
 
+<h2>Orientações ao Paciente</h2>
+<p><br></p>
 
-## Exames Solicitados
-- 
-- 
-- 
-
-## Orientações ao Paciente
-
-
-## Retorno para Resultado
-`
+<h2>Retorno para Resultado</h2>
+<p><br></p>`
   }
 ];
 
