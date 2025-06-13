@@ -699,56 +699,22 @@ export class PostgreSQLStorage implements IStorage {
     id: number, 
     updates: Partial<InsertCalendarIntegration>
   ): Promise<CalendarIntegration | undefined> {
-    // Build dynamic update query based on provided fields
-    const updateFields = [];
-    const params = [id]; // Start with id for WHERE clause
-    let paramIndex = 2;
-
-    if (updates.access_token !== undefined) {
-      updateFields.push(`access_token = $${paramIndex++}`);
-      params.push(updates.access_token);
-    }
-    if (updates.refresh_token !== undefined) {
-      updateFields.push(`refresh_token = $${paramIndex++}`);
-      params.push(updates.refresh_token);
-    }
-    if (updates.token_expires_at !== undefined) {
-      updateFields.push(`token_expires_at = $${paramIndex++}`);
-      params.push(updates.token_expires_at);
-    }
-    if (updates.calendar_id !== undefined) {
-      updateFields.push(`calendar_id = $${paramIndex++}`);
-      params.push(updates.calendar_id);
-    }
-    if (updates.sync_preference !== undefined) {
-      updateFields.push(`sync_preference = $${paramIndex++}`);
-      params.push(updates.sync_preference);
-    }
-    if (updates.is_active !== undefined) {
-      updateFields.push(`is_active = $${paramIndex++}`);
-      params.push(updates.is_active);
-    }
-    if (updates.calendar_name !== undefined) {
-      updateFields.push(`calendar_name = $${paramIndex++}`);
-      params.push(updates.calendar_name);
-    }
-
-    // Always update timestamp
-    updateFields.push(`updated_at = NOW()`);
-
-    if (updateFields.length === 1) {
-      // Only timestamp update, return existing record
-      return this.getCalendarIntegration(id);
-    }
-
-    const query = `
+    // Simple approach using individual field updates
+    const result = await db.execute(sql`
       UPDATE calendar_integrations 
-      SET ${updateFields.join(', ')}
-      WHERE id = $1
+      SET 
+        access_token = ${updates.access_token !== undefined ? updates.access_token : sql`access_token`},
+        refresh_token = ${updates.refresh_token !== undefined ? updates.refresh_token : sql`refresh_token`},
+        token_expires_at = ${updates.token_expires_at !== undefined ? updates.token_expires_at : sql`token_expires_at`},
+        calendar_id = ${updates.calendar_id !== undefined ? updates.calendar_id : sql`calendar_id`},
+        sync_preference = ${updates.sync_preference !== undefined ? updates.sync_preference : sql`sync_preference`},
+        is_active = ${updates.is_active !== undefined ? updates.is_active : sql`is_active`},
+        calendar_name = ${updates.calendar_name !== undefined ? updates.calendar_name : sql`calendar_name`},
+        updated_at = NOW()
+      WHERE id = ${id}
       RETURNING *
-    `;
-
-    const result = await db.execute(sql.raw(query, params));
+    `);
+    
     return result.rows[0] as CalendarIntegration | undefined;
   }
 
