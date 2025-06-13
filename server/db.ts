@@ -3,30 +3,16 @@ import { Pool } from "pg";
 import * as schema from "@shared/schema";
 
 // Create database connection - use Supabase if URL is provided
-let supabaseDbUrl = process.env.SUPABASE_DATABASE_URL;
+let connectionString = process.env.DATABASE_URL;
 
-// Fix Supabase URL format if needed
-if (supabaseDbUrl) {
-  // URL encode special characters in password
-  if (supabaseDbUrl.includes('#')) {
-    supabaseDbUrl = supabaseDbUrl.replace(/#/g, '%23');
-  }
-  
-  // Convert direct connection to pooler if needed
-  if (supabaseDbUrl.includes('db.') && supabaseDbUrl.includes('.supabase.co:5432')) {
-    const projectRef = supabaseDbUrl.match(/db\.(\w+)\.supabase\.co/)?.[1];
-    const password = supabaseDbUrl.match(/:([^@]+)@/)?.[1];
-    if (projectRef && password) {
-      const encodedPassword = encodeURIComponent(password);
-      supabaseDbUrl = `postgresql://postgres.${projectRef}:${encodedPassword}@aws-0-us-west-1.pooler.supabase.com:6543/postgres`;
-    }
-  }
+if (process.env.SUPABASE_DATABASE_URL) {
+  // Use Supabase URL directly, just encode the # character
+  connectionString = process.env.SUPABASE_DATABASE_URL.replace('#', '%23');
   console.log('🔗 Conectando ao Supabase database...');
+  console.log('🔍 Connection string format:', connectionString.split('@')[0] + '@[hidden]');
 } else {
   console.log('🔗 Usando PostgreSQL local...');
 }
-
-const connectionString = supabaseDbUrl || process.env.DATABASE_URL;
 
 const pool = new Pool({
   connectionString,

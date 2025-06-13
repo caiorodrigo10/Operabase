@@ -34,8 +34,11 @@ export class PostgreSQLStorage implements IStorage {
   
   async testConnection(): Promise<void> {
     try {
-      await db.select().from(users).limit(1);
+      console.log('🔍 Testing PostgreSQL/Supabase connection...');
+      const result = await db.select().from(users).limit(1);
+      console.log('✅ Database connection successful');
     } catch (error) {
+      console.error('❌ Database connection failed:', error);
       throw new Error(`PostgreSQL connection test failed: ${error}`);
     }
   }
