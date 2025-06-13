@@ -653,12 +653,10 @@ export class PostgreSQLStorage implements IStorage {
   // ============ CALENDAR INTEGRATIONS ============
 
   async getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]> {
-    const result = await db.execute(sql`
-      SELECT * FROM calendar_integrations 
-      WHERE user_id = ${userId} 
-      ORDER BY created_at DESC
-    `);
-    return result.rows as CalendarIntegration[];
+    return await db.select()
+      .from(calendar_integrations)
+      .where(eq(calendar_integrations.user_id, userId))
+      .orderBy(desc(calendar_integrations.created_at));
   }
 
   async getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined> {
@@ -674,14 +672,15 @@ export class PostgreSQLStorage implements IStorage {
     provider: string, 
     email: string
   ): Promise<CalendarIntegration | undefined> {
-    const result = await db.execute(sql`
-      SELECT * FROM calendar_integrations 
-      WHERE user_id = ${userId} 
-      AND provider = ${provider} 
-      AND email = ${email}
-      LIMIT 1
-    `);
-    return result.rows[0] as CalendarIntegration | undefined;
+    const result = await db.select()
+      .from(calendar_integrations)
+      .where(and(
+        eq(calendar_integrations.user_id, userId),
+        eq(calendar_integrations.provider, provider),
+        eq(calendar_integrations.email, email)
+      ))
+      .limit(1);
+    return result[0];
   }
 
   async createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration> {
