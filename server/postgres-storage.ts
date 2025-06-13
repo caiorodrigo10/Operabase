@@ -73,7 +73,12 @@ export class PostgreSQLStorage implements IStorage {
   // ============ CLINIC USERS & ACCESS CONTROL ============
 
   async getUserClinics(userId: number): Promise<(ClinicUser & { clinic: Clinic })[]> {
-    console.log('🔍 getUserClinics called for userId:', userId);
+    console.log('🔍 getUserClinics called for userId:', userId, typeof userId);
+    
+    // Test with direct pool query to verify data exists
+    const { pool } = await import('./db');
+    const poolResult = await pool.query('SELECT * FROM clinic_users WHERE user_id = $1', [userId]);
+    console.log('🔍 Direct pool query result:', poolResult.rows);
     
     // First test simple query to clinic_users
     const simpleTest = await db
@@ -131,16 +136,17 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async userHasClinicAccess(userId: number, clinicId: number): Promise<boolean> {
-    const result = await db
-      .select({ id: clinic_users.id })
-      .from(clinic_users)
-      .where(and(
-        eq(clinic_users.user_id, userId),
-        eq(clinic_users.clinic_id, clinicId),
-        eq(clinic_users.is_active, true)
-      ))
-      .limit(1);
-    return result.length > 0;
+    try {
+      const { pool } = await import('./db');
+      const result = await pool.query(
+        'SELECT COUNT(*) as count FROM clinic_users WHERE user_id = $1 AND clinic_id = $2 AND is_active = true',
+        [userId, clinicId]
+      );
+      return parseInt(result.rows[0].count) > 0;
+    } catch (error) {
+      console.error('Error checking clinic access:', error);
+      return false;
+    }
   }
 
   async getClinicUsers(clinicId: number): Promise<(ClinicUser & { user: User })[]> {
