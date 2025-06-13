@@ -1073,7 +1073,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔍 Mara AI - Access check:', {
         userId: req.user.id,
         clinicId: contact.clinic_id,
-        accessCount: accessCheck.rows[0].count,
         hasAccess
       });
       

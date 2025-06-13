@@ -137,12 +137,15 @@ export class PostgreSQLStorage implements IStorage {
 
   async userHasClinicAccess(userId: number, clinicId: number): Promise<boolean> {
     try {
-      const { pool } = await import('./db');
+      console.log('🔍 userHasClinicAccess called:', { userId, clinicId });
       const result = await pool.query(
         'SELECT COUNT(*) as count FROM clinic_users WHERE user_id = $1 AND clinic_id = $2 AND is_active = true',
         [userId, clinicId]
       );
-      return parseInt(result.rows[0].count) > 0;
+      console.log('🔍 userHasClinicAccess result:', result.rows[0]);
+      const hasAccess = parseInt(result.rows[0].count) > 0;
+      console.log('🔍 userHasClinicAccess final:', hasAccess);
+      return hasAccess;
     } catch (error) {
       console.error('Error checking clinic access:', error);
       return false;
