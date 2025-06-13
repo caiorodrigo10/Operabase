@@ -178,7 +178,13 @@ export interface IStorage {
   getMedicalRecord(id: number): Promise<MedicalRecord | undefined>;
   getMedicalRecordByAppointment(appointmentId: number): Promise<MedicalRecord | undefined>;
   createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord>;
+
   updateMedicalRecord(id: number, updates: Partial<InsertMedicalRecord>): Promise<MedicalRecord | undefined>;
+
+  // Password Reset Tokens
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -195,6 +201,7 @@ export class MemStorage implements IStorage {
   private pipelineActivities: Map<number, PipelineActivity>;
   private clinicUsers: Map<number, ClinicUser>;
   private clinicInvitations: Map<number, ClinicInvitation>;
+  private passwordResetTokens: Map<number, PasswordResetToken>;
   private currentId: number;
 
   constructor() {
@@ -211,6 +218,7 @@ export class MemStorage implements IStorage {
     this.pipelineActivities = new Map();
     this.clinicUsers = new Map();
     this.clinicInvitations = new Map();
+    this.passwordResetTokens = new Map();
     this.currentId = 1;
   }
 

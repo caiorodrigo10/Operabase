@@ -4,7 +4,7 @@ import {
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   clinic_users, clinic_invitations, customers, charges, subscriptions, payments, 
-  financial_transactions, financial_reports, calendar_integrations, medical_records,
+  financial_transactions, financial_reports, calendar_integrations, medical_records, password_reset_tokens,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -25,7 +25,8 @@ import {
   type FinancialTransaction, type InsertFinancialTransaction,
   type FinancialReport, type InsertFinancialReport,
   type CalendarIntegration, type InsertCalendarIntegration,
-  type MedicalRecord, type InsertMedicalRecord
+  type MedicalRecord, type InsertMedicalRecord,
+  type PasswordResetToken, type InsertPasswordResetToken
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -747,6 +748,29 @@ export class PostgreSQLStorage implements IStorage {
       .where(eq(medical_records.id, id))
       .returning();
     return result[0];
+  }
+
+  // ============ PASSWORD RESET TOKENS ============
+
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const result = await db.insert(password_reset_tokens)
+      .values(token)
+      .returning();
+    return result[0];
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const result = await db.select()
+      .from(password_reset_tokens)
+      .where(eq(password_reset_tokens.token, token))
+      .limit(1);
+    return result[0];
+  }
+
+  async markPasswordResetTokenAsUsed(id: number): Promise<void> {
+    await db.update(password_reset_tokens)
+      .set({ used: true })
+      .where(eq(password_reset_tokens.id, id));
   }
 }
 
