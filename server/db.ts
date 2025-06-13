@@ -8,6 +8,15 @@ let connectionString = process.env.DATABASE_URL;
 if (process.env.SUPABASE_POOLER_URL) {
   // Use Supabase pooler URL (preferred)
   connectionString = process.env.SUPABASE_POOLER_URL;
+  
+  // Fix common issues with Supabase URLs
+  if (connectionString.startsWith('postgres://')) {
+    connectionString = connectionString.replace('postgres://', 'postgresql://');
+  }
+  if (connectionString.includes('#')) {
+    connectionString = connectionString.replace(/#/g, '%23');
+  }
+  
   console.log('🔗 Conectando ao Supabase database (pooler)...');
   console.log('🔍 Connection string format:', connectionString.split('@')[0] + '@[hidden]');
 } else if (process.env.SUPABASE_CONNECTION_STRING) {

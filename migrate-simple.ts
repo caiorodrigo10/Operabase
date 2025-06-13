@@ -12,16 +12,16 @@ async function migrateToSupabase() {
   });
   const localDb = drizzle(localPool, { schema });
 
-  // Supabase connection - try both direct and pooler formats
-  let supabaseUrl = process.env.SUPABASE_DATABASE_URL;
+  // Supabase connection using the same logic as server/db.ts
+  let supabaseUrl = process.env.SUPABASE_POOLER_URL;
   
-  // If the URL contains 'db.', change it to use the pooler
-  if (supabaseUrl && supabaseUrl.includes('db.')) {
-    const projectRef = supabaseUrl.match(/db\.(\w+)\.supabase\.co/)?.[1];
-    const password = supabaseUrl.match(/:([^@]+)@/)?.[1];
-    if (projectRef && password) {
-      const encodedPassword = encodeURIComponent(password);
-      supabaseUrl = `postgresql://postgres.${projectRef}:${encodedPassword}@aws-0-us-west-1.pooler.supabase.com:6543/postgres`;
+  if (supabaseUrl) {
+    // Fix common issues with Supabase URLs
+    if (supabaseUrl.startsWith('postgres://')) {
+      supabaseUrl = supabaseUrl.replace('postgres://', 'postgresql://');
+    }
+    if (supabaseUrl.includes('#')) {
+      supabaseUrl = supabaseUrl.replace(/#/g, '%23');
     }
   }
   

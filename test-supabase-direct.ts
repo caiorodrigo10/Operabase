@@ -11,15 +11,21 @@ if (!connectionString) {
 
 console.log('Original:', connectionString.split('@')[0] + '@[hidden]');
 
-// Convert to pooler format if it's direct connection
-if (connectionString.includes('db.') && connectionString.includes('.supabase.co:5432')) {
-  const projectRef = connectionString.match(/db\.(\w+)\.supabase\.co/)?.[1];
-  const password = connectionString.match(/:([^@]+)@/)?.[1];
-  if (projectRef && password) {
-    const encodedPassword = encodeURIComponent(password);
-    connectionString = `postgresql://postgres.${projectRef}:${encodedPassword}@aws-0-us-west-1.pooler.supabase.com:6543/postgres`;
-    console.log('Converted to pooler:', connectionString.split('@')[0] + '@[hidden]');
+// Fix common issues with Supabase URLs
+if (connectionString) {
+  // Replace postgres:// with postgresql://
+  if (connectionString.startsWith('postgres://')) {
+    connectionString = connectionString.replace('postgres://', 'postgresql://');
+    console.log('Fixed protocol to postgresql://');
   }
+  
+  // Encode # characters in password
+  if (connectionString.includes('#')) {
+    connectionString = connectionString.replace(/#/g, '%23');
+    console.log('Encoded # characters');
+  }
+  
+  console.log('Final URL:', connectionString.split('@')[0] + '@[hidden]');
 }
 
 async function testConnection() {
