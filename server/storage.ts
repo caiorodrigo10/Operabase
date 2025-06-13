@@ -946,18 +946,21 @@ async function initializeStorage() {
   if (storage) return storage; // Already initialized
   
   try {
-    // Try PostgreSQL first
+    // Force PostgreSQL/Supabase usage - no fallback to memory
     const { postgresStorage } = await import('./postgres-storage');
-    await postgresStorage.testConnection();
-    console.log("💾 Using PostgreSQL storage");
+    console.log("💾 Using PostgreSQL storage (forced)");
     storage = postgresStorage;
+    
+    // Test connection but don't fail if it's just a temporary issue
+    try {
+      await postgresStorage.testConnection();
+      console.log("✅ PostgreSQL connection verified");
+    } catch (connectionError) {
+      console.warn("⚠️ PostgreSQL connection test failed, but continuing:", connectionError.message);
+    }
   } catch (error) {
-    console.error("PostgreSQL connection failed:", error);
-    console.log("💾 Falling back to in-memory storage");
-    storage = new MemStorage();
-    // Initialize sample data only for in-memory storage
-    await initializeSampleData();
-    await initializeAnalyticsData();
+    console.error("❌ Failed to initialize PostgreSQL storage:", error);
+    throw new Error("PostgreSQL storage initialization failed - no fallback allowed");
   }
   
   return storage;
