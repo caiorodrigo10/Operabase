@@ -4,7 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryClient } from "./lib/queryClient";
+import { AuthProvider } from "@/components/AuthProvider";
 import { useAuth } from "@/hooks/useAuth";
+import { LoginForm } from "@/components/LoginForm";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/dashboard";
 import { Conversas } from "./pages/conversas";
@@ -22,14 +24,14 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   const [location] = useLocation();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   
   const getCurrentPage = () => {
     if (location === "/") return "dashboard";
     return location.substring(1);
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="space-y-4 w-full max-w-md">
@@ -41,14 +43,8 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/" component={Landing} />
-        <Route path="/recuperar-senha" component={RecuperarSenha} />
-        <Route component={Landing} />
-      </Switch>
-    );
+  if (!user) {
+    return <LoginForm />;
   }
 
   return (
@@ -73,10 +69,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
