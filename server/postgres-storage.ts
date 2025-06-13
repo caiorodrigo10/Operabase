@@ -740,8 +740,8 @@ export class PostgreSQLStorage implements IStorage {
       setPairs.push(`updated_at = NOW()`);
       
       // Add ID for WHERE clause
-      values.push(id);
       const whereParamIndex = paramIndex;
+      values.push(id);
 
       const query = `UPDATE calendar_integrations SET ${setPairs.join(', ')} WHERE id = $${whereParamIndex} RETURNING *`;
       
