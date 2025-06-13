@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import MarkdownRenderer from "./MarkdownRenderer";
 import { 
   Bold, 
   Italic, 
@@ -19,14 +19,11 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Type,
   Save,
   X,
   FileText,
-  Stethoscope,
-  Heart,
-  Baby,
-  AlertTriangle
+  Eye,
+  Edit
 } from "lucide-react";
 
 interface ProntuarioEditorProps {
@@ -38,116 +35,161 @@ interface ProntuarioEditorProps {
 
 const medicalTemplates = [
   {
+    id: "blank",
+    name: "Nota em Branco",
+    template: ""
+  },
+  {
     id: "consultation",
     name: "Consulta Médica",
-    icon: <Stethoscope className="w-4 h-4" />,
-    template: `# 🩺 Consulta Médica
+    template: `# Consulta Médica
 
 **Data:** ${new Date().toLocaleDateString('pt-BR')}
 
-## 🗣️ Queixa Principal
+## Queixa Principal
 
 
-## 📋 História da Doença Atual
+## História da Doença Atual
 
 
-## 🔍 Exame Físico
+## Exame Físico
 - **Geral:** 
 - **Sinais Vitais:** PA: ___/___mmHg | FC: ___bpm | T: ___°C | Peso: ___kg
 - **Específico:** 
 
-## 🎯 Hipóteses Diagnósticas
+## Hipóteses Diagnósticas
 1. 
 2. 
 
-## 💊 Conduta
+## Conduta
 - **Medicações:** 
 - **Exames:** 
 - **Orientações:** 
 
-## 📅 Retorno
+## Retorno
 `
   },
   {
     id: "followup",
-    name: "Retorno",
-    icon: <Heart className="w-4 h-4" />,
-    template: `# 🔄 Consulta de Retorno
+    name: "Consulta de Retorno",
+    template: `# Consulta de Retorno
 
 **Data:** ${new Date().toLocaleDateString('pt-BR')}
 
-## 📈 Evolução
+## Evolução
 
 
-## 💊 Adesão ao Tratamento
+## Adesão ao Tratamento
 
 
-## 🔍 Exame Atual
+## Exame Atual
 
 
-## 📋 Ajustes na Conduta
+## Ajustes na Conduta
 
 
-## 📅 Próximo Retorno
+## Próximo Retorno
 `
   },
   {
     id: "pediatric",
-    name: "Pediatria",
-    icon: <Baby className="w-4 h-4" />,
-    template: `# 👶 Consulta Pediátrica
+    name: "Consulta Pediátrica",
+    template: `# Consulta Pediátrica
 
 **Data:** ${new Date().toLocaleDateString('pt-BR')}
 **Idade:** 
 
-## 🗣️ Queixa dos Responsáveis
+## Queixa dos Responsáveis
 
 
-## 📊 Desenvolvimento
+## Desenvolvimento
 - **Peso:** ___kg (P___)
 - **Altura:** ___cm (P___)
 - **PC:** ___cm (P___)
 - **Marcos do desenvolvimento:** 
 
-## 🔍 Exame Físico
+## Exame Físico
 
 
-## 💉 Vacinas
-- **Em dia:** ☐ Sim ☐ Não
+## Vacinas
+- **Em dia:** Sim / Não
 - **Observações:** 
 
-## 🎯 Conduta
+## Conduta
 
 
-## 📅 Retorno
+## Retorno
 `
   },
   {
     id: "emergency",
-    name: "Emergência",
-    icon: <AlertTriangle className="w-4 h-4" />,
-    template: `# 🚨 Atendimento de Emergência
+    name: "Atendimento de Emergência",
+    template: `# Atendimento de Emergência
 
 **Data/Hora:** ${new Date().toLocaleString('pt-BR')}
 
-## ⚡ Motivo da Consulta
+## Motivo da Consulta
 
 
-## 🚨 Estado Geral
-- **Consciente:** ☐ Sim ☐ Não
-- **Orientado:** ☐ Sim ☐ Não
+## Estado Geral
+- **Consciente:** Sim / Não
+- **Orientado:** Sim / Não
 - **Sinais Vitais:** PA: ___/___mmHg | FC: ___bpm | T: ___°C | SatO2: ___%
 
-## 🔍 Avaliação Inicial
+## Avaliação Inicial
 
 
-## 🎯 Hipótese Diagnóstica
+## Hipótese Diagnóstica
 
 
-## ⚡ Conduta Imediata
+## Conduta Imediata
 
 
-## 📋 Evolução/Desfecho
+## Evolução/Desfecho
+`
+  },
+  {
+    id: "procedure",
+    name: "Procedimento",
+    template: `# Procedimento
+
+**Data:** ${new Date().toLocaleDateString('pt-BR')}
+**Procedimento:** 
+
+## Indicação
+
+
+## Técnica Utilizada
+
+
+## Intercorrências
+
+
+## Orientações Pós-procedimento
+
+
+## Retorno
+`
+  },
+  {
+    id: "exam",
+    name: "Solicitação de Exames",
+    template: `# Solicitação de Exames
+
+**Data:** ${new Date().toLocaleDateString('pt-BR')}
+
+## Indicação Clínica
+
+
+## Exames Solicitados
+- 
+- 
+- 
+
+## Orientações ao Paciente
+
+
+## Retorno para Resultado
 `
   }
 ];
@@ -162,10 +204,7 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
   const queryClient = useQueryClient();
 
   const createRecordMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/contacts/${contactId}/medical-records`, {
-      method: "POST",
-      body: JSON.stringify(data)
-    }),
+    mutationFn: (data: any) => apiRequest(`/api/contacts/${contactId}/medical-records`, "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId, "medical-records"] });
       toast({
@@ -275,21 +314,22 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
         <CardContent className="p-6 space-y-6">
           {/* Templates */}
           <div>
-            <Label className="text-sm font-medium mb-3 block">Templates Médicos</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {medicalTemplates.map((template) => (
-                <Button
-                  key={template.id}
-                  variant={selectedTemplate === template.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => applyTemplate(template.id)}
-                  className="h-auto p-3 flex flex-col items-center gap-2"
-                >
-                  {template.icon}
-                  <span className="text-xs">{template.name}</span>
-                </Button>
-              ))}
-            </div>
+            <Label className="text-sm font-medium mb-2 block">Template Médico</Label>
+            <Select value={selectedTemplate} onValueChange={applyTemplate}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {medicalTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              Escolha um template para preencher automaticamente a estrutura da nota
+            </p>
           </div>
 
           {/* Vinculação a Consulta */}
@@ -330,20 +370,68 @@ export default function ProntuarioEditor({ contactId, contactName, appointments,
             </div>
           </div>
 
-          {/* Editor de Texto */}
+          {/* Editor com Tabs */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Conteúdo da Nota</Label>
-            <Textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Digite sua nota médica aqui... Use os templates acima para facilitar o preenchimento."
-              rows={25}
-              className="font-mono text-sm resize-none"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Dica: Use markdown para formatação (**, *, -, etc.) ou os botões de formatação acima
-            </p>
+            <Label className="text-sm font-medium mb-3 block">Conteúdo da Nota</Label>
+            <Tabs defaultValue="editor" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="editor" className="flex items-center gap-2">
+                  <Edit className="w-4 h-4" />
+                  Editar
+                </TabsTrigger>
+                <TabsTrigger value="preview" className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Visualizar
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="editor" className="mt-4">
+                <div>
+                  {/* Barra de Formatação */}
+                  <div className="flex flex-wrap gap-1 p-2 bg-gray-50 rounded-t-lg border border-b-0">
+                    {formatButtons.map((button, index) => (
+                      <Button
+                        key={index}
+                        variant="ghost"
+                        size="sm"
+                        onClick={button.action}
+                        title={button.title}
+                        className="h-8 w-8 p-0"
+                      >
+                        {button.icon}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  {/* Área de Texto */}
+                  <Textarea
+                    ref={textareaRef}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Digite sua nota médica aqui... Use os templates acima para facilitar o preenchimento."
+                    rows={25}
+                    className="font-mono text-sm resize-none rounded-t-none border-t-0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Dica: Use markdown para formatação (**, *, -, etc.) ou os botões de formatação acima
+                  </p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="preview" className="mt-4">
+                <div className="min-h-[400px] max-h-[600px] overflow-y-auto border rounded-lg p-4 bg-white">
+                  {content ? (
+                    <MarkdownRenderer content={content} />
+                  ) : (
+                    <div className="text-center text-gray-500 py-8">
+                      <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p>Nenhum conteúdo para visualizar</p>
+                      <p className="text-sm">Digite algum texto na aba "Editar" para ver a prévia aqui</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Ações */}

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import ProntuarioEditor from "./ProntuarioEditor";
+import MarkdownRenderer from "./MarkdownRenderer";
 import { 
   FileText, 
   Plus, 
@@ -168,9 +169,14 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
 
                         {/* Conteúdo da Nota */}
                         <div className="bg-gray-50 p-4 rounded-lg">
-                          <div className="whitespace-pre-wrap text-sm text-gray-800 font-mono leading-relaxed">
-                            {record.content || record.observations || record.chief_complaint || "Nota vazia"}
-                          </div>
+                          {record.content || record.observations || record.chief_complaint ? (
+                            <MarkdownRenderer 
+                              content={record.content || record.observations || record.chief_complaint || ""} 
+                              className="text-sm"
+                            />
+                          ) : (
+                            <div className="text-sm text-gray-500 italic">Nota vazia</div>
+                          )}
                         </div>
 
                         {/* Ações */}
