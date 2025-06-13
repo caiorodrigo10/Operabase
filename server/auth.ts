@@ -68,20 +68,41 @@ export function setupAuth(app: Express, storage: IStorage) {
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
+          console.log('🔍 Login attempt for:', email);
           const user = await storage.getUserByEmail(email);
-          if (!user || !user.password || !(await comparePasswords(password, user.password))) {
+          console.log('👤 User found:', user ? { id: user.id, email: user.email, name: user.name, role: user.role, is_active: user.is_active } : 'null');
+          
+          if (!user) {
+            console.log('❌ User not found');
+            return done(null, false, { message: 'Email ou senha incorretos' });
+          }
+          
+          if (!user.password) {
+            console.log('❌ User has no password');
+            return done(null, false, { message: 'Email ou senha incorretos' });
+          }
+          
+          const passwordMatch = await comparePasswords(password, user.password);
+          console.log('🔐 Password comparison result:', passwordMatch);
+          
+          if (!passwordMatch) {
+            console.log('❌ Password mismatch');
             return done(null, false, { message: 'Email ou senha incorretos' });
           }
           
           if (!user.is_active) {
+            console.log('❌ User account inactive');
             return done(null, false, { message: 'Conta desativada' });
           }
+          
+          console.log('✅ Login successful for user:', user.email);
           
           // Update last login
           await storage.updateUser(user.id, { last_login: new Date() });
           
           return done(null, user);
         } catch (error) {
+          console.error('❌ Auth error:', error);
           return done(error);
         }
       }
