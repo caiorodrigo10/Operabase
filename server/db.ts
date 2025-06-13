@@ -2,8 +2,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "@shared/schema";
 
-// Create database connection - use Supabase if URL is provided
-let connectionString = process.env.DATABASE_URL;
+// Force Supabase connection - override DATABASE_URL
+let connectionString = process.env.SUPABASE_POOLER_URL || process.env.SUPABASE_CONNECTION_STRING || process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 
 if (process.env.SUPABASE_POOLER_URL) {
   // Use Supabase pooler URL (preferred)
@@ -19,6 +19,8 @@ if (process.env.SUPABASE_POOLER_URL) {
   
   console.log('🔗 Conectando ao Supabase database (pooler)...');
   console.log('🔍 Connection string format:', connectionString.split('@')[0] + '@[hidden]');
+  console.log('🔍 Using SUPABASE_POOLER_URL:', !!process.env.SUPABASE_POOLER_URL);
+  console.log('🔍 Using DATABASE_URL:', !!process.env.DATABASE_URL);
 } else if (process.env.SUPABASE_CONNECTION_STRING) {
   // Use Supabase connection string
   connectionString = process.env.SUPABASE_CONNECTION_STRING;

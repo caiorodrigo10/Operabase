@@ -748,13 +748,15 @@ export class PostgreSQLStorage implements IStorage {
       console.log('📋 Generated SQL query:', query);
       console.log('📋 Query parameters:', values);
 
-      // Test direct connection first
-      console.log('🔍 Testing direct table existence...');
-      const pool = (db as any)._.session.client;
-      const testResult = await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'calendar_integrations' AND column_name = 'sync_preference'");
-      console.log('🔍 Column exists in current connection:', testResult.rows.length > 0);
+      // Remove sync_preference from update since it doesn't exist in actual Supabase table
+      const queryWithoutSync = query.replace(/sync_preference = \$\d+,?\s*/, '');
+      const valuesWithoutSync = values.filter((_, index) => index !== 1); // Remove sync_preference value
       
-      const result = await pool.query(query, values);
+      console.log('📋 Fixed SQL query:', queryWithoutSync);
+      console.log('📋 Fixed parameters:', valuesWithoutSync);
+      
+      const pool = (db as any)._.session.client;
+      const result = await pool.query(queryWithoutSync, valuesWithoutSync);
       console.log('✅ Update result:', result.rows[0]);
       
       return result.rows[0] as CalendarIntegration | undefined;
