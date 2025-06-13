@@ -26,6 +26,19 @@ export const users = pgTable("users", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Password reset tokens table
+export const password_reset_tokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  expires_at: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_password_reset_tokens_user").on(table.user_id),
+  index("idx_password_reset_tokens_token").on(table.token),
+]);
+
 // Clinic-User relationship table for multi-tenant access
 export const clinic_users = pgTable("clinic_users", {
   id: serial("id").primaryKey(),
@@ -615,3 +628,40 @@ export const insertMedicalRecordSchema = createInsertSchema(medical_records).omi
 
 export type MedicalRecord = typeof medical_records.$inferSelect;
 export type InsertMedicalRecord = z.infer<typeof insertMedicalRecordSchema>;
+
+// Password reset token schemas
+export const insertPasswordResetTokenSchema = createInsertSchema(password_reset_tokens).omit({
+  id: true,
+  created_at: true,
+});
+
+export type PasswordResetToken = typeof password_reset_tokens.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+
+// User profile update schema
+export const updateUserProfileSchema = createInsertSchema(users).omit({
+  id: true,
+  password: true,
+  role: true,
+  is_active: true,
+  last_login: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(6).optional(),
+  confirmPassword: z.string().optional(),
+}).refine((data) => {
+  if (data.newPassword && !data.currentPassword) {
+    return false;
+  }
+  if (data.newPassword && data.newPassword !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Password confirmation doesn't match",
+  path: ["confirmPassword"],
+});
+
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;

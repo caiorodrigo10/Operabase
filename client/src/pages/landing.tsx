@@ -235,6 +235,15 @@ export default function Landing() {
                     >
                       {loginMutation.isPending ? "Entrando..." : "Entrar"}
                     </Button>
+                    
+                    <div className="text-center">
+                      <a 
+                        href="/recuperar-senha"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        Esqueci minha senha
+                      </a>
+                    </div>
                   </form>
                 ) : (
                   <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
