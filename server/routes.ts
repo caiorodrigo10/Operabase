@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+// Storage will be imported dynamically to ensure initialization
 import { setupAuth, isAuthenticated, hasClinicAccess } from "./auth";
 import { nanoid } from "nanoid";
 import { 
@@ -23,6 +23,8 @@ import {
 import { googleCalendarService } from "./google-calendar-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Import storage dynamically to ensure initialization is complete
+  const { storage } = await import('./storage');
   
   // ============ AUTHENTICATION ============
   

@@ -915,9 +915,11 @@ import { postgresStorage } from "./postgres-storage";
 import { testConnection } from "./db";
 
 // Use PostgreSQL in production, MemStorage for development
-let storage: IStorage;
+let storage: IStorage | undefined;
 
 async function initializeStorage() {
+  if (storage) return storage; // Already initialized
+  
   try {
     // Try PostgreSQL first
     const { postgresStorage } = await import('./postgres-storage');
@@ -932,6 +934,18 @@ async function initializeStorage() {
     await initializeSampleData();
     await initializeAnalyticsData();
   }
+  
+  return storage;
+}
+
+async function getStorage(): Promise<IStorage> {
+  if (!storage) {
+    await initializeStorage();
+  }
+  if (!storage) {
+    throw new Error('Failed to initialize storage');
+  }
+  return storage;
 }
 
 // Initialize PostgreSQL with sample data if tables are empty
@@ -1219,10 +1233,7 @@ async function initializePostgreSQLData() {
   }
 }
 
-// Initialize storage
-initializeStorage();
-
-export { storage };
+export { storage, getStorage };
 
 // Initialize with sample data for in-memory storage only
 async function initializeSampleData() {
