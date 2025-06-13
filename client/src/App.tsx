@@ -17,6 +17,7 @@ import { LiviaConfig } from "./pages/livia-config";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
 // import { Prontuario } from "./pages/prontuario";
 import FinanceiroPage from "./pages/financeiro";
+import ErrorGuidePage from "./pages/error-guide";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -64,6 +65,7 @@ function Router() {
         <Route path="/relatorios" component={Relatorios} />
         <Route path="/configuracoes" component={Configuracoes} />
         <Route path="/livia-config" component={LiviaConfig} />
+        <Route path="/error-guide" component={ErrorGuidePage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
