@@ -2,13 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import { supabase, supabaseAdmin } from './supabase';
 import type { IStorage } from './storage';
 
+export interface SupabaseUser {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+}
+
 export interface AuthenticatedRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    name?: string;
-    role?: string;
-  };
+  supabaseUser?: SupabaseUser;
 }
 
 // Middleware para autenticação Supabase
@@ -49,7 +51,7 @@ export const authenticateSupabase = async (
     req.app.locals.currentUserId = userIdInt;
 
     // Anexar dados do usuário à requisição
-    (req as AuthenticatedRequest).user = {
+    (req as AuthenticatedRequest).supabaseUser = {
       id: user.id,
       email: user.email!,
       name: profile.name,
@@ -181,7 +183,7 @@ export function setupSupabaseAuthRoutes(app: any, storage: IStorage) {
 
   // Verificar usuário atual
   app.get('/api/auth/user', authenticateSupabase, (req: Request, res: Response) => {
-    const user = (req as AuthenticatedRequest).user;
+    const user = (req as AuthenticatedRequest).supabaseUser;
     res.json({ user });
   });
 
