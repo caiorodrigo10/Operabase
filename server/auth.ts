@@ -5,7 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import bcrypt from "bcryptjs";
-import { storage } from "./storage";
+import type { IStorage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 
@@ -45,7 +45,7 @@ async function comparePasswords(supplied: string, stored: string) {
   }
 }
 
-export function setupAuth(app: Express) {
+export function setupAuth(app: Express, storage: IStorage) {
   // Use memory store instead of PostgreSQL due to connection issues
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'default-session-secret-for-dev',

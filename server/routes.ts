@@ -24,12 +24,13 @@ import { googleCalendarService } from "./google-calendar-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Import storage dynamically to ensure initialization is complete
-  const { storage } = await import('./storage');
+  const { getStorage } = await import('./storage');
+  const storage = await getStorage();
   
   // ============ AUTHENTICATION ============
   
   // Setup traditional email/password auth
-  setupAuth(app);
+  setupAuth(app, storage);
 
   // Get user's accessible clinics
   app.get('/api/user/clinics', isAuthenticated, async (req: any, res) => {

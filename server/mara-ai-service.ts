@@ -25,14 +25,6 @@ export class MaraAIService {
       apiKey: process.env.OPENAI_API_KEY
     });
     this.storage = storage;
-    
-    // Bind storage methods to preserve context
-    if (storage) {
-      this.storage.getContact = storage.getContact.bind(storage);
-      this.storage.getContactAppointments = storage.getContactAppointments.bind(storage);
-      this.storage.getContactMedicalRecords = storage.getContactMedicalRecords.bind(storage);
-      this.storage.getClinic = storage.getClinic.bind(storage);
-    }
   }
 
   async analyzeContact(contactId: number, question: string): Promise<MaraResponse> {
@@ -84,17 +76,17 @@ export class MaraAIService {
         throw new Error('Storage not initialized');
       }
 
-      if (!this.storage.getContact) {
-        throw new Error('Storage.getContact method not available');
-      }
-
       const contact = await this.storage.getContact(contactId);
       if (!contact) {
         throw new Error(`Contact ${contactId} not found`);
       }
 
-      const appointments = await this.storage.getContactAppointments(contactId);
-      const medicalRecords = await this.storage.getContactMedicalRecords(contactId);
+      // Get appointments for this contact by filtering clinic appointments
+      const allAppointments = await this.storage.getAppointments(contact.clinic_id, {});
+      const appointments = allAppointments.filter(apt => apt.contact_id === contactId);
+      
+      // Get medical records for this contact
+      const medicalRecords = await this.storage.getMedicalRecords(contactId);
       
       let clinicInfo = null;
       if (contact?.clinic_id) {
