@@ -2,16 +2,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "@shared/schema";
 
-// Create Supabase PostgreSQL connection pool
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Create database connection - use Supabase if URL is provided
+const supabaseDbUrl = process.env.SUPABASE_DATABASE_URL;
+const connectionString = supabaseDbUrl || process.env.DATABASE_URL;
 
-// Extract project reference from Supabase URL and build connection string
-let connectionString = process.env.DATABASE_URL;
-
-if (supabaseUrl && supabaseServiceKey) {
-  const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-  connectionString = `postgresql://postgres.${projectRef}:${supabaseServiceKey}@aws-0-us-west-1.pooler.supabase.com:6543/postgres`;
+if (supabaseDbUrl) {
   console.log('🔗 Conectando ao Supabase database...');
 } else {
   console.log('🔗 Usando PostgreSQL local...');

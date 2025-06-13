@@ -19,8 +19,9 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 // Extract project reference from Supabase URL
-const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-const supabaseConnectionString = `postgresql://postgres.${projectRef}:${supabaseKey}@aws-0-us-west-1.pooler.supabase.com:6543/postgres`;
+const urlParts = supabaseUrl.replace('https://', '').split('.');
+const projectRef = urlParts[0];
+const supabaseConnectionString = `postgresql://postgres:${supabaseKey}@db.${projectRef}.supabase.co:5432/postgres`;
 
 const supabasePool = new Pool({
   connectionString: supabaseConnectionString,
