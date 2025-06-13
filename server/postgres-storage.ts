@@ -748,7 +748,9 @@ export class PostgreSQLStorage implements IStorage {
       console.log('📋 Generated SQL query:', query);
       console.log('📋 Query parameters:', values);
 
-      const result = await db.execute(sql.raw(query, values));
+      // Execute query using pool directly to avoid Drizzle SQL parsing issues
+      const pool = (db as any)._.session.client;
+      const result = await pool.query(query, values);
       console.log('✅ Update result:', result.rows[0]);
       
       return result.rows[0] as CalendarIntegration | undefined;
