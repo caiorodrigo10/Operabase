@@ -23,16 +23,9 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
-    console.log('🔍 Password comparison debug:');
-    console.log('  Supplied password:', supplied);
-    console.log('  Stored hash:', stored);
-    console.log('  Hash starts with $2b$:', stored.startsWith('$2b$'));
-    
     // Check if it's a bcrypt hash (starts with $2b$)
     if (stored.startsWith('$2b$') || stored.startsWith('$2a$') || stored.startsWith('$2y$')) {
-      const result = await bcrypt.compare(supplied, stored);
-      console.log('  Bcrypt compare result:', result);
-      return result;
+      return await bcrypt.compare(supplied, stored);
     }
     
     // Fallback to scrypt for legacy passwords
@@ -75,41 +68,22 @@ export function setupAuth(app: Express, storage: IStorage) {
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
-          console.log('🔍 Login attempt for:', email);
           const user = await storage.getUserByEmail(email);
-          console.log('👤 User found:', user ? { id: user.id, email: user.email, name: user.name, role: user.role, is_active: user.is_active } : 'null');
           
-          if (!user) {
-            console.log('❌ User not found');
-            return done(null, false, { message: 'Email ou senha incorretos' });
-          }
-          
-          if (!user.password) {
-            console.log('❌ User has no password');
-            return done(null, false, { message: 'Email ou senha incorretos' });
-          }
-          
-          const passwordMatch = await comparePasswords(password, user.password);
-          console.log('🔐 Password comparison result:', passwordMatch);
-          
-          if (!passwordMatch) {
-            console.log('❌ Password mismatch');
+          if (!user || !user.password || !(await comparePasswords(password, user.password))) {
             return done(null, false, { message: 'Email ou senha incorretos' });
           }
           
           if (!user.is_active) {
-            console.log('❌ User account inactive');
             return done(null, false, { message: 'Conta desativada' });
           }
-          
-          console.log('✅ Login successful for user:', user.email);
           
           // Update last login
           await storage.updateUser(user.id, { last_login: new Date() });
           
           return done(null, user);
         } catch (error) {
-          console.error('❌ Auth error:', error);
+          console.error('Auth error:', error);
           return done(error);
         }
       }
