@@ -28,6 +28,7 @@ import {
   Pill,
   AlertTriangle
 } from "lucide-react";
+import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
@@ -511,39 +512,7 @@ export function ContatoDetalhes() {
             </TabsContent>
 
             <TabsContent value="pipeline" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="w-5 h-5" />
-                    Histórico do Funil
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {opportunities.length > 0 ? (
-                    <div className="space-y-4">
-                      {opportunities.map((opportunity) => (
-                        <div key={opportunity.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className="font-semibold">{opportunity.title}</h4>
-                              <p className="text-sm text-slate-600">{opportunity.description}</p>
-                            </div>
-                            <Badge>{opportunity.status}</Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-slate-600">
-                            <span>Valor: R$ {(opportunity.value || 0) / 100}</span>
-                            <span>Estágio: {opportunity.stage_id}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-center py-8">
-                      Nenhuma movimentação no pipeline para este contato.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+              <ContactPipelineHistory contactId={contact.id} contactName={contact.name} />
             </TabsContent>
           </Tabs>
         </div>
