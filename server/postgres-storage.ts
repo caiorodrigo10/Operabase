@@ -699,23 +699,63 @@ export class PostgreSQLStorage implements IStorage {
     id: number, 
     updates: Partial<InsertCalendarIntegration>
   ): Promise<CalendarIntegration | undefined> {
-    // Simple approach using individual field updates
-    const result = await db.execute(sql`
-      UPDATE calendar_integrations 
-      SET 
-        access_token = ${updates.access_token !== undefined ? updates.access_token : sql`access_token`},
-        refresh_token = ${updates.refresh_token !== undefined ? updates.refresh_token : sql`refresh_token`},
-        token_expires_at = ${updates.token_expires_at !== undefined ? updates.token_expires_at : sql`token_expires_at`},
-        calendar_id = ${updates.calendar_id !== undefined ? updates.calendar_id : sql`calendar_id`},
-        sync_preference = ${updates.sync_preference !== undefined ? updates.sync_preference : sql`sync_preference`},
-        is_active = ${updates.is_active !== undefined ? updates.is_active : sql`is_active`},
-        calendar_name = ${updates.calendar_name !== undefined ? updates.calendar_name : sql`calendar_name`},
-        updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING *
-    `);
+    console.log('🔧 updateCalendarIntegration called with:', { id, updates });
     
-    return result.rows[0] as CalendarIntegration | undefined;
+    try {
+      // Build dynamic query only with fields that are being updated
+      const setPairs = [];
+      const values = [];
+      let paramIndex = 1;
+
+      if (updates.access_token !== undefined) {
+        setPairs.push(`access_token = $${paramIndex++}`);
+        values.push(updates.access_token);
+      }
+      if (updates.refresh_token !== undefined) {
+        setPairs.push(`refresh_token = $${paramIndex++}`);
+        values.push(updates.refresh_token);
+      }
+      if (updates.token_expires_at !== undefined) {
+        setPairs.push(`token_expires_at = $${paramIndex++}`);
+        values.push(updates.token_expires_at);
+      }
+      if (updates.calendar_id !== undefined) {
+        setPairs.push(`calendar_id = $${paramIndex++}`);
+        values.push(updates.calendar_id);
+      }
+      if (updates.sync_preference !== undefined) {
+        setPairs.push(`sync_preference = $${paramIndex++}`);
+        values.push(updates.sync_preference);
+      }
+      if (updates.is_active !== undefined) {
+        setPairs.push(`is_active = $${paramIndex++}`);
+        values.push(updates.is_active);
+      }
+      if (updates.calendar_name !== undefined) {
+        setPairs.push(`calendar_name = $${paramIndex++}`);
+        values.push(updates.calendar_name);
+      }
+
+      // Always update timestamp
+      setPairs.push(`updated_at = NOW()`);
+      
+      // Add ID for WHERE clause
+      values.push(id);
+      const whereParamIndex = paramIndex;
+
+      const query = `UPDATE calendar_integrations SET ${setPairs.join(', ')} WHERE id = $${whereParamIndex} RETURNING *`;
+      
+      console.log('📋 Generated SQL query:', query);
+      console.log('📋 Query parameters:', values);
+
+      const result = await db.execute(sql.raw(query, values));
+      console.log('✅ Update result:', result.rows[0]);
+      
+      return result.rows[0] as CalendarIntegration | undefined;
+    } catch (error) {
+      console.error('❌ Error in updateCalendarIntegration:', error);
+      throw error;
+    }
   }
 
   async deleteCalendarIntegration(id: number): Promise<boolean> {
