@@ -1,5 +1,5 @@
 import { eq, and, like, gte, lte, desc, asc, or, ilike, sql } from "drizzle-orm";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,

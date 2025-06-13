@@ -1067,13 +1067,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Contato não encontrado' });
       }
 
-      // Verificar permissão do usuário para acessar este contato usando query direta
-      const { pool } = await import('./db');
-      const accessCheck = await pool.query(
-        'SELECT COUNT(*) as count FROM clinic_users WHERE user_id = $1 AND clinic_id = $2 AND is_active = true',
-        [req.user.id, contact.clinic_id]
-      );
-      const hasAccess = parseInt(accessCheck.rows[0].count) > 0;
+      // Verificar permissão do usuário para acessar este contato
+      const hasAccess = await storage.userHasClinicAccess(req.user.id, contact.clinic_id);
       
       console.log('🔍 Mara AI - Access check:', {
         userId: req.user.id,

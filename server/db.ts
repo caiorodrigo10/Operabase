@@ -33,7 +33,7 @@ if (process.env.SUPABASE_POOLER_URL) {
   console.log('🔗 Usando PostgreSQL local...');
 }
 
-const pool = new Pool({
+export const pool = new Pool({
   connectionString,
   ssl: { rejectUnauthorized: false },
 });
