@@ -3,6 +3,7 @@ import { googleCalendarService } from './google-calendar-service';
 import { storage } from './storage';
 import { isAuthenticated } from './auth';
 import { google } from 'googleapis';
+import { supabaseAdmin } from './supabase-client';
 
 // Google Calendar OAuth initialization
 export async function initGoogleCalendarAuth(req: any, res: Response) {
@@ -744,21 +745,65 @@ export async function updateLinkedCalendarSettings(req: any, res: Response) {
 
     await storage.updateCalendarIntegration(integrationId, updateData);
 
-    // Also update in Supabase to keep in sync
+    // Get detailed calendar information for Supabase sync
+    let calendarDetails = null;
+    let calendarName = null;
+    let iCalUID = null;
+
+    if (linkedCalendarId) {
+      try {
+        // Get user's calendars to find the selected one
+        const availableCalendars = await googleCalendarService.getUserCalendars();
+        const selectedCalendar = availableCalendars.find((cal: any) => cal.id === linkedCalendarId);
+        
+        if (selectedCalendar) {
+          calendarDetails = selectedCalendar;
+          calendarName = selectedCalendar.summary || selectedCalendar.name || 'Calendário Personalizado';
+          
+          // Generate iCalUID for the calendar integration
+          // Format: calendar-integration-{integrationId}-{calendarId}@system.local
+          iCalUID = `calendar-integration-${integrationId}-${linkedCalendarId.replace(/[^a-zA-Z0-9]/g, '-')}@system.local`;
+          
+          console.log('📅 Detalhes do calendário selecionado:', {
+            id: selectedCalendar.id,
+            summary: selectedCalendar.summary,
+            name: calendarName,
+            iCalUID: iCalUID,
+            primary: selectedCalendar.primary,
+            accessRole: selectedCalendar.accessRole
+          });
+        }
+      } catch (detailsError) {
+        console.error('❌ Erro ao obter detalhes do calendário:', detailsError);
+      }
+    }
+
+    // Update in Supabase with complete calendar information
     try {
+      const supabaseUpdateData = {
+        calendar_id: linkedCalendarId || null,
+        calendar_name: calendarName || null,
+        sync_preference: addEventsToCalendar ? 'bidirectional' : 'none',
+        ical_uid: iCalUID || null,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('📤 Enviando para Supabase:', supabaseUpdateData);
+
       const { error: supabaseError } = await supabaseAdmin
         .from('calendar_integrations')
-        .update({
-          calendar_id: linkedCalendarId || null,
-          sync_enabled: addEventsToCalendar,
-          updated_at: new Date().toISOString()
-        })
+        .update(supabaseUpdateData)
         .eq('id', integrationId);
 
       if (supabaseError) {
         console.error('⚠️ Erro ao atualizar no Supabase:', supabaseError);
       } else {
-        console.log('✅ Atualizado com sucesso no Supabase');
+        console.log('✅ Sincronizado com Supabase com sucesso:', {
+          calendar_id: linkedCalendarId,
+          calendar_name: calendarName,
+          ical_uid: iCalUID,
+          sync_preference: addEventsToCalendar ? 'bidirectional' : 'none'
+        });
       }
     } catch (supabaseUpdateError) {
       console.error('⚠️ Erro na atualização do Supabase:', supabaseUpdateError);
