@@ -34,7 +34,7 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
 
       // Verificar permissão do usuário para acessar este contato
       const userClinics = await storage.getUserClinics(req.user.id);
-      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
         return res.status(403).json({ error: 'Acesso negado a este contato' });
@@ -76,7 +76,7 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
 
       // Verificar permissão do usuário
       const userClinics = await storage.getUserClinics(req.user.id);
-      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
         return res.status(403).json({ error: 'Acesso negado a este contato' });
@@ -113,7 +113,7 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       }
 
       const userClinics = await storage.getUserClinics(req.user.id);
-      const hasAccess = userClinics.some(clinic => clinic.id === contact.clinic_id);
+      const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
         return res.status(403).json({ error: 'Acesso negado a este contato' });
