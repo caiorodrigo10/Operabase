@@ -1045,6 +1045,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const contactId = parseInt(req.params.contactId);
       const { question } = req.body;
+      
+      console.log('🤖 Mara AI - Request received:', {
+        contactId,
+        userId: req.user?.id,
+        hasQuestion: !!question
+      });
 
       if (!question || question.trim().length === 0) {
         return res.status(400).json({ error: 'Pergunta é obrigatória' });
@@ -1052,12 +1058,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar se o contato existe e pertence ao usuário
       const contact = await storage.getContact(contactId);
+      console.log('🔍 Mara AI - Contact found:', {
+        contactExists: !!contact,
+        contactClinicId: contact?.clinic_id
+      });
+      
       if (!contact) {
         return res.status(404).json({ error: 'Contato não encontrado' });
       }
 
       // Verificar permissão do usuário para acessar este contato
       const userClinics = await storage.getUserClinics(req.user.id);
+      console.log('🔍 Mara AI - Debug clinic access:', {
+        userId: req.user.id,
+        contactClinicId: contact.clinic_id,
+        userClinics: userClinics.map(uc => ({ clinicId: uc.clinic.id, clinicName: uc.clinic.name }))
+      });
+      
       const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
