@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 // Storage will be imported dynamically to ensure initialization
 import { setupAuth, isAuthenticated, hasClinicAccess } from "./auth";
+import { setupSupabaseAuthRoutes, authenticateSupabase, hasClinicAccess as hasSupabaseClinicAccess } from "./supabase-auth";
 import { nanoid } from "nanoid";
 import { 
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
@@ -29,8 +30,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ============ AUTHENTICATION ============
   
-  // Setup traditional email/password auth
+  // Setup traditional email/password auth (legacy)
   setupAuth(app, storage);
+  
+  // Setup new Supabase Auth routes
+  setupSupabaseAuthRoutes(app, storage);
 
   // Get user's accessible clinics
   app.get('/api/user/clinics', isAuthenticated, async (req: any, res) => {

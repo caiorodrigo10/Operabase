@@ -34,28 +34,31 @@ async function testSupabaseAuthIntegration() {
     console.log('Password: NovaSeinha123!');
     console.log('UUID: e35fc90d-4509-4eb4-a17a-7df154917f9f');
     
-    // Test 4: Verify profile exists
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', 'e35fc90d-4509-4eb4-a17a-7df154917f9f')
-      .single();
+    // Test 4: Verify profile exists using direct SQL
+    const { pool } = await import('./server/db');
+    const profileResult = await pool.query(
+      'SELECT * FROM profiles WHERE id = $1',
+      ['e35fc90d-4509-4eb4-a17a-7df154917f9f']
+    );
     
-    if (profileError || !profile) {
+    const profile = profileResult.rows[0];
+    
+    if (!profile) {
       console.log('❌ Profile not found');
       return false;
     }
     
     console.log(`✅ Profile found: ${profile.name} (${profile.role})`);
     
-    // Test 5: Verify ID mapping
-    const { data: mapping, error: mappingError } = await supabaseAdmin
-      .from('user_id_mapping')
-      .select('*')
-      .eq('supabase_uuid', 'e35fc90d-4509-4eb4-a17a-7df154917f9f')
-      .single();
+    // Test 5: Verify ID mapping using direct SQL
+    const mappingResult = await pool.query(
+      'SELECT * FROM user_id_mapping WHERE supabase_uuid = $1',
+      ['e35fc90d-4509-4eb4-a17a-7df154917f9f']
+    );
     
-    if (mappingError || !mapping) {
+    const mapping = mappingResult.rows[0];
+    
+    if (!mapping) {
       console.log('❌ ID mapping not found');
       return false;
     }
