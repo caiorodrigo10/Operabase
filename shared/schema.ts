@@ -16,7 +16,6 @@ export const sessions = pgTable(
 // Enhanced users table for email/password authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username"), // Added to match Supabase schema
   email: varchar("email").notNull().unique(),
   password: varchar("password").notNull(),
   name: varchar("name").notNull(),
