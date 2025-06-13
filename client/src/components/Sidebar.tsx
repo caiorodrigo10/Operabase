@@ -10,7 +10,8 @@ import {
   X,
   Bot,
   Calendar,
-  DollarSign
+  DollarSign,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const navigation = [
   { name: "Contatos", href: "/contatos", icon: Users, route: "contatos" },
   { name: "Financeiro", href: "/financeiro", icon: DollarSign, route: "financeiro" },
   { name: "Relatórios", href: "/relatorios", icon: FileBarChart, route: "relatorios" },
+  { name: "Guia de Erros", href: "/error-guide", icon: HelpCircle, route: "error-guide" },
   { name: "Configurações", href: "/configuracoes", icon: Settings, route: "configuracoes" },
 ];
 
