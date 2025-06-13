@@ -1116,6 +1116,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // ============ USER PROFILE AND PASSWORD RESET ============
+  
+  // Update user profile
+  app.put('/api/user/profile', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { name, email, currentPassword, newPassword } = req.body;
+      const userId = req.user.id;
+
+      // Validar dados básicos
+      if (!name || !email) {
+        return res.status(400).json({ error: 'Nome e email são obrigatórios' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      // Se está alterando senha, validar senha atual
+      if (newPassword) {
+        if (!currentPassword) {
+          return res.status(400).json({ error: 'Senha atual é obrigatória para alterar a senha' });
+        }
+
+        const bcrypt = require('bcryptjs');
+        const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+        if (!isValidPassword) {
+          return res.status(400).json({ error: 'Senha atual incorreta' });
+        }
+
+        // Hash da nova senha
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await storage.updateUser(userId, {
+          name,
+          email,
+          password: hashedPassword,
+          updated_at: new Date(),
+        });
+      } else {
+        // Apenas atualizar nome e email
+        await storage.updateUser(userId, {
+          name,
+          email,
+          updated_at: new Date(),
+        });
+      }
+
+      const updatedUser = await storage.getUser(userId);
+      res.json({
+        message: 'Perfil atualizado com sucesso',
+        user: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  // Request password reset
+  app.post('/api/auth/request-password-reset', async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email é obrigatório' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Não revelar se o email existe ou não por segurança
+        return res.json({ message: 'Se o email estiver registrado, você receberá as instruções' });
+      }
+
+      // Gerar token único
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      // Salvar token no banco
+      await storage.createPasswordResetToken({
+        user_id: user.id,
+        token,
+        expires_at: expiresAt,
+        used: false,
+      });
+
+      // Em um ambiente real, aqui enviaria o email
+      // Por enquanto, vamos apenas retornar o token no console para teste
+      console.log(`\n🔑 TOKEN DE RECUPERAÇÃO DE SENHA:`);
+      console.log(`Email: ${email}`);
+      console.log(`Token: ${token}`);
+      console.log(`Expira em: ${expiresAt.toLocaleString('pt-BR')}`);
+      console.log(`Link de recuperação: http://localhost:5000/recuperar-senha?token=${token}\n`);
+
+      res.json({ 
+        message: 'Se o email estiver registrado, você receberá as instruções',
+        // REMOVER EM PRODUÇÃO - apenas para desenvolvimento
+        token: process.env.NODE_ENV === 'development' ? token : undefined
+      });
+
+    } catch (error) {
+      console.error('Erro ao solicitar reset de senha:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  // Reset password with token
+  app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+
+      if (!token || !password) {
+        return res.status(400).json({ error: 'Token e nova senha são obrigatórios' });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Nova senha deve ter pelo menos 6 caracteres' });
+      }
+
+      // Buscar token válido
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ error: 'Token inválido ou expirado' });
+      }
+
+      if (resetToken.used) {
+        return res.status(400).json({ error: 'Token já foi utilizado' });
+      }
+
+      if (new Date() > new Date(resetToken.expires_at)) {
+        return res.status(400).json({ error: 'Token expirado' });
+      }
+
+      // Hash da nova senha
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Atualizar senha do usuário
+      await storage.updateUser(resetToken.user_id, {
+        password: hashedPassword,
+        updated_at: new Date(),
+      });
+
+      // Marcar token como usado
+      await storage.markPasswordResetTokenAsUsed(resetToken.id);
+
+      res.json({ message: 'Senha alterada com sucesso' });
+
+    } catch (error) {
+      console.error('Erro ao resetar senha:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
   // ============ GOOGLE CALENDAR INTEGRATION ============
   
   // Initialize Google Calendar OAuth

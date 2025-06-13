@@ -18,6 +18,8 @@ import { ContatoDetalhes } from "./pages/contato-detalhes";
 // import { Prontuario } from "./pages/prontuario";
 import FinanceiroPage from "./pages/financeiro";
 import ErrorGuidePage from "./pages/error-guide";
+import { Perfil } from "./pages/perfil";
+import { RecuperarSenha } from "./pages/recuperar-senha";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -46,6 +48,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/recuperar-senha" component={RecuperarSenha} />
         <Route component={Landing} />
       </Switch>
     );
@@ -66,6 +69,7 @@ function Router() {
         <Route path="/configuracoes" component={Configuracoes} />
         <Route path="/livia-config" component={LiviaConfig} />
         <Route path="/error-guide" component={ErrorGuidePage} />
+        <Route path="/perfil" component={Perfil} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
