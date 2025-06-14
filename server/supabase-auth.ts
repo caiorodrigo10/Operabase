@@ -34,15 +34,30 @@ export const authenticateSupabase = async (
       return res.status(401).json({ error: 'Token inválido ou expirado' });
     }
 
-    // Buscar dados do perfil
-    const { data: profile, error: profileError } = await supabase
+    // Buscar dados do perfil usando admin client
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
 
     if (profileError) {
-      return res.status(401).json({ error: 'Perfil de usuário não encontrado' });
+      console.error('Erro ao buscar perfil:', profileError);
+      // Usar dados do usuário mesmo se o perfil não for encontrado
+      const fallbackProfile = {
+        name: user.user_metadata?.name || user.email,
+        role: user.user_metadata?.role || 'user'
+      };
+      
+      (req as AuthenticatedRequest).supabaseUser = {
+        id: user.id,
+        email: user.email!,
+        name: fallbackProfile.name,
+        role: fallbackProfile.role
+      };
+      
+      next();
+      return;
     }
 
     // Configurar contexto do usuário para RLS
