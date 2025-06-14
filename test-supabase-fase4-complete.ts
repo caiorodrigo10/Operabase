@@ -15,7 +15,7 @@ async function testFASE4Complete() {
   // Test 2: Direct Supabase Connection
   console.log('\n🔗 2. Direct Supabase Connection Test');
   const supabaseUrl = 'https://lkwrevhxugaxfpwiktdy.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrd3Jldmh4dWdheGZwd2lrdGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NDEyNzUsImV4cCI6MjA2NTMxNzI3NX0.1hGfT9Rby8r6u7PBOLMsVODFOXnWfQQRTYNdNJvKaWQ';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrd3Jldmh4dWdheGZwd2lrdGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4Mjg0NjMsImV4cCI6MjA2NTQwNDQ2M30.sWOsGKa_PWfjth6iaXcTpyGa95xmGZO_vnBnrFnK-sc';
   
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
