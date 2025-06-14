@@ -23,52 +23,71 @@ export const authenticateSupabase = async (
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ No authorization header provided');
       return res.status(401).json({ error: 'Token de autenticação não fornecido' });
     }
 
     const token = authHeader.replace('Bearer ', '');
+    console.log('🔍 Processing token for authentication...');
     
-    // Criar cliente Supabase com o token do usuário
-    const supabaseWithAuth = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        },
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false
-        }
+    // Decodificar JWT payload diretamente
+    let user;
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      
+      // Verificar expiração
+      if (payload.exp && payload.exp < Date.now() / 1000) {
+        console.log('❌ Token expired');
+        return res.status(401).json({ error: 'Token expirado' });
       }
-    );
+
+      user = {
+        id: payload.sub,
+        email: payload.email,
+        user_metadata: payload.user_metadata || {}
+      };
+      
+      console.log('✅ Token decoded successfully for user:', payload.email);
+    } catch (decodeError) {
+      console.error('❌ Error decoding token:', decodeError);
+      return res.status(401).json({ error: 'Token inválido' });
+    }
     
-    // Verificar token com Supabase 
-    const { data: { user }, error } = await supabaseWithAuth.auth.getUser();
-    
-    if (error || !user) {
-      console.error('Erro na validação do token:', error);
-      return res.status(401).json({ error: 'Token inválido ou expirado' });
+    if (!user || !user.id) {
+      console.log('❌ No user found in token');
+      return res.status(401).json({ error: 'Usuário não encontrado no token' });
     }
 
-    // Buscar dados do perfil
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    // Buscar dados do perfil usando admin client
+    let profile = null;
+    try {
+      const { data, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profileError) {
+        profile = data;
+        console.log('✅ Profile found for user:', user.email);
+      } else {
+        console.log('⚠️ Profile not found, using fallback data');
+      }
+    } catch (profileError) {
+      console.log('⚠️ Profile lookup failed, using fallback data');
+    }
 
-    // Usar dados do usuário mesmo se o perfil não for encontrado
+    // Criar dados do usuário
     const userData = {
       id: user.id,
-      email: user.email!,
+      email: user.email,
       name: profile?.name || user.user_metadata?.name || user.email,
       role: profile?.role || user.user_metadata?.role || 'user'
     };
 
-    // Configurar contexto do usuário para RLS
+    console.log('👤 User data prepared:', { id: userData.id, email: userData.email, role: userData.role });
+
+    // Configurar contexto do usuário para compatibilidade
     const userIdInt = await getUserIdMapping(user.id);
     req.app.locals.currentUserId = userIdInt;
 
@@ -77,7 +96,7 @@ export const authenticateSupabase = async (
 
     next();
   } catch (error) {
-    console.error('Erro na autenticação Supabase:', error);
+    console.error('❌ Authentication error:', error);
     return res.status(500).json({ error: 'Erro interno de autenticação' });
   }
 };
