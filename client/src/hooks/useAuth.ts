@@ -36,11 +36,21 @@ export const useAuthProvider = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    // Set a timeout to ensure loading doesn't hang forever
+    timeoutId = setTimeout(() => {
+      console.log('⏰ Auth timeout - stopping loading state');
+      setLoading(false);
+    }, 5000); // 5 second timeout
+
     // Get initial session
     const getInitialSession = async () => {
       try {
         console.log('🔍 Getting initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        clearTimeout(timeoutId); // Clear timeout on successful response
         
         if (error) {
           console.error('❌ Session error:', error);
@@ -52,30 +62,58 @@ export const useAuthProvider = () => {
         
         if (session?.user) {
           console.log('👤 User found, getting profile...');
-          // Get profile data
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          try {
+            // Get profile data with timeout
+            const profilePromise = supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
 
-          if (profileError) {
-            console.error('❌ Profile error:', profileError);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+            );
+
+            const { data: profile, error: profileError } = await Promise.race([
+              profilePromise,
+              timeoutPromise
+            ]) as any;
+
+            if (profileError) {
+              console.error('❌ Profile error:', profileError);
+              // Still set user even if profile fetch fails
+              setUser({
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.email,
+                role: 'user'
+              });
+            } else {
+              console.log('📋 Profile:', profile);
+              setUser({
+                id: session.user.id,
+                email: session.user.email!,
+                name: profile?.name || session.user.email,
+                role: profile?.role || 'user'
+              });
+            }
+            setSession(session);
+          } catch (error) {
+            console.error('❌ Profile fetch failed:', error);
+            // Fallback to basic user data
+            setUser({
+              id: session.user.id,
+              email: session.user.email!,
+              name: session.user.email,
+              role: 'user'
+            });
+            setSession(session);
           }
-
-          console.log('📋 Profile:', profile);
-
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            name: profile?.name,
-            role: profile?.role
-          });
-          setSession(session);
         }
         setLoading(false);
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
+        clearTimeout(timeoutId);
         setLoading(false);
       }
     };
@@ -89,24 +127,42 @@ export const useAuthProvider = () => {
         
         try {
           if (event === 'SIGNED_IN' && session?.user) {
-            // Get profile data
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+            try {
+              // Get profile data
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
 
-            if (profileError) {
-              console.error('❌ Profile fetch error:', profileError);
+              if (profileError) {
+                console.error('❌ Profile fetch error:', profileError);
+                // Fallback to basic user data
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  name: session.user.email,
+                  role: 'user'
+                });
+              } else {
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  name: profile?.name || session.user.email,
+                  role: profile?.role || 'user'
+                });
+              }
+              setSession(session);
+            } catch (error) {
+              console.error('❌ Auth state profile error:', error);
+              setUser({
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.email,
+                role: 'user'
+              });
+              setSession(session);
             }
-
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              name: profile?.name,
-              role: profile?.role
-            });
-            setSession(session);
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
             setSession(null);
@@ -119,7 +175,10 @@ export const useAuthProvider = () => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
