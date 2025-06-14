@@ -42,7 +42,7 @@ export const useAuthProvider = () => {
     timeoutId = setTimeout(() => {
       console.log('⏰ Auth timeout - stopping loading state');
       setLoading(false);
-    }, 2000); // 2 second timeout
+    }, 5000); // 5 second timeout
 
     // Get initial session
     const getInitialSession = async () => {
@@ -92,43 +92,21 @@ export const useAuthProvider = () => {
         
         try {
           if (event === 'SIGNED_IN' && session?.user) {
-            try {
-              // Get profile data
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-
-              if (profileError) {
-                console.error('❌ Profile fetch error:', profileError);
-                // Fallback to basic user data
-                setUser({
-                  id: session.user.id,
-                  email: session.user.email!,
-                  name: session.user.email,
-                  role: 'user'
-                });
-              } else {
-                setUser({
-                  id: session.user.id,
-                  email: session.user.email!,
-                  name: profile?.name || session.user.email,
-                  role: profile?.role || 'user'
-                });
-              }
-              setSession(session);
-            } catch (error) {
-              console.error('❌ Auth state profile error:', error);
-              setUser({
-                id: session.user.id,
-                email: session.user.email!,
-                name: session.user.email,
-                role: 'user'
-              });
-              setSession(session);
-            }
+            console.log('🔐 Processing sign in for user:', session.user.email);
+            
+            // Use user metadata directly for faster login
+            const userData = {
+              id: session.user.id,
+              email: session.user.email!,
+              name: session.user.user_metadata?.name || session.user.email,
+              role: session.user.user_metadata?.role || 'user'
+            };
+            
+            console.log('✅ User data set:', userData);
+            setUser(userData);
+            setSession(session);
           } else if (event === 'SIGNED_OUT') {
+            console.log('🚪 Processing sign out');
             setUser(null);
             setSession(null);
           }
@@ -148,16 +126,41 @@ export const useAuthProvider = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
+      console.log('🔐 Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) return { error };
+      if (error) {
+        console.error('❌ Login error:', error);
+        setLoading(false);
+        return { error };
+      }
 
-      // Profile will be loaded by the auth state change listener
+      console.log('✅ Login successful, processing user data...');
+      
+      // Set user data immediately for faster response
+      if (data.user) {
+        const userData = {
+          id: data.user.id,
+          email: data.user.email!,
+          name: data.user.user_metadata?.name || data.user.email,
+          role: data.user.user_metadata?.role || 'user'
+        };
+        
+        console.log('👤 Setting user data:', userData);
+        setUser(userData);
+        setSession(data.session);
+      }
+      
+      setLoading(false);
       return { data };
     } catch (error) {
+      console.error('❌ Login exception:', error);
+      setLoading(false);
       return { error };
     }
   };
