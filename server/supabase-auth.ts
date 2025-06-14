@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { createClient } from '@supabase/supabase-js';
 import { supabase, supabaseAdmin } from './supabase';
 import type { IStorage } from './storage';
 
@@ -27,51 +28,52 @@ export const authenticateSupabase = async (
 
     const token = authHeader.replace('Bearer ', '');
     
-    // Verificar token com Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Criar cliente Supabase com o token do usuário
+    const supabaseWithAuth = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      }
+    );
+    
+    // Verificar token com Supabase 
+    const { data: { user }, error } = await supabaseWithAuth.auth.getUser();
     
     if (error || !user) {
+      console.error('Erro na validação do token:', error);
       return res.status(401).json({ error: 'Token inválido ou expirado' });
     }
 
-    // Buscar dados do perfil usando admin client
+    // Buscar dados do perfil
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
 
-    if (profileError) {
-      console.error('Erro ao buscar perfil:', profileError);
-      // Usar dados do usuário mesmo se o perfil não for encontrado
-      const fallbackProfile = {
-        name: user.user_metadata?.name || user.email,
-        role: user.user_metadata?.role || 'user'
-      };
-      
-      (req as AuthenticatedRequest).supabaseUser = {
-        id: user.id,
-        email: user.email!,
-        name: fallbackProfile.name,
-        role: fallbackProfile.role
-      };
-      
-      next();
-      return;
-    }
+    // Usar dados do usuário mesmo se o perfil não for encontrado
+    const userData = {
+      id: user.id,
+      email: user.email!,
+      name: profile?.name || user.user_metadata?.name || user.email,
+      role: profile?.role || user.user_metadata?.role || 'user'
+    };
 
     // Configurar contexto do usuário para RLS
-    // Usamos uma conversão temporária de UUID para integer durante a migração
     const userIdInt = await getUserIdMapping(user.id);
     req.app.locals.currentUserId = userIdInt;
 
     // Anexar dados do usuário à requisição
-    (req as AuthenticatedRequest).supabaseUser = {
-      id: user.id,
-      email: user.email!,
-      name: profile.name,
-      role: profile.role
-    };
+    (req as AuthenticatedRequest).supabaseUser = userData;
 
     next();
   } catch (error) {
