@@ -26,12 +26,15 @@ function Router() {
   const [location] = useLocation();
   const { user, loading } = useAuth();
   
+  console.log('🔍 Router state:', { user: !!user, loading, location });
+  
   const getCurrentPage = () => {
     if (location === "/") return "dashboard";
     return location.substring(1);
   };
 
   if (loading) {
+    console.log('⏳ Loading state - showing skeleton');
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="space-y-4 w-full max-w-md">
@@ -44,8 +47,11 @@ function Router() {
   }
 
   if (!user) {
+    console.log('🔑 No user - showing login form');
     return <LoginForm />;
   }
+
+  console.log('✅ User authenticated - showing main app');
 
   return (
     <Layout currentPage={getCurrentPage()}>
