@@ -1615,7 +1615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update medical record
-  app.put("/api/medical-records/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/medical-records/:id", authenticateSupabase, async (req, res) => {
     try {
       const recordId = parseInt(req.params.id);
       if (isNaN(recordId)) {
