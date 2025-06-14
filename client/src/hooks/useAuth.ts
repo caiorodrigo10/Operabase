@@ -42,7 +42,7 @@ export const useAuthProvider = () => {
     timeoutId = setTimeout(() => {
       console.log('⏰ Auth timeout - stopping loading state');
       setLoading(false);
-    }, 5000); // 5 second timeout
+    }, 2000); // 2 second timeout
 
     // Get initial session
     const getInitialSession = async () => {
@@ -61,54 +61,19 @@ export const useAuthProvider = () => {
         console.log('📊 Session:', session ? 'Found' : 'Not found');
         
         if (session?.user) {
-          console.log('👤 User found, getting profile...');
-          try {
-            // Get profile data with timeout
-            const profilePromise = supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
-            );
-
-            const { data: profile, error: profileError } = await Promise.race([
-              profilePromise,
-              timeoutPromise
-            ]) as any;
-
-            if (profileError) {
-              console.error('❌ Profile error:', profileError);
-              // Still set user even if profile fetch fails
-              setUser({
-                id: session.user.id,
-                email: session.user.email!,
-                name: session.user.email,
-                role: 'user'
-              });
-            } else {
-              console.log('📋 Profile:', profile);
-              setUser({
-                id: session.user.id,
-                email: session.user.email!,
-                name: profile?.name || session.user.email,
-                role: profile?.role || 'user'
-              });
-            }
-            setSession(session);
-          } catch (error) {
-            console.error('❌ Profile fetch failed:', error);
-            // Fallback to basic user data
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              name: session.user.email,
-              role: 'user'
-            });
-            setSession(session);
-          }
+          console.log('👤 User found, setting user data...');
+          
+          // Use metadata from Supabase session
+          const userData = {
+            id: session.user.id,
+            email: session.user.email!,
+            name: session.user.user_metadata?.name || session.user.email,
+            role: session.user.user_metadata?.role || 'user'
+          };
+          
+          console.log('📋 User data:', userData);
+          setUser(userData);
+          setSession(session);
         }
         setLoading(false);
       } catch (error) {
