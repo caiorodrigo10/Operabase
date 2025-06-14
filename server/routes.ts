@@ -1520,7 +1520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ MEDICAL RECORDS ============
 
   // Get medical records for a contact
-  app.get("/api/contacts/:contactId/medical-records", isAuthenticated, async (req, res) => {
+  app.get("/api/contacts/:contactId/medical-records", authenticateSupabase, async (req, res) => {
     try {
       const contactId = parseInt(req.params.contactId);
       if (isNaN(contactId)) {
@@ -1537,7 +1537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create medical record for a contact
-  app.post("/api/contacts/:contactId/medical-records", isAuthenticated, async (req, res) => {
+  app.post("/api/contacts/:contactId/medical-records", authenticateSupabase, async (req, res) => {
     try {
       const contactId = parseInt(req.params.contactId);
       if (isNaN(contactId)) {
@@ -1574,7 +1574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get medical record by appointment
-  app.get("/api/appointments/:appointmentId/medical-record", isAuthenticated, async (req, res) => {
+  app.get("/api/appointments/:appointmentId/medical-record", authenticateSupabase, async (req, res) => {
     try {
       const appointmentId = parseInt(req.params.appointmentId);
       if (isNaN(appointmentId)) {
@@ -1594,7 +1594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create medical record
-  app.post("/api/medical-records", isAuthenticated, async (req, res) => {
+  app.post("/api/medical-records", authenticateSupabase, async (req, res) => {
     try {
       const userId = (req as any).user?.id;
       const validatedData = insertMedicalRecordSchema.parse({
@@ -1644,7 +1644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get specific medical record
-  app.get("/api/medical-records/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/medical-records/:id", authenticateSupabase, async (req, res) => {
     try {
       const recordId = parseInt(req.params.id);
       if (isNaN(recordId)) {
