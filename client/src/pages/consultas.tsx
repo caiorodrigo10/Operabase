@@ -866,8 +866,10 @@ export function Consultas() {
           </DialogHeader>
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {dayEventsDialog.events.map((appointment: any) => {
-              const colors = getEventColor(appointment.status);
-              const patientName = getPatientName(appointment.contact_id);
+              const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
+              const displayName = appointment.is_google_calendar_event 
+                ? (appointment.doctor_name || 'Evento do Google Calendar')
+                : getPatientName(appointment.contact_id, appointment);
               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
               
               return (
@@ -883,15 +885,25 @@ export function Consultas() {
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 ${colors.dot} rounded-full`}></div>
                       <div>
-                        <p className="font-medium">{time} - {patientName}</p>
-                        {appointment.doctor_name && (
-                          <p className="text-sm text-slate-600">Dr. {appointment.doctor_name}</p>
+                        <p className="font-medium">{time} - {displayName}</p>
+                        {appointment.is_google_calendar_event ? (
+                          <p className="text-sm text-gray-600">Evento do Google Calendar</p>
+                        ) : (
+                          appointment.doctor_name && (
+                            <p className="text-sm text-slate-600">Dr. {appointment.doctor_name}</p>
+                          )
                         )}
                       </div>
                     </div>
-                    <Badge className={statusLabels[appointment.status]?.color || 'bg-gray-100 text-gray-800'}>
-                      {statusLabels[appointment.status]?.label || appointment.status}
-                    </Badge>
+                    {appointment.is_google_calendar_event ? (
+                      <Badge className="bg-gray-100 text-gray-800">
+                        -
+                      </Badge>
+                    ) : (
+                      <Badge className={statusLabels[appointment.status]?.color || 'bg-gray-100 text-gray-800'}>
+                        {statusLabels[appointment.status]?.label || appointment.status}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               );
