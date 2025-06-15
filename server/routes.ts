@@ -494,6 +494,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update appointment status (PATCH)
+  app.patch("/api/appointments/:id", async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      if (isNaN(appointmentId)) {
+        return res.status(400).json({ error: "Invalid appointment ID" });
+      }
+      
+      // Only allow status updates via PATCH
+      const { status } = req.body;
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      
+      const validatedData = { status: status.toString() };
+      const appointment = await storage.updateAppointment(appointmentId, validatedData);
+      
+      if (!appointment) {
+        return res.status(404).json({ error: "Appointment not found" });
+      }
+      
+      res.json(appointment);
+    } catch (error: any) {
+      console.error("Error updating appointment status:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Delete appointment
   app.delete("/api/appointments/:id", async (req, res) => {
     try {
