@@ -21,6 +21,7 @@ import { ContatoDetalhes } from "./pages/contato-detalhes";
 // import { Prontuario } from "./pages/prontuario";
 import { Perfil } from "./pages/perfil";
 import { RecuperarSenha } from "./pages/recuperar-senha";
+import { ResetPassword } from "./pages/reset-password";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -50,6 +51,12 @@ function Router() {
 
   if (!user) {
     console.log('🔑 No user - showing login form');
+    
+    // Check if this is a password reset page
+    if (location === '/reset-password') {
+      return <ResetPassword />;
+    }
+    
     return <LoginForm />;
   }
 
