@@ -128,6 +128,14 @@ export function Configuracoes() {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
+  // Initialize phone values when clinic data loads
+  useEffect(() => {
+    if (clinic) {
+      setPhoneValue(clinic.phone || "");
+      setCelularValue(clinic.celular || "");
+    }
+  }, [clinic]);
+
   // Update clinic configuration mutation
   const updateClinicMutation = useMutation({
     mutationFn: async (data: Partial<InsertClinic>) => {
