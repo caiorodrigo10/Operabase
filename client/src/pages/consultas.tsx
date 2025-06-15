@@ -236,9 +236,18 @@ export function Consultas() {
   };
 
   const getCalendarDays = () => {
-    const start = startOfWeek(startOfMonth(currentDate));
-    const end = endOfWeek(endOfMonth(currentDate));
-    return eachDayOfInterval({ start, end });
+    if (calendarView === 'week') {
+      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      return eachDayOfInterval({ start, end });
+    } else if (calendarView === 'day') {
+      return [currentDate];
+    } else {
+      // Month view
+      const start = startOfWeek(startOfMonth(currentDate));
+      const end = endOfWeek(endOfMonth(currentDate));
+      return eachDayOfInterval({ start, end });
+    }
   };
 
   const getAppointmentsForDate = (date: Date) => {
