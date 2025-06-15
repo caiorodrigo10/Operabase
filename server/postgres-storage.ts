@@ -802,16 +802,37 @@ export class PostgreSQLStorage implements IStorage {
     console.log('🔍 Searching calendar integrations for email:', userEmail);
     
     try {
-      // Use direct SQL query to ensure compatibility
+      // First, try to get the legacy user_id from user_id_mapping
       const pool = (db as any)._.session.client;
-      const result = await pool.query(
-        'SELECT * FROM calendar_integrations WHERE email = $1 ORDER BY created_at DESC',
+      const mappingResult = await pool.query(
+        'SELECT legacy_id FROM user_id_mapping WHERE email = $1',
         [userEmail]
       );
       
-      console.log('📊 Calendar integrations found:', result.rows.length);
-      console.log('📋 Integration data:', result.rows);
-      return result.rows as CalendarIntegration[];
+      if (mappingResult.rows.length > 0) {
+        const legacyUserId = mappingResult.rows[0].legacy_id;
+        console.log('🔗 Found legacy user_id:', legacyUserId, 'for email:', userEmail);
+        
+        // Search by user_id
+        const result = await pool.query(
+          'SELECT * FROM calendar_integrations WHERE user_id = $1 ORDER BY created_at DESC',
+          [legacyUserId]
+        );
+        
+        console.log('📊 Calendar integrations found by user_id:', result.rows.length);
+        console.log('📋 Integration data:', result.rows);
+        return result.rows as CalendarIntegration[];
+      } else {
+        // Fallback to email search
+        const result = await pool.query(
+          'SELECT * FROM calendar_integrations WHERE email = $1 ORDER BY created_at DESC',
+          [userEmail]
+        );
+        
+        console.log('📊 Calendar integrations found by email:', result.rows.length);
+        console.log('📋 Integration data:', result.rows);
+        return result.rows as CalendarIntegration[];
+      }
     } catch (error) {
       console.error('❌ Error in getCalendarIntegrationsByEmail:', error);
       return [];
