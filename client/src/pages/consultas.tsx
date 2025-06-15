@@ -367,6 +367,34 @@ export function Consultas() {
     });
   };
 
+  // Helper functions for calendar background colors
+  const isUnavailableDay = (date: Date): boolean => {
+    if (!clinicConfig) return false;
+    return !isWorkingDay(date, clinicConfig);
+  };
+
+  const isUnavailableHour = (hour: number): boolean => {
+    if (!clinicConfig) return false;
+    const timeString = `${hour.toString().padStart(2, '0')}:00`;
+    return !isWorkingHour(timeString, clinicConfig) || isLunchTime(timeString, clinicConfig);
+  };
+
+  const getCalendarCellBackgroundClass = (date: Date, hour?: number): string => {
+    if (!clinicConfig) return "bg-white";
+    
+    // For monthly view - check if entire day is unavailable
+    if (hour === undefined) {
+      return isUnavailableDay(date) ? "bg-gray-100" : "bg-white";
+    }
+    
+    // For weekly/daily view - check both day and hour
+    if (isUnavailableDay(date) || isUnavailableHour(hour)) {
+      return "bg-gray-100";
+    }
+    
+    return "bg-white";
+  };
+
   // Function to check availability when date/time changes
   const checkAvailability = async (date: string, time: string, duration: string) => {
     if (!date || !time || !duration) {
@@ -1139,11 +1167,13 @@ export function Consultas() {
                   {calendarDays.map((day) => {
                     const dayAppointments = getAppointmentsForDate(day);
                     const isCurrentMonth = isSameMonth(day, currentDate);
+                    const backgroundClass = getCalendarCellBackgroundClass(day);
+                    const isToday = isSameDay(day, new Date());
                     
                     return (
                       <div
                         key={day.toISOString()}
-                        className={`bg-white p-2 min-h-24 ${!isCurrentMonth ? 'text-slate-400' : ''} ${isSameDay(day, new Date()) ? 'bg-blue-50' : ''}`}
+                        className={`${backgroundClass} p-2 min-h-24 ${!isCurrentMonth ? 'text-slate-400' : ''} ${isToday ? 'bg-blue-50' : ''}`}
                       >
                         <div className="text-sm font-medium mb-1">
                           {format(day, 'd')}
@@ -1217,7 +1247,7 @@ export function Consultas() {
                         });
                         
                         return (
-                          <div key={`${day.toISOString()}-${hour}`} className="bg-white p-1 border-r relative min-h-16">
+                          <div key={`${day.toISOString()}-${hour}`} className={`${getCalendarCellBackgroundClass(day, hour)} p-1 border-r relative min-h-16`}>
                             {dayAppointments.map((appointment: Appointment, idx: number) => {
                               const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                               const patientName = getPatientName(appointment.contact_id, appointment);
@@ -1261,7 +1291,7 @@ export function Consultas() {
                       });
                       
                       return (
-                        <div key={hour} className="flex border-b border-slate-100 pb-2">
+                        <div key={hour} className={`flex border-b border-slate-100 pb-2 ${getCalendarCellBackgroundClass(currentDate, hour)}`}>
                           <div className="w-20 text-sm text-slate-600 pt-2">
                             {hour}:00
                           </div>
