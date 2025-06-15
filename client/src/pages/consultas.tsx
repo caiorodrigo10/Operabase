@@ -389,11 +389,43 @@ export function Consultas() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <Badge className={statusLabels[appointment.status]?.color || 'bg-gray-100 text-gray-800'}>
-                                {statusLabels[appointment.status]?.label || appointment.status}
-                              </Badge>
+                              {/* Clickable Status Badge with Dropdown */}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <div onClick={(e) => e.stopPropagation()}>
+                                    <Badge 
+                                      className={`${statusLabels[appointment.status]?.color || 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 hover:shadow-sm transition-all duration-200 border border-opacity-20`}
+                                    >
+                                      {statusLabels[appointment.status]?.label || appointment.status}
+                                      <span className="ml-1 text-xs opacity-60">▼</span>
+                                    </Badge>
+                                  </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  {/* Status Change Options */}
+                                  {Object.entries(statusConfig)
+                                    .filter(([status]) => status !== appointment.status)
+                                    .sort(([,a], [,b]) => a.order - b.order)
+                                    .map(([status, config]) => (
+                                      <DropdownMenuItem
+                                        key={status}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateStatusMutation.mutate({
+                                            appointmentId: appointment.id,
+                                            status: status
+                                          });
+                                        }}
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <div className={`w-3 h-3 ${config.badgeColor} rounded-full mr-2`}></div>
+                                        Alterar para {config.label}
+                                      </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                               
-                              {/* Quick Status Change Dropdown */}
+                              {/* Actions Menu */}
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -404,7 +436,7 @@ export function Consultas() {
                                     <MoreVertical className="w-4 h-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuContent align="end" className="w-40">
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -423,27 +455,6 @@ export function Consultas() {
                                     <Edit className="w-4 h-4 mr-2" />
                                     Editar consulta
                                   </DropdownMenuItem>
-                                  
-                                  {/* Status Change Options */}
-                                  {Object.entries(statusConfig)
-                                    .filter(([status]) => status !== appointment.status)
-                                    .sort(([,a], [,b]) => a.order - b.order)
-                                    .map(([status, config]) => (
-                                      <DropdownMenuItem
-                                        key={status}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateStatusMutation.mutate({
-                                            appointmentId: appointment.id,
-                                            status: status
-                                          });
-                                        }}
-                                        disabled={updateStatusMutation.isPending}
-                                      >
-                                        <div className={`w-3 h-3 ${config.badgeColor} rounded-full mr-2`}></div>
-                                        Marcar como {config.label}
-                                      </DropdownMenuItem>
-                                    ))}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
