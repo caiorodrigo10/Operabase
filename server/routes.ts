@@ -358,8 +358,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         user_id: req.user.id,
                         clinic_id: clinicId,
                         doctor_name: event.summary,
-                        specialty: integration.sync_preference === 'bidirectional' ? 'Evento Sincronizado' : 'Evento do Google Calendar',
-                        appointment_type: integration.sync_preference === 'bidirectional' ? 'bidirectional_sync' : 'google_calendar',
+                        specialty: integration.sync_enabled ? 'Evento Sincronizado' : 'Evento do Google Calendar',
+                        appointment_type: integration.sync_enabled ? 'sync_enabled' : 'google_calendar',
                         scheduled_date: startDate,
                         duration_minutes: durationMinutes,
                         status: 'scheduled',
@@ -370,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         updated_at: new Date(),
                         google_calendar_event_id: event.id,
                         is_google_calendar_event: true, // Flag to identify Google Calendar events
-                        sync_preference: integration.sync_preference // Track sync preference for UI rendering
+                        sync_enabled: integration.sync_enabled // Track sync status for UI rendering
                       });
                     }
                   }
