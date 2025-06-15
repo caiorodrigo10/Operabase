@@ -26,14 +26,53 @@ import { EventTooltip } from "@/components/EventTooltip";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
 import type { Appointment, Contact } from "@/../../shared/schema";
 
-const statusLabels = {
-  scheduled: { label: "Agendado", color: "bg-green-100 text-green-800" },
-  completed: { label: "Realizado", color: "bg-blue-100 text-blue-800" },
-  cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800" },
-  pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
-  confirmed: { label: "Confirmado", color: "bg-green-100 text-green-800" },
-  agendado: { label: "Agendado", color: "bg-green-100 text-green-800" },
-  realizado: { label: "Realizado", color: "bg-blue-100 text-blue-800" },
+// Status configuration with proper colors and ordering
+const statusConfig = {
+  scheduled: { 
+    label: "Agendado", 
+    color: "bg-blue-100 text-blue-800 border-blue-200",
+    badgeColor: "bg-blue-500",
+    order: 1
+  },
+  confirmed: { 
+    label: "Confirmado", 
+    color: "bg-green-100 text-green-800 border-green-200",
+    badgeColor: "bg-green-500",
+    order: 2
+  },
+  completed: { 
+    label: "Realizado", 
+    color: "bg-purple-100 text-purple-800 border-purple-200",
+    badgeColor: "bg-purple-500",
+    order: 3
+  },
+  cancelled: { 
+    label: "Cancelado", 
+    color: "bg-red-100 text-red-800 border-red-200",
+    badgeColor: "bg-red-500",
+    order: 4
+  },
+  no_show: { 
+    label: "Faltou", 
+    color: "bg-orange-100 text-orange-800 border-orange-200",
+    badgeColor: "bg-orange-500",
+    order: 5
+  },
+  pending: { 
+    label: "Pendente", 
+    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    badgeColor: "bg-yellow-500",
+    order: 0
+  }
+} as const;
+
+// Support legacy status names
+const statusLabels: Record<string, { label: string; color: string }> = {
+  ...Object.fromEntries(
+    Object.entries(statusConfig).map(([key, value]) => [key, { label: value.label, color: value.color }])
+  ),
+  agendado: { label: "Agendado", color: "bg-blue-100 text-blue-800" },
+  realizado: { label: "Realizado", color: "bg-purple-100 text-purple-800" },
   cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
   pendente: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
 };
@@ -54,6 +93,33 @@ export function Consultas() {
   });
   
   const { toast } = useToast();
+
+  // Mutation for updating appointment status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
+      const response = await fetch(`/api/appointments/${appointmentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to update status');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+      toast({
+        title: "Status atualizado",
+        description: "O status da consulta foi atualizado com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status da consulta.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch appointments
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
@@ -107,12 +173,14 @@ export function Consultas() {
       'agendado': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
       'confirmed': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
       'confirmada': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-      'completed': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' },
-      'finalizada': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' },
+      'completed': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
+      'realizado': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
       'cancelled': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
       'cancelado': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
       'no_show': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
       'faltou': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
+      'pending': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
+      'pendente': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
     };
     return statusMap[status] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
   };
@@ -324,26 +392,60 @@ export function Consultas() {
                               <Badge className={statusLabels[appointment.status]?.color || 'bg-gray-100 text-gray-800'}>
                                 {statusLabels[appointment.status]?.label || appointment.status}
                               </Badge>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditAppointment(appointment.id);
-                                }}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAppointmentClick(appointment);
-                                }}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
+                              
+                              {/* Quick Status Change Dropdown */}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAppointmentClick(appointment);
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Ver detalhes
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditAppointment(appointment.id);
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Editar consulta
+                                  </DropdownMenuItem>
+                                  
+                                  {/* Status Change Options */}
+                                  {Object.entries(statusConfig)
+                                    .filter(([status]) => status !== appointment.status)
+                                    .sort(([,a], [,b]) => a.order - b.order)
+                                    .map(([status, config]) => (
+                                      <DropdownMenuItem
+                                        key={status}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateStatusMutation.mutate({
+                                            appointmentId: appointment.id,
+                                            status: status
+                                          });
+                                        }}
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <div className={`w-3 h-3 ${config.badgeColor} rounded-full mr-2`}></div>
+                                        Marcar como {config.label}
+                                      </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         </CardContent>
