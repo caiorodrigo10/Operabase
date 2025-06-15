@@ -2256,11 +2256,11 @@ export function Consultas() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="insurance_type"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Convênio</FormLabel>
-                          <Select>
+                          <Select onValueChange={field.onChange} defaultValue="particular">
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Particular" />
@@ -2281,7 +2281,7 @@ export function Consultas() {
                     
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="insurance_holder"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Titular do convênio</FormLabel>
@@ -2297,7 +2297,7 @@ export function Consultas() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="insurance_number"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Número da carteirinha</FormLabel>
@@ -2311,7 +2311,7 @@ export function Consultas() {
                     
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="insurance_responsible_cpf"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>CPF do Responsável</FormLabel>
