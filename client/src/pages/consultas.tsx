@@ -1103,7 +1103,7 @@ export function Consultas() {
                     />
                   </div>
 
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <FormField
                       control={form.control}
                       name="duration"
@@ -1129,13 +1129,13 @@ export function Consultas() {
                     />
                   </div>
 
-                  <div className="col-span-3">
+                  <div className="col-span-4">
                     <div className="space-y-2">
                       <div className="text-sm text-gray-700 invisible">Ação</div>
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-4"
+                        className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-6"
                         onClick={() => {
                           const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
                           const targetDuration = watchedDuration || '30';
