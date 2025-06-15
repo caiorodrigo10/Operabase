@@ -499,6 +499,36 @@ export function Consultas() {
     return contact ? contact.name : 'Paciente não encontrado';
   };
 
+  // Calendar height and positioning helpers
+  const PIXELS_PER_HOUR = 60; // Base height for 1 hour slot
+  const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60; // 1 pixel per minute
+
+  // Calculate appointment height based on duration
+  const getAppointmentHeight = (durationMinutes: number): number => {
+    return Math.max(durationMinutes * PIXELS_PER_MINUTE, 20); // Minimum 20px height
+  };
+
+  // Calculate appointment top position based on start time within the hour
+  const getAppointmentTopPosition = (scheduledDate: string): number => {
+    const date = new Date(scheduledDate);
+    const minutes = date.getMinutes();
+    return minutes * PIXELS_PER_MINUTE; // Position based on minutes past the hour
+  };
+
+  // Get appointment duration in minutes
+  const getAppointmentDuration = (appointment: Appointment): number => {
+    return appointment.duration_minutes || 60; // Default to 60 minutes if not specified
+  };
+
+  // Check if appointment spans multiple hours
+  const getAppointmentEndHour = (appointment: Appointment): number => {
+    if (!appointment.scheduled_date) return 0;
+    const startDate = new Date(appointment.scheduled_date);
+    const duration = getAppointmentDuration(appointment);
+    const endDate = new Date(startDate.getTime() + duration * 60000);
+    return endDate.getHours();
+  };
+
   const getPatientInfo = (contactId: number) => {
     return contacts.find((c: any) => c.id === contactId);
   };
@@ -1216,63 +1246,86 @@ export function Consultas() {
               )}
 
               {calendarView === "week" && (
-                <div className="grid grid-cols-8 gap-px bg-slate-200 rounded-lg overflow-hidden">
-                  {/* Time column header */}
-                  <div className="bg-slate-50 p-2"></div>
-                  
-                  {/* Day headers */}
-                  {calendarDays.slice(0, 7).map((day) => (
-                    <div key={day.toISOString()} className="bg-slate-50 p-2 text-center">
-                      <div className="text-sm font-medium">{format(day, 'EEE', { locale: ptBR })}</div>
-                      <div className={`text-lg ${isSameDay(day, new Date()) ? 'text-blue-600 font-bold' : ''}`}>
-                        {format(day, 'd')}
+                <div className="bg-slate-200 rounded-lg overflow-hidden">
+                  {/* Headers */}
+                  <div className="grid grid-cols-8 gap-px">
+                    {/* Time column header */}
+                    <div className="bg-slate-50 p-2 text-center font-medium">Hora</div>
+                    
+                    {/* Day headers */}
+                    {calendarDays.slice(0, 7).map((day) => (
+                      <div key={day.toISOString()} className="bg-slate-50 p-2 text-center">
+                        <div className="text-sm font-medium">{format(day, 'EEE', { locale: ptBR })}</div>
+                        <div className={`text-lg ${isSameDay(day, new Date()) ? 'text-blue-600 font-bold' : ''}`}>
+                          {format(day, 'd')}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                   
-                  {/* Time slots */}
-                  {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
-                    <div key={hour} className="contents">
-                      {/* Time label */}
-                      <div className="bg-white p-2 text-sm text-slate-600 border-r">
-                        {hour}:00
-                      </div>
-                      
-                      {/* Day columns */}
-                      {calendarDays.slice(0, 7).map((day) => {
-                        const dayAppointments = getAppointmentsForDate(day).filter((apt: Appointment) => {
-                          if (!apt.scheduled_date) return false;
-                          const aptHour = new Date(apt.scheduled_date).getHours();
-                          return aptHour === hour;
-                        });
+                  {/* Time slots grid */}
+                  <div className="grid grid-cols-8 gap-px">
+                    {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
+                      <div key={hour} className="contents">
+                        {/* Time label */}
+                        <div className="bg-white p-2 text-sm text-slate-600 border-r flex items-start justify-center" style={{ height: `${PIXELS_PER_HOUR}px` }}>
+                          {hour}:00
+                        </div>
                         
-                        return (
-                          <div key={`${day.toISOString()}-${hour}`} className={`${getCalendarCellBackgroundClass(day, hour)} p-1 border-r relative min-h-16`}>
-                            {dayAppointments.map((appointment: Appointment, idx: number) => {
-                              const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
-                              const patientName = getPatientName(appointment.contact_id, appointment);
-                              const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
+                        {/* Day columns */}
+                        {calendarDays.slice(0, 7).map((day) => {
+                          const allDayAppointments = getAppointmentsForDate(day);
+                          
+                          // Get appointments that start in this hour slot
+                          const slotAppointments = allDayAppointments.filter((apt: Appointment) => {
+                            if (!apt.scheduled_date) return false;
+                            const aptStartHour = new Date(apt.scheduled_date).getHours();
+                            return aptStartHour === hour;
+                          });
+                          
+                          return (
+                            <div 
+                              key={`${day.toISOString()}-${hour}`} 
+                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative overflow-hidden`}
+                              style={{ height: `${PIXELS_PER_HOUR}px` }}
+                            >
+                              {slotAppointments.map((appointment: Appointment) => {
+                                const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
+                                const patientName = getPatientName(appointment.contact_id, appointment);
+                                const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
+                                const duration = getAppointmentDuration(appointment);
+                                const height = getAppointmentHeight(duration);
+                                const topPosition = getAppointmentTopPosition(appointment.scheduled_date || '');
 
-                              return (
-                                <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
-                                  <div
-                                    className="absolute left-1 right-1 text-xs p-1 bg-slate-50 text-slate-700 rounded truncate cursor-pointer border border-slate-200 hover:bg-slate-100"
-                                    style={{ top: `${idx * 20}px`, zIndex: 10 + idx }}
-                                    onClick={() => handleAppointmentClick(appointment)}
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                      <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                return (
+                                  <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
+                                    <div
+                                      className="absolute left-1 right-1 text-xs p-1 bg-blue-100 text-blue-800 rounded cursor-pointer border border-blue-200 hover:bg-blue-200 transition-colors overflow-hidden"
+                                      style={{ 
+                                        top: `${topPosition}px`,
+                                        height: `${height}px`,
+                                        zIndex: 10
+                                      }}
+                                      onClick={() => handleAppointmentClick(appointment)}
+                                    >
+                                      <div className="flex items-start gap-1 h-full">
+                                        <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-0.5`}></div>
+                                        <div className="flex-1 overflow-hidden">
+                                          <div className="font-medium truncate">{time}</div>
+                                          <div className="truncate text-xs opacity-90">{patientName}</div>
+                                          <div className="text-xs opacity-75">{duration}min</div>
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </EventTooltip>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                                  </EventTooltip>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -1282,46 +1335,87 @@ export function Consultas() {
                     {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                   </div>
                   
-                  <div className="grid grid-cols-1 gap-2">
-                    {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => {
-                      const hourAppointments = getAppointmentsForDate(currentDate).filter((apt: Appointment) => {
-                        if (!apt.scheduled_date) return false;
-                        const aptHour = new Date(apt.scheduled_date).getHours();
-                        return aptHour === hour;
-                      });
-                      
-                      return (
-                        <div key={hour} className={`flex border-b border-slate-100 pb-2 ${getCalendarCellBackgroundClass(currentDate, hour)}`}>
-                          <div className="w-20 text-sm text-slate-600 pt-2">
+                  <div className="bg-slate-200 rounded-lg overflow-hidden">
+                    <div className="flex">
+                      {/* Time column */}
+                      <div className="w-24 bg-slate-50">
+                        <div className="p-2 text-center font-medium border-b">Hora</div>
+                        {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
+                          <div 
+                            key={hour} 
+                            className="p-2 text-sm text-slate-600 border-b flex items-start justify-center"
+                            style={{ height: `${PIXELS_PER_HOUR}px` }}
+                          >
                             {hour}:00
                           </div>
-                          <div className="flex-1 space-y-1">
-                            {hourAppointments.map((appointment: Appointment, idx: number) => {
-                              const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
-                              const patientName = getPatientName(appointment.contact_id, appointment);
-                              const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
+                        ))}
+                      </div>
+                      
+                      {/* Appointments column */}
+                      <div className="flex-1 bg-white">
+                        <div className="p-2 text-center font-medium border-b bg-slate-50">Compromissos</div>
+                        <div className="relative">
+                          {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
+                            <div 
+                              key={hour} 
+                              className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
+                              style={{ height: `${PIXELS_PER_HOUR}px` }}
+                            >
+                              {/* Hour grid line */}
+                              <div className="absolute top-0 left-0 right-0 h-px bg-slate-200"></div>
+                            </div>
+                          ))}
+                          
+                          {/* Appointments positioned absolutely */}
+                          {getAppointmentsForDate(currentDate).map((appointment: Appointment) => {
+                            if (!appointment.scheduled_date) return null;
+                            
+                            const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
+                            const patientName = getPatientName(appointment.contact_id, appointment);
+                            const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
+                            const duration = getAppointmentDuration(appointment);
+                            const height = getAppointmentHeight(duration);
+                            
+                            const startDate = new Date(appointment.scheduled_date);
+                            const startHour = startDate.getHours();
+                            const startMinutes = startDate.getMinutes();
+                            
+                            // Calculate position from 8 AM start
+                            const hourOffset = startHour - 8;
+                            const totalMinutesFromStart = (hourOffset * 60) + startMinutes;
+                            const topPosition = totalMinutesFromStart * PIXELS_PER_MINUTE;
 
-                              return (
-                                <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
-                                  <div
-                                    className="p-2 bg-slate-50 text-slate-700 rounded cursor-pointer border border-slate-200 hover:bg-slate-100"
-                                    onClick={() => handleAppointmentClick(appointment)}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                      <span className="font-medium">{time} - {patientName}</span>
+                            return (
+                              <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
+                                <div
+                                  className="absolute left-2 right-2 text-sm p-3 bg-blue-100 text-blue-800 rounded cursor-pointer border border-blue-200 hover:bg-blue-200 transition-colors overflow-hidden shadow-sm"
+                                  style={{ 
+                                    top: `${topPosition}px`,
+                                    height: `${height}px`,
+                                    zIndex: 10
+                                  }}
+                                  onClick={() => handleAppointmentClick(appointment)}
+                                >
+                                  <div className="flex items-start gap-2 h-full">
+                                    <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
+                                    <div className="flex-1 overflow-hidden">
+                                      <div className="font-semibold truncate">{time} - {patientName}</div>
+                                      {appointment.doctor_name && !appointment.google_calendar_event_id && (
+                                        <div className="text-xs mt-1 opacity-90">Dr. {appointment.doctor_name}</div>
+                                      )}
+                                      <div className="text-xs mt-1 opacity-75">Duração: {duration} minutos</div>
+                                      {appointment.appointment_name && (
+                                        <div className="text-xs mt-1 opacity-90 truncate">{appointment.appointment_name}</div>
+                                      )}
                                     </div>
-                                    {appointment.doctor_name && !appointment.google_calendar_event_id && (
-                                      <div className="text-xs mt-1">Dr. {appointment.doctor_name}</div>
-                                    )}
                                   </div>
-                                </EventTooltip>
-                              );
-                            })}
-                          </div>
+                                </div>
+                              </EventTooltip>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
