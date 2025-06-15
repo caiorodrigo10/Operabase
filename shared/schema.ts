@@ -78,9 +78,11 @@ export const clinics = pgTable("clinics", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   responsible: text("responsible").notNull(),
-  whatsapp_number: text("whatsapp_number").notNull(),
-  email: text("email"),
   phone: text("phone"),
+  phone_country_code: text("phone_country_code").default("+55"),
+  celular: text("celular").notNull(),
+  celular_country_code: text("celular_country_code").default("+55"),
+  email: text("email"),
   specialties: text("specialties").array(),
   
   // Address fields
@@ -90,14 +92,16 @@ export const clinics = pgTable("clinics", {
   address_neighborhood: text("address_neighborhood"),
   address_city: text("address_city"),
   address_state: text("address_state"),
-  address_zip_code: text("address_zip_code"),
-  address_country: text("address_country").default("Brasil"),
+  address_zip: text("address_zip"),
+  address_country: text("address_country").default("BR"),
   
   // Operational information
   total_professionals: integer("total_professionals").default(1),
-  working_days: jsonb("working_days").default('["monday","tuesday","wednesday","thursday","friday"]'),
-  working_hours: jsonb("working_hours").default('{"start":"08:00","end":"18:00"}'),
-  lunch_break: jsonb("lunch_break").default('{"enabled":true,"start":"12:00","end":"13:00"}'),
+  working_days: text("working_days").array().default(['monday','tuesday','wednesday','thursday','friday']),
+  work_start: text("work_start").default("08:00"),
+  work_end: text("work_end").default("18:00"),
+  lunch_start: text("lunch_start").default("12:00"),
+  lunch_end: text("lunch_end").default("13:00"),
   timezone: text("timezone").default("America/Sao_Paulo"),
   
   // Business information

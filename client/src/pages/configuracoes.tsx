@@ -10,11 +10,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save } from "lucide-react";
+import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save, Phone } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Clinic, InsertClinic } from "@shared/schema";
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import countries from 'world-countries';
 
 const integrations = [
   {
@@ -82,6 +86,8 @@ export function Configuracoes() {
   const [clinicConfig, setClinicConfig] = useState<Partial<InsertClinic>>({});
   const [workingDays, setWorkingDays] = useState<string[]>(["monday", "tuesday", "wednesday", "thursday", "friday"]);
   const [isSaving, setIsSaving] = useState(false);
+  const [phoneValue, setPhoneValue] = useState<string>("");
+  const [celularValue, setCelularValue] = useState<string>("");
 
   // Fetch clinic configuration
   const { data: clinic, refetch: refetchClinic } = useQuery({
@@ -427,20 +433,22 @@ export function Configuracoes() {
                   </div>
                   <div>
                     <Label htmlFor="clinic-phone">Telefone Principal</Label>
-                    <Input
-                      id="clinic-phone"
-                      defaultValue={clinic?.phone || ""}
-                      className="mt-1"
-                      placeholder="(11) 99999-9999"
+                    <PhoneInput
+                      international
+                      defaultCountry="BR"
+                      value={phoneValue}
+                      onChange={setPhoneValue}
+                      className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="clinic-whatsapp">WhatsApp</Label>
-                    <Input
-                      id="clinic-whatsapp"
-                      defaultValue={clinic?.whatsapp_number || ""}
-                      className="mt-1"
-                      placeholder="(11) 99999-9999"
+                    <Label htmlFor="clinic-celular">Celular/WhatsApp</Label>
+                    <PhoneInput
+                      international
+                      defaultCountry="BR"
+                      value={celularValue}
+                      onChange={setCelularValue}
+                      className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                   <div>
