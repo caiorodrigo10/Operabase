@@ -131,12 +131,23 @@ export function Configuracoes() {
   // Initialize phone values and working days when clinic data loads
   useEffect(() => {
     if (clinic) {
+      console.log("🏥 Clinic data loaded:", { 
+        working_days: clinic.working_days, 
+        phone: clinic.phone, 
+        celular: clinic.celular 
+      });
+      
       setPhoneValue(clinic.phone || "");
       setCelularValue(clinic.celular || "");
       
-      // Update working days from clinic data
+      // Update working days from clinic data - this should override the default
       if (clinic.working_days && Array.isArray(clinic.working_days)) {
+        console.log("📅 Setting working days from clinic data:", clinic.working_days);
         setWorkingDays(clinic.working_days);
+      } else {
+        // Fallback to default if no working days are set
+        console.log("📅 Using default working days");
+        setWorkingDays(["monday", "tuesday", "wednesday", "thursday", "friday"]);
       }
     }
   }, [clinic]);
