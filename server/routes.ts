@@ -305,7 +305,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get Google Calendar events if user is authenticated and has calendar integration
       if (req.user) {
         try {
+          console.log('🔍 Fetching calendar integrations for user:', req.user.id);
           const integrations = await storage.getCalendarIntegrations(req.user.id);
+          console.log('📊 Calendar integrations found:', integrations.length);
           const googleEvents = [];
           
           for (const integration of integrations) {
@@ -313,16 +315,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               try {
                 // Check sync preferences - only show Google Calendar events if sync is enabled
                 const showGoogleEvents = integration.sync_enabled && integration.is_active;
+                console.log('📋 Integration check:', {
+                  id: integration.id,
+                  sync_enabled: integration.sync_enabled,
+                  is_active: integration.is_active,
+                  showGoogleEvents
+                });
                 
                 if (!showGoogleEvents) {
+                  console.log('⏭️ Skipping integration - sync disabled or inactive');
                   continue; // Skip this integration if sync is disabled
                 }
 
                 // Set up Google Calendar service
+                const tokenExpiry = integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined;
                 googleCalendarService.setCredentials(
                   integration.access_token,
                   integration.refresh_token || undefined,
-                  integration.token_expires_at?.getTime()
+                  tokenExpiry
                 );
 
                 // Get events for the date range
@@ -338,6 +348,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   timeMin,
                   timeMax
                 );
+
+                console.log('📅 Google Calendar events found:', events.length);
+                console.log('🕐 Date range:', { timeMin, timeMax });
 
                 // Convert Google Calendar events to appointment format based on sync preference
                 for (const event of events) {
