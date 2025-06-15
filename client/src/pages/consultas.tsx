@@ -505,6 +505,337 @@ export function Consultas() {
         }}
       />
 
+      {/* Create Appointment Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Agendar Nova Consulta</DialogTitle>
+            <DialogDescription>
+              Preencha os dados para agendar uma nova consulta. O sistema verificará automaticamente a disponibilidade.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
+              {/* Appointment Name */}
+              <FormField
+                control={form.control}
+                name="appointment_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Compromisso *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: Consulta Dr. Silva, Retorno Cardiologia..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Contact Selection */}
+              <FormField
+                control={form.control}
+                name="contact_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Paciente *</FormLabel>
+                    <FormControl>
+                      <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={contactComboboxOpen}
+                            className="w-full justify-between"
+                          >
+                            {field.value
+                              ? contacts.find((contact: Contact) => contact.id.toString() === field.value)?.name
+                              : "Selecione um paciente..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Buscar paciente..." />
+                            <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {contacts.map((contact: Contact) => (
+                                <CommandItem
+                                  key={contact.id}
+                                  value={contact.name}
+                                  onSelect={() => {
+                                    field.onChange(contact.id.toString());
+                                    form.setValue("contact_whatsapp", contact.phone || "");
+                                    form.setValue("contact_email", contact.email || "");
+                                    setContactComboboxOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${
+                                      field.value === contact.id.toString() ? "opacity-100" : "opacity-0"
+                                    }`}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span>{contact.name}</span>
+                                    {contact.phone && (
+                                      <span className="text-xs text-gray-500">{contact.phone}</span>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Professional Selection */}
+              <FormField
+                control={form.control}
+                name="user_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profissional *</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o profissional" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clinicUsers.map((user: any) => (
+                            <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                              {user.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Date and Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="scheduled_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="scheduled_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Horário *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Duration and Type */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="duration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duração (minutos) *</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Duração" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="30">30 minutos</SelectItem>
+                            <SelectItem value="60">60 minutos</SelectItem>
+                            <SelectItem value="90">90 minutos</SelectItem>
+                            <SelectItem value="120">120 minutos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Consulta *</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="consulta">Consulta</SelectItem>
+                            <SelectItem value="retorno">Retorno</SelectItem>
+                            <SelectItem value="avaliacao">Avaliação</SelectItem>
+                            <SelectItem value="procedimento">Procedimento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Availability Check Status */}
+              {availabilityConflict && (
+                <div className={`p-3 rounded-lg border ${
+                  availabilityConflict.hasConflict
+                    ? "bg-red-50 border-red-200 text-red-800"
+                    : "bg-green-50 border-green-200 text-green-800"
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-sm font-medium">{availabilityConflict.message}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Find Available Slots */}
+              {watchedDate && watchedDuration && (
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => findAvailableSlots(watchedDate, watchedDuration)}
+                    disabled={availabilityCheck.isPending}
+                  >
+                    {availabilityCheck.isPending ? "Buscando..." : "Encontrar Horários Disponíveis"}
+                  </Button>
+
+                  {suggestedSlots.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {suggestedSlots.map((slot, index) => (
+                        <Button
+                          key={index}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            form.setValue("scheduled_time", slot.time);
+                            setSuggestedSlots([]);
+                          }}
+                          className="text-xs"
+                        >
+                          {slot.time}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Contact Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="contact_whatsapp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WhatsApp</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="(11) 99999-9999"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contact_email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="paciente@email.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Notes */}
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Observações sobre a consulta..."
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createAppointmentMutation.isPending || (availabilityConflict?.hasConflict === true)}
+                >
+                  {createAppointmentMutation.isPending ? "Agendando..." : "Agendar Consulta"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
       <div className="bg-white rounded-lg shadow-sm border">
         {/* View Mode Toggle */}
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">

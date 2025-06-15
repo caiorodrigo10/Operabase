@@ -60,6 +60,7 @@ export interface IStorage {
   updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment | undefined>;
   deleteAppointment(id: number): Promise<boolean>;
   getAppointmentsByContact(contactId: number): Promise<Appointment[]>;
+  getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]>;
 
   // Analytics
   createAnalyticsMetric(metric: InsertAnalyticsMetric): Promise<AnalyticsMetric>;
@@ -104,6 +105,7 @@ export interface IStorage {
 
   // Calendar Integrations
   getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]>;
+  getAllCalendarIntegrations(): Promise<CalendarIntegration[]>;
   getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]>;
   getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined>;
   getCalendarIntegrationByUserAndProvider(userId: number, provider: string, email: string): Promise<CalendarIntegration | undefined>;

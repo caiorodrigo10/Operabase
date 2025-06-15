@@ -1414,6 +1414,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Update linked calendar settings
   app.put('/api/calendar/integrations/:integrationId/linked-calendar', calendarAuth, updateLinkedCalendarSettings);
+
+  // Check availability for appointment scheduling
+  app.post('/api/calendar/check-availability', async (req, res) => {
+    try {
+      const { startDateTime, endDateTime, excludeAppointmentId } = req.body;
+      
+      if (!startDateTime || !endDateTime) {
+        return res.status(400).json({ error: "Start and end datetime are required" });
+      }
+
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ error: "Invalid datetime format" });
+      }
+
+      // Check for conflicts with existing appointments
+      const existingAppointments = await storage.getAppointmentsByDateRange(startDate, endDate);
+      
+      let conflictingAppointment = null;
+      if (excludeAppointmentId) {
+        conflictingAppointment = existingAppointments.find(apt => 
+          apt.id !== excludeAppointmentId && 
+          new Date(apt.scheduled_date) < endDate &&
+          new Date(apt.scheduled_date).getTime() + (apt.duration_minutes * 60000) > startDate.getTime()
+        );
+      } else {
+        conflictingAppointment = existingAppointments.find(apt => 
+          new Date(apt.scheduled_date) < endDate &&
+          new Date(apt.scheduled_date).getTime() + (apt.duration_minutes * 60000) > startDate.getTime()
+        );
+      }
+
+      if (conflictingAppointment) {
+        // Get contact name for the conflicting appointment
+        const contact = await storage.getContact(conflictingAppointment.contact_id);
+        return res.json({
+          available: false,
+          conflict: true,
+          conflictType: 'appointment',
+          conflictDetails: {
+            id: conflictingAppointment.id.toString(),
+            title: `${conflictingAppointment.doctor_name} - ${contact?.name || 'Paciente'}`,
+            startTime: conflictingAppointment.scheduled_date,
+            endTime: new Date(new Date(conflictingAppointment.scheduled_date).getTime() + 
+                             conflictingAppointment.duration_minutes * 60000).toISOString(),
+            location: conflictingAppointment.location || ''
+          }
+        });
+      }
+
+      // Check for conflicts with Google Calendar events
+      try {
+        // Get all active calendar integrations
+        const integrations = await storage.getAllCalendarIntegrations();
+        
+        for (const integration of integrations) {
+          if (!integration.sync_enabled || !integration.access_token) continue;
+          
+          try {
+            const events = await googleCalendarService.getEvents(
+              integration.access_token,
+              integration.refresh_token,
+              startDate,
+              endDate,
+              integration.linked_calendar_id
+            );
+
+            const conflictingEvent = events.find(event => {
+              if (!event.start?.dateTime || !event.end?.dateTime) return false;
+              
+              const eventStart = new Date(event.start.dateTime);
+              const eventEnd = new Date(event.end.dateTime);
+              
+              return eventStart < endDate && eventEnd > startDate;
+            });
+
+            if (conflictingEvent) {
+              return res.json({
+                available: false,
+                conflict: true,
+                conflictType: 'google_calendar',
+                conflictDetails: {
+                  id: conflictingEvent.id || 'unknown',
+                  title: conflictingEvent.summary || 'Evento sem título',
+                  startTime: conflictingEvent.start?.dateTime || startDateTime,
+                  endTime: conflictingEvent.end?.dateTime || endDateTime,
+                  location: conflictingEvent.location || ''
+                }
+              });
+            }
+          } catch (calendarError) {
+            console.error('Error checking calendar events:', calendarError);
+            // Continue checking other integrations even if one fails
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Google Calendar conflicts:', error);
+        // Don't fail the availability check if Google Calendar check fails
+      }
+
+      res.json({
+        available: true,
+        conflict: false
+      });
+
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      res.status(500).json({ error: 'Failed to check availability' });
+    }
+  });
   
   // Manual sync from Google Calendar to system
   app.post("/api/calendar/sync-from-google", isAuthenticated, async (req, res) => {
