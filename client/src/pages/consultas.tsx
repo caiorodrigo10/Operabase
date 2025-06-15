@@ -146,6 +146,11 @@ export function Consultas() {
     message: string;
     conflictType?: string;
   } | null>(null);
+  const [workingHoursWarning, setWorkingHoursWarning] = useState<{
+    hasWarning: boolean;
+    message: string;
+    type: 'non_working_day' | 'outside_hours' | 'lunch_time' | null;
+  } | null>(null);
   const [suggestedSlots, setSuggestedSlots] = useState<Array<{
     date: string;
     time: string;
@@ -281,6 +286,87 @@ export function Consultas() {
     },
   });
 
+  // Fetch clinic configuration for working hours validation
+  const { data: clinicConfig } = useQuery({
+    queryKey: ["/api/clinic/1/config"],
+    queryFn: async () => {
+      const response = await fetch('/api/clinic/1/config');
+      if (!response.ok) throw new Error('Failed to fetch clinic config');
+      return response.json();
+    },
+    select: (data: any) => ({
+      working_days: data.working_days || ['monday','tuesday','wednesday','thursday','friday'],
+      work_start: data.work_start || "08:00",
+      work_end: data.work_end || "18:00", 
+      lunch_start: data.lunch_start || "12:00",
+      lunch_end: data.lunch_end || "13:00"
+    })
+  });
+
+  // Helper functions for working hours validation
+  const getDayOfWeekKey = (date: Date): string => {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[getDay(date)];
+  };
+
+  const isWorkingDay = (date: Date, config: any): boolean => {
+    if (!config?.working_days) return true;
+    const dayKey = getDayOfWeekKey(date);
+    return config.working_days.includes(dayKey);
+  };
+
+  const isWorkingHour = (time: string, config: any): boolean => {
+    if (!config?.work_start || !config?.work_end) return true;
+    return time >= config.work_start && time <= config.work_end;
+  };
+
+  const isLunchTime = (time: string, config: any): boolean => {
+    if (!config?.lunch_start || !config?.lunch_end) return false;
+    return time >= config.lunch_start && time < config.lunch_end;
+  };
+
+  const checkWorkingHours = (date: string, time: string) => {
+    if (!date || !time || !clinicConfig) {
+      setWorkingHoursWarning(null);
+      return;
+    }
+
+    const selectedDate = new Date(date);
+    
+    if (!isWorkingDay(selectedDate, clinicConfig)) {
+      setWorkingHoursWarning({
+        hasWarning: true,
+        message: "Este dia não está configurado como dia útil da clínica",
+        type: 'non_working_day'
+      });
+      return;
+    }
+    
+    if (!isWorkingHour(time, clinicConfig)) {
+      setWorkingHoursWarning({
+        hasWarning: true,
+        message: `Horário fora do funcionamento da clínica (${clinicConfig.work_start} às ${clinicConfig.work_end})`,
+        type: 'outside_hours'
+      });
+      return;
+    }
+    
+    if (isLunchTime(time, clinicConfig)) {
+      setWorkingHoursWarning({
+        hasWarning: true,
+        message: `Horário durante o almoço da clínica (${clinicConfig.lunch_start} às ${clinicConfig.lunch_end})`,
+        type: 'lunch_time'
+      });
+      return;
+    }
+
+    setWorkingHoursWarning({
+      hasWarning: false,
+      message: "Horário dentro do funcionamento da clínica",
+      type: null
+    });
+  };
+
   // Function to check availability when date/time changes
   const checkAvailability = async (date: string, time: string, duration: string) => {
     if (!date || !time || !duration) {
@@ -362,6 +448,7 @@ export function Consultas() {
     const timeoutId = setTimeout(() => {
       if (watchedDate && watchedTime && watchedDuration) {
         checkAvailability(watchedDate, watchedTime, watchedDuration);
+        checkWorkingHours(watchedDate, watchedTime);
       }
     }, 500); // Debounce
 
@@ -723,6 +810,29 @@ export function Consultas() {
                     <Clock className="h-4 w-4" />
                     <span className="text-sm font-medium">{availabilityConflict.message}</span>
                   </div>
+                </div>
+              )}
+
+              {/* Working Hours Warning */}
+              {workingHoursWarning && (
+                <div className={`p-3 rounded-lg border ${
+                  workingHoursWarning.hasWarning
+                    ? "bg-orange-50 border-orange-200 text-orange-800"
+                    : "bg-blue-50 border-blue-200 text-blue-800"
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {workingHoursWarning.hasWarning ? (
+                      <AlertTriangle className="h-4 w-4" />
+                    ) : (
+                      <Clock className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-medium">{workingHoursWarning.message}</span>
+                  </div>
+                  {workingHoursWarning.hasWarning && (
+                    <div className="mt-2 text-xs text-orange-700">
+                      O agendamento ainda pode ser realizado, mas está fora do horário padrão da clínica.
+                    </div>
+                  )}
                 </div>
               )}
 
