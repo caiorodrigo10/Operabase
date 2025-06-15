@@ -304,7 +304,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appointments = await storage.getAppointments(clinicId, filters);
       console.log('📊 DB appointments found:', appointments.length);
       
-      res.json(appointments);
+      // Try to get Google Calendar events if user has integrations
+      let allAppointments = [...appointments];
+      
+      try {
+        // Get calendar integrations by querying database directly for this clinic
+        const integrations = await storage.getCalendarIntegrationsForClinic(clinicId);
+        console.log('📅 Calendar integrations found:', integrations.length);
+        
+        if (integrations.length > 0) {
+          const { googleCalendarService } = await import('./google-calendar-service');
+          
+          for (const integration of integrations) {
+            if (integration.is_active && integration.sync_enabled && integration.calendar_id) {
+              try {
+                // Set credentials
+                googleCalendarService.setCredentials(
+                  integration.access_token!,
+                  integration.refresh_token || undefined,
+                  integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined
+                );
+                
+                // Get date range for events
+                const timeMin = filters.date 
+                  ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate()).toISOString()
+                  : new Date().toISOString();
+                const timeMax = filters.date
+                  ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate() + 1).toISOString()
+                  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                
+                const events = await googleCalendarService.listEvents(
+                  integration.calendar_id,
+                  timeMin,
+                  timeMax
+                );
+                
+                console.log('📅 Google Calendar events found:', events.length);
+                
+                // Convert Google Calendar events to appointment format
+                for (const event of events) {
+                  if (event.start?.dateTime && event.summary) {
+                    const startDate = new Date(event.start.dateTime);
+                    const endDate = new Date(event.end?.dateTime || event.start.dateTime);
+                    const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+                    
+                    // Check if this event is already in our database
+                    const existsInDb = appointments.some(apt => apt.google_calendar_event_id === event.id);
+                    
+                    if (!existsInDb) {
+                      allAppointments.push({
+                        id: `gc_${event.id}`, // Prefix to distinguish from DB appointments
+                        contact_id: null,
+                        user_id: integration.user_id,
+                        clinic_id: clinicId,
+                        doctor_name: event.summary,
+                        specialty: 'Evento do Google Calendar',
+                        appointment_type: 'google_calendar',
+                        scheduled_date: startDate,
+                        duration_minutes: durationMinutes,
+                        status: 'scheduled',
+                        payment_status: 'pending',
+                        payment_amount: 0,
+                        session_notes: event.description || null,
+                        created_at: new Date(),
+                        updated_at: new Date(),
+                        google_calendar_event_id: event.id,
+                        is_google_calendar_event: true
+                      } as any);
+                    }
+                  }
+                }
+              } catch (calError) {
+                console.warn('Error fetching from Google Calendar:', calError);
+              }
+            }
+          }
+        }
+      } catch (integrationError) {
+        console.warn('Error fetching calendar integrations:', integrationError);
+      }
+      
+      console.log('📊 Total appointments (DB + Google):', allAppointments.length);
+      res.json(allAppointments);
     } catch (error) {
       console.error('Error fetching appointments:', error);
       res.status(500).json({ error: 'Failed to fetch appointments' });

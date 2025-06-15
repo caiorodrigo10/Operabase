@@ -793,6 +793,21 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  async getCalendarIntegrationsForClinic(clinicId: number): Promise<CalendarIntegration[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM calendar_integrations 
+        WHERE clinic_id = ${clinicId}
+        AND is_active = true
+        ORDER BY created_at DESC
+      `);
+      return result.rows as CalendarIntegration[];
+    } catch (error) {
+      console.error('Error fetching calendar integrations for clinic:', error);
+      return [];
+    }
+  }
+
   async getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]> {
     console.log('🔍 Searching calendar integrations for email:', userEmail);
     
