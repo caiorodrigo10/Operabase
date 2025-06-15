@@ -210,23 +210,23 @@ export function Consultas() {
       };
     }
 
-    // Regular appointments use status-based colors
+    // Regular appointments use original status-based colors
     const config = getStatusConfig(appointment.status);
     if (!config) {
-      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500', isGoogleEvent: false };
+      return { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-500', isGoogleEvent: false };
     }
 
-    // Convert config colors to event colors
+    // Convert config colors to event colors - mantendo as cores originais
     const colorMap: Record<string, { bg: string; text: string; border: string; dot: string; isGoogleEvent: boolean }> = {
-      'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500', isGoogleEvent: false },
-      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500', isGoogleEvent: false },
-      'bg-green-100 text-green-800 border-green-200': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500', isGoogleEvent: false },
-      'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500', isGoogleEvent: false },
-      'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500', isGoogleEvent: false },
-      'bg-red-100 text-red-800 border-red-200': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500', isGoogleEvent: false },
+      'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-yellow-500', isGoogleEvent: false },
+      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-blue-500', isGoogleEvent: false },
+      'bg-green-100 text-green-800 border-green-200': { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-green-500', isGoogleEvent: false },
+      'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-purple-500', isGoogleEvent: false },
+      'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-orange-500', isGoogleEvent: false },
+      'bg-red-100 text-red-800 border-red-200': { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-red-500', isGoogleEvent: false },
     };
 
-    return colorMap[config.color] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500', isGoogleEvent: false };
+    return colorMap[config.color] || { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-500', isGoogleEvent: false };
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -677,11 +677,6 @@ export function Consultas() {
                                     <div className="flex items-center gap-2">
                                       {!colors.isGoogleEvent && (
                                         <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                      )}
-                                      {colors.isGoogleEvent && (
-                                        <div className="w-3 h-3 flex items-center justify-center">
-                                          <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                                        </div>
                                       )}
                                       <span className="font-medium">{time} - {displayName}</span>
                                     </div>
