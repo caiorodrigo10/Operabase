@@ -121,6 +121,7 @@ export function Configuracoes() {
   const [isSaving, setIsSaving] = useState(false);
   const [phoneValue, setPhoneValue] = useState<string | undefined>("");
   const [celularValue, setCelularValue] = useState<string | undefined>("");
+  const [hasLunchBreak, setHasLunchBreak] = useState(true);
 
   // Fetch clinic configuration
   const { data: clinic, refetch: refetchClinic } = useQuery<Clinic>({
@@ -134,7 +135,8 @@ export function Configuracoes() {
       console.log("🏥 Clinic data loaded:", { 
         working_days: clinic.working_days, 
         phone: clinic.phone, 
-        celular: clinic.celular 
+        celular: clinic.celular,
+        has_lunch_break: clinic.has_lunch_break
       });
       
       setPhoneValue(clinic.phone || "");
@@ -149,6 +151,9 @@ export function Configuracoes() {
         console.log("📅 Using default working days");
         setWorkingDays(["monday", "tuesday", "wednesday", "thursday", "friday"]);
       }
+      
+      // Load lunch break setting
+      setHasLunchBreak(clinic.has_lunch_break !== false);
     }
   }, [clinic]);
 
@@ -768,7 +773,11 @@ export function Configuracoes() {
 
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="lunch-break" defaultChecked />
+                      <Checkbox 
+                        id="lunch-break" 
+                        checked={hasLunchBreak}
+                        onCheckedChange={(checked) => setHasLunchBreak(checked === true)}
+                      />
                       <Label htmlFor="lunch-break" className="text-sm font-medium text-slate-700">
                         Intervalo para Almoço
                       </Label>

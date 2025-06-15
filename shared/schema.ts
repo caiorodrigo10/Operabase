@@ -100,6 +100,7 @@ export const clinics = pgTable("clinics", {
   working_days: text("working_days").array().default(['monday','tuesday','wednesday','thursday','friday']),
   work_start: text("work_start").default("08:00"),
   work_end: text("work_end").default("18:00"),
+  has_lunch_break: boolean("has_lunch_break").default(true),
   lunch_start: text("lunch_start").default("12:00"),
   lunch_end: text("lunch_end").default("13:00"),
   timezone: text("timezone").default("America/Sao_Paulo"),
