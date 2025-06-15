@@ -236,6 +236,7 @@ export function Configuracoes() {
       address_country: clinicConfig.address_country || "BR",
       work_start: formElements.work_start?.value || "08:00",
       work_end: formElements.work_end?.value || "18:00",
+      has_lunch_break: hasLunchBreak,
       lunch_start: formElements.lunch_start?.value || "12:00",
       lunch_end: formElements.lunch_end?.value || "13:00",
       working_days: workingDays,
@@ -784,21 +785,27 @@ export function Configuracoes() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="lunch-start">Início do Almoço</Label>
+                        <Label htmlFor="lunch-start" className={!hasLunchBreak ? "text-slate-400" : ""}>
+                          Início do Almoço
+                        </Label>
                         <Input
                           id="lunch-start"
                           type="time"
                           defaultValue="12:00"
                           className="mt-1"
+                          disabled={!hasLunchBreak}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="lunch-end">Fim do Almoço</Label>
+                        <Label htmlFor="lunch-end" className={!hasLunchBreak ? "text-slate-400" : ""}>
+                          Fim do Almoço
+                        </Label>
                         <Input
                           id="lunch-end"
                           type="time"
                           defaultValue="13:00"
                           className="mt-1"
+                          disabled={!hasLunchBreak}
                         />
                       </div>
                     </div>

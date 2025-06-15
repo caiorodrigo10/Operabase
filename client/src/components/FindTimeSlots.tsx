@@ -26,6 +26,7 @@ interface ClinicConfig {
   working_days: string[];
   work_start: string;
   work_end: string;
+  has_lunch_break: boolean;
   lunch_start: string;
   lunch_end: string;
 }
@@ -54,7 +55,8 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
     select: (data: any): ClinicConfig => ({
       working_days: data.working_days || ['monday','tuesday','wednesday','thursday','friday'],
       work_start: data.work_start || "08:00",
-      work_end: data.work_end || "18:00", 
+      work_end: data.work_end || "18:00",
+      has_lunch_break: data.has_lunch_break !== false,
       lunch_start: data.lunch_start || "12:00",
       lunch_end: data.lunch_end || "13:00"
     })
@@ -101,6 +103,10 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
   };
 
   const isLunchTime = (time: string, config: ClinicConfig): boolean => {
+    // If lunch break is disabled, never block lunch time
+    if (!config.has_lunch_break) {
+      return false;
+    }
     return time >= config.lunch_start && time < config.lunch_end;
   };
 
