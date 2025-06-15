@@ -1129,21 +1129,23 @@ export function Consultas() {
                     />
                   </div>
 
-                  <div className="col-span-3 flex flex-col">
-                    <div className="h-5 mb-1"></div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-4"
-                      onClick={() => {
-                        const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
-                        const targetDuration = watchedDuration || '30';
-                        setFindTimeSlotsOpen(true);
-                      }}
-                    >
-                      <Clock className="mr-2 h-4 w-4" />
-                      Encontrar horário
-                    </Button>
+                  <div className="col-span-3">
+                    <div className="space-y-2">
+                      <div className="text-sm text-gray-700 invisible">Ação</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-4"
+                        onClick={() => {
+                          const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
+                          const targetDuration = watchedDuration || '30';
+                          setFindTimeSlotsOpen(true);
+                        }}
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Encontrar horário
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
