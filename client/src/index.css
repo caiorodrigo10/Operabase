@@ -116,3 +116,42 @@
     background-color: var(--medical-purple);
   }
 }
+
+/* Phone input customization - Hide country code, show only flag */
+.PhoneInput {
+  display: flex;
+}
+
+.PhoneInputInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.PhoneInputCountrySelect {
+  width: auto !important;
+  min-width: auto !important;
+  padding-right: 8px !important;
+  border-right: none !important;
+}
+
+.PhoneInputCountrySelectArrow {
+  display: none !important;
+}
+
+.PhoneInputCountryIcon {
+  width: 24px !important;
+  height: 18px !important;
+  border-radius: 2px !important;
+}
+
+/* Hide the country calling code text (+55, +1, etc) */
+.PhoneInputCountryIcon + * {
+  display: none !important;
+}
+
+/* Ensure proper spacing and border */
+.PhoneInput .PhoneInputInput {
+  border-left: 1px solid hsl(var(--border)) !important;
+  margin-left: 8px !important;
+  padding-left: 8px !important;
+}

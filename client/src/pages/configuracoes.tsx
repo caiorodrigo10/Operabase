@@ -479,7 +479,14 @@ export function Configuracoes() {
                       defaultCountry="BR"
                       value={phoneValue}
                       onChange={(value) => setPhoneValue(value || "")}
+                      displayInitialValueAsLocalNumber={false}
+                      countryCallingCodeEditable={false}
+                      addInternationalOption={false}
                       className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{
+                        '--PhoneInputCountryFlag-aspectRatio': '1.5',
+                        '--PhoneInputCountrySelectArrow-color': 'transparent',
+                      } as any}
                     />
                   </div>
                   <div>
@@ -489,7 +496,14 @@ export function Configuracoes() {
                       defaultCountry="BR"
                       value={celularValue}
                       onChange={(value) => setCelularValue(value || "")}
+                      displayInitialValueAsLocalNumber={false}
+                      countryCallingCodeEditable={false}
+                      addInternationalOption={false}
                       className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{
+                        '--PhoneInputCountryFlag-aspectRatio': '1.5',
+                        '--PhoneInputCountrySelectArrow-color': 'transparent',
+                      } as any}
                     />
                   </div>
                   <div>
