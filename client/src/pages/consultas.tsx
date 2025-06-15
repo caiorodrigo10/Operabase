@@ -1130,22 +1130,24 @@ export function Consultas() {
                   </div>
 
                   <div className="col-span-4">
-                    <div className="space-y-2">
-                      <div className="text-sm text-gray-700 invisible">Ação</div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-6"
-                        onClick={() => {
-                          const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
-                          const targetDuration = watchedDuration || '30';
-                          setFindTimeSlotsOpen(true);
-                        }}
-                      >
-                        <Clock className="mr-2 h-4 w-4" />
-                        Encontrar horário
-                      </Button>
-                    </div>
+                    <FormItem>
+                      <FormLabel className="text-sm text-gray-700 invisible">Ação</FormLabel>
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-6"
+                          onClick={() => {
+                            const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
+                            const targetDuration = watchedDuration || '30';
+                            setFindTimeSlotsOpen(true);
+                          }}
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          Encontrar horário
+                        </Button>
+                      </FormControl>
+                    </FormItem>
                   </div>
                 </div>
               </div>
