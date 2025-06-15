@@ -25,13 +25,13 @@ async function migrateClinicsTable() {
 
     console.log('✅ Colunas básicas adicionadas');
 
-    // Atualizar coluna address_country
+    // Adicionar address_country se não existir e definir default
     await sql`
       ALTER TABLE clinics 
-      ALTER COLUMN address_country SET DEFAULT 'BR'
+      ADD COLUMN IF NOT EXISTS address_country TEXT DEFAULT 'BR'
     `;
 
-    console.log('✅ Coluna address_country atualizada');
+    console.log('✅ Coluna address_country adicionada/atualizada');
 
     // Adicionar working_days como array
     await sql`

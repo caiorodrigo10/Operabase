@@ -20,6 +20,39 @@ import 'react-phone-number-input/style.css';
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
 import countries from 'world-countries';
 
+// Country selector component
+const CountrySelector = ({ value, onChange, placeholder = "Selecione um país" }: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) => {
+  const sortedCountries = countries
+    .map(country => ({
+      code: country.cca2,
+      name: country.name.common,
+      flag: country.flag
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {sortedCountries.map((country) => (
+          <SelectItem key={country.code} value={country.code}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{country.flag}</span>
+              <span>{country.name}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
+
 const integrations = [
   {
     id: 1,
@@ -86,8 +119,8 @@ export function Configuracoes() {
   const [clinicConfig, setClinicConfig] = useState<Partial<InsertClinic>>({});
   const [workingDays, setWorkingDays] = useState<string[]>(["monday", "tuesday", "wednesday", "thursday", "friday"]);
   const [isSaving, setIsSaving] = useState(false);
-  const [phoneValue, setPhoneValue] = useState<string>("");
-  const [celularValue, setCelularValue] = useState<string>("");
+  const [phoneValue, setPhoneValue] = useState<string | undefined>("");
+  const [celularValue, setCelularValue] = useState<string | undefined>("");
 
   // Fetch clinic configuration
   const { data: clinic, refetch: refetchClinic } = useQuery({
