@@ -63,55 +63,47 @@ const statusConfig = {
     color: "bg-red-100 text-red-800 border-red-200",
     badgeColor: "bg-red-500",
     order: 5
-  },
-  // Legacy status support
-  scheduled: { 
-    label: "Agendado", 
-    color: "bg-blue-100 text-blue-800 border-blue-200",
-    badgeColor: "bg-blue-500",
-    order: 1
-  },
-  confirmed: { 
-    label: "Confirmado", 
-    color: "bg-green-100 text-green-800 border-green-200",
-    badgeColor: "bg-green-500",
-    order: 2
-  },
-  completed: { 
-    label: "Realizado", 
-    color: "bg-purple-100 text-purple-800 border-purple-200",
-    badgeColor: "bg-purple-500",
-    order: 3
-  },
-  cancelled: { 
-    label: "Cancelado", 
-    color: "bg-red-100 text-red-800 border-red-200",
-    badgeColor: "bg-red-500",
-    order: 5
-  },
-  no_show: { 
-    label: "Faltou", 
-    color: "bg-orange-100 text-orange-800 border-orange-200",
-    badgeColor: "bg-orange-500",
-    order: 4
-  },
-  pending: { 
-    label: "Pendente", 
-    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    badgeColor: "bg-yellow-500",
-    order: 0
   }
 } as const;
 
-// Support legacy status names
+// Legacy status mapping - only for display purposes
+const legacyStatusMapping: Record<string, keyof typeof statusConfig> = {
+  scheduled: "agendada",
+  confirmed: "confirmada", 
+  completed: "realizada",
+  cancelled: "cancelada",
+  no_show: "faltou",
+  pending: "pendente"
+};
+
+// Main status list for dropdowns (no duplicates)
+const mainStatusList = [
+  'pendente',
+  'agendada', 
+  'confirmada',
+  'realizada',
+  'faltou',
+  'cancelada'
+] as const;
+
+// Helper function to get status config (including legacy mapping)
+const getStatusConfig = (status: string) => {
+  const mappedStatus = legacyStatusMapping[status] || status;
+  return statusConfig[mappedStatus as keyof typeof statusConfig];
+};
+
+// Support legacy status names for display
 const statusLabels: Record<string, { label: string; color: string }> = {
   ...Object.fromEntries(
     Object.entries(statusConfig).map(([key, value]) => [key, { label: value.label, color: value.color }])
   ),
-  agendado: { label: "Agendado", color: "bg-blue-100 text-blue-800" },
-  realizado: { label: "Realizado", color: "bg-purple-100 text-purple-800" },
-  cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
-  pendente: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
+  // Legacy status labels
+  scheduled: { label: "Agendado", color: "bg-blue-100 text-blue-800" },
+  confirmed: { label: "Confirmado", color: "bg-green-100 text-green-800" },
+  completed: { label: "Realizado", color: "bg-purple-100 text-purple-800" },
+  cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800" },
+  no_show: { label: "Faltou", color: "bg-orange-100 text-orange-800" },
+  pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
 };
 
 export function Consultas() {
@@ -205,25 +197,22 @@ export function Consultas() {
   };
 
   const getEventColor = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-      'pendente': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
-      'agendada': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-      'confirmada': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-      'realizada': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
-      'faltou': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
-      'cancelada': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
-      // Legacy status support
-      'scheduled': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-      'agendado': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-      'confirmed': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-      'completed': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
-      'realizado': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
-      'cancelled': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
-      'cancelado': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
-      'no_show': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
-      'pending': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
+    const config = getStatusConfig(status);
+    if (!config) {
+      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+    }
+
+    // Convert config colors to event colors
+    const colorMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+      'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
+      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
+      'bg-green-100 text-green-800 border-green-200': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
+      'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
+      'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
+      'bg-red-100 text-red-800 border-red-200': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
     };
-    return statusMap[status] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+
+    return colorMap[config.color] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -444,25 +433,27 @@ export function Consultas() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
                                   {/* Status Change Options */}
-                                  {Object.entries(statusConfig)
-                                    .filter(([status]) => status !== appointment.status)
-                                    .sort(([,a], [,b]) => a.order - b.order)
-                                    .map(([status, config]) => (
-                                      <DropdownMenuItem
-                                        key={status}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateStatusMutation.mutate({
-                                            appointmentId: appointment.id,
-                                            status: status
-                                          });
-                                        }}
-                                        disabled={updateStatusMutation.isPending}
-                                      >
-                                        <div className={`w-3 h-3 ${config.badgeColor} rounded-full mr-2`}></div>
-                                        Alterar para {config.label}
-                                      </DropdownMenuItem>
-                                    ))}
+                                  {mainStatusList
+                                    .filter((status) => status !== appointment.status)
+                                    .map((status) => {
+                                      const config = statusConfig[status];
+                                      return (
+                                        <DropdownMenuItem
+                                          key={status}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateStatusMutation.mutate({
+                                              appointmentId: appointment.id,
+                                              status: status
+                                            });
+                                          }}
+                                          disabled={updateStatusMutation.isPending}
+                                        >
+                                          <div className={`w-3 h-3 ${config.badgeColor} rounded-full mr-2`}></div>
+                                          Alterar para {config.label}
+                                        </DropdownMenuItem>
+                                      );
+                                    })}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                               
