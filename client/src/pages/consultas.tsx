@@ -697,58 +697,43 @@ export function Consultas() {
                             variant="outline"
                             role="combobox"
                             aria-expanded={contactComboboxOpen}
-                            className="w-full justify-between h-14 text-left font-normal px-4 py-3"
+                            className="w-full justify-between h-11 text-left font-normal px-3"
                           >
-                            <div className="flex items-center gap-3 flex-1">
-                              {field.value ? (
-                                <>
-                                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full text-sm font-medium flex-shrink-0">
-                                    {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="font-medium text-gray-900 truncate">
-                                      {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.name}
-                                    </span>
-                                    {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.phone && (
-                                      <span className="text-sm text-gray-500 truncate">
-                                        {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.phone}
-                                      </span>
-                                    )}
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-400 rounded-full flex-shrink-0">
-                                    <User className="w-5 h-5" />
-                                  </div>
-                                  <span className="text-gray-500">Buscar e selecionar paciente...</span>
-                                </>
-                              )}
-                            </div>
+                            {field.value ? (
+                              <span className="truncate">
+                                {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">Buscar paciente...</span>
+                            )}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[480px] p-0" align="start">
+                        <PopoverContent className="w-[400px] p-0" align="start">
                           <Command>
-                            <div className="flex items-center border-b px-3 py-2">
+                            <div className="flex items-center border-b px-3">
                               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                               <CommandInput 
                                 placeholder="Digite o nome do paciente..." 
-                                className="border-0 focus:ring-0 text-base"
+                                className="border-0 focus:ring-0"
                               />
                             </div>
-                            <CommandEmpty className="py-8 text-center text-sm text-gray-500">
-                              <div className="flex flex-col items-center gap-3">
-                                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 text-gray-400 rounded-full">
-                                  <User className="w-6 h-6" />
-                                </div>
-                                <div>
-                                  <div className="font-medium">Nenhum paciente encontrado</div>
-                                  <div className="text-xs text-gray-400 mt-1">Verifique a ortografia ou cadastre um novo paciente</div>
-                                </div>
-                              </div>
+                            <CommandEmpty className="py-6 text-center text-sm text-gray-500">
+                              <div>Nenhum paciente encontrado</div>
+                              <Button 
+                                variant="link" 
+                                size="sm" 
+                                className="mt-2 text-blue-600"
+                                onClick={() => {
+                                  setContactComboboxOpen(false);
+                                  // TODO: Implement new patient creation
+                                }}
+                              >
+                                <Plus className="mr-1 h-4 w-4" />
+                                Cadastrar paciente
+                              </Button>
                             </CommandEmpty>
-                            <CommandGroup className="max-h-80 overflow-y-auto">
+                            <CommandGroup className="max-h-64 overflow-y-auto">
                               {contacts.map((contact: Contact) => (
                                 <CommandItem
                                   key={contact.id}
@@ -759,50 +744,23 @@ export function Consultas() {
                                     form.setValue("contact_email", contact.email || "");
                                     setContactComboboxOpen(false);
                                   }}
-                                  className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 border-b border-gray-50 last:border-b-0"
+                                  className="flex items-center gap-3 p-3 cursor-pointer"
                                 >
-                                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full text-sm font-medium flex-shrink-0">
+                                  <div className="flex items-center justify-center w-8 h-8 bg-gray-500 text-white rounded-full text-sm font-medium flex-shrink-0">
                                     {contact.name.charAt(0).toUpperCase()}
                                   </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-medium text-gray-900 truncate">{contact.name}</span>
-                                      {field.value === contact.id.toString() && (
-                                        <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                                      )}
-                                    </div>
-                                    <div className="space-y-1">
-                                      {contact.phone && (
-                                        <div className="flex items-center gap-2">
-                                          <Phone className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                                          <span className="text-sm text-gray-600">{contact.phone}</span>
-                                        </div>
-                                      )}
-                                      {contact.email && (
-                                        <div className="flex items-center gap-2">
-                                          <Mail className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                                          <span className="text-sm text-gray-600 truncate">{contact.email}</span>
-                                        </div>
-                                      )}
-                                    </div>
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="font-medium text-gray-900 truncate">{contact.name}</span>
+                                    {contact.phone && (
+                                      <span className="text-sm text-gray-500">{contact.phone}</span>
+                                    )}
                                   </div>
+                                  {field.value === contact.id.toString() && (
+                                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                  )}
                                 </CommandItem>
                               ))}
                             </CommandGroup>
-                            <div className="border-t p-3 bg-gray-50">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-10"
-                                onClick={() => {
-                                  setContactComboboxOpen(false);
-                                  // TODO: Implement new patient creation
-                                }}
-                              >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Cadastrar novo paciente
-                              </Button>
-                            </div>
                           </Command>
                         </PopoverContent>
                       </Popover>
