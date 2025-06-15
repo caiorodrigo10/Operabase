@@ -403,12 +403,13 @@ export function Consultas() {
           {viewMode === "list" ? (
             /* List View */
             <div className="space-y-4">
-              {appointments.length === 0 ? (
+              {appointments.filter((app: Appointment) => !app.google_calendar_event_id).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
                 </div>
               ) : (
                 appointments
+                  .filter((app: Appointment) => !app.google_calendar_event_id)
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
                   })
