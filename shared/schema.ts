@@ -398,7 +398,7 @@ export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema
 // Google Calendar integrations table
 export const calendar_integrations = pgTable("calendar_integrations", {
   id: serial("id").primaryKey(),
-  user_id: integer("user_id").references(() => users.id).notNull(),
+  user_id: text("user_id").notNull(), // Changed to TEXT for Supabase UUIDs
   clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
   provider: text("provider").notNull(),
   email: text("email"),

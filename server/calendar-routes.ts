@@ -103,7 +103,7 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
     } else {
       // Create new integration with primary calendar linked
       await storage.createCalendarIntegration({
-        user_id: typeof userId === 'string' ? null : userId, // For Supabase UUIDs, use null
+        user_id: userId, // Now accepts both UUIDs and integers as text
         clinic_id: clinicId,
         provider: 'google',
         email: userEmail, // Use the user's authenticated email
