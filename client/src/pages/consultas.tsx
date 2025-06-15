@@ -1130,11 +1130,11 @@ export function Consultas() {
                   </div>
 
                   <div className="col-span-3 flex flex-col">
-                    <div className="h-6"></div>
+                    <div className="h-5 mb-1"></div>
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal"
+                      className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-4"
                       onClick={() => {
                         const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
                         const targetDuration = watchedDuration || '30';
