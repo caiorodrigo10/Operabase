@@ -191,15 +191,15 @@ export function Consultas() {
   // Helper functions
   const getPatientName = (contactId: number, appointment?: Appointment) => {
     // Para eventos do Google Calendar, mostrar o título do evento
-    if (appointment?.is_google_calendar_event) {
+    if (appointment?.google_calendar_event_id) {
       return appointment.doctor_name || 'Evento do Google Calendar';
     }
-    const contact = contacts.find(c => c.id === contactId);
+    const contact = contacts.find((c: any) => c.id === contactId);
     return contact ? contact.name : 'Paciente não encontrado';
   };
 
   const getPatientInfo = (contactId: number) => {
-    return contacts.find(c => c.id === contactId);
+    return contacts.find((c: any) => c.id === contactId);
   };
 
   const getEventColor = (status: string, isGoogleCalendarEvent?: boolean) => {
@@ -414,7 +414,7 @@ export function Consultas() {
                   })
                   .map((appointment: Appointment) => {
                     const patientName = getPatientName(appointment.contact_id, appointment);
-                    const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
+                    const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                     
                     return (
                       <Card key={appointment.id} className="border border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow">
@@ -429,7 +429,7 @@ export function Consultas() {
                                     <Clock className="w-4 h-4 mr-1" />
                                     {appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não definida'}
                                   </span>
-                                  {appointment.doctor_name && !appointment.is_google_calendar_event && (
+                                  {appointment.doctor_name && !appointment.google_calendar_event_id && (
                                     <span className="flex items-center">
                                       <Stethoscope className="w-4 h-4 mr-1" />
                                       {appointment.doctor_name}
@@ -544,19 +544,21 @@ export function Consultas() {
                         </div>
                         <div className="space-y-1">
                           {dayAppointments.slice(0, 2).map((appointment: Appointment) => {
-                            const patientName = getPatientName(appointment.contact_id);
+                            const displayName = appointment.google_calendar_event_id 
+                              ? (appointment.doctor_name || 'Evento do Google Calendar')
+                              : getPatientName(appointment.contact_id, appointment);
                             const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
-                            const colors = getEventColor(appointment.status);
+                            const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
 
                             return (
-                              <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
+                              <EventTooltip key={appointment.id} appointment={appointment} patientName={displayName}>
                                 <div
                                   className="text-xs p-1 bg-slate-50 text-slate-700 rounded truncate cursor-pointer border border-slate-200 hover:bg-slate-100"
                                   onClick={() => handleAppointmentClick(appointment)}
                                 >
                                   <div className="flex items-center gap-1">
                                     <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                    <span className="truncate">{time} {patientName.split(' ')[0]}</span>
+                                    <span className="truncate">{time} {displayName.split(' ')[0]}</span>
                                   </div>
                                 </div>
                               </EventTooltip>
