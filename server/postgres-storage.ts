@@ -777,13 +777,26 @@ export class PostgreSQLStorage implements IStorage {
 
   // ============ CALENDAR INTEGRATIONS ============
 
-  async getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]> {
-    const result = await db.execute(sql`
-      SELECT * FROM calendar_integrations 
-      WHERE user_id = ${userId} 
-      ORDER BY created_at DESC
-    `);
-    return result.rows as CalendarIntegration[];
+  async getCalendarIntegrations(userId: string | number): Promise<CalendarIntegration[]> {
+    // For Supabase UUID compatibility, query the profiles table to get user data
+    if (typeof userId === 'string') {
+      // This is a Supabase UUID, query using profiles table
+      const result = await db.execute(sql`
+        SELECT ci.* FROM calendar_integrations ci 
+        JOIN profiles p ON p.email = ci.email
+        WHERE p.id = ${userId}
+        ORDER BY ci.created_at DESC
+      `);
+      return result.rows as CalendarIntegration[];
+    } else {
+      // Legacy integer ID support
+      const result = await db.execute(sql`
+        SELECT * FROM calendar_integrations 
+        WHERE user_id = ${userId} 
+        ORDER BY created_at DESC
+      `);
+      return result.rows as CalendarIntegration[];
+    }
   }
 
   async getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined> {
