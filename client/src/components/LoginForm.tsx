@@ -9,16 +9,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Lock, Mail, Stethoscope } from 'lucide-react';
 
 export function LoginForm() {
-  const { signIn, loading } = useAuth();
+  const { signIn, loading, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setResetMessage('');
     setIsLoading(true);
 
     try {
@@ -36,6 +39,32 @@ export function LoginForm() {
       }
     } catch (err) {
       setError('Erro inesperado ao fazer login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Digite seu email para recuperar a senha');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const { error } = await resetPassword(email);
+      
+      if (error) {
+        setError(error.message || 'Erro ao enviar email de recuperação');
+      } else {
+        setResetMessage('Email de recuperação enviado! Verifique sua caixa de entrada.');
+        setShowForgotPassword(false);
+      }
+    } catch (err) {
+      setError('Erro inesperado ao enviar email de recuperação');
     } finally {
       setIsLoading(false);
     }
@@ -131,20 +160,74 @@ export function LoginForm() {
               </Label>
             </div>
             
-            <Button 
-              type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled={isLoading || !email || !password}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                'Entrar'
-              )}
-            </Button>
+            {!showForgotPassword ? (
+              <>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isLoading || !email || !password}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </Button>
+                
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Button 
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isLoading || !email}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    'Enviar Email de Recuperação'
+                  )}
+                </Button>
+                
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setError('');
+                      setResetMessage('');
+                    }}
+                    className="text-sm text-slate-600 hover:text-slate-700 hover:underline"
+                  >
+                    Voltar ao login
+                  </button>
+                </div>
+              </>
+            )}
+
+            {resetMessage && (
+              <Alert className="border-green-200 bg-green-50">
+                <AlertDescription className="text-green-800">
+                  {resetMessage}
+                </AlertDescription>
+              </Alert>
+            )}
           </form>
         </CardContent>
       </Card>
