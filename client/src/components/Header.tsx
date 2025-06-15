@@ -18,6 +18,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { SearchModal } from "./SearchModal";
+import { useState } from "react";
 
 interface HeaderProps {
   currentPage: string;
@@ -38,7 +40,8 @@ const iconButtons = [
     icon: Search, 
     tooltip: "Procurar Pacientes", 
     href: "/contatos",
-    active: true 
+    active: true,
+    isSearch: true
   },
   { 
     icon: Bell, 
@@ -70,6 +73,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
   const [location] = useLocation();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -190,6 +194,27 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   );
                 }
 
+                // Special handling for search button
+                if (button.isSearch) {
+                  return (
+                    <Tooltip key={index}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 w-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                          onClick={() => setIsSearchModalOpen(true)}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{button.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
                 return (
                   <Tooltip key={index}>
                     <TooltipTrigger asChild>
@@ -283,6 +308,12 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
             })}
           </nav>
         )}
+
+        {/* Search Modal */}
+        <SearchModal 
+          isOpen={isSearchModalOpen} 
+          onClose={() => setIsSearchModalOpen(false)} 
+        />
       </header>
     </TooltipProvider>
   );
