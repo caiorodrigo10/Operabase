@@ -310,34 +310,113 @@ export class PostgreSQLStorage implements IStorage {
   // ============ APPOINTMENTS ============
   
   async getAppointments(clinicId: number, filters?: { status?: string; date?: Date }): Promise<Appointment[]> {
-    let conditions = [eq(appointments.clinic_id, clinicId)];
+    try {
+      let conditions = [`clinic_id = ${clinicId}`];
 
-    if (filters?.status) {
-      conditions.push(eq(appointments.status, filters.status));
-    }
+      if (filters?.status) {
+        conditions.push(`status = '${filters.status}'`);
+      }
 
-    if (filters?.date) {
-      const startOfDay = new Date(filters.date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(filters.date);
-      endOfDay.setHours(23, 59, 59, 999);
+      if (filters?.date) {
+        const dateStr = filters.date.toISOString().split('T')[0];
+        conditions.push(`DATE(scheduled_date) = '${dateStr}'`);
+      }
+
+      const whereClause = conditions.join(' AND ');
       
-      conditions.push(
-        gte(appointments.scheduled_date, startOfDay),
-        lte(appointments.scheduled_date, endOfDay)
-      );
+      const result = await db.execute(sql`
+        SELECT 
+          id, contact_id, clinic_id, user_id, doctor_name, specialty,
+          appointment_type, scheduled_date, duration_minutes, status,
+          cancellation_reason, session_notes, next_appointment_suggested,
+          payment_status, payment_amount, google_calendar_event_id,
+          created_at, updated_at,
+          COALESCE(observations, '') as observations,
+          COALESCE(return_period, '') as return_period,
+          COALESCE(how_found_clinic, '') as how_found_clinic,
+          COALESCE(tags, ARRAY[]::text[]) as tags,
+          COALESCE(receive_reminders, true) as receive_reminders
+        FROM appointments 
+        WHERE ${sql.raw(whereClause)}
+        ORDER BY scheduled_date ASC
+        LIMIT 500
+      `);
+      
+      return result.rows as Appointment[];
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      // Fallback para quando há problemas com colunas
+      const result = await db.execute(sql`
+        SELECT 
+          id, contact_id, clinic_id, user_id, doctor_name, specialty,
+          appointment_type, scheduled_date, duration_minutes, status,
+          cancellation_reason, session_notes, next_appointment_suggested,
+          payment_status, payment_amount, google_calendar_event_id,
+          created_at, updated_at
+        FROM appointments 
+        WHERE clinic_id = ${clinicId}
+        ORDER BY scheduled_date ASC
+        LIMIT 500
+      `);
+      
+      return result.rows.map((row: any) => ({
+        ...row,
+        observations: '',
+        return_period: '',
+        how_found_clinic: '',
+        tags: [],
+        receive_reminders: true
+      })) as Appointment[];
     }
-
-    return db.select()
-      .from(appointments)
-      .where(and(...conditions))
-      .orderBy(asc(appointments.scheduled_date))
-      .limit(500); // Limitar para melhor performance
   }
 
   async getAppointment(id: number): Promise<Appointment | undefined> {
-    const result = await db.select().from(appointments).where(eq(appointments.id, id)).limit(1);
-    return result[0];
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          id, contact_id, clinic_id, user_id, doctor_name, specialty,
+          appointment_type, scheduled_date, duration_minutes, status,
+          cancellation_reason, session_notes, next_appointment_suggested,
+          payment_status, payment_amount, google_calendar_event_id,
+          created_at, updated_at,
+          COALESCE(observations, '') as observations,
+          COALESCE(return_period, '') as return_period,
+          COALESCE(how_found_clinic, '') as how_found_clinic,
+          COALESCE(tags, ARRAY[]::text[]) as tags,
+          COALESCE(receive_reminders, true) as receive_reminders
+        FROM appointments 
+        WHERE id = ${id}
+        LIMIT 1
+      `);
+      
+      return result.rows[0] as Appointment;
+    } catch (error) {
+      console.error('Error fetching appointment:', error);
+      // Fallback simples
+      const result = await db.execute(sql`
+        SELECT 
+          id, contact_id, clinic_id, user_id, doctor_name, specialty,
+          appointment_type, scheduled_date, duration_minutes, status,
+          cancellation_reason, session_notes, next_appointment_suggested,
+          payment_status, payment_amount, google_calendar_event_id,
+          created_at, updated_at
+        FROM appointments 
+        WHERE id = ${id}
+        LIMIT 1
+      `);
+      
+      const row = result.rows[0];
+      if (!row) return undefined;
+      
+      return {
+        ...row,
+        observations: '',
+        return_period: '',
+        how_found_clinic: '',
+        tags: [],
+        receive_reminders: true
+      } as Appointment;
+    }
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
