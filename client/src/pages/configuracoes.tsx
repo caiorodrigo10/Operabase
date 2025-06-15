@@ -114,6 +114,60 @@ export function Configuracoes() {
     },
   });
 
+  // Function to collect form data and save configuration
+  const handleSaveConfiguration = () => {
+    setIsSaving(true);
+    
+    const formElements = {
+      name: document.getElementById("clinic-name") as HTMLInputElement,
+      responsible: document.getElementById("clinic-responsible") as HTMLInputElement,
+      phone: document.getElementById("clinic-phone") as HTMLInputElement,
+      whatsapp_number: document.getElementById("clinic-whatsapp") as HTMLInputElement,
+      email: document.getElementById("clinic-email") as HTMLInputElement,
+      website: document.getElementById("clinic-website") as HTMLInputElement,
+      cnpj: document.getElementById("clinic-cnpj") as HTMLInputElement,
+      description: document.getElementById("clinic-description") as HTMLTextAreaElement,
+      address_street: document.getElementById("address-street") as HTMLInputElement,
+      address_number: document.getElementById("address-number") as HTMLInputElement,
+      address_complement: document.getElementById("address-complement") as HTMLInputElement,
+      address_neighborhood: document.getElementById("address-neighborhood") as HTMLInputElement,
+      address_city: document.getElementById("address-city") as HTMLInputElement,
+      address_state: document.querySelector("#address-state [data-value]")?.getAttribute("data-value") as string,
+      address_zip: document.getElementById("address-zip") as HTMLInputElement,
+      address_country: document.querySelector("#address-country [data-value]")?.getAttribute("data-value") as string,
+      work_start: document.getElementById("work-start") as HTMLInputElement,
+      work_end: document.getElementById("work-end") as HTMLInputElement,
+      lunch_start: document.getElementById("lunch-start") as HTMLInputElement,
+      lunch_end: document.getElementById("lunch-end") as HTMLInputElement,
+    };
+
+    const configData: Partial<InsertClinic> = {
+      name: formElements.name?.value || "",
+      responsible: formElements.responsible?.value || "",
+      phone: formElements.phone?.value || "",
+      whatsapp_number: formElements.whatsapp_number?.value || "",
+      email: formElements.email?.value || "",
+      website: formElements.website?.value || "",
+      cnpj: formElements.cnpj?.value || "",
+      description: formElements.description?.value || "",
+      address_street: formElements.address_street?.value || "",
+      address_number: formElements.address_number?.value || "",
+      address_complement: formElements.address_complement?.value || "",
+      address_neighborhood: formElements.address_neighborhood?.value || "",
+      address_city: formElements.address_city?.value || "",
+      address_state: formElements.address_state || "SP",
+      address_zip: formElements.address_zip?.value || "",
+      address_country: formElements.address_country || "brasil",
+      work_start: formElements.work_start?.value || "08:00",
+      work_end: formElements.work_end?.value || "18:00",
+      lunch_start: formElements.lunch_start?.value || "12:00",
+      lunch_end: formElements.lunch_end?.value || "13:00",
+      working_days: workingDays,
+    };
+
+    updateClinicMutation.mutate(configData);
+  };
+
   // Fetch calendar integrations using TanStack Query
   const { data: calendarIntegrations = [], refetch: refetchIntegrations } = useQuery({
     queryKey: ["/api/calendar/integrations"],
@@ -580,7 +634,14 @@ export function Configuracoes() {
                       <div key={day.id} className="flex items-center space-x-2">
                         <Checkbox 
                           id={day.id} 
-                          defaultChecked={day.defaultChecked}
+                          checked={workingDays.includes(day.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setWorkingDays([...workingDays, day.id]);
+                            } else {
+                              setWorkingDays(workingDays.filter(d => d !== day.id));
+                            }
+                          }}
                         />
                         <Label htmlFor={day.id} className="text-sm">{day.label}</Label>
                       </div>
@@ -661,11 +722,25 @@ export function Configuracoes() {
             </Card>
 
             <div className="flex justify-end space-x-3">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => refetchClinic()}>
                 Cancelar
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Salvar Todas as Configurações
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleSaveConfiguration}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar Todas as Configurações
+                  </>
+                )}
               </Button>
             </div>
           </TabsContent>
