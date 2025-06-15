@@ -1,45 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, addDays, subDays, isSameDay } from "date-fns";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useFindAvailableSlots } from "@/hooks/useAvailability";
 
 interface FindTimeSlotsProps {
   selectedDate?: string;
+  duration: number;
   onTimeSelect: (time: string) => void;
   onClose: () => void;
 }
 
-// Generate time slots for different periods
-const generateTimeSlots = (startHour: number, endHour: number, duration: number = 30) => {
-  const slots = [];
-  for (let hour = startHour; hour < endHour; hour++) {
-    for (let minute = 0; minute < 60; minute += duration) {
-      const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      const endMinute = minute + duration;
-      const endHour = endMinute >= 60 ? hour + 1 : hour;
-      const adjustedEndMinute = endMinute >= 60 ? endMinute - 60 : endMinute;
-      const endTime = `${endHour.toString().padStart(2, '0')}:${adjustedEndMinute.toString().padStart(2, '0')}`;
-      
-      if (endHour <= endHour || (endHour === endHour + 1 && adjustedEndMinute === 0)) {
-        slots.push({
-          startTime,
-          endTime,
-          label: `De ${startTime} às ${endTime}`,
-          available: Math.random() > 0.3 // Mock availability - 70% chance of being available
-        });
-      }
-    }
-  }
-  return slots;
-};
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  label: string;
+  available: boolean;
+}
 
-const morningSlots = generateTimeSlots(7, 12);
-const afternoonSlots = generateTimeSlots(13, 18);
-const eveningSlots = generateTimeSlots(18, 22);
-
-export function FindTimeSlots({ selectedDate, onTimeSelect, onClose }: FindTimeSlotsProps) {
+export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }: FindTimeSlotsProps) {
   const [currentDate, setCurrentDate] = useState(() => {
     if (selectedDate) {
       return new Date(selectedDate);
@@ -47,6 +28,17 @@ export function FindTimeSlots({ selectedDate, onTimeSelect, onClose }: FindTimeS
     return new Date();
   });
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [timeSlots, setTimeSlots] = useState<{
+    morning: TimeSlot[];
+    afternoon: TimeSlot[];
+    evening: TimeSlot[];
+  }>({
+    morning: [],
+    afternoon: [],
+    evening: []
+  });
+
+  const findSlotsMutation = useFindAvailableSlots();
 
   const navigateDate = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => direction === 'prev' ? subDays(prev, 1) : addDays(prev, 1));
@@ -69,8 +61,55 @@ export function FindTimeSlots({ selectedDate, onTimeSelect, onClose }: FindTimeS
   const handleConfirm = () => {
     if (selectedTime) {
       onTimeSelect(selectedTime);
+      onClose();
     }
   };
+
+  // Load available time slots when date or duration changes
+  useEffect(() => {
+    const loadTimeSlots = async () => {
+      try {
+        const dateStr = format(currentDate, 'yyyy-MM-dd');
+        const result = await findSlotsMutation.mutateAsync({
+          date: dateStr,
+          duration,
+          workingHours: {
+            start: "07:00",
+            end: "22:00"
+          }
+        });
+
+        // Organize slots by time periods
+        const morning: TimeSlot[] = [];
+        const afternoon: TimeSlot[] = [];
+        const evening: TimeSlot[] = [];
+
+        result.availableSlots.forEach(slot => {
+          const hour = parseInt(slot.startTime.split('T')[1].split(':')[0]);
+          const timeSlot: TimeSlot = {
+            startTime: slot.startTime.split('T')[1].substring(0, 5),
+            endTime: slot.endTime.split('T')[1].substring(0, 5),
+            label: `De ${slot.startTime.split('T')[1].substring(0, 5)} às ${slot.endTime.split('T')[1].substring(0, 5)}`,
+            available: true
+          };
+
+          if (hour < 12) {
+            morning.push(timeSlot);
+          } else if (hour < 18) {
+            afternoon.push(timeSlot);
+          } else {
+            evening.push(timeSlot);
+          }
+        });
+
+        setTimeSlots({ morning, afternoon, evening });
+      } catch (error) {
+        console.error('Erro ao carregar horários:', error);
+      }
+    };
+
+    loadTimeSlots();
+  }, [currentDate, duration, findSlotsMutation]);
 
   const renderTimeSlots = (slots: any[], title: string) => (
     <div className="space-y-4">
@@ -139,11 +178,24 @@ export function FindTimeSlots({ selectedDate, onTimeSelect, onClose }: FindTimeS
         </div>
       </DialogHeader>
 
-      <div className="space-y-8">
-        {renderTimeSlots(morningSlots, "Horários da manhã")}
-        {renderTimeSlots(afternoonSlots, "Horários da tarde")}
-        {renderTimeSlots(eveningSlots, "Horários da noite")}
-      </div>
+      {findSlotsMutation.isPending ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          <span>Carregando horários disponíveis...</span>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {timeSlots.morning.length > 0 && renderTimeSlots(timeSlots.morning, "Horários da manhã")}
+          {timeSlots.afternoon.length > 0 && renderTimeSlots(timeSlots.afternoon, "Horários da tarde")}
+          {timeSlots.evening.length > 0 && renderTimeSlots(timeSlots.evening, "Horários da noite")}
+          
+          {timeSlots.morning.length === 0 && timeSlots.afternoon.length === 0 && timeSlots.evening.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              Nenhum horário disponível para esta data com duração de {duration} minutos.
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex justify-end space-x-3 pt-6 border-t">
         <Button variant="outline" onClick={onClose}>
@@ -151,7 +203,7 @@ export function FindTimeSlots({ selectedDate, onTimeSelect, onClose }: FindTimeS
         </Button>
         <Button 
           onClick={handleConfirm}
-          disabled={!selectedTime}
+          disabled={!selectedTime || findSlotsMutation.isPending}
           className="bg-blue-600 hover:bg-blue-700"
         >
           Escolher horário

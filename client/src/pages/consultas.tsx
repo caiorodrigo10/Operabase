@@ -24,6 +24,7 @@ import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameM
 import { ptBR } from "date-fns/locale";
 import { EventTooltip } from "@/components/EventTooltip";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
+import { FindTimeSlots } from "@/components/FindTimeSlots";
 import type { Appointment, Contact } from "@/../../shared/schema";
 
 // Schema for appointment creation form
@@ -150,6 +151,7 @@ export function Consultas() {
     time: string;
     datetime: Date;
   }>>([]);
+  const [findTimeSlotsOpen, setFindTimeSlotsOpen] = useState(false);
   
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
@@ -724,38 +726,19 @@ export function Consultas() {
                 </div>
               )}
 
-              {/* Find Available Slots */}
-              {watchedDate && watchedDuration && (
-                <div className="space-y-2">
+              {/* Find Available Slots - Simple Button */}
+              {watchedDuration && (
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => findAvailableSlots(watchedDate, watchedDuration)}
-                    disabled={availabilityCheck.isPending}
+                    onClick={() => setFindTimeSlotsOpen(true)}
+                    className="flex items-center gap-2 text-blue-600"
                   >
-                    {availabilityCheck.isPending ? "Buscando..." : "Encontrar Horários Disponíveis"}
+                    <Clock className="h-4 w-4" />
+                    Encontrar horário
                   </Button>
-
-                  {suggestedSlots.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2">
-                      {suggestedSlots.map((slot, index) => (
-                        <Button
-                          key={index}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            form.setValue("scheduled_time", slot.time);
-                            setSuggestedSlots([]);
-                          }}
-                          className="text-xs"
-                        >
-                          {slot.time}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
 
