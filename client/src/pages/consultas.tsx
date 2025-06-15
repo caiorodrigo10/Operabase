@@ -1059,91 +1059,92 @@ export function Consultas() {
               </div>
 
               {/* Date, Time, Duration and Find Time Button */}
-              <div className="grid grid-cols-12 gap-4 items-end">
-                <div className="col-span-3">
-                  <FormField
-                    control={form.control}
-                    name="scheduled_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <div className="space-y-2">
+                <div className="grid grid-cols-12 gap-3 items-start">
+                  <div className="col-span-3">
+                    <FormField
+                      control={form.control}
+                      name="scheduled_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm text-gray-700">Data da consulta</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              className="h-10"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <div className="col-span-3">
-                  <FormField
-                    control={form.control}
-                    name="scheduled_time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Horário *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                  <div className="col-span-3">
+                    <FormField
+                      control={form.control}
+                      name="scheduled_time"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm text-gray-700">Horário</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="time"
+                                {...field}
+                                className="h-10 pr-8"
+                              />
+                              <Clock className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <div className="col-span-3">
-                  <FormField
-                    control={form.control}
-                    name="duration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Duração *</FormLabel>
-                        <FormControl>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Duração" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="30">30 min</SelectItem>
-                              <SelectItem value="60">60 min</SelectItem>
-                              <SelectItem value="90">90 min</SelectItem>
-                              <SelectItem value="120">120 min</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                  <div className="col-span-3">
+                    <FormField
+                      control={form.control}
+                      name="duration"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm text-gray-700">Duração</FormLabel>
+                          <FormControl>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="30" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="30">30</SelectItem>
+                                <SelectItem value="60">60</SelectItem>
+                                <SelectItem value="90">90</SelectItem>
+                                <SelectItem value="120">120</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <div className="col-span-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full bg-blue-600 text-white hover:bg-blue-700"
-                    disabled={!watchedDate || !watchedDuration}
-                    onClick={() => setFindTimeSlotsOpen(true)}
-                  >
-                    {false ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Buscando...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-4 w-4" />
-                        Encontrar Horário
-                      </>
-                    )}
-                  </Button>
+                  <div className="col-span-3 pt-5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full h-10 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-0"
+                      onClick={() => {
+                        const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
+                        const targetDuration = watchedDuration || '30';
+                        setFindTimeSlotsOpen(true);
+                      }}
+                    >
+                      <Clock className="mr-2 h-4 w-4" />
+                      Encontrar horário
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -1941,8 +1942,8 @@ export function Consultas() {
       <Dialog open={findTimeSlotsOpen} onOpenChange={setFindTimeSlotsOpen}>
         <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto z-[60]">
           <FindTimeSlots
-            selectedDate={watchedDate}
-            duration={parseInt(watchedDuration) || 60}
+            selectedDate={watchedDate || format(new Date(), 'yyyy-MM-dd')}
+            duration={parseInt(watchedDuration) || 30}
             onTimeSelect={(time) => {
               form.setValue("scheduled_time", time);
               setFindTimeSlotsOpen(false);
