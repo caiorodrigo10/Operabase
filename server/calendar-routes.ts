@@ -45,15 +45,29 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
       return res.redirect('/configuracoes?calendar=error&reason=no_user');
     }
 
-    // Get user info from storage
-    const user = await storage.getUser(userId);
-    if (!user) {
-      console.error('❌ User not found:', userId);
-      return res.redirect('/configuracoes?calendar=error&reason=user_not_found');
+    // For Supabase UUID users, get user info from request context
+    let userEmail: string;
+    let clinicId = 1; // Default clinic
+    
+    if (typeof userId === 'string') {
+      // This is a Supabase UUID - get user info from auth context
+      userEmail = req.user?.email;
+      if (!userEmail) {
+        console.error('❌ User email not found for UUID:', userId);
+        return res.redirect('/configuracoes?calendar=error&reason=no_email');
+      }
+      console.log('✅ Processing OAuth for Supabase user:', { userId, email: userEmail, clinicId });
+    } else {
+      // Legacy integer user ID
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error('❌ User not found:', userId);
+        return res.redirect('/configuracoes?calendar=error&reason=user_not_found');
+      }
+      userEmail = user.email;
+      clinicId = user.clinic_id || 1;
+      console.log('✅ Processing OAuth for legacy user:', { userId, email: userEmail, clinicId });
     }
-
-    const clinicId = user.clinic_id || 1; // Default clinic
-    console.log('✅ Processing OAuth for user:', { userId, email: user.email, clinicId });
 
     // Exchange code for tokens
     const tokens = await googleCalendarService.getTokensFromCode(code as string);
@@ -72,11 +86,10 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
     const userCalendars = await googleCalendarService.getUserCalendars();
     const primaryCalendar = userCalendars.find(cal => cal.primary) || userCalendars[0];
 
-    // Check if integration already exists
-    const existingIntegration = await storage.getCalendarIntegrationByUserAndProvider(
-      userId,
-      'google',
-      calendarInfo.email
+    // Check if integration already exists by email for Supabase users
+    const existingIntegrations = await storage.getCalendarIntegrationsByEmail(userEmail);
+    const existingIntegration = existingIntegrations.find(integration => 
+      integration.provider === 'google' && integration.email === calendarInfo.email
     );
 
     if (existingIntegration) {
@@ -94,10 +107,10 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
     } else {
       // Create new integration with primary calendar linked
       await storage.createCalendarIntegration({
-        user_id: userId,
+        user_id: typeof userId === 'string' ? null : userId, // For Supabase UUIDs, use null
         clinic_id: clinicId,
         provider: 'google',
-        email: calendarInfo.email,
+        email: userEmail, // Use the user's authenticated email
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         token_expires_at: new Date(tokens.expiry_date),
