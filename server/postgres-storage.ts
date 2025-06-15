@@ -331,11 +331,11 @@ export class PostgreSQLStorage implements IStorage {
           cancellation_reason, session_notes, next_appointment_suggested,
           payment_status, payment_amount, google_calendar_event_id,
           created_at, updated_at,
-          COALESCE(observations, '') as observations,
-          COALESCE(return_period, '') as return_period,
-          COALESCE(how_found_clinic, '') as how_found_clinic,
-          COALESCE(tags, ARRAY[]::text[]) as tags,
-          COALESCE(receive_reminders, true) as receive_reminders
+          observations,
+          return_period,
+          how_found_clinic,
+          tags,
+          receive_reminders
         FROM appointments 
         WHERE ${sql.raw(whereClause)}
         ORDER BY scheduled_date ASC
@@ -379,11 +379,11 @@ export class PostgreSQLStorage implements IStorage {
           cancellation_reason, session_notes, next_appointment_suggested,
           payment_status, payment_amount, google_calendar_event_id,
           created_at, updated_at,
-          COALESCE(observations, '') as observations,
-          COALESCE(return_period, '') as return_period,
-          COALESCE(how_found_clinic, '') as how_found_clinic,
-          COALESCE(tags, ARRAY[]::text[]) as tags,
-          COALESCE(receive_reminders, true) as receive_reminders
+          observations,
+          return_period,
+          how_found_clinic,
+          tags,
+          receive_reminders
         FROM appointments 
         WHERE id = ${id}
         LIMIT 1
@@ -410,11 +410,11 @@ export class PostgreSQLStorage implements IStorage {
       
       return {
         ...row,
-        observations: '',
-        return_period: '',
-        how_found_clinic: '',
-        tags: [],
-        receive_reminders: true
+        observations: row.observations || '',
+        return_period: row.return_period || '',
+        how_found_clinic: row.how_found_clinic || '',
+        tags: row.tags || [],
+        receive_reminders: row.receive_reminders !== false
       } as Appointment;
     }
   }
