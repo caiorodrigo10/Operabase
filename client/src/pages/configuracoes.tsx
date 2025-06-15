@@ -165,6 +165,14 @@ export function Configuracoes() {
   const handleSaveConfiguration = () => {
     setIsSaving(true);
     
+    // Debug: Log the phone values to confirm they include country codes
+    console.log("📞 Phone values before save:", {
+      phoneValue,
+      celularValue,
+      includesCountryCode: phoneValue?.startsWith('+'),
+      celularIncludesCountryCode: celularValue?.startsWith('+')
+    });
+    
     const formElements = {
       name: document.getElementById("clinic-name") as HTMLInputElement,
       responsible: document.getElementById("clinic-responsible") as HTMLInputElement,
@@ -191,8 +199,8 @@ export function Configuracoes() {
     const configData: Partial<InsertClinic> = {
       name: formElements.name?.value || "",
       responsible: formElements.responsible?.value || "",
-      phone: phoneValue || "",
-      celular: celularValue || "",
+      phone: phoneValue || "", // This already includes +55 from PhoneInput
+      celular: celularValue || "", // This already includes +55 from PhoneInput
       email: formElements.email?.value || "",
       website: formElements.website?.value || "",
       cnpj: formElements.cnpj?.value || "",
@@ -212,6 +220,7 @@ export function Configuracoes() {
       working_days: workingDays,
     };
 
+    console.log("💾 Data being saved to database:", configData);
     updateClinicMutation.mutate(configData);
   };
 
