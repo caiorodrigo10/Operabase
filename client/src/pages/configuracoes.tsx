@@ -210,6 +210,45 @@ export function Configuracoes() {
     }
   }, [clinic]);
 
+  // Remove country code text from PhoneInput components
+  useEffect(() => {
+    const hideCountryCode = () => {
+      const phoneInputs = document.querySelectorAll('.PhoneInput');
+      phoneInputs.forEach(input => {
+        const countryElements = input.querySelectorAll('.PhoneInputCountry');
+        countryElements.forEach(countryEl => {
+          // Remove all text nodes that contain "+"
+          const walker = document.createTreeWalker(
+            countryEl,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          );
+          const textNodesToRemove: Text[] = [];
+          let node;
+          while (node = walker.nextNode()) {
+            if (node.textContent && node.textContent.includes('+')) {
+              textNodesToRemove.push(node as Text);
+            }
+          }
+          textNodesToRemove.forEach(textNode => {
+            textNode.textContent = '';
+          });
+        });
+      });
+    };
+
+    // Run immediately and after a short delay to catch dynamic updates
+    hideCountryCode();
+    const timer = setTimeout(hideCountryCode, 100);
+    const intervalTimer = setInterval(hideCountryCode, 500);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(intervalTimer);
+    };
+  }, [phoneValue, celularValue]);
+
   // Update clinic configuration mutation
   const updateClinicMutation = useMutation({
     mutationFn: async (data: Partial<InsertClinic>) => {

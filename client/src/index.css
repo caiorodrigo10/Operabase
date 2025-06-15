@@ -76,6 +76,8 @@
   width: auto !important;
   min-width: auto !important;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
 .PhoneInputCountryIcon {
@@ -83,6 +85,8 @@
   height: 15px;
   margin-right: 8px;
   flex-shrink: 0;
+  z-index: 2;
+  position: relative;
 }
 
 .PhoneInputCountryIcon--border {
@@ -94,44 +98,32 @@
   display: none !important;
 }
 
-/* Ultra-specific CSS to hide country code completely */
+/* Hide only the calling code text, keep the flag */
 .PhoneInputCountryCallingCode {
   display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 
-.PhoneInputCountry > * {
-  display: none !important;
-}
-
-.PhoneInputCountry .PhoneInputCountryIcon {
-  display: block !important;
-}
-
-.PhoneInputCountry .PhoneInputCountryIconImg {
-  display: block !important;
-}
-
-/* Hide all text content in country selector */
-.PhoneInputCountry {
-  font-size: 0 !important;
-  color: transparent !important;
-}
-
-.PhoneInputCountry::before,
+/* Additional CSS to hide text nodes containing +55 */
 .PhoneInputCountry::after {
-  content: none !important;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 22px;
+  right: 0;
+  bottom: 0;
+  background: hsl(var(--background));
+  z-index: 1;
 }
 
-/* Force hide any remaining text */
-.PhoneInputCountry * {
-  color: transparent !important;
-  font-size: 0 !important;
-}
-
-.PhoneInputCountry .PhoneInputCountryIcon,
-.PhoneInputCountry .PhoneInputCountryIconImg {
-  color: initial !important;
-  font-size: initial !important;
+/* Ensure flag stays visible above the overlay */
+.PhoneInputCountryIcon {
+  z-index: 3 !important;
 }
 
 .PhoneInputInput {
