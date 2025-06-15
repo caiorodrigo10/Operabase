@@ -134,10 +134,15 @@ export const appointments = pgTable("appointments", {
   appointment_type: text("appointment_type"), // primeira_consulta, retorno, avaliacao, emergencia
   scheduled_date: timestamp("scheduled_date"),
   duration_minutes: integer("duration_minutes").default(60),
-  status: text("status").notNull(), // agendado, confirmado, realizado, cancelado, reagendado
+  status: text("status").notNull(), // agendada, confirmada, paciente_aguardando, paciente_em_atendimento, finalizada, faltou, cancelada_paciente, cancelada_dentista
   cancellation_reason: text("cancellation_reason"),
   session_notes: text("session_notes"),
+  observations: text("observations"), // Campo de observações livre
   next_appointment_suggested: timestamp("next_appointment_suggested"),
+  return_period: text("return_period"), // sem_retorno, 15_dias, 1_mes, 6_meses, 12_meses, outro
+  how_found_clinic: text("how_found_clinic"), // instagram, facebook, google, indicacao_familiar, indicacao_amigo, indicacao_dentista, marketing
+  tags: text("tags").array(), // Etiquetas da consulta
+  receive_reminders: boolean("receive_reminders").default(true), // Se o paciente recebe lembretes
   payment_status: text("payment_status").default("pendente"), // pendente, pago, isento
   payment_amount: integer("payment_amount"), // valor em centavos
   google_calendar_event_id: text("google_calendar_event_id"), // Link to Google Calendar event
@@ -147,6 +152,19 @@ export const appointments = pgTable("appointments", {
   index("idx_appointments_user").on(table.user_id),
   index("idx_appointments_contact").on(table.contact_id),
   index("idx_appointments_clinic").on(table.clinic_id),
+]);
+
+// Tabela para etiquetas de consultas (appointment tags)
+export const appointment_tags = pgTable("appointment_tags", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  name: text("name").notNull(),
+  color: text("color").notNull(), // Cor da etiqueta em hexadecimal
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_appointment_tags_clinic").on(table.clinic_id),
 ]);
 
 // Tabela para métricas e analytics
@@ -296,6 +314,12 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   updated_at: true,
 });
 
+export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics).omit({
   id: true,
   created_at: true,
@@ -352,6 +376,8 @@ export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+export type AppointmentTag = typeof appointment_tags.$inferSelect;
+export type InsertAppointmentTag = z.infer<typeof insertAppointmentTagSchema>;
 export type AnalyticsMetric = typeof analytics_metrics.$inferSelect;
 export type InsertAnalyticsMetric = z.infer<typeof insertAnalyticsMetricSchema>;
 export type ClinicSetting = typeof clinic_settings.$inferSelect;

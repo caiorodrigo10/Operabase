@@ -22,6 +22,7 @@ import { mockAppointments, mockContacts } from "@/lib/mock-data";
 import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { EventTooltip } from "@/components/EventTooltip";
+import { AppointmentEditor } from "@/components/AppointmentEditor";
 import type { Appointment, Contact } from "@/../../shared/schema";
 
 const statusLabels = {

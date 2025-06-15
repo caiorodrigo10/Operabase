@@ -1,0 +1,124 @@
+Atue como um product designer sênior com experiência em plataformas de gestão de clínicas odontológicas. Seu papel é reestruturar e organizar a tela de agendamento de consultas, aproveitando os elementos já disponíveis no sistema, conforme os exemplos visuais fornecidos.
+
+O objetivo é revisar, padronizar e documentar a estrutura da funcionalidade de agendamento e edição de consultas, utilizando todos os componentes visuais exibidos nos prints compartilhados. Nenhum novo campo deve ser inventado.
+
+🧱 Estrutura do agendamento (tela "Alterar Agendamento")
+Dentista (campo select)
+Lista com os dentistas da clínica.
+
+Paciente (campo texto/autocomplete)
+Com botão ao lado para Cadastrar novo paciente.
+Abaixo, há atalhos para:
+
+Abrir prontuário
+
+Ir para financeiro
+
+Ir para agendamentos
+
+Data da consulta, Horário e Duração (campos separados)
+
+A data é inserida manualmente.
+
+Horário e duração são campos independentes.
+
+Botão lateral direito: "Encontrar horário", que abre uma janela com todos os horários disponíveis no dia escolhido.
+
+Popup "Encontrar horário"
+
+Mostra os horários disponíveis do dia em colunas por período: manhã / tarde / noite
+
+Intervalos exibidos: de 30 em 30 minutos
+
+Possui navegação de data (setas esquerda/direita e botão "Hoje")
+
+Botão de confirmação: "Escolher horário"
+
+Status da consulta (campo select com cores)
+Opções visuais e funcionais:
+
+Agendada (azul)
+
+Confirmada (verde)
+
+Paciente aguardando (laranja)
+
+Paciente em atendimento (roxo)
+
+Finalizada (cinza)
+
+Faltou (vermelho)
+
+Cancelada pelo paciente (vermelho)
+
+Cancelada pelo dentista (vermelho)
+
+Observações (campo de texto livre)
+Permite inserir qualquer informação adicional.
+
+Campo “Como conheceu a clínica” (campo select)
+Opções disponíveis:
+
+Instagram
+
+Facebook
+
+Google
+
+Indicação familiar
+
+Indicação de amigo
+
+Indicação de outro dentista
+
+Marketing
+
+Campo “Retornar em” (campo select)
+Opções:
+
+Sem retorno
+
+15 dias
+
+1 mês
+
+6 meses
+
+12 meses
+
+Outro
+
+Etiqueta da consulta (etiquetas coloridas com edição)
+Exibe lista de etiquetas cadastradas com ícone circular colorido:
+
+Avaliação (rosa claro)
+
+Cirurgia (vermelho escuro)
+
+Encaixe (amarelo)
+
+Ligar (roxo)
+
+Ortodontia (azul)
+
+Prótese (verde)
+
+Funções disponíveis:
+
+Criar nova etiqueta
+
+Editar
+
+Excluir
+
+Aviso em vermelho no rodapé da etiqueta:
+"O paciente não receberá lembretes da consulta pois está marcado com a opção 'Não receber'."
+
+📌 Instruções finais:
+Utilize apenas os elementos visuais observados nas imagens.
+
+Estruture a descrição técnica da interface exatamente como descrita.
+
+Não adicione novos campos, regras ou funcionalidades.
+
+Take a deep breath and work on this problem step-by-step.
