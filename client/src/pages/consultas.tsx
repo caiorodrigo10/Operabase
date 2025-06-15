@@ -574,7 +574,7 @@ export function Consultas() {
                   
                   {/* Time slots */}
                   {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
-                    <React.Fragment key={hour}>
+                    <div key={hour} className="contents">
                       {/* Time label */}
                       <div className="bg-white p-2 text-sm text-slate-600 border-r">
                         {hour}:00
@@ -613,7 +613,7 @@ export function Consultas() {
                           </div>
                         );
                       })}
-                    </React.Fragment>
+                    </div>
                   ))}
                 </div>
               )}
