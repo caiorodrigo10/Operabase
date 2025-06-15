@@ -395,25 +395,25 @@ export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema
 
 
 
-// Google Calendar integrations table
+// Google Calendar integrations table - aligned with Supabase structure
 export const calendar_integrations = pgTable("calendar_integrations", {
   id: serial("id").primaryKey(),
   user_id: text("user_id").notNull(), // Changed to TEXT for Supabase UUIDs
   clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
   provider: text("provider").notNull(),
+  provider_user_id: text("provider_user_id"),
   email: text("email"),
+  calendar_id: text("calendar_id"),
+  calendar_name: text("calendar_name"),
   access_token: text("access_token"),
   refresh_token: text("refresh_token"),
   token_expires_at: timestamp("token_expires_at"),
-  calendar_id: text("calendar_id"),
-  sync_preference: text("sync_preference").default("one-way"),
   is_active: boolean("is_active").default(true),
-  last_sync: timestamp("last_sync"),
-  sync_errors: text("sync_errors"),
+  sync_enabled: boolean("sync_enabled").default(true),
+  last_sync_at: timestamp("last_sync_at"),
+  sync_errors: text("sync_errors"), // Changed from text to match actual structure
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-  calendar_name: text("calendar_name"),
-  ical_uid: text("ical_uid"),
 }, (table) => [
   index("idx_calendar_user").on(table.user_id),
   index("idx_calendar_clinic").on(table.clinic_id),

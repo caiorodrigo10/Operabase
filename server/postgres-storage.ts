@@ -846,24 +846,26 @@ export class PostgreSQLStorage implements IStorage {
     const pool = (db as any)._.session.client;
     const result = await pool.query(`
       INSERT INTO calendar_integrations 
-      (user_id, clinic_id, provider, email, access_token, refresh_token, token_expires_at, calendar_id, sync_preference, is_active, last_sync, sync_errors, created_at, updated_at, calendar_name, ical_uid)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW(), $13, $14)
+      (user_id, clinic_id, provider, provider_user_id, email, calendar_id, calendar_name, 
+       access_token, refresh_token, token_expires_at, is_active, sync_enabled, 
+       last_sync_at, sync_errors, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
       RETURNING *
     `, [
       integration.user_id,
       integration.clinic_id,
       integration.provider || 'google',
+      integration.provider_user_id,
       integration.email,
+      integration.calendar_id,
+      integration.calendar_name,
       integration.access_token,
       integration.refresh_token,
       integration.token_expires_at,
-      integration.calendar_id,
-      integration.sync_preference || 'one-way',
       integration.is_active !== false,
-      integration.last_sync,
-      integration.sync_errors,
-      integration.calendar_name,
-      integration.ical_uid
+      integration.sync_enabled !== false,
+      integration.last_sync_at,
+      integration.sync_errors
     ]);
     
     console.log('✅ Calendar integration created:', result.rows[0]);
@@ -898,9 +900,17 @@ export class PostgreSQLStorage implements IStorage {
         setPairs.push(`calendar_id = $${paramIndex++}`);
         values.push(updates.calendar_id);
       }
-      if (updates.sync_preference !== undefined) {
-        setPairs.push(`sync_preference = $${paramIndex++}`);
-        values.push(updates.sync_preference);
+      if (updates.sync_enabled !== undefined) {
+        setPairs.push(`sync_enabled = $${paramIndex++}`);
+        values.push(updates.sync_enabled);
+      }
+      if (updates.last_sync_at !== undefined) {
+        setPairs.push(`last_sync_at = $${paramIndex++}`);
+        values.push(updates.last_sync_at);
+      }
+      if (updates.sync_errors !== undefined) {
+        setPairs.push(`sync_errors = $${paramIndex++}`);
+        values.push(updates.sync_errors);
       }
       if (updates.is_active !== undefined) {
         setPairs.push(`is_active = $${paramIndex++}`);

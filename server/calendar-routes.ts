@@ -95,10 +95,11 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
         refresh_token: tokens.refresh_token,
         token_expires_at: new Date(tokens.expiry_date),
         calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
+        calendar_name: primaryCalendar?.summary || 'Calendário Principal',
         is_active: true,
-        last_sync: new Date(),
+        sync_enabled: true,
+        last_sync_at: new Date(),
         sync_errors: null,
-        sync_preference: 'one-way', // Set to one-way by default
       });
     } else {
       // Create new integration with primary calendar linked
@@ -106,14 +107,16 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
         user_id: userId, // Now accepts both UUIDs and integers as text
         clinic_id: clinicId,
         provider: 'google',
+        provider_user_id: calendarInfo.email,
         email: userEmail, // Use the user's authenticated email
+        calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
+        calendar_name: primaryCalendar?.summary || 'Calendário Principal',
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         token_expires_at: new Date(tokens.expiry_date),
-        calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
-        sync_preference: 'one-way', // Set to one-way by default
         is_active: true,
-        last_sync: new Date(),
+        sync_enabled: true,
+        last_sync_at: new Date(),
       });
     }
 

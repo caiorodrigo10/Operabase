@@ -311,8 +311,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const integration of integrations) {
             if (integration.calendar_id && integration.access_token) {
               try {
-                // Check sync preferences - only show Google Calendar events based on preference
-                const showGoogleEvents = integration.sync_preference === 'bidirectional' || integration.sync_preference === 'one-way';
+                // Check sync preferences - only show Google Calendar events if sync is enabled
+                const showGoogleEvents = integration.sync_enabled && integration.is_active;
                 
                 if (!showGoogleEvents) {
                   continue; // Skip this integration if sync is disabled

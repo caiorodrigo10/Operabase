@@ -23,18 +23,18 @@ async function testCalendarIntegrationStructure() {
       console.log(`  ${col.column_name}: ${col.data_type} ${col.is_nullable === 'NO' ? '(NOT NULL)' : ''}`);
     });
     
-    // Test 2: Create a test integration with UUID
+    // Test 2: Create a test integration with UUID using correct structure
     const testUserId = '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4';
     const testEmail = 'cr@caiorodrigo.com.br';
     
     console.log('\n📝 Testing integration creation...');
     const testResult = await client`
       INSERT INTO calendar_integrations 
-      (user_id, clinic_id, provider, email, access_token, refresh_token, 
-       calendar_id, sync_preference, is_active, created_at, updated_at)
-      VALUES (${testUserId}, 1, 'google', ${testEmail}, 'test_token', 'test_refresh',
-              'primary', 'one-way', true, NOW(), NOW())
-      RETURNING id, user_id, email, provider, is_active
+      (user_id, clinic_id, provider, provider_user_id, email, calendar_id, calendar_name,
+       access_token, refresh_token, is_active, sync_enabled, created_at, updated_at)
+      VALUES (${testUserId}, 1, 'google', ${testEmail}, ${testEmail}, 'primary', 'Calendário Principal',
+              'test_token', 'test_refresh', true, true, NOW(), NOW())
+      RETURNING id, user_id, email, provider, is_active, sync_enabled
     `;
     
     console.log('✅ Test integration created:', testResult[0]);
