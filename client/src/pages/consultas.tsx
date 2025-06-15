@@ -1129,10 +1129,10 @@ export function Consultas() {
                     type="button"
                     variant="outline"
                     className="w-full bg-blue-600 text-white hover:bg-blue-700"
-                    disabled={!watchedDate || !watchedDuration || findTimeSlotsLoading}
+                    disabled={!watchedDate || !watchedDuration}
                     onClick={() => setFindTimeSlotsOpen(true)}
                   >
-                    {findTimeSlotsLoading ? (
+                    {false ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Buscando...
