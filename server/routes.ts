@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ APPOINTMENTS ============
   
   // Get appointments with filters (including Google Calendar events)
-  app.get("/api/appointments", supabaseAuth, async (req, res) => {
+  app.get("/api/appointments", flexibleAuth, async (req, res) => {
     try {
       console.log('🚀 Appointments API called');
       const { clinic_id, status, date } = req.query;

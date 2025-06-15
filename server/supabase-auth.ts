@@ -56,9 +56,19 @@ export const supabaseAuth = async (req: AuthenticatedRequest, res: Response, nex
 };
 
 // Alternative middleware that works with session-based auth (for backward compatibility)
-export const flexibleAuth = (req: any, res: Response, next: NextFunction) => {
+export const flexibleAuth = async (req: any, res: Response, next: NextFunction) => {
   // Check if we have a session-based user (passport)
   if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+    // Convert session user to expected format for calendar integration
+    if (req.user.id && req.user.email) {
+      req.user = {
+        id: req.user.id.toString(),
+        email: req.user.email,
+        name: req.user.name || req.user.email,
+        role: req.user.role || 'user',
+        clinic_id: req.user.clinic_id
+      };
+    }
     return next();
   }
   
