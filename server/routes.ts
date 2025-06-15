@@ -1416,7 +1416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/calendar/integrations/:integrationId/linked-calendar', calendarAuth, updateLinkedCalendarSettings);
 
   // Check availability for appointment scheduling
-  app.post('/api/calendar/check-availability', async (req, res) => {
+  app.post('/api/availability/check', async (req, res) => {
     try {
       const { startDateTime, endDateTime, excludeAppointmentId } = req.body;
       
@@ -1438,13 +1438,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (excludeAppointmentId) {
         conflictingAppointment = existingAppointments.find(apt => 
           apt.id !== excludeAppointmentId && 
-          new Date(apt.scheduled_date) < endDate &&
-          new Date(apt.scheduled_date).getTime() + (apt.duration_minutes * 60000) > startDate.getTime()
+          new Date(apt.scheduled_date!) < endDate &&
+          new Date(apt.scheduled_date!).getTime() + ((apt.duration_minutes || 60) * 60000) > startDate.getTime()
         );
       } else {
         conflictingAppointment = existingAppointments.find(apt => 
-          new Date(apt.scheduled_date) < endDate &&
-          new Date(apt.scheduled_date).getTime() + (apt.duration_minutes * 60000) > startDate.getTime()
+          new Date(apt.scheduled_date!) < endDate &&
+          new Date(apt.scheduled_date!).getTime() + ((apt.duration_minutes || 60) * 60000) > startDate.getTime()
         );
       }
 
@@ -1459,9 +1459,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: conflictingAppointment.id.toString(),
             title: `${conflictingAppointment.doctor_name} - ${contact?.name || 'Paciente'}`,
             startTime: conflictingAppointment.scheduled_date,
-            endTime: new Date(new Date(conflictingAppointment.scheduled_date).getTime() + 
-                             conflictingAppointment.duration_minutes * 60000).toISOString(),
-            location: conflictingAppointment.location || ''
+            endTime: new Date(new Date(conflictingAppointment.scheduled_date!).getTime() + 
+                             (conflictingAppointment.duration_minutes || 60) * 60000).toISOString()
           }
         });
       }
@@ -1477,10 +1476,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const events = await googleCalendarService.getEvents(
               integration.access_token,
-              integration.refresh_token,
+              integration.refresh_token || '',
               startDate,
               endDate,
-              integration.linked_calendar_id
+              integration.linked_calendar_id || 'primary'
             );
 
             const conflictingEvent = events.find(event => {
@@ -1524,6 +1523,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error checking availability:', error);
       res.status(500).json({ error: 'Failed to check availability' });
+    }
+  });
+
+  // Find available time slots
+  app.post('/api/availability/find-slots', async (req, res) => {
+    try {
+      const { date, duration = 60, workingHours = { start: '08:00', end: '18:00' } } = req.body;
+      
+      if (!date) {
+        return res.status(400).json({ error: "Date is required" });
+      }
+
+      const targetDate = new Date(date);
+      if (isNaN(targetDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date format" });
+      }
+
+      // Set up start and end of day
+      const dayStart = new Date(targetDate);
+      const [startHour, startMinute] = workingHours.start.split(':').map(Number);
+      dayStart.setHours(startHour, startMinute, 0, 0);
+
+      const dayEnd = new Date(targetDate);
+      const [endHour, endMinute] = workingHours.end.split(':').map(Number);
+      dayEnd.setHours(endHour, endMinute, 0, 0);
+
+      // Get all appointments for the day
+      const appointments = await storage.getAppointmentsByDateRange(dayStart, dayEnd);
+      
+      // Get Google Calendar events for the day
+      let calendarEvents: any[] = [];
+      try {
+        const integrations = await storage.getAllCalendarIntegrations();
+        
+        for (const integration of integrations) {
+          if (!integration.sync_enabled || !integration.access_token) continue;
+          
+          try {
+            const events = await googleCalendarService.getEvents(
+              integration.access_token,
+              integration.refresh_token || '',
+              dayStart,
+              dayEnd,
+              integration.linked_calendar_id || 'primary'
+            );
+            calendarEvents.push(...events);
+          } catch (error) {
+            console.error('Error fetching calendar events for integration:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching Google Calendar events:', error);
+      }
+
+      // Convert appointments to time blocks
+      const busyBlocks: { start: Date; end: Date; type: string; title: string }[] = [];
+      
+      // Add appointment blocks
+      appointments.forEach(apt => {
+        if (apt.scheduled_date && apt.status !== 'cancelled') {
+          const start = new Date(apt.scheduled_date);
+          const end = new Date(start.getTime() + (apt.duration_minutes || 60) * 60000);
+          busyBlocks.push({
+            start,
+            end,
+            type: 'appointment',
+            title: `${apt.doctor_name} - Consulta`
+          });
+        }
+      });
+
+      // Add calendar event blocks
+      calendarEvents.forEach(event => {
+        if (event.start?.dateTime && event.end?.dateTime) {
+          busyBlocks.push({
+            start: new Date(event.start.dateTime),
+            end: new Date(event.end.dateTime),
+            type: 'calendar_event',
+            title: event.summary || 'Evento'
+          });
+        }
+      });
+
+      // Sort busy blocks by start time
+      busyBlocks.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+      // Find available slots
+      const availableSlots: { startTime: string; endTime: string; duration: number }[] = [];
+      const slotDuration = duration * 60000; // Convert to milliseconds
+
+      let currentTime = new Date(dayStart);
+
+      for (const block of busyBlocks) {
+        // Check if there's a gap before this block
+        if (currentTime < block.start) {
+          const gapDuration = block.start.getTime() - currentTime.getTime();
+          
+          // Create slots in this gap
+          let slotStart = new Date(currentTime);
+          while (slotStart.getTime() + slotDuration <= block.start.getTime()) {
+            const slotEnd = new Date(slotStart.getTime() + slotDuration);
+            availableSlots.push({
+              startTime: slotStart.toISOString(),
+              endTime: slotEnd.toISOString(),
+              duration
+            });
+            slotStart = new Date(slotStart.getTime() + slotDuration);
+          }
+        }
+        
+        // Update current time to after this block
+        currentTime = new Date(Math.max(currentTime.getTime(), block.end.getTime()));
+      }
+
+      // Check for slots after the last block until end of day
+      if (currentTime < dayEnd) {
+        let slotStart = new Date(currentTime);
+        while (slotStart.getTime() + slotDuration <= dayEnd.getTime()) {
+          const slotEnd = new Date(slotStart.getTime() + slotDuration);
+          availableSlots.push({
+            startTime: slotStart.toISOString(),
+            endTime: slotEnd.toISOString(),
+            duration
+          });
+          slotStart = new Date(slotStart.getTime() + slotDuration);
+        }
+      }
+
+      res.json({
+        date: targetDate.toISOString().split('T')[0],
+        duration,
+        workingHours,
+        availableSlots,
+        busyBlocks: busyBlocks.map(block => ({
+          startTime: block.start.toISOString(),
+          endTime: block.end.toISOString(),
+          type: block.type,
+          title: block.title
+        }))
+      });
+
+    } catch (error) {
+      console.error('Error finding available slots:', error);
+      res.status(500).json({ error: 'Failed to find available slots' });
     }
   });
   

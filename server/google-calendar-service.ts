@@ -159,6 +159,59 @@ class GoogleCalendarService {
     }
   }
 
+  async getEvents(
+    accessToken: string, 
+    refreshToken: string, 
+    startDate: Date, 
+    endDate: Date, 
+    calendarId: string = 'primary'
+  ): Promise<any[]> {
+    try {
+      // Set up OAuth2 client with tokens
+      this.oauth2Client.setCredentials({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+
+      const response = await this.calendar.events.list({
+        calendarId: calendarId,
+        timeMin: startDate.toISOString(),
+        timeMax: endDate.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime'
+      });
+
+      return response.data.items || [];
+    } catch (error) {
+      console.error('Error getting calendar events:', error);
+      // If token is expired, try to refresh
+      if (error.code === 401) {
+        try {
+          const newTokens = await this.refreshAccessToken();
+          this.oauth2Client.setCredentials({
+            access_token: newTokens.access_token,
+            refresh_token: newTokens.refresh_token || refreshToken
+          });
+
+          // Retry the request
+          const response = await this.calendar.events.list({
+            calendarId: calendarId,
+            timeMin: startDate.toISOString(),
+            timeMax: endDate.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime'
+          });
+
+          return response.data.items || [];
+        } catch (refreshError) {
+          console.error('Error refreshing token for events:', refreshError);
+          return [];
+        }
+      }
+      return [];
+    }
+  }
+
   async createEvent(calendarId: string, event: CalendarEvent): Promise<any> {
     try {
       const response = await this.calendar.events.insert({

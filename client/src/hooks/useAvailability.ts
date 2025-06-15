@@ -25,7 +25,7 @@ interface AvailabilityResponse {
 export function useAvailabilityCheck() {
   return useMutation({
     mutationFn: async (data: AvailabilityRequest): Promise<AvailabilityResponse> => {
-      const response = await apiRequest('POST', '/api/calendar/check-availability', data);
+      const response = await apiRequest('POST', '/api/availability/check', data);
       return response.json();
     }
   });

@@ -467,6 +467,29 @@ export class PostgreSQLStorage implements IStorage {
       .limit(100); // Limitar para melhor performance
   }
 
+  async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          id, contact_id, clinic_id, user_id, doctor_name, specialty,
+          appointment_type, scheduled_date, duration_minutes, status,
+          cancellation_reason, session_notes, next_appointment_suggested,
+          payment_status, payment_amount, google_calendar_event_id,
+          created_at, updated_at
+        FROM appointments 
+        WHERE scheduled_date >= ${startDate.toISOString()}
+          AND scheduled_date <= ${endDate.toISOString()}
+          AND status NOT IN ('cancelled', 'no_show')
+        ORDER BY scheduled_date ASC
+      `);
+      
+      return result.rows as Appointment[];
+    } catch (error) {
+      console.error('Error fetching appointments by date range:', error);
+      return [];
+    }
+  }
+
   // ============ ANALYTICS ============
   
   async createAnalyticsMetric(insertMetric: InsertAnalyticsMetric): Promise<AnalyticsMetric> {
@@ -789,6 +812,22 @@ export class PostgreSQLStorage implements IStorage {
       return result.rows as CalendarIntegration[];
     } catch (error) {
       console.error('Error fetching calendar integrations:', error);
+      return [];
+    }
+  }
+
+  async getAllCalendarIntegrations(): Promise<CalendarIntegration[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM calendar_integrations 
+        WHERE is_active = true 
+          AND sync_enabled = true
+          AND access_token IS NOT NULL
+        ORDER BY created_at DESC
+      `);
+      return result.rows as CalendarIntegration[];
+    } catch (error) {
+      console.error('Error fetching all calendar integrations:', error);
       return [];
     }
   }
