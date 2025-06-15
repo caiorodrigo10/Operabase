@@ -382,8 +382,13 @@ export async function getUserCalendarIntegrations(req: any, res: Response) {
     const userId = req.user.id;
     const userEmail = req.user.email;
     
+    console.log('🔍 Getting calendar integrations for user:', { userId, userEmail });
+    
     // For Supabase users, filter by email since we don't have user_id in calendar_integrations
     const integrations = await storage.getCalendarIntegrationsByEmail(userEmail);
+    
+    console.log('📊 Integrations retrieved:', integrations.length);
+    console.log('📋 Raw integrations:', integrations);
     
     // Remove sensitive token data from response
     const sanitizedIntegrations = integrations.map(integration => ({
