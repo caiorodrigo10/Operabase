@@ -41,22 +41,29 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
-/* Custom styles for phone input - show flag with clean number input */
+/* Custom styles for phone input - clean design matching other inputs */
 .PhoneInput {
   display: flex;
   align-items: center;
-  border: 1px solid hsl(var(--border));
+  height: 40px;
+  width: 100%;
   border-radius: calc(var(--radius) - 2px);
+  border: 1px solid hsl(var(--border));
   background-color: hsl(var(--background));
   padding: 8px 12px;
   font-size: 14px;
+  ring-offset-background: hsl(var(--background));
   transition: border-color 0.2s;
-  min-height: 40px;
 }
 
 .PhoneInput:focus-within {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+.PhoneInput.PhoneInput--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .PhoneInputCountry {
@@ -65,15 +72,17 @@
   border: none !important;
   background: transparent !important;
   padding: 0 !important;
-  margin-right: 8px;
+  margin: 0 !important;
   width: auto !important;
   min-width: auto !important;
+  cursor: pointer;
 }
 
 .PhoneInputCountryIcon {
   width: 20px;
   height: 15px;
-  margin-right: 0;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .PhoneInputCountryIcon--border {
@@ -85,9 +94,13 @@
   display: none !important;
 }
 
-/* Hide the country calling code completely */
+/* Completely hide the country calling code */
 .PhoneInputCountryCallingCode {
   display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
 }
 
 .PhoneInputInput {
@@ -96,8 +109,15 @@
   background: transparent !important;
   flex: 1;
   padding: 0;
+  margin: 0;
   font-size: 14px;
   color: hsl(var(--foreground));
+  ring-offset-background: transparent;
+}
+
+.PhoneInputInput:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .PhoneInputInput::placeholder {
