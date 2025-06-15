@@ -23,7 +23,8 @@ async function addEmailColumn() {
       ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'America/Sao_Paulo',
       ADD COLUMN IF NOT EXISTS cnpj TEXT,
       ADD COLUMN IF NOT EXISTS website TEXT,
-      ADD COLUMN IF NOT EXISTS description TEXT
+      ADD COLUMN IF NOT EXISTS description TEXT,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
     `;
 
     console.log('✅ Email column added successfully');

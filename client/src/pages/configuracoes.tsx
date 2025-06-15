@@ -123,7 +123,7 @@ export function Configuracoes() {
   const [celularValue, setCelularValue] = useState<string | undefined>("");
 
   // Fetch clinic configuration
-  const { data: clinic, refetch: refetchClinic } = useQuery({
+  const { data: clinic, refetch: refetchClinic } = useQuery<Clinic>({
     queryKey: ["/api/clinic/1/config"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
@@ -183,8 +183,8 @@ export function Configuracoes() {
     const configData: Partial<InsertClinic> = {
       name: formElements.name?.value || "",
       responsible: formElements.responsible?.value || "",
-      phone: formElements.phone?.value || "",
-      whatsapp_number: formElements.whatsapp_number?.value || "",
+      phone: phoneValue || "",
+      celular: celularValue || "",
       email: formElements.email?.value || "",
       website: formElements.website?.value || "",
       cnpj: formElements.cnpj?.value || "",
@@ -196,7 +196,7 @@ export function Configuracoes() {
       address_city: formElements.address_city?.value || "",
       address_state: formElements.address_state || "SP",
       address_zip: formElements.address_zip?.value || "",
-      address_country: formElements.address_country || "brasil",
+      address_country: clinicConfig.address_country || "BR",
       work_start: formElements.work_start?.value || "08:00",
       work_end: formElements.work_end?.value || "18:00",
       lunch_start: formElements.lunch_start?.value || "12:00",
@@ -498,6 +498,7 @@ export function Configuracoes() {
                     <Label htmlFor="clinic-website">Website</Label>
                     <Input
                       id="clinic-website"
+                      defaultValue={clinic?.website || ""}
                       className="mt-1"
                       placeholder="www.clinica.com.br"
                     />
@@ -506,6 +507,7 @@ export function Configuracoes() {
                     <Label htmlFor="clinic-cnpj">CNPJ</Label>
                     <Input
                       id="clinic-cnpj"
+                      defaultValue={clinic?.cnpj || ""}
                       className="mt-1"
                       placeholder="00.000.000/0001-00"
                     />
@@ -530,6 +532,7 @@ export function Configuracoes() {
                   <Label htmlFor="clinic-description">Descrição da Clínica</Label>
                   <textarea
                     id="clinic-description"
+                    defaultValue={clinic?.description || ""}
                     className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows={3}
                     placeholder="Descreva os serviços e especialidades da clínica..."
@@ -548,6 +551,7 @@ export function Configuracoes() {
                     <Label htmlFor="address-street">Logradouro</Label>
                     <Input
                       id="address-street"
+                      defaultValue={clinic?.address_street || ""}
                       className="mt-1"
                       placeholder="Rua, Avenida, Praça..."
                     />
@@ -556,6 +560,7 @@ export function Configuracoes() {
                     <Label htmlFor="address-number">Número</Label>
                     <Input
                       id="address-number"
+                      defaultValue={clinic?.address_number || ""}
                       className="mt-1"
                       placeholder="123"
                     />
@@ -566,6 +571,7 @@ export function Configuracoes() {
                     <Label htmlFor="address-complement">Complemento</Label>
                     <Input
                       id="address-complement"
+                      defaultValue={clinic?.address_complement || ""}
                       className="mt-1"
                       placeholder="Sala, Andar, Bloco... (opcional)"
                     />
@@ -574,6 +580,7 @@ export function Configuracoes() {
                     <Label htmlFor="address-neighborhood">Bairro</Label>
                     <Input
                       id="address-neighborhood"
+                      defaultValue={clinic?.address_neighborhood || ""}
                       className="mt-1"
                       placeholder="Nome do bairro"
                     />
@@ -584,13 +591,14 @@ export function Configuracoes() {
                     <Label htmlFor="address-city">Cidade</Label>
                     <Input
                       id="address-city"
+                      defaultValue={clinic?.address_city || ""}
                       className="mt-1"
                       placeholder="Nome da cidade"
                     />
                   </div>
                   <div>
                     <Label htmlFor="address-state">Estado/UF</Label>
-                    <Select defaultValue="SP">
+                    <Select defaultValue={clinic?.address_state || "SP"}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -629,6 +637,7 @@ export function Configuracoes() {
                     <Label htmlFor="address-zip">CEP</Label>
                     <Input
                       id="address-zip"
+                      defaultValue={clinic?.address_zip || ""}
                       className="mt-1"
                       placeholder="00000-000"
                     />
