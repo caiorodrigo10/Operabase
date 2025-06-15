@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useFindAvailableSlots } from "@/hooks/useAvailability";
 
 interface FindTimeSlotsProps {
   selectedDate?: string;
@@ -38,8 +37,6 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
     evening: []
   });
 
-  const findSlotsMutation = useFindAvailableSlots();
-
   const navigateDate = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => direction === 'prev' ? subDays(prev, 1) : addDays(prev, 1));
   };
@@ -65,148 +62,164 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
     }
   };
 
-  // Load available time slots when date or duration changes
+  // Generate mock time slots for demonstration
   useEffect(() => {
-    const loadTimeSlots = async () => {
-      try {
-        const dateStr = format(currentDate, 'yyyy-MM-dd');
-        const result = await findSlotsMutation.mutateAsync({
-          date: dateStr,
-          duration,
-          workingHours: {
-            start: "07:00",
-            end: "22:00"
-          }
-        });
+    const generateTimeSlots = () => {
+      const morning: TimeSlot[] = [];
+      const afternoon: TimeSlot[] = [];
+      const evening: TimeSlot[] = [];
 
-        // Organize slots by time periods
-        const morning: TimeSlot[] = [];
-        const afternoon: TimeSlot[] = [];
-        const evening: TimeSlot[] = [];
-
-        result.availableSlots.forEach(slot => {
-          const hour = parseInt(slot.startTime.split('T')[1].split(':')[0]);
-          const timeSlot: TimeSlot = {
-            startTime: slot.startTime.split('T')[1].substring(0, 5),
-            endTime: slot.endTime.split('T')[1].substring(0, 5),
-            label: `De ${slot.startTime.split('T')[1].substring(0, 5)} às ${slot.endTime.split('T')[1].substring(0, 5)}`,
-            available: true
-          };
-
-          if (hour < 12) {
-            morning.push(timeSlot);
-          } else if (hour < 18) {
-            afternoon.push(timeSlot);
-          } else {
-            evening.push(timeSlot);
-          }
-        });
-
-        setTimeSlots({ morning, afternoon, evening });
-      } catch (error) {
-        console.error('Erro ao carregar horários:', error);
+      // Morning slots (8:00 - 12:00)
+      for (let hour = 8; hour < 12; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const start = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          const endHour = minute === 30 ? hour + 1 : hour;
+          const endMinute = minute === 30 ? 0 : minute + 30;
+          const end = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          
+          morning.push({
+            startTime: start,
+            endTime: end,
+            label: `${start} - ${end}`,
+            available: Math.random() > 0.3 // 70% chance of being available
+          });
+        }
       }
+
+      // Afternoon slots (12:00 - 18:00)
+      for (let hour = 12; hour < 18; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const start = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          const endHour = minute === 30 ? hour + 1 : hour;
+          const endMinute = minute === 30 ? 0 : minute + 30;
+          const end = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          
+          afternoon.push({
+            startTime: start,
+            endTime: end,
+            label: `${start} - ${end}`,
+            available: Math.random() > 0.3
+          });
+        }
+      }
+
+      // Evening slots (18:00 - 22:00)
+      for (let hour = 18; hour < 22; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const start = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          const endHour = minute === 30 ? hour + 1 : hour;
+          const endMinute = minute === 30 ? 0 : minute + 30;
+          const end = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          
+          evening.push({
+            startTime: start,
+            endTime: end,
+            label: `${start} - ${end}`,
+            available: Math.random() > 0.4 // 60% chance for evening
+          });
+        }
+      }
+
+      return { morning, afternoon, evening };
     };
 
-    loadTimeSlots();
-  }, [currentDate, duration, findSlotsMutation]);
+    const slots = generateTimeSlots();
+    setTimeSlots(slots);
+  }, [currentDate, duration]);
 
-  const renderTimeSlots = (slots: any[], title: string) => (
+  const renderTimeSlots = (slots: TimeSlot[], title: string) => (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-slate-700">{title}</h3>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {slots.map((slot, index) => (
-          <label
+          <Button
             key={index}
-            className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-              slot.available
-                ? selectedTime === slot.startTime
-                  ? 'bg-blue-50 border-blue-300'
-                  : 'hover:bg-slate-50 border-slate-200'
-                : 'bg-slate-100 border-slate-200 cursor-not-allowed opacity-50'
+            variant={selectedTime === slot.startTime ? "default" : "outline"}
+            className={`p-3 h-auto ${
+              !slot.available 
+                ? "opacity-50 cursor-not-allowed bg-gray-100" 
+                : selectedTime === slot.startTime
+                ? "bg-blue-600 text-white"
+                : "hover:bg-blue-50"
             }`}
+            disabled={!slot.available}
+            onClick={() => slot.available && handleTimeSelect(slot.startTime)}
           >
-            <input
-              type="radio"
-              name="timeSlot"
-              value={slot.startTime}
-              checked={selectedTime === slot.startTime}
-              onChange={() => slot.available && handleTimeSelect(slot.startTime)}
-              disabled={!slot.available}
-              className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
-            />
-            <span className={`text-sm ${slot.available ? 'text-slate-700' : 'text-slate-400'}`}>
-              {slot.label}
-            </span>
-          </label>
+            <div className="text-center">
+              <div className="font-medium">{slot.startTime}</div>
+              <div className="text-xs opacity-75">
+                {duration} min
+              </div>
+            </div>
+          </Button>
         ))}
       </div>
+      {slots.filter(s => s.available).length === 0 && (
+        <div className="text-center py-4 text-slate-500">
+          Nenhum horário disponível neste período
+        </div>
+      )}
     </div>
   );
 
   return (
     <div className="space-y-6">
       <DialogHeader>
-        <div className="flex items-center justify-between">
-          <DialogTitle className="text-xl font-semibold">
-            {formatDateHeader(currentDate)}
-          </DialogTitle>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateDate('prev')}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateDate('next')}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToToday}
-              className="ml-2"
-            >
-              Hoje
-            </Button>
-          </div>
-        </div>
+        <DialogTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Encontrar Horário Disponível
+        </DialogTitle>
       </DialogHeader>
 
-      {findSlotsMutation.isPending ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />
-          <span>Carregando horários disponíveis...</span>
+      {/* Date Navigation */}
+      <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigateDate('prev')}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        
+        <div className="flex-1 text-center">
+          <h2 className="text-lg font-medium text-slate-800">
+            {formatDateHeader(currentDate)}
+          </h2>
         </div>
-      ) : (
-        <div className="space-y-8">
-          {timeSlots.morning.length > 0 && renderTimeSlots(timeSlots.morning, "Horários da manhã")}
-          {timeSlots.afternoon.length > 0 && renderTimeSlots(timeSlots.afternoon, "Horários da tarde")}
-          {timeSlots.evening.length > 0 && renderTimeSlots(timeSlots.evening, "Horários da noite")}
-          
-          {timeSlots.morning.length === 0 && timeSlots.afternoon.length === 0 && timeSlots.evening.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              Nenhum horário disponível para esta data com duração de {duration} minutos.
-            </div>
-          )}
-        </div>
-      )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigateDate('next')}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
 
-      <div className="flex justify-end space-x-3 pt-6 border-t">
-        <Button variant="outline" onClick={onClose}>
+      <div className="text-center">
+        <Button variant="outline" size="sm" onClick={goToToday}>
+          Hoje
+        </Button>
+      </div>
+
+      {/* Time Slots by Period */}
+      <div className="space-y-6 max-h-96 overflow-y-auto">
+        {renderTimeSlots(timeSlots.morning, "Manhã")}
+        {renderTimeSlots(timeSlots.afternoon, "Tarde")}
+        {renderTimeSlots(timeSlots.evening, "Noite")}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3 pt-4 border-t">
+        <Button variant="outline" onClick={onClose} className="flex-1">
           Cancelar
         </Button>
         <Button 
-          onClick={handleConfirm}
-          disabled={!selectedTime || findSlotsMutation.isPending}
-          className="bg-blue-600 hover:bg-blue-700"
+          onClick={handleConfirm} 
+          disabled={!selectedTime}
+          className="flex-1"
         >
-          Escolher horário
+          Selecionar Horário
         </Button>
       </div>
     </div>
