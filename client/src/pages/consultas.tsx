@@ -367,11 +367,11 @@ export function Consultas() {
                     const colors = getEventColor(appointment.status);
                     
                     return (
-                      <Card key={appointment.id} className={`border ${colors.border} ${colors.bg} cursor-pointer hover:shadow-md transition-shadow`}>
+                      <Card key={appointment.id} className="border border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
-                              <div className={`w-3 h-3 ${colors.dot} rounded-full`}></div>
+                              <div className="w-3 h-3 bg-slate-300 rounded-full"></div>
                               <div>
                                 <h3 className="font-semibold text-slate-900">{patientName}</h3>
                                 <div className="flex items-center space-x-4 text-sm text-slate-600">
@@ -499,7 +499,7 @@ export function Consultas() {
                             return (
                               <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                 <div
-                                  className={`text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer border ${colors.border}`}
+                                  className="text-xs p-1 bg-slate-50 text-slate-700 rounded truncate cursor-pointer border border-slate-200 hover:bg-slate-100"
                                   onClick={() => handleAppointmentClick(appointment)}
                                 >
                                   <div className="flex items-center gap-1">
@@ -566,7 +566,7 @@ export function Consultas() {
                               return (
                                 <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                   <div
-                                    className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer border ${colors.border}`}
+                                    className="absolute left-1 right-1 text-xs p-1 bg-slate-50 text-slate-700 rounded truncate cursor-pointer border border-slate-200 hover:bg-slate-100"
                                     style={{ top: `${idx * 20}px`, zIndex: 10 + idx }}
                                     onClick={() => handleAppointmentClick(appointment)}
                                   >
@@ -614,7 +614,7 @@ export function Consultas() {
                               return (
                                 <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                   <div
-                                    className={`p-2 ${colors.bg} ${colors.text} rounded cursor-pointer border ${colors.border}`}
+                                    className="p-2 bg-slate-50 text-slate-700 rounded cursor-pointer border border-slate-200 hover:bg-slate-100"
                                     onClick={() => handleAppointmentClick(appointment)}
                                   >
                                     <div className="flex items-center gap-2">
@@ -811,7 +811,7 @@ export function Consultas() {
               return (
                 <div
                   key={appointment.id}
-                  className={`p-3 rounded-lg border ${colors.border} ${colors.bg} cursor-pointer hover:shadow-sm`}
+                  className="p-3 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer hover:shadow-sm hover:bg-slate-100"
                   onClick={() => {
                     handleAppointmentClick(appointment);
                     setDayEventsDialog(prev => ({ ...prev, open: false }));
