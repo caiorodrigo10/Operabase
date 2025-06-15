@@ -36,14 +36,12 @@ const appointmentFormSchema = z.object({
 type AppointmentFormData = z.infer<typeof appointmentFormSchema>;
 
 const statusOptions = [
-  { value: 'agendada', label: 'Agendada', color: 'bg-blue-100 text-blue-800' },
-  { value: 'confirmada', label: 'Confirmada', color: 'bg-green-100 text-green-800' },
-  { value: 'paciente_aguardando', label: 'Paciente aguardando', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'paciente_em_atendimento', label: 'Paciente em atendimento', color: 'bg-orange-100 text-orange-800' },
-  { value: 'finalizada', label: 'Finalizada', color: 'bg-gray-100 text-gray-800' },
-  { value: 'faltou', label: 'Faltou', color: 'bg-red-100 text-red-800' },
-  { value: 'cancelada_paciente', label: 'Cancelada pelo paciente', color: 'bg-red-100 text-red-800' },
-  { value: 'cancelada_dentista', label: 'Cancelada pelo profissional', color: 'bg-red-100 text-red-800' },
+  { value: 'pendente', label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'agendada', label: 'Agendado', color: 'bg-blue-100 text-blue-800' },
+  { value: 'confirmada', label: 'Confirmado', color: 'bg-green-100 text-green-800' },
+  { value: 'realizada', label: 'Realizado', color: 'bg-purple-100 text-purple-800' },
+  { value: 'faltou', label: 'Faltou', color: 'bg-orange-100 text-orange-800' },
+  { value: 'cancelada', label: 'Cancelado', color: 'bg-red-100 text-red-800' },
 ];
 
 const howFoundOptions = [
