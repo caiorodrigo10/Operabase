@@ -509,7 +509,8 @@ export function Consultas() {
   };
 
   // Calculate appointment top position based on start time within the hour
-  const getAppointmentTopPosition = (scheduledDate: string): number => {
+  const getAppointmentTopPosition = (scheduledDate: string | Date | null): number => {
+    if (!scheduledDate) return 0;
     const date = new Date(scheduledDate);
     const minutes = date.getMinutes();
     return minutes * PIXELS_PER_MINUTE; // Position based on minutes past the hour
@@ -1295,7 +1296,7 @@ export function Consultas() {
                                 const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
                                 const duration = getAppointmentDuration(appointment);
                                 const height = getAppointmentHeight(duration);
-                                const topPosition = getAppointmentTopPosition(appointment.scheduled_date || '');
+                                const topPosition = getAppointmentTopPosition(appointment.scheduled_date);
 
                                 return (
                                   <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
@@ -1404,8 +1405,8 @@ export function Consultas() {
                                         <div className="text-xs mt-1 opacity-90">Dr. {appointment.doctor_name}</div>
                                       )}
                                       <div className="text-xs mt-1 opacity-75">Duração: {duration} minutos</div>
-                                      {appointment.appointment_name && (
-                                        <div className="text-xs mt-1 opacity-90 truncate">{appointment.appointment_name}</div>
+                                      {appointment.appointment_type && (
+                                        <div className="text-xs mt-1 opacity-90 truncate">{appointment.appointment_type}</div>
                                       )}
                                     </div>
                                   </div>
