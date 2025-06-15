@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 // Storage will be imported dynamically to ensure initialization
 import { setupAuth, isAuthenticated, hasClinicAccess } from "./auth";
-import { setupSupabaseAuthRoutes, authenticateSupabase, hasClinicAccess as hasSupabaseClinicAccess } from "./supabase-auth";
+import { flexibleAuth } from "./supabase-auth";
 import { nanoid } from "nanoid";
 import { 
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
@@ -33,8 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup traditional email/password auth (legacy)
   setupAuth(app, storage);
   
-  // Setup new Supabase Auth routes
-  setupSupabaseAuthRoutes(app, storage);
+  // Supabase auth routes are handled by frontend
 
   // Get user's accessible clinics
   app.get('/api/user/clinics', isAuthenticated, async (req: any, res) => {
@@ -1335,26 +1334,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ GOOGLE CALENDAR INTEGRATION ============
   
+  // Custom auth middleware for calendar routes that works with Supabase
+  const calendarAuth = async (req: any, res: any, next: any) => {
+    try {
+      // Get session from Supabase
+      const cookies = req.headers.cookie;
+      if (!cookies) {
+        return res.status(401).json({ error: "Acesso negado" });
+      }
+      
+      // Extract access token from cookies (Supabase session)
+      const accessTokenMatch = cookies.match(/sb-[^=]+-auth-token=([^;]+)/);
+      if (!accessTokenMatch) {
+        return res.status(401).json({ error: "Acesso negado" });
+      }
+      
+      try {
+        const tokenData = JSON.parse(decodeURIComponent(accessTokenMatch[1]));
+        const accessToken = tokenData.access_token;
+        
+        if (!accessToken) {
+          return res.status(401).json({ error: "Acesso negado" });
+        }
+        
+        // Verify token with Supabase
+        const { supabaseAdmin } = await import('./supabase-client');
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+        
+        if (error || !user) {
+          return res.status(401).json({ error: "Acesso negado" });
+        }
+        
+        // Get user profile
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        // Set user in request
+        req.user = {
+          id: user.id,
+          email: user.email,
+          name: profile?.name || user.user_metadata?.name || '',
+          role: profile?.role || 'user',
+          clinic_id: profile?.clinic_id
+        };
+        
+        next();
+      } catch (parseError) {
+        return res.status(401).json({ error: "Acesso negado" });
+      }
+    } catch (error) {
+      console.error('Calendar auth error:', error);
+      res.status(401).json({ error: "Acesso negado" });
+    }
+  };
+  
   // Initialize Google Calendar OAuth
-  app.get('/api/calendar/auth/google', isAuthenticated, initGoogleCalendarAuth);
+  app.get('/api/calendar/auth/google', calendarAuth, initGoogleCalendarAuth);
   
   // Google Calendar OAuth callback
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
   
   // Get user's calendar integrations
-  app.get('/api/calendar/integrations', isAuthenticated, getUserCalendarIntegrations);
+  app.get('/api/calendar/integrations', calendarAuth, getUserCalendarIntegrations);
   
   // Update calendar sync preferences
-  app.put('/api/calendar/integrations/:integrationId/sync', isAuthenticated, updateCalendarSyncPreferences);
+  app.put('/api/calendar/integrations/:integrationId/sync', calendarAuth, updateCalendarSyncPreferences);
   
   // Delete calendar integration
-  app.delete('/api/calendar/integrations/:integrationId', isAuthenticated, deleteCalendarIntegration);
+  app.delete('/api/calendar/integrations/:integrationId', calendarAuth, deleteCalendarIntegration);
   
   // Get user calendars from Google Calendar
-  app.get('/api/calendar/integrations/:integrationId/calendars', isAuthenticated, getUserCalendars);
+  app.get('/api/calendar/integrations/:integrationId/calendars', calendarAuth, getUserCalendars);
   
   // Update linked calendar settings
-  app.put('/api/calendar/integrations/:integrationId/linked-calendar', isAuthenticated, updateLinkedCalendarSettings);
+  app.put('/api/calendar/integrations/:integrationId/linked-calendar', calendarAuth, updateLinkedCalendarSettings);
   
   // Manual sync from Google Calendar to system
   app.post("/api/calendar/sync-from-google", isAuthenticated, async (req, res) => {
@@ -1548,7 +1604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ MEDICAL RECORDS ============
 
   // Get medical records for a contact
-  app.get("/api/contacts/:contactId/medical-records", authenticateSupabase, async (req, res) => {
+  app.get("/api/contacts/:contactId/medical-records", isAuthenticated, async (req, res) => {
     try {
       const contactId = parseInt(req.params.contactId);
       if (isNaN(contactId)) {
