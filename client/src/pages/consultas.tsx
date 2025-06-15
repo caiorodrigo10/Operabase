@@ -613,7 +613,7 @@ export function Consultas() {
                         return (
                           <div key={`${day.toISOString()}-${hour}`} className="bg-white p-1 border-r relative min-h-16">
                             {dayAppointments.map((appointment: Appointment, idx: number) => {
-                              const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
+                              const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                               const patientName = getPatientName(appointment.contact_id, appointment);
                               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
 
@@ -661,7 +661,7 @@ export function Consultas() {
                           </div>
                           <div className="flex-1 space-y-1">
                             {hourAppointments.map((appointment: Appointment, idx: number) => {
-                              const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
+                              const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                               const patientName = getPatientName(appointment.contact_id, appointment);
                               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
 
@@ -675,7 +675,7 @@ export function Consultas() {
                                       <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
                                       <span className="font-medium">{time} - {patientName}</span>
                                     </div>
-                                    {appointment.doctor_name && !appointment.is_google_calendar_event && (
+                                    {appointment.doctor_name && !appointment.google_calendar_event_id && (
                                       <div className="text-xs mt-1">Dr. {appointment.doctor_name}</div>
                                     )}
                                   </div>
@@ -724,7 +724,7 @@ export function Consultas() {
           {selectedAppointment && (
             <div className="space-y-6">
               {/* Google Calendar Event Layout */}
-              {selectedAppointment.is_google_calendar_event ? (
+              {selectedAppointment.google_calendar_event_id ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
@@ -868,8 +868,8 @@ export function Consultas() {
           </DialogHeader>
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {dayEventsDialog.events.map((appointment: any) => {
-              const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
-              const displayName = appointment.is_google_calendar_event 
+              const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
+              const displayName = appointment.google_calendar_event_id 
                 ? (appointment.doctor_name || 'Evento do Google Calendar')
                 : getPatientName(appointment.contact_id, appointment);
               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
@@ -888,7 +888,7 @@ export function Consultas() {
                       <div className={`w-3 h-3 ${colors.dot} rounded-full`}></div>
                       <div>
                         <p className="font-medium">{time} - {displayName}</p>
-                        {appointment.is_google_calendar_event ? (
+                        {appointment.google_calendar_event_id ? (
                           <p className="text-sm text-gray-600">Evento do Google Calendar</p>
                         ) : (
                           appointment.doctor_name && (
@@ -897,7 +897,7 @@ export function Consultas() {
                         )}
                       </div>
                     </div>
-                    {appointment.is_google_calendar_event ? (
+                    {appointment.google_calendar_event_id ? (
                       <Badge className="bg-gray-100 text-gray-800">
                         -
                       </Badge>
