@@ -374,8 +374,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     }
                   }
                 }
-              } catch (calError) {
-                console.warn('Error fetching from Google Calendar:', calError);
+              } catch (calError: any) {
+                console.warn(`Google Calendar integration ${integration.id} failed:`, calError.message || 'Unknown error');
+                
+                // If token is expired/invalid, disable the integration
+                if (calError.code === 401 || calError.status === 401 || 
+                    (calError.message && calError.message.includes('authentication credentials'))) {
+                  try {
+                    await storage.updateCalendarIntegration(integration.id, {
+                      sync_enabled: false,
+                      sync_errors: 'Token expired - re-authentication required'
+                    });
+                    console.warn(`Disabled integration ${integration.id} due to authentication failure`);
+                  } catch (updateError) {
+                    console.error('Failed to update integration status:', updateError);
+                  }
+                }
               }
             }
           }
@@ -1569,8 +1583,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               integration.linked_calendar_id || 'primary'
             );
             calendarEvents.push(...events);
-          } catch (error) {
-            console.error('Error fetching calendar events for integration:', error);
+          } catch (error: any) {
+            console.warn(`Google Calendar token expired or invalid for integration ${integration.id}. Continuing without calendar events.`);
+            
+            // If token is expired/invalid, mark integration as needing re-authentication
+            if (error.code === 401 || error.status === 401) {
+              try {
+                await storage.updateCalendarIntegration(integration.id, {
+                  sync_enabled: false,
+                  sync_errors: 'Token expired - re-authentication required'
+                });
+              } catch (updateError) {
+                console.error('Failed to update integration status:', updateError);
+              }
+            }
           }
         }
       } catch (error) {

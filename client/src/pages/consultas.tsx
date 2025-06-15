@@ -1418,7 +1418,7 @@ export function Consultas() {
 
       {/* Find Time Slots Modal */}
       <Dialog open={findTimeSlotsOpen} onOpenChange={setFindTimeSlotsOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto z-[60]">
           <FindTimeSlots
             selectedDate={watchedDate}
             duration={parseInt(watchedDuration) || 60}
