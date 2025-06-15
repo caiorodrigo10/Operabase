@@ -31,6 +31,46 @@ export function useAvailabilityCheck() {
   });
 }
 
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  duration: number;
+}
+
+interface FindSlotsRequest {
+  date: string;
+  duration?: number;
+  workingHours?: {
+    start: string;
+    end: string;
+  };
+}
+
+interface FindSlotsResponse {
+  date: string;
+  duration: number;
+  workingHours: {
+    start: string;
+    end: string;
+  };
+  availableSlots: TimeSlot[];
+  busyBlocks: {
+    startTime: string;
+    endTime: string;
+    type: string;
+    title: string;
+  }[];
+}
+
+export function useFindAvailableSlots() {
+  return useMutation({
+    mutationFn: async (data: FindSlotsRequest): Promise<FindSlotsResponse> => {
+      const response = await apiRequest('POST', '/api/availability/find-slots', data);
+      return response.json();
+    }
+  });
+}
+
 export function createTimeSlots(date: Date, startHour: number = 8, endHour: number = 18, intervalMinutes: number = 30) {
   const slots = [];
   const baseDate = new Date(date);
