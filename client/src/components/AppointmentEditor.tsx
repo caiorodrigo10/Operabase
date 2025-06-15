@@ -278,15 +278,21 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave }: Ap
       };
       
       if (appointmentId) {
-        return apiRequest(`/api/appointments/${appointmentId}`, {
+        const response = await fetch(`/api/appointments/${appointmentId}`, {
           method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!response.ok) throw new Error('Failed to update appointment');
+        return response.json();
       } else {
-        return apiRequest('/api/appointments', {
+        const response = await fetch('/api/appointments', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!response.ok) throw new Error('Failed to create appointment');
+        return response.json();
       }
     },
     onSuccess: (appointment) => {

@@ -60,6 +60,8 @@ export function Consultas() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [appointmentEditorOpen, setAppointmentEditorOpen] = useState(false);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<number | undefined>(undefined);
   const [contactComboboxOpen, setContactComboboxOpen] = useState(false);
   const [dayEventsDialog, setDayEventsDialog] = useState<{ open: boolean; date: Date; events: Appointment[] }>({
     open: false,
@@ -397,41 +399,33 @@ export function Consultas() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Consultas</h1>
           <p className="text-slate-600">Gerencie e visualize todas as sessões agendadas</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Nova Consulta
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Agendar Nova Consulta</DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                <div className="flex items-start space-x-2">
-                  <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-800">Sincronização com Google Calendar</p>
-                    <p className="text-xs text-blue-700 mt-1">
-                      É obrigatório selecionar um paciente e um usuário responsável para identificar qual conta Google Calendar receberá este agendamento.
-                    </p>
-                  </div>
-                </div>
-              </div>
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => {
+            setEditingAppointmentId(undefined);
+            setAppointmentEditorOpen(true);
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Nova Consulta
+        </Button>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="appointment_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do compromisso *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: Consulta com João Silva"
-                        {...field}
+      {/* Comprehensive Appointment Editor */}
+      <AppointmentEditor
+        appointmentId={editingAppointmentId}
+        isOpen={appointmentEditorOpen}
+        onClose={() => {
+          setAppointmentEditorOpen(false);
+          setEditingAppointmentId(undefined);
+        }}
+        onSave={() => {
+          // Refresh appointments list
+          queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+        }}
+      />
+
+      <div className="bg-white rounded-lg shadow-sm border">
                       />
                     </FormControl>
                     <FormMessage />
