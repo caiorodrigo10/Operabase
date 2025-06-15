@@ -551,13 +551,18 @@ export function Configuracoes() {
                     <div className="mt-1">
                       <PhoneInput
                         international
+                        countryCallingCodeEditable={false}
                         defaultCountry="BR"
                         value={phoneValue}
                         onChange={(value) => setPhoneValue(value || "")}
                         placeholder="(11) 99999-9999"
+                        displayInitialValueAsLocalNumber
                         numberInputProps={{
                           className: "flex-1 bg-transparent border-none outline-none text-sm",
                           placeholder: "(11) 99999-9999"
+                        }}
+                        countrySelectProps={{
+                          className: "phone-country-select"
                         }}
                       />
                     </div>
@@ -567,13 +572,18 @@ export function Configuracoes() {
                     <div className="mt-1">
                       <PhoneInput
                         international
+                        countryCallingCodeEditable={false}
                         defaultCountry="BR"
                         value={celularValue}
                         onChange={(value) => setCelularValue(value || "")}
                         placeholder="(11) 98888-8888"
+                        displayInitialValueAsLocalNumber
                         numberInputProps={{
                           className: "flex-1 bg-transparent border-none outline-none text-sm",
                           placeholder: "(11) 98888-8888"
+                        }}
+                        countrySelectProps={{
+                          className: "phone-country-select"
                         }}
                       />
                     </div>

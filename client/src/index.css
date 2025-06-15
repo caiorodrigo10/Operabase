@@ -94,13 +94,44 @@
   display: none !important;
 }
 
-/* Completely hide the country calling code */
+/* Ultra-specific CSS to hide country code completely */
 .PhoneInputCountryCallingCode {
   display: none !important;
-  visibility: hidden !important;
-  width: 0 !important;
-  height: 0 !important;
-  opacity: 0 !important;
+}
+
+.PhoneInputCountry > * {
+  display: none !important;
+}
+
+.PhoneInputCountry .PhoneInputCountryIcon {
+  display: block !important;
+}
+
+.PhoneInputCountry .PhoneInputCountryIconImg {
+  display: block !important;
+}
+
+/* Hide all text content in country selector */
+.PhoneInputCountry {
+  font-size: 0 !important;
+  color: transparent !important;
+}
+
+.PhoneInputCountry::before,
+.PhoneInputCountry::after {
+  content: none !important;
+}
+
+/* Force hide any remaining text */
+.PhoneInputCountry * {
+  color: transparent !important;
+  font-size: 0 !important;
+}
+
+.PhoneInputCountry .PhoneInputCountryIcon,
+.PhoneInputCountry .PhoneInputCountryIconImg {
+  color: initial !important;
+  font-size: initial !important;
 }
 
 .PhoneInputInput {
