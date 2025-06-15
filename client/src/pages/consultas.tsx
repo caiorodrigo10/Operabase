@@ -254,18 +254,25 @@ export function Consultas() {
   // Mutation for creating patient
   const createPatientMutation = useMutation({
     mutationFn: async (data: PatientForm) => {
-      return await apiRequest("POST", "/api/contacts", {
+      // Only send fields that exist in the contacts table schema
+      const contactData = {
         clinic_id: 1,
         name: data.name,
         phone: data.phone,
-        email: data.email || null,
+        email: data.email || '',
         status: 'novo',
         source: 'cadastro',
         gender: data.gender || null,
         profession: data.profession || null,
         address: data.address || null,
         notes: data.notes || null,
-      });
+        // Combine emergency contact info into notes if provided
+        emergency_contact: data.emergency_contact_name && data.emergency_contact_phone 
+          ? `${data.emergency_contact_name} - ${data.emergency_contact_phone}` 
+          : null,
+      };
+      
+      return await apiRequest("POST", "/api/contacts", contactData);
     },
     onSuccess: (newPatient: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
@@ -280,7 +287,8 @@ export function Consultas() {
         description: "O paciente foi cadastrado com sucesso.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Error creating patient:', error);
       toast({
         title: "Erro",
         description: "Não foi possível cadastrar o paciente.",
