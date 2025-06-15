@@ -286,8 +286,23 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createContact(insertContact: InsertContact): Promise<Contact> {
-    const result = await db.insert(contacts).values(insertContact).returning();
-    return result[0];
+    try {
+      const result = await db.insert(contacts).values(insertContact).returning();
+      return result[0];
+    } catch (error: any) {
+      // Handle duplicate key error by fixing sequence and retrying
+      if (error.code === '23505' && error.constraint === 'contacts_pkey') {
+        console.log('Fixing contacts sequence due to duplicate key error...');
+        
+        // Fix the sequence
+        await db.execute(sql`SELECT setval('contacts_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM contacts), false)`);
+        
+        // Retry the insert
+        const result = await db.insert(contacts).values(insertContact).returning();
+        return result[0];
+      }
+      throw error;
+    }
   }
 
   async updateContact(id: number, updates: Partial<InsertContact>): Promise<Contact | undefined> {
