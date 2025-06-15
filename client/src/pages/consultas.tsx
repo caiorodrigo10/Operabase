@@ -809,6 +809,12 @@ export function Consultas() {
               )}
             </div>
           )}
+          
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={() => setIsDialogOpen(false)}>
+              Fechar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
