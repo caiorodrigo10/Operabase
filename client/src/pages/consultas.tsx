@@ -277,8 +277,23 @@ export function Consultas() {
       console.log('📤 Sending contact data to API:', contactData);
       
       try {
-        const result = await apiRequest("POST", "/api/contacts", contactData);
+        const response = await apiRequest("POST", "/api/contacts", contactData);
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', response.headers);
+        
+        // Check if response has content
+        const contentLength = response.headers.get('content-length');
+        console.log('📏 Content length:', contentLength);
+        
+        if (contentLength === '0' || contentLength === null) {
+          console.warn('⚠️ Empty response received, checking response body...');
+        }
+        
+        const result = await response.json();
         console.log('✅ Patient created successfully:', result);
+        console.log('🔍 Result type:', typeof result);
+        console.log('🔍 Result keys:', Object.keys(result || {}));
+        
         return result;
       } catch (error) {
         console.error('❌ Failed to create patient:', error);
@@ -300,9 +315,40 @@ export function Consultas() {
         patientForm.reset();
         
         console.log('🎯 Auto-selecting newly created patient...');
-        form.setValue("contact_id", newPatient.id.toString());
-        form.setValue("contact_whatsapp", newPatient.phone || "");
-        form.setValue("contact_email", newPatient.email || "");
+        if (newPatient && newPatient.id) {
+          form.setValue("contact_id", newPatient.id.toString());
+          form.setValue("contact_whatsapp", newPatient.phone || "");
+          form.setValue("contact_email", newPatient.email || "");
+          console.log('✅ Patient auto-selected with ID:', newPatient.id);
+        } else {
+          console.warn('⚠️ Unable to auto-select patient - no ID received, will attempt fallback');
+          // Refresh contacts and try to select the most recently created patient
+          queryClient.invalidateQueries({ queryKey: ['/api/contacts'] }).then(() => {
+            // After cache invalidation, try to find the newly created patient by name
+            const patientName = patientForm.getValues('name');
+            console.log('🔍 Looking for patient with name:', patientName);
+            
+            setTimeout(() => {
+              // Get the latest contacts data
+              const contactsQuery = queryClient.getQueryData(['/api/contacts']) as Contact[] | undefined;
+              if (contactsQuery) {
+                const newlyCreated = contactsQuery.find(contact => 
+                  contact.name === patientName && 
+                  contact.phone === patientForm.getValues('phone')
+                );
+                
+                if (newlyCreated) {
+                  form.setValue("contact_id", newlyCreated.id.toString());
+                  form.setValue("contact_whatsapp", newlyCreated.phone || "");
+                  form.setValue("contact_email", newlyCreated.email || "");
+                  console.log('✅ Fallback patient selection successful with ID:', newlyCreated.id);
+                } else {
+                  console.warn('⚠️ Fallback patient selection failed - patient not found in contacts list');
+                }
+              }
+            }, 500); // Small delay to allow cache refresh
+          });
+        }
         
         console.log('✅ Success toast will be shown');
         toast({
