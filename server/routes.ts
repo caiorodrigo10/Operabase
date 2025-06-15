@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ APPOINTMENTS ============
   
   // Get appointments with filters (including Google Calendar events)
-  app.get("/api/appointments", flexibleAuth, async (req, res) => {
+  app.get("/api/appointments", async (req, res) => {
     try {
       console.log('🚀 Appointments API called');
       const { clinic_id, status, date } = req.query;
@@ -304,102 +304,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appointments = await storage.getAppointments(clinicId, filters);
       console.log('📊 DB appointments found:', appointments.length);
       
-      // Get Google Calendar events if user is authenticated and has calendar integration
-      console.log('🔐 User auth check:', !!req.user);
-      if (req.user) {
-        try {
-          console.log('🔍 Fetching calendar integrations for user:', req.user.id);
-          const integrations = await storage.getCalendarIntegrations(req.user.id);
-          console.log('📊 Calendar integrations found:', integrations.length);
-          const googleEvents = [];
-          
-          for (const integration of integrations) {
-            if (integration.calendar_id && integration.access_token) {
-              try {
-                // Check sync preferences - only show Google Calendar events if sync is enabled
-                const showGoogleEvents = integration.sync_enabled && integration.is_active;
-                console.log('📋 Integration check:', {
-                  id: integration.id,
-                  sync_enabled: integration.sync_enabled,
-                  is_active: integration.is_active,
-                  showGoogleEvents
-                });
-                
-                if (!showGoogleEvents) {
-                  console.log('⏭️ Skipping integration - sync disabled or inactive');
-                  continue; // Skip this integration if sync is disabled
-                }
-
-                // Set up Google Calendar service
-                const tokenExpiry = integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined;
-                googleCalendarService.setCredentials(
-                  integration.access_token,
-                  integration.refresh_token || undefined,
-                  tokenExpiry
-                );
-
-                // Get events for the date range
-                const timeMin = filters.date 
-                  ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate()).toISOString()
-                  : new Date().toISOString();
-                const timeMax = filters.date
-                  ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate() + 1).toISOString()
-                  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-                const events = await googleCalendarService.listEvents(
-                  integration.calendar_id,
-                  timeMin,
-                  timeMax
-                );
-
-                console.log('📅 Google Calendar events found:', events.length);
-                console.log('🕐 Date range:', { timeMin, timeMax });
-
-                // Convert Google Calendar events to appointment format based on sync preference
-                for (const event of events) {
-                  if (event.start?.dateTime && event.summary) {
-                    const startDate = new Date(event.start.dateTime);
-                    const endDate = new Date(event.end?.dateTime || event.start.dateTime);
-                    const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
-
-                    // Check if this event is already in our database
-                    const existsInDb = appointments.some(apt => apt.google_calendar_event_id === event.id);
-                    
-                    if (!existsInDb) {
-                      // For bidirectional sync, show events as system appointments
-                      // For one-way sync, show as external calendar events for conflict detection
-                      googleEvents.push({
-                        id: `gc_${event.id}`, // Prefix to distinguish from DB appointments
-                        contact_id: null,
-                        user_id: req.user.id,
-                        clinic_id: clinicId,
-                        doctor_name: event.summary,
-                        specialty: integration.sync_enabled ? 'Evento Sincronizado' : 'Evento do Google Calendar',
-                        appointment_type: integration.sync_enabled ? 'sync_enabled' : 'google_calendar',
-                        scheduled_date: startDate,
-                        duration_minutes: durationMinutes,
-                        status: 'scheduled',
-                        payment_status: 'pending',
-                        payment_amount: 0,
-                        session_notes: event.description || null,
-                        created_at: new Date(),
-                        updated_at: new Date(),
-                        google_calendar_event_id: event.id,
-                        is_google_calendar_event: true, // Flag to identify Google Calendar events
-                        sync_enabled: integration.sync_enabled // Track sync status for UI rendering
-                      });
-                    }
-                  }
-                }
-              } catch (calError) {
-                console.warn('Error fetching from Google Calendar:', calError);
-                // Continue with other integrations or just database appointments
-              }
-            }
-          }
-
-          // Combine database appointments with Google Calendar events
-          const allAppointments = [...appointments, ...googleEvents];
+      res.json(appointments);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      res.status(500).json({ error: 'Failed to fetch appointments' });
+    }
+  });
           console.log('📊 Final result:', {
             dbAppointments: appointments.length,
             googleEvents: googleEvents.length,
