@@ -801,14 +801,21 @@ export class PostgreSQLStorage implements IStorage {
   async getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]> {
     console.log('🔍 Searching calendar integrations for email:', userEmail);
     
-    const result = await db.execute(sql`
-      SELECT * FROM calendar_integrations 
-      WHERE email = ${userEmail} 
-      ORDER BY created_at DESC
-    `);
-    console.log('📊 Calendar integrations found:', result.rows.length);
-    console.log('📋 Integration data:', result.rows);
-    return result.rows as CalendarIntegration[];
+    try {
+      // Use direct SQL query to ensure compatibility
+      const pool = (db as any)._.session.client;
+      const result = await pool.query(
+        'SELECT * FROM calendar_integrations WHERE email = $1 ORDER BY created_at DESC',
+        [userEmail]
+      );
+      
+      console.log('📊 Calendar integrations found:', result.rows.length);
+      console.log('📋 Integration data:', result.rows);
+      return result.rows as CalendarIntegration[];
+    } catch (error) {
+      console.error('❌ Error in getCalendarIntegrationsByEmail:', error);
+      return [];
+    }
   }
 
   async getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined> {
