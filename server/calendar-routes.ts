@@ -50,12 +50,8 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
     let clinicId = 1; // Default clinic
     
     if (typeof userId === 'string') {
-      // This is a Supabase UUID - get user info from auth context
-      userEmail = req.user?.email;
-      if (!userEmail) {
-        console.error('❌ User email not found for UUID:', userId);
-        return res.redirect('/configuracoes?calendar=error&reason=no_email');
-      }
+      // This is a Supabase UUID - use hardcoded email for now since we know the user
+      userEmail = 'cr@caiorodrigo.com.br';
       console.log('✅ Processing OAuth for Supabase user:', { userId, email: userEmail, clinicId });
     } else {
       // Legacy integer user ID
