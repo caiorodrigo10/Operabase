@@ -992,8 +992,8 @@ export function Consultas() {
                     </FormControl>
                     <Button
                       type="button"
-                      variant="ghost"
-                      className="h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-0 font-normal px-4"
+                      variant="outline"
+                      className="h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-4"
                       onClick={() => setShowNewPatientDialog(true)}
                     >
                       <Plus className="mr-2 h-4 w-4" />
@@ -1129,11 +1129,12 @@ export function Consultas() {
                     />
                   </div>
 
-                  <div className="col-span-3 flex items-end">
+                  <div className="col-span-3 flex flex-col">
+                    <div className="h-6"></div>
                     <Button
                       type="button"
-                      variant="ghost"
-                      className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-0 font-normal"
+                      variant="outline"
+                      className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal"
                       onClick={() => {
                         const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
                         const targetDuration = watchedDuration || '30';
