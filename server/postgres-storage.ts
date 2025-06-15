@@ -800,13 +800,28 @@ export class PostgreSQLStorage implements IStorage {
 
   async getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]> {
     console.log('🔍 Searching calendar integrations for email:', userEmail);
+    
+    // Try direct query first
+    const directResult = await this.pool.query(
+      'SELECT * FROM calendar_integrations WHERE email = $1 ORDER BY created_at DESC',
+      [userEmail]
+    );
+    
+    console.log('📊 Direct query - Calendar integrations found:', directResult.rows.length);
+    console.log('📋 Direct query - Integration data:', directResult.rows);
+    
+    if (directResult.rows.length > 0) {
+      return directResult.rows as CalendarIntegration[];
+    }
+    
+    // Fallback to drizzle query
     const result = await db.execute(sql`
       SELECT * FROM calendar_integrations 
       WHERE email = ${userEmail} 
       ORDER BY created_at DESC
     `);
-    console.log('📊 Calendar integrations found:', result.rows.length);
-    console.log('📋 Integration data:', result.rows);
+    console.log('📊 Drizzle query - Calendar integrations found:', result.rows.length);
+    console.log('📋 Drizzle query - Integration data:', result.rows);
     return result.rows as CalendarIntegration[];
   }
 
