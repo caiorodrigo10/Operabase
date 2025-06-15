@@ -98,6 +98,20 @@
     color: var(--medical-purple);
   }
   
+  .search-input {
+    @apply border-slate-200 bg-white;
+  }
+  
+  .search-input:focus {
+    @apply border-blue-300 ring-1 ring-blue-200 ring-opacity-50 outline-none !important;
+    box-shadow: 0 0 0 1px rgb(147 197 253 / 0.5) !important;
+  }
+  
+  .search-input:focus-visible {
+    @apply border-blue-300 ring-1 ring-blue-200 ring-opacity-50 outline-none !important;
+    box-shadow: 0 0 0 1px rgb(147 197 253 / 0.5) !important;
+  }
+  
   .bg-medical-purple {
     background-color: var(--medical-purple);
   }

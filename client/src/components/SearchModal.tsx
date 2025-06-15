@@ -72,7 +72,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               placeholder="Digite o nome do paciente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-base border-slate-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200 focus:outline-none"
+              className="search-input pl-10 text-base"
               autoFocus
             />
           </div>
