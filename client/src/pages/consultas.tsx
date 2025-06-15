@@ -350,11 +350,8 @@ export function Consultas() {
           });
         }
         
-        console.log('✅ Success toast will be shown');
-        toast({
-          title: "Paciente cadastrado",
-          description: "O paciente foi cadastrado com sucesso.",
-        });
+        // Patient successfully created and auto-selected - no notification needed
+        // The auto-selection in the patient field clearly shows success
         
         console.log('🏁 Patient creation process completed successfully');
       } catch (successError) {
@@ -890,7 +887,7 @@ export function Consultas() {
                 )}
               />
 
-              {/* Contact Selection */}
+              {/* Contact Selection with Cadastrar button */}
               <FormField
                 control={form.control}
                 name="contact_id"
@@ -900,9 +897,9 @@ export function Consultas() {
                       <FormLabel>Paciente *</FormLabel>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-3"
+                        className="bg-blue-600 text-white hover:bg-blue-700 h-8 px-4"
                         onClick={() => setShowNewPatientDialog(true)}
                       >
                         <Plus className="mr-1 h-4 w-4" />
@@ -1009,87 +1006,25 @@ export function Consultas() {
                 )}
               />
 
-              {/* Professional Selection */}
-              <FormField
-                control={form.control}
-                name="user_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profissional *</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o profissional" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {clinicUsers.map((user: any) => (
-                            <SelectItem key={user.user_id} value={user.user_id.toString()}>
-                              {user.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Date and Time */}
+              {/* Professional and Consultation Type */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="scheduled_date"
+                  name="user_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="scheduled_time"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Horário *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="time"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Duration and Type */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Duração (minutos) *</FormLabel>
+                      <FormLabel>Profissional *</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Duração" />
+                            <SelectValue placeholder="Selecione o profissional" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="30">30 minutos</SelectItem>
-                            <SelectItem value="60">60 minutos</SelectItem>
-                            <SelectItem value="90">90 minutos</SelectItem>
-                            <SelectItem value="120">120 minutos</SelectItem>
+                            {clinicUsers.map((user: any) => (
+                              <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                                {user.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -1121,6 +1056,95 @@ export function Consultas() {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Date, Time, Duration and Find Time Button */}
+              <div className="grid grid-cols-12 gap-4 items-end">
+                <div className="col-span-3">
+                  <FormField
+                    control={form.control}
+                    name="scheduled_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="col-span-3">
+                  <FormField
+                    control={form.control}
+                    name="scheduled_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Horário *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="col-span-3">
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duração *</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Duração" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="30">30 min</SelectItem>
+                              <SelectItem value="60">60 min</SelectItem>
+                              <SelectItem value="90">90 min</SelectItem>
+                              <SelectItem value="120">120 min</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="col-span-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                    disabled={!watchedDate || !watchedDuration || findTimeSlotsLoading}
+                    onClick={() => setFindTimeSlotsOpen(true)}
+                  >
+                    {findTimeSlotsLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Buscando...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-4 w-4" />
+                        Encontrar Horário
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* Availability Check Status */}
