@@ -1415,6 +1415,21 @@ export function Consultas() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Find Time Slots Modal */}
+      <Dialog open={findTimeSlotsOpen} onOpenChange={setFindTimeSlotsOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+          <FindTimeSlots
+            selectedDate={watchedDate}
+            duration={parseInt(watchedDuration) || 60}
+            onTimeSelect={(time) => {
+              form.setValue("scheduled_time", time);
+              setFindTimeSlotsOpen(false);
+            }}
+            onClose={() => setFindTimeSlotsOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
