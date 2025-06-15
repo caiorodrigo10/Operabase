@@ -371,7 +371,7 @@ export function Consultas() {
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
-                              <div className="w-3 h-3 bg-slate-300 rounded-full"></div>
+                              <div className={`w-3 h-3 ${getEventColor(appointment.status).dot} rounded-full`}></div>
                               <div>
                                 <h3 className="font-semibold text-slate-900">{patientName}</h3>
                                 <div className="flex items-center space-x-4 text-sm text-slate-600">
