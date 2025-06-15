@@ -534,15 +534,10 @@ export function Consultas() {
     return contacts.find((c: any) => c.id === contactId);
   };
 
-  const getEventColor = (status: string, isGoogleCalendarEvent?: boolean, appointment?: any) => {
-    // Para eventos do Google Calendar, usar cores baseadas na preferência de sincronização
-    if (isGoogleCalendarEvent && appointment) {
-      // Verificar se tem preferência de sincronização bidirecional
-      if (appointment.sync_preference === 'bidirectional') {
-        return { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' };
-      } else {
-        return { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' };
-      }
+  const getEventColor = (status: string, isGoogleCalendarEvent?: boolean) => {
+    // Para eventos do Google Calendar, sempre usar cor cinza
+    if (isGoogleCalendarEvent) {
+      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
     }
 
     const config = getStatusConfig(status);
@@ -1220,7 +1215,7 @@ export function Consultas() {
                               ? (appointment.doctor_name || 'Evento do Google Calendar')
                               : getPatientName(appointment.contact_id, appointment);
                             const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
-                            const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id, appointment);
+                            const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
 
                             return (
                               <EventTooltip key={appointment.id} appointment={appointment} patientName={displayName}>
@@ -1296,7 +1291,7 @@ export function Consultas() {
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
                               {slotAppointments.map((appointment: Appointment) => {
-                                const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id, appointment);
+                                const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                                 const patientName = getPatientName(appointment.contact_id, appointment);
                                 const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
                                 const duration = getAppointmentDuration(appointment);
@@ -1306,7 +1301,7 @@ export function Consultas() {
                                 return (
                                   <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                     <div
-                                      className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded cursor-pointer border ${colors.border} transition-colors overflow-hidden`}
+                                      className="absolute left-1 right-1 text-xs p-1 bg-blue-100 text-blue-800 rounded cursor-pointer border border-blue-200 hover:bg-blue-200 transition-colors overflow-hidden"
                                       style={{ 
                                         top: `${topPosition}px`,
                                         height: `${height}px`,
@@ -1376,7 +1371,7 @@ export function Consultas() {
                           {getAppointmentsForDate(currentDate).map((appointment: Appointment) => {
                             if (!appointment.scheduled_date) return null;
                             
-                            const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id, appointment);
+                            const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                             const patientName = getPatientName(appointment.contact_id, appointment);
                             const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
                             const duration = getAppointmentDuration(appointment);
@@ -1394,7 +1389,7 @@ export function Consultas() {
                             return (
                               <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                 <div
-                                  className={`absolute left-2 right-2 text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-pointer border ${colors.border} transition-colors overflow-hidden shadow-sm`}
+                                  className="absolute left-2 right-2 text-sm p-3 bg-blue-100 text-blue-800 rounded cursor-pointer border border-blue-200 hover:bg-blue-200 transition-colors overflow-hidden shadow-sm"
                                   style={{ 
                                     top: `${topPosition}px`,
                                     height: `${height}px`,
