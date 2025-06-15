@@ -189,7 +189,11 @@ export function Consultas() {
   }, [appointmentsLoading]);
 
   // Helper functions
-  const getPatientName = (contactId: number) => {
+  const getPatientName = (contactId: number, appointment?: Appointment) => {
+    // Para eventos do Google Calendar, mostrar o título do evento
+    if (appointment?.is_google_calendar_event) {
+      return appointment.doctor_name || 'Evento do Google Calendar';
+    }
     const contact = contacts.find(c => c.id === contactId);
     return contact ? contact.name : 'Paciente não encontrado';
   };
@@ -198,7 +202,12 @@ export function Consultas() {
     return contacts.find(c => c.id === contactId);
   };
 
-  const getEventColor = (status: string) => {
+  const getEventColor = (status: string, isGoogleCalendarEvent?: boolean) => {
+    // Para eventos do Google Calendar, sempre usar cor cinza
+    if (isGoogleCalendarEvent) {
+      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+    }
+
     const config = getStatusConfig(status);
     if (!config) {
       return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
@@ -404,15 +413,15 @@ export function Consultas() {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
                   })
                   .map((appointment: Appointment) => {
-                    const patientName = getPatientName(appointment.contact_id);
-                    const colors = getEventColor(appointment.status);
+                    const patientName = getPatientName(appointment.contact_id, appointment);
+                    const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
                     
                     return (
                       <Card key={appointment.id} className="border border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
-                              <div className={`w-3 h-3 ${getEventColor(appointment.status).dot} rounded-full`}></div>
+                              <div className={`w-3 h-3 ${colors.dot} rounded-full`}></div>
                               <div>
                                 <h3 className="font-semibold text-slate-900">{patientName}</h3>
                                 <div className="flex items-center space-x-4 text-sm text-slate-600">
@@ -420,7 +429,7 @@ export function Consultas() {
                                     <Clock className="w-4 h-4 mr-1" />
                                     {appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não definida'}
                                   </span>
-                                  {appointment.doctor_name && (
+                                  {appointment.doctor_name && !appointment.is_google_calendar_event && (
                                     <span className="flex items-center">
                                       <Stethoscope className="w-4 h-4 mr-1" />
                                       {appointment.doctor_name}
@@ -602,8 +611,8 @@ export function Consultas() {
                         return (
                           <div key={`${day.toISOString()}-${hour}`} className="bg-white p-1 border-r relative min-h-16">
                             {dayAppointments.map((appointment: Appointment, idx: number) => {
-                              const colors = getEventColor(appointment.status);
-                              const patientName = getPatientName(appointment.contact_id);
+                              const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
+                              const patientName = getPatientName(appointment.contact_id, appointment);
                               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
 
                               return (
@@ -650,8 +659,8 @@ export function Consultas() {
                           </div>
                           <div className="flex-1 space-y-1">
                             {hourAppointments.map((appointment: Appointment, idx: number) => {
-                              const colors = getEventColor(appointment.status);
-                              const patientName = getPatientName(appointment.contact_id);
+                              const colors = getEventColor(appointment.status, appointment.is_google_calendar_event);
+                              const patientName = getPatientName(appointment.contact_id, appointment);
                               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
 
                               return (
@@ -664,7 +673,7 @@ export function Consultas() {
                                       <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
                                       <span className="font-medium">{time} - {patientName}</span>
                                     </div>
-                                    {appointment.doctor_name && (
+                                    {appointment.doctor_name && !appointment.is_google_calendar_event && (
                                       <div className="text-xs mt-1">Dr. {appointment.doctor_name}</div>
                                     )}
                                   </div>
@@ -712,78 +721,126 @@ export function Consultas() {
           
           {selectedAppointment && (
             <div className="space-y-6">
-              {/* Unified Layout for All Appointments */}
-              {selectedAppointment.google_calendar_event_id && (
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm font-medium text-purple-800">Evento do Google Calendar</span>
-                </div>
-              )}
-
-              {/* Patient Information */}
-              <div className="bg-slate-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Informações do Paciente
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-slate-600">Nome</p>
-                    <p className="font-medium">{getPatientName(selectedAppointment.contact_id)}</p>
+              {/* Google Calendar Event Layout */}
+              {selectedAppointment.is_google_calendar_event ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-800">Evento do Google Calendar</span>
                   </div>
-                  {getPatientInfo(selectedAppointment.contact_id) && (
-                    <>
+
+                  {/* Event Information */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Informações do Evento
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-slate-600">Telefone</p>
+                        <p className="text-sm text-gray-600">Título do Evento</p>
+                        <p className="font-medium">{selectedAppointment.doctor_name || 'Evento do Google Calendar'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Data e Hora</p>
                         <p className="font-medium flex items-center gap-2">
-                          <Phone className="w-3 h-3" />
-                          {getPatientInfo(selectedAppointment.contact_id)?.phone}
+                          <Clock className="w-3 h-3" />
+                          {selectedAppointment.scheduled_date ? format(new Date(selectedAppointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não definida'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600">Email</p>
-                        <p className="font-medium">{getPatientInfo(selectedAppointment.contact_id)?.email || 'Não informado'}</p>
+                        <p className="text-sm text-gray-600">Duração</p>
+                        <p className="font-medium">{selectedAppointment.duration_minutes || 60} minutos</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600">Idade</p>
-                        <p className="font-medium">{getPatientInfo(selectedAppointment.contact_id)?.age || 'Não informado'} anos</p>
+                        <p className="text-sm text-gray-600">Status</p>
+                        <p className="text-gray-500 italic">-</p>
                       </div>
-                    </>
+                      <div>
+                        <p className="text-sm text-gray-600">Especialidade</p>
+                        <p className="text-gray-500 italic">-</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Paciente</p>
+                        <p className="text-gray-500 italic">-</p>
+                      </div>
+                    </div>
+                    {selectedAppointment.session_notes && (
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-600">Observações</p>
+                        <p className="font-medium">{selectedAppointment.session_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Regular Appointment Layout */
+                <div className="space-y-6">
+                  {/* Patient Information */}
+                  <div className="bg-slate-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Informações do Paciente
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-slate-600">Nome</p>
+                        <p className="font-medium">{getPatientName(selectedAppointment.contact_id, selectedAppointment)}</p>
+                      </div>
+                      {getPatientInfo(selectedAppointment.contact_id) && (
+                        <>
+                          <div>
+                            <p className="text-sm text-slate-600">Telefone</p>
+                            <p className="font-medium flex items-center gap-2">
+                              <Phone className="w-3 h-3" />
+                              {getPatientInfo(selectedAppointment.contact_id)?.phone}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-600">Email</p>
+                            <p className="font-medium">{getPatientInfo(selectedAppointment.contact_id)?.email || 'Não informado'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-600">Idade</p>
+                            <p className="font-medium">{getPatientInfo(selectedAppointment.contact_id)?.age || 'Não informado'} anos</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Appointment Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-sm text-slate-600">Data e Hora</p>
+                      <p className="font-medium flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        {selectedAppointment.scheduled_date 
+                          ? format(new Date(selectedAppointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                          : 'Não definido'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Status</p>
+                      <span className="font-medium">{statusLabels[selectedAppointment.status]?.label || selectedAppointment.status}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Duração</p>
+                      <p className="font-medium">{selectedAppointment.duration_minutes || 60} minutos</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Especialidade</p>
+                      <p className="font-medium">{selectedAppointment.specialty || 'Não especificado'}</p>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  {selectedAppointment.session_notes && (
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-slate-800 mb-3">Observações</h3>
+                      <p className="text-slate-700">{selectedAppointment.session_notes}</p>
+                    </div>
                   )}
-                </div>
-              </div>
-
-              {/* Appointment Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-slate-600">Data e Hora</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    {selectedAppointment.scheduled_date 
-                      ? format(new Date(selectedAppointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-                      : 'Não definido'
-                    }
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600">Status</p>
-                  <span className="font-medium">{statusLabels[selectedAppointment.status]?.label || selectedAppointment.status}</span>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600">Duração</p>
-                  <p className="font-medium">{selectedAppointment.duration_minutes || 60} minutos</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600">Especialidade</p>
-                  <p className="font-medium">{selectedAppointment.specialty || 'Não especificado'}</p>
-                </div>
-              </div>
-
-              {/* Notes */}
-              {selectedAppointment.session_notes && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-slate-800 mb-3">Observações</h3>
-                  <p className="text-slate-700">{selectedAppointment.session_notes}</p>
                 </div>
               )}
             </div>
