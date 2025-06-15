@@ -286,20 +286,37 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createContact(insertContact: InsertContact): Promise<Contact> {
+    console.log('🗄️ PostgreSQLStorage.createContact - Starting database operation');
+    console.log('📋 Insert data:', insertContact);
+    
     try {
+      console.log('💾 Executing database insert...');
       const result = await db.insert(contacts).values(insertContact).returning();
+      console.log('✅ Database insert successful:', result[0]);
       return result[0];
     } catch (error: any) {
+      console.error('❌ Database insert failed:', error);
+      console.error('📊 Error code:', error.code);
+      console.error('📊 Error constraint:', error.constraint);
+      
       // Handle duplicate key error by fixing sequence and retrying
       if (error.code === '23505' && error.constraint === 'contacts_pkey') {
-        console.log('Fixing contacts sequence due to duplicate key error...');
+        console.log('🔧 Fixing contacts sequence due to duplicate key error...');
         
-        // Fix the sequence
-        await db.execute(sql`SELECT setval('contacts_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM contacts), false)`);
-        
-        // Retry the insert
-        const result = await db.insert(contacts).values(insertContact).returning();
-        return result[0];
+        try {
+          // Fix the sequence
+          console.log('📊 Executing sequence fix...');
+          await db.execute(sql`SELECT setval('contacts_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM contacts), false)`);
+          console.log('✅ Sequence fixed, retrying insert...');
+          
+          // Retry the insert
+          const result = await db.insert(contacts).values(insertContact).returning();
+          console.log('✅ Retry insert successful:', result[0]);
+          return result[0];
+        } catch (retryError: any) {
+          console.error('❌ Retry insert also failed:', retryError);
+          throw retryError;
+        }
       }
       throw error;
     }

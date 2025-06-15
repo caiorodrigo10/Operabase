@@ -254,6 +254,8 @@ export function Consultas() {
   // Mutation for creating patient
   const createPatientMutation = useMutation({
     mutationFn: async (data: PatientForm) => {
+      console.log('🚀 Starting patient creation with data:', data);
+      
       // Only send fields that exist in the contacts table schema
       const contactData = {
         clinic_id: 1,
@@ -272,26 +274,66 @@ export function Consultas() {
           : null,
       };
       
-      return await apiRequest("POST", "/api/contacts", contactData);
+      console.log('📤 Sending contact data to API:', contactData);
+      
+      try {
+        const result = await apiRequest("POST", "/api/contacts", contactData);
+        console.log('✅ Patient created successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Failed to create patient:', error);
+        throw error;
+      }
     },
     onSuccess: (newPatient: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
-      setShowNewPatientDialog(false);
-      patientForm.reset();
-      // Auto-select the newly created patient
-      form.setValue("contact_id", newPatient.id.toString());
-      form.setValue("contact_whatsapp", newPatient.phone || "");
-      form.setValue("contact_email", newPatient.email || "");
-      toast({
-        title: "Paciente cadastrado",
-        description: "O paciente foi cadastrado com sucesso.",
-      });
+      console.log('🎉 Patient creation SUCCESS callback triggered');
+      console.log('📋 New patient data received:', newPatient);
+      
+      try {
+        console.log('🔄 Invalidating contacts cache...');
+        queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
+        
+        console.log('❌ Closing patient dialog...');
+        setShowNewPatientDialog(false);
+        
+        console.log('🧹 Resetting patient form...');
+        patientForm.reset();
+        
+        console.log('🎯 Auto-selecting newly created patient...');
+        form.setValue("contact_id", newPatient.id.toString());
+        form.setValue("contact_whatsapp", newPatient.phone || "");
+        form.setValue("contact_email", newPatient.email || "");
+        
+        console.log('✅ Success toast will be shown');
+        toast({
+          title: "Paciente cadastrado",
+          description: "O paciente foi cadastrado com sucesso.",
+        });
+        
+        console.log('🏁 Patient creation process completed successfully');
+      } catch (successError) {
+        console.error('❌ Error in success callback:', successError);
+      }
     },
     onError: (error: any) => {
-      console.error('Error creating patient:', error);
+      console.error('💥 Patient creation ERROR callback triggered');
+      console.error('📊 Error details:', error);
+      console.error('📊 Error type:', typeof error);
+      console.error('📊 Error properties:', Object.keys(error || {}));
+      
+      if (error?.response) {
+        console.error('📡 HTTP Response error:', error.response);
+        console.error('📡 Response status:', error.response.status);
+        console.error('📡 Response data:', error.response.data);
+      }
+      
+      if (error?.message) {
+        console.error('💬 Error message:', error.message);
+      }
+      
       toast({
         title: "Erro",
-        description: "Não foi possível cadastrar o paciente.",
+        description: `Não foi possível cadastrar o paciente. ${error?.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     },
@@ -1848,7 +1890,14 @@ export function Consultas() {
           </DialogHeader>
           
           <Form {...patientForm}>
-            <form onSubmit={patientForm.handleSubmit((data) => createPatientMutation.mutate(data))} className="space-y-6">
+            <form onSubmit={patientForm.handleSubmit((data) => {
+              console.log('📝 Patient form submitted!');
+              console.log('📋 Form data received:', data);
+              console.log('🔍 Form validation state:', patientForm.formState);
+              console.log('🔍 Form errors:', patientForm.formState.errors);
+              console.log('🚀 Triggering createPatientMutation...');
+              createPatientMutation.mutate(data);
+            })} className="space-y-6">
               <Tabs value={patientFormTab} onValueChange={setPatientFormTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="basic">Informações básicas</TabsTrigger>

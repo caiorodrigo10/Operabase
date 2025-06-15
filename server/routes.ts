@@ -261,14 +261,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create contact
   app.post("/api/contacts", async (req, res) => {
     try {
+      console.log('🚀 POST /api/contacts - Starting contact creation');
+      console.log('📥 Raw request body:', req.body);
+      
+      console.log('🔍 Validating data with insertContactSchema...');
       const validatedData = insertContactSchema.parse(req.body);
+      console.log('✅ Data validation successful:', validatedData);
+      
+      console.log('💾 Calling storage.createContact...');
       const contact = await storage.createContact(validatedData);
+      console.log('✅ Contact created successfully in database:', contact);
+      
+      console.log('📤 Sending 201 response with contact data');
       res.status(201).json(contact);
     } catch (error: any) {
+      console.error('❌ Error in POST /api/contacts:', error);
+      
       if (error.name === 'ZodError') {
+        console.error('📋 Zod validation errors:', error.errors);
         return res.status(400).json({ error: "Invalid data", details: error.errors });
       }
-      console.error("Error creating contact:", error);
+      
+      console.error("💥 Database/Server error creating contact:", error);
+      console.error("📊 Error stack:", error.stack);
       res.status(500).json({ error: "Internal server error" });
     }
   });
