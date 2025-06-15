@@ -17,7 +17,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X, Eye, MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAvailabilityCheck, formatConflictMessage } from "@/hooks/useAvailability";
+import { useAvailabilityCheck, formatConflictMessage, createTimeSlots } from "@/hooks/useAvailability";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
 import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfDay, endOfDay } from "date-fns";
@@ -25,6 +25,22 @@ import { ptBR } from "date-fns/locale";
 import { EventTooltip } from "@/components/EventTooltip";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
 import type { Appointment, Contact } from "@/../../shared/schema";
+
+// Schema for appointment creation form
+const appointmentSchema = z.object({
+  appointment_name: z.string().min(1, "Nome do compromisso é obrigatório"),
+  contact_id: z.string().min(1, "Contato é obrigatório"),
+  user_id: z.string().min(1, "Profissional é obrigatório"),
+  scheduled_date: z.string().min(1, "Data é obrigatória"),
+  scheduled_time: z.string().min(1, "Horário é obrigatório"),
+  duration: z.string().min(1, "Duração é obrigatória"),
+  type: z.string().min(1, "Tipo é obrigatório"),
+  notes: z.string().optional(),
+  contact_whatsapp: z.string().optional(),
+  contact_email: z.string().optional(),
+});
+
+type AppointmentForm = z.infer<typeof appointmentSchema>;
 
 // Status configuration with proper colors and ordering
 const statusConfig = {
@@ -115,15 +131,45 @@ export function Consultas() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [appointmentEditorOpen, setAppointmentEditorOpen] = useState(false);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | undefined>(undefined);
+  const [contactComboboxOpen, setContactComboboxOpen] = useState(false);
   const [dayEventsDialog, setDayEventsDialog] = useState<{ open: boolean; date: Date; events: Appointment[] }>({
     open: false,
     date: new Date(),
     events: []
   });
+  const [availabilityConflict, setAvailabilityConflict] = useState<{
+    hasConflict: boolean;
+    message: string;
+    conflictType?: string;
+  } | null>(null);
+  const [suggestedSlots, setSuggestedSlots] = useState<Array<{
+    date: string;
+    time: string;
+    datetime: Date;
+  }>>([]);
   
   const { toast } = useToast();
+  const availabilityCheck = useAvailabilityCheck();
+
+  // Form for creating appointments
+  const form = useForm<AppointmentForm>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      appointment_name: "",
+      contact_id: "",
+      user_id: "",
+      scheduled_date: "",
+      scheduled_time: "",
+      duration: "60",
+      type: "consulta",
+      notes: "",
+      contact_whatsapp: "",
+      contact_email: "",
+    },
+  });
 
   // Mutation for updating appointment status
   const updateStatusMutation = useMutation({
@@ -147,6 +193,57 @@ export function Consultas() {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status da consulta.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create appointment mutation
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (data: AppointmentForm) => {
+      // Update contact data if modified
+      if (data.contact_whatsapp || data.contact_email) {
+        const contactUpdates: any = {};
+        if (data.contact_whatsapp) contactUpdates.phone = data.contact_whatsapp;
+        if (data.contact_email) contactUpdates.email = data.contact_email;
+        
+        if (Object.keys(contactUpdates).length > 0) {
+          await apiRequest("PUT", `/api/contacts/${data.contact_id}`, contactUpdates);
+        }
+      }
+
+      const appointmentData = {
+        contact_id: parseInt(data.contact_id),
+        user_id: parseInt(data.user_id),
+        clinic_id: 1,
+        doctor_name: data.appointment_name,
+        specialty: data.type,
+        appointment_type: data.type,
+        scheduled_date: new Date(`${data.scheduled_date}T${data.scheduled_time}`),
+        duration_minutes: parseInt(data.duration),
+        status: "agendada",
+        payment_status: "pendente",
+        payment_amount: 0,
+        session_notes: data.notes || null,
+      };
+      const res = await apiRequest("POST", "/api/appointments", appointmentData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments", { clinic_id: 1 }] });
+      toast({
+        title: "Consulta criada",
+        description: "A consulta foi agendada com sucesso.",
+      });
+      setIsCreateDialogOpen(false);
+      form.reset();
+      setAvailabilityConflict(null);
+      setSuggestedSlots([]);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar consulta",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -181,6 +278,93 @@ export function Consultas() {
       return response.json();
     },
   });
+
+  // Function to check availability when date/time changes
+  const checkAvailability = async (date: string, time: string, duration: string) => {
+    if (!date || !time || !duration) {
+      setAvailabilityConflict(null);
+      return;
+    }
+
+    const startDateTime = new Date(`${date}T${time}`);
+    const durationMinutes = parseInt(duration);
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+
+    try {
+      const result = await availabilityCheck.mutateAsync({
+        startDateTime: startDateTime.toISOString(),
+        endDateTime: endDateTime.toISOString()
+      });
+
+      if (result.conflict) {
+        setAvailabilityConflict({
+          hasConflict: true,
+          message: formatConflictMessage(result.conflictType!, result.conflictDetails!),
+          conflictType: result.conflictType
+        });
+      } else {
+        setAvailabilityConflict({
+          hasConflict: false,
+          message: "Horário disponível",
+          conflictType: undefined
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade:', error);
+      setAvailabilityConflict(null);
+    }
+  };
+
+  // Find available time slots
+  const findAvailableSlots = async (date: string, duration: string) => {
+    if (!date || !duration) return;
+
+    const selectedDate = new Date(date);
+    const slots = createTimeSlots(selectedDate, 8, 18, 30);
+    const availableSlots = [];
+
+    for (const slot of slots) {
+      try {
+        const startDateTime = slot.datetime;
+        const durationMinutes = parseInt(duration);
+        const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+
+        const result = await availabilityCheck.mutateAsync({
+          startDateTime: startDateTime.toISOString(),
+          endDateTime: endDateTime.toISOString()
+        });
+
+        if (!result.conflict) {
+          availableSlots.push({
+            date: date,
+            time: slot.value,
+            datetime: slot.datetime
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao verificar slot:', error);
+      }
+
+      if (availableSlots.length >= 6) break; // Limit to 6 suggestions
+    }
+
+    setSuggestedSlots(availableSlots);
+  };
+
+  // Watch form fields for availability checking
+  const watchedDate = form.watch("scheduled_date");
+  const watchedTime = form.watch("scheduled_time");
+  const watchedDuration = form.watch("duration");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (watchedDate && watchedTime && watchedDuration) {
+        checkAvailability(watchedDate, watchedTime, watchedDuration);
+      }
+    }, 500); // Debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedDate, watchedTime, watchedDuration]);
 
   useEffect(() => {
     if (!appointmentsLoading) {
@@ -300,10 +484,7 @@ export function Consultas() {
         </div>
         <Button 
           className="flex items-center gap-2"
-          onClick={() => {
-            setEditingAppointmentId(undefined);
-            setAppointmentEditorOpen(true);
-          }}
+          onClick={() => setIsCreateDialogOpen(true)}
         >
           <Plus className="w-4 h-4" />
           Nova Consulta
