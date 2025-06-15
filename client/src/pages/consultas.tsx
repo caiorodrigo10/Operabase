@@ -739,27 +739,28 @@ export function Consultas() {
   };
 
   const getEventColor = (status: string, isGoogleCalendarEvent?: boolean) => {
-    // Para eventos do Google Calendar, sempre usar cor cinza
+    // Para eventos do Google Calendar, sempre usar fundo cinza
     if (isGoogleCalendarEvent) {
-      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+      return { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300', dot: 'bg-gray-500' };
     }
 
+    // Para compromissos do sistema, usar fundo branco com borda colorida
     const config = getStatusConfig(status);
     if (!config) {
-      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+      return { bg: 'bg-white', text: 'text-gray-700', border: 'border-gray-300', dot: 'bg-gray-500' };
     }
 
-    // Convert config colors to event colors
+    // Convert config colors to event colors - white background with colored borders
     const colorMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-      'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
-      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-      'bg-green-100 text-green-800 border-green-200': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-      'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
-      'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
-      'bg-red-100 text-red-800 border-red-200': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
+      'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-white', text: 'text-yellow-700', border: 'border-yellow-400', dot: 'bg-yellow-500' },
+      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-white', text: 'text-blue-700', border: 'border-blue-400', dot: 'bg-blue-500' },
+      'bg-green-100 text-green-800 border-green-200': { bg: 'bg-white', text: 'text-green-700', border: 'border-green-400', dot: 'bg-green-500' },
+      'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-white', text: 'text-purple-700', border: 'border-purple-400', dot: 'bg-purple-500' },
+      'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-white', text: 'text-orange-700', border: 'border-orange-400', dot: 'bg-orange-500' },
+      'bg-red-100 text-red-800 border-red-200': { bg: 'bg-white', text: 'text-red-700', border: 'border-red-400', dot: 'bg-red-500' },
     };
 
-    return colorMap[config.color] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+    return colorMap[config.color] || { bg: 'bg-white', text: 'text-gray-700', border: 'border-gray-300', dot: 'bg-gray-500' };
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
