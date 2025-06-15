@@ -43,6 +43,25 @@ const appointmentSchema = z.object({
 
 type AppointmentForm = z.infer<typeof appointmentSchema>;
 
+// Schema for patient registration form
+const patientSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  phone: z.string().min(1, "Telefone é obrigatório"),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  cpf: z.string().optional(),
+  rg: z.string().optional(),
+  birth_date: z.string().optional(),
+  gender: z.string().optional(),
+  profession: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip_code: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type PatientForm = z.infer<typeof patientSchema>;
+
 // Status configuration with proper colors and ordering
 const statusConfig = {
   pendente: { 
@@ -157,6 +176,9 @@ export function Consultas() {
     datetime: Date;
   }>>([]);
   const [findTimeSlotsOpen, setFindTimeSlotsOpen] = useState(false);
+  const [showNewPatientDialog, setShowNewPatientDialog] = useState(false);
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
+  const [isCreatingPatient, setIsCreatingPatient] = useState(false);
   
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
@@ -175,6 +197,69 @@ export function Consultas() {
       notes: "",
       contact_whatsapp: "",
       contact_email: "",
+    },
+  });
+
+  // Form for patient registration
+  const patientForm = useForm<PatientForm>({
+    resolver: zodResolver(patientSchema),
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      cpf: "",
+      rg: "",
+      birth_date: "",
+      gender: "",
+      profession: "",
+      address: "",
+      city: "",
+      state: "",
+      zip_code: "",
+      notes: "",
+    },
+  });
+
+  // Mutation for creating patient
+  const createPatientMutation = useMutation({
+    mutationFn: async (data: PatientForm) => {
+      const response = await apiRequest("POST", "/api/contacts", {
+        clinic_id: 1,
+        name: data.name,
+        phone: data.phone,
+        email: data.email || null,
+        cpf: data.cpf || null,
+        rg: data.rg || null,
+        birth_date: data.birth_date || null,
+        gender: data.gender || null,
+        profession: data.profession || null,
+        address: data.address || null,
+        city: data.city || null,
+        state: data.state || null,
+        zip_code: data.zip_code || null,
+        notes: data.notes || null,
+      });
+      return response;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
+      setShowNewPatientDialog(false);
+      patientForm.reset();
+      // Auto-select the newly created patient
+      form.setValue("contact_id", data.id.toString());
+      form.setValue("contact_whatsapp", data.phone || "");
+      form.setValue("contact_email", data.email || "");
+      toast({
+        title: "Paciente cadastrado",
+        description: "O paciente foi cadastrado com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível cadastrar o paciente.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -689,7 +774,19 @@ export function Consultas() {
                 name="contact_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Paciente *</FormLabel>
+                    <div className="flex items-center justify-between mb-2">
+                      <FormLabel>Paciente *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-3"
+                        onClick={() => setShowNewPatientDialog(true)}
+                      >
+                        <Plus className="mr-1 h-4 w-4" />
+                        Cadastrar
+                      </Button>
+                    </div>
                     <FormControl>
                       <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
                         <PopoverTrigger asChild>
@@ -711,56 +808,76 @@ export function Consultas() {
                         </PopoverTrigger>
                         <PopoverContent className="w-[400px] p-0" align="start">
                           <Command>
-                            <div className="flex items-center border-b px-3">
-                              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                              <CommandInput 
-                                placeholder="Digite o nome do paciente..." 
-                                className="border-0 focus:ring-0"
-                              />
-                            </div>
-                            <CommandEmpty className="py-6 text-center text-sm text-gray-500">
-                              <div>Nenhum paciente encontrado</div>
-                              <Button 
-                                variant="link" 
-                                size="sm" 
-                                className="mt-2 text-blue-600"
-                                onClick={() => {
-                                  setContactComboboxOpen(false);
-                                  // TODO: Implement new patient creation
-                                }}
-                              >
-                                <Plus className="mr-1 h-4 w-4" />
-                                Cadastrar paciente
-                              </Button>
-                            </CommandEmpty>
-                            <CommandGroup className="max-h-64 overflow-y-auto">
-                              {contacts.map((contact: Contact) => (
-                                <CommandItem
-                                  key={contact.id}
-                                  value={contact.name}
-                                  onSelect={() => {
-                                    field.onChange(contact.id.toString());
-                                    form.setValue("contact_whatsapp", contact.phone || "");
-                                    form.setValue("contact_email", contact.email || "");
-                                    setContactComboboxOpen(false);
-                                  }}
-                                  className="flex items-center gap-3 p-3 cursor-pointer"
-                                >
-                                  <div className="flex items-center justify-center w-8 h-8 bg-gray-500 text-white rounded-full text-sm font-medium flex-shrink-0">
-                                    {contact.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="font-medium text-gray-900 truncate">{contact.name}</span>
-                                    {contact.phone && (
-                                      <span className="text-sm text-gray-500">{contact.phone}</span>
-                                    )}
-                                  </div>
-                                  {field.value === contact.id.toString() && (
-                                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                                  )}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
+                            <CommandInput 
+                              placeholder="Digite pelo menos 2 caracteres..." 
+                              className="border-b"
+                              value={patientSearchQuery}
+                              onValueChange={setPatientSearchQuery}
+                            />
+                            {patientSearchQuery.length === 0 && (
+                              <div className="py-6 text-center text-sm text-gray-500">
+                                <div>Digite pelo menos 2 caracteres</div>
+                              </div>
+                            )}
+                            {patientSearchQuery.length === 1 && (
+                              <div className="py-6 text-center text-sm text-gray-500">
+                                <div>Digite pelo menos 2 caracteres</div>
+                              </div>
+                            )}
+                            {patientSearchQuery.length >= 2 && (
+                              <>
+                                <CommandEmpty className="py-6 text-center text-sm text-gray-500">
+                                  <div>Nenhum paciente encontrado com "{patientSearchQuery}"</div>
+                                  <Button 
+                                    variant="link" 
+                                    size="sm" 
+                                    className="mt-2 text-blue-600"
+                                    onClick={() => {
+                                      setContactComboboxOpen(false);
+                                      setPatientSearchQuery("");
+                                      setShowNewPatientDialog(true);
+                                      patientForm.setValue("name", patientSearchQuery);
+                                    }}
+                                  >
+                                    <Plus className="mr-1 h-4 w-4" />
+                                    Cadastrar paciente
+                                  </Button>
+                                </CommandEmpty>
+                                <CommandGroup className="max-h-64 overflow-y-auto">
+                                  {contacts
+                                    .filter((contact: Contact) => 
+                                      contact.name.toLowerCase().includes(patientSearchQuery.toLowerCase())
+                                    )
+                                    .map((contact: Contact) => (
+                                    <CommandItem
+                                      key={contact.id}
+                                      value={contact.name}
+                                      onSelect={() => {
+                                        field.onChange(contact.id.toString());
+                                        form.setValue("contact_whatsapp", contact.phone || "");
+                                        form.setValue("contact_email", contact.email || "");
+                                        setContactComboboxOpen(false);
+                                        setPatientSearchQuery("");
+                                      }}
+                                      className="flex items-center gap-3 p-3 cursor-pointer"
+                                    >
+                                      <div className="flex items-center justify-center w-8 h-8 bg-gray-500 text-white rounded-full text-sm font-medium flex-shrink-0">
+                                        {contact.name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="font-medium text-gray-900 truncate">{contact.name}</span>
+                                        {contact.phone && (
+                                          <span className="text-sm text-gray-500">{contact.phone}</span>
+                                        )}
+                                      </div>
+                                      {field.value === contact.id.toString() && (
+                                        <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                      )}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </>
+                            )}
                           </Command>
                         </PopoverContent>
                       </Popover>
