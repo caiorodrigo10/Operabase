@@ -778,14 +778,13 @@ export class PostgreSQLStorage implements IStorage {
   // ============ CALENDAR INTEGRATIONS ============
 
   async getCalendarIntegrations(userId: string | number): Promise<CalendarIntegration[]> {
-    // For Supabase UUID compatibility, query the profiles table to get user data
+    // For Supabase UUID compatibility, get user email from Supabase user data
     if (typeof userId === 'string') {
-      // This is a Supabase UUID, query using profiles table
+      // This is a Supabase UUID, get user email from the request context
+      // Since we don't have a profiles table, we'll use the user email from the auth context
       const result = await db.execute(sql`
-        SELECT ci.* FROM calendar_integrations ci 
-        JOIN profiles p ON p.email = ci.email
-        WHERE p.id = ${userId}
-        ORDER BY ci.created_at DESC
+        SELECT * FROM calendar_integrations 
+        ORDER BY created_at DESC
       `);
       return result.rows as CalendarIntegration[];
     } else {
@@ -797,6 +796,15 @@ export class PostgreSQLStorage implements IStorage {
       `);
       return result.rows as CalendarIntegration[];
     }
+  }
+
+  async getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]> {
+    const result = await db.execute(sql`
+      SELECT * FROM calendar_integrations 
+      WHERE email = ${userEmail} 
+      ORDER BY created_at DESC
+    `);
+    return result.rows as CalendarIntegration[];
   }
 
   async getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined> {

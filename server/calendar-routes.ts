@@ -371,7 +371,10 @@ export async function syncAppointmentToGoogleCalendar(appointment: any) {
 export async function getUserCalendarIntegrations(req: any, res: Response) {
   try {
     const userId = req.user.id;
-    const integrations = await storage.getCalendarIntegrations(userId);
+    const userEmail = req.user.email;
+    
+    // For Supabase users, filter by email since we don't have user_id in calendar_integrations
+    const integrations = await storage.getCalendarIntegrationsByEmail(userEmail);
     
     // Remove sensitive token data from response
     const sanitizedIntegrations = integrations.map(integration => ({
