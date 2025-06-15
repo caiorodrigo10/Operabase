@@ -1501,7 +1501,7 @@ export function Consultas() {
                             return (
                               <EventTooltip key={appointment.id} appointment={appointment} patientName={displayName}>
                                 <div
-                                  className="text-xs p-1 bg-slate-50 text-slate-700 rounded truncate cursor-pointer border border-slate-200 hover:bg-slate-100"
+                                  className={`text-xs p-1 ${colors.bg} ${colors.text} rounded truncate cursor-pointer ${colors.border} border hover:opacity-90`}
                                   onClick={() => handleAppointmentClick(appointment)}
                                 >
                                   <div className="flex items-center gap-1">
@@ -1668,7 +1668,7 @@ export function Consultas() {
                             return (
                               <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                 <div
-                                  className="absolute left-2 right-2 text-sm p-3 bg-slate-50 text-slate-700 rounded cursor-pointer border border-slate-200 hover:bg-slate-100 transition-colors overflow-hidden shadow-sm"
+                                  className={`absolute left-2 right-2 text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm`}
                                   style={{ 
                                     top: `${topPosition}px`,
                                     height: `${height}px`,
@@ -1886,7 +1886,7 @@ export function Consultas() {
               return (
                 <div
                   key={appointment.id}
-                  className="p-3 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer hover:shadow-sm hover:bg-slate-100"
+                  className={`p-3 rounded-lg ${colors.border} border ${colors.bg} cursor-pointer hover:shadow-sm hover:opacity-90`}
                   onClick={() => {
                     handleAppointmentClick(appointment);
                     setDayEventsDialog(prev => ({ ...prev, open: false }));
