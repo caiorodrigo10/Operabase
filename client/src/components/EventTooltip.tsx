@@ -118,7 +118,7 @@ export function EventTooltip({ appointment, patientName, children }: EventToolti
                 <div className="flex items-center gap-2">
                   <Stethoscope className="w-4 h-4 text-gray-500" />
                   <span className="text-sm">
-                    <span className="text-gray-600">Médico:</span>
+                    <span className="text-gray-600">Profissional:</span>
                     <span className="ml-1 text-gray-900">{appointment.doctor_name}</span>
                   </span>
                 </div>
