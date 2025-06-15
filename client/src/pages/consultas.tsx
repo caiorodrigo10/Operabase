@@ -897,12 +897,12 @@ export function Consultas() {
                       <FormLabel>Paciente *</FormLabel>
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="default"
                         size="sm"
-                        className="bg-blue-600 text-white hover:bg-blue-700 h-8 px-4"
+                        className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-4 rounded-md"
                         onClick={() => setShowNewPatientDialog(true)}
                       >
-                        <Plus className="mr-1 h-4 w-4" />
+                        <Plus className="mr-1 h-3 w-3" />
                         Cadastrar
                       </Button>
                     </div>
@@ -1013,10 +1013,10 @@ export function Consultas() {
                   name="user_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Profissional *</FormLabel>
+                      <FormLabel className="text-sm text-gray-700">Profissional *</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11">
                             <SelectValue placeholder="Selecione o profissional" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1038,11 +1038,11 @@ export function Consultas() {
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tipo de Consulta *</FormLabel>
+                      <FormLabel className="text-sm text-gray-700">Tipo de Consulta *</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Consulta" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="consulta">Consulta</SelectItem>
@@ -1072,7 +1072,7 @@ export function Consultas() {
                             <Input
                               type="date"
                               {...field}
-                              className="h-10"
+                              className="h-11"
                             />
                           </FormControl>
                           <FormMessage />
@@ -1093,9 +1093,9 @@ export function Consultas() {
                               <Input
                                 type="time"
                                 {...field}
-                                className="h-10 pr-8"
+                                className="h-11 pr-8"
                               />
-                              <Clock className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
+                              <Clock className="absolute right-3 top-3.5 h-4 w-4 text-gray-400" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -1113,8 +1113,8 @@ export function Consultas() {
                           <FormLabel className="text-sm text-gray-700">Duração</FormLabel>
                           <FormControl>
                             <Select value={field.value} onValueChange={field.onChange}>
-                              <SelectTrigger className="h-10">
-                                <SelectValue placeholder="30" />
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="60" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="30">30</SelectItem>
@@ -1134,7 +1134,7 @@ export function Consultas() {
                     <Button
                       type="button"
                       variant="ghost"
-                      className="w-full h-10 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-0"
+                      className="w-full h-11 text-blue-500 hover:text-blue-600 hover:bg-blue-50 border-0 font-normal"
                       onClick={() => {
                         const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
                         const targetDuration = watchedDuration || '30';
