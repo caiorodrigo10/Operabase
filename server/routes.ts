@@ -310,25 +310,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to fetch appointments' });
     }
   });
-          console.log('📊 Final result:', {
-            dbAppointments: appointments.length,
-            googleEvents: googleEvents.length,
-            total: allAppointments.length
-          });
-          res.json(allAppointments);
-        } catch (integrationError) {
-          console.warn('Error fetching calendar integrations:', integrationError);
-          // Return just database appointments if calendar integration fails
-          res.json(appointments);
-        }
-      } else {
-        res.json(appointments);
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
 
   // Get appointment by ID
   app.get("/api/appointments/:id", async (req, res) => {
