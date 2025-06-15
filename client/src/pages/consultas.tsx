@@ -198,23 +198,35 @@ export function Consultas() {
     return contacts.find(c => c.id === contactId);
   };
 
-  const getEventColor = (status: string) => {
-    const config = getStatusConfig(status);
+  const getEventColor = (appointment: any) => {
+    // Google Calendar events get special gray styling
+    if (appointment.is_google_calendar_event) {
+      return { 
+        bg: 'bg-gray-100', 
+        text: 'text-gray-600', 
+        border: 'border-gray-300', 
+        dot: 'bg-gray-400',
+        isGoogleEvent: true 
+      };
+    }
+
+    // Regular appointments use status-based colors
+    const config = getStatusConfig(appointment.status);
     if (!config) {
-      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500', isGoogleEvent: false };
     }
 
     // Convert config colors to event colors
-    const colorMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-      'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
-      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-      'bg-green-100 text-green-800 border-green-200': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-      'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
-      'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
-      'bg-red-100 text-red-800 border-red-200': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
+    const colorMap: Record<string, { bg: string; text: string; border: string; dot: string; isGoogleEvent: boolean }> = {
+      'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500', isGoogleEvent: false },
+      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500', isGoogleEvent: false },
+      'bg-green-100 text-green-800 border-green-200': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500', isGoogleEvent: false },
+      'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500', isGoogleEvent: false },
+      'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500', isGoogleEvent: false },
+      'bg-red-100 text-red-800 border-red-200': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500', isGoogleEvent: false },
     };
 
-    return colorMap[config.color] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
+    return colorMap[config.color] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500', isGoogleEvent: false };
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -650,21 +662,33 @@ export function Consultas() {
                           </div>
                           <div className="flex-1 space-y-1">
                             {hourAppointments.map((appointment: Appointment, idx: number) => {
-                              const colors = getEventColor(appointment.status);
-                              const patientName = getPatientName(appointment.contact_id);
+                              const colors = getEventColor(appointment);
+                              const displayName = appointment.is_google_calendar_event 
+                                ? appointment.doctor_name || 'Compromisso Externo'
+                                : getPatientName(appointment.contact_id);
                               const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
 
                               return (
-                                <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
+                                <EventTooltip key={appointment.id} appointment={appointment} patientName={displayName}>
                                   <div
-                                    className="p-2 bg-slate-50 text-slate-700 rounded cursor-pointer border border-slate-200 hover:bg-slate-100"
+                                    className={`p-2 ${colors.bg} ${colors.text} rounded cursor-pointer border ${colors.border} hover:opacity-80`}
                                     onClick={() => handleAppointmentClick(appointment)}
                                   >
                                     <div className="flex items-center gap-2">
-                                      <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
-                                      <span className="font-medium">{time} - {patientName}</span>
+                                      {!colors.isGoogleEvent && (
+                                        <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0`}></div>
+                                      )}
+                                      {colors.isGoogleEvent && (
+                                        <div className="w-3 h-3 flex items-center justify-center">
+                                          <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
+                                        </div>
+                                      )}
+                                      <span className="font-medium">{time} - {displayName}</span>
                                     </div>
-                                    {appointment.doctor_name && (
+                                    {appointment.is_google_calendar_event && (
+                                      <div className="text-xs mt-1 italic">Bloqueio de Agenda</div>
+                                    )}
+                                    {appointment.doctor_name && !appointment.is_google_calendar_event && (
                                       <div className="text-xs mt-1">Dr. {appointment.doctor_name}</div>
                                     )}
                                   </div>

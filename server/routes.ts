@@ -357,19 +357,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         contact_id: null,
                         user_id: integration.user_id,
                         clinic_id: clinicId,
-                        doctor_name: event.summary,
-                        specialty: 'Evento do Google Calendar',
-                        appointment_type: 'google_calendar',
+                        doctor_name: event.summary, // Original event title
+                        specialty: 'Bloqueio de Agenda',
+                        appointment_type: 'bloqueio_externo',
                         scheduled_date: startDate,
                         duration_minutes: durationMinutes,
-                        status: 'scheduled',
-                        payment_status: 'pending',
+                        status: 'bloqueado',
+                        payment_status: 'n/a',
                         payment_amount: 0,
-                        session_notes: event.description || null,
+                        session_notes: event.description || 'Compromisso sincronizado do Google Calendar',
                         created_at: new Date(),
                         updated_at: new Date(),
                         google_calendar_event_id: event.id,
-                        is_google_calendar_event: true
+                        is_google_calendar_event: true,
+                        is_external_block: true
                       } as any);
                     }
                   }
