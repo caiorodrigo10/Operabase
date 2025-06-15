@@ -17,15 +17,18 @@ import { useToast } from "@/hooks/use-toast";
 import type { Clinic, InsertClinic } from "@shared/schema";
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import { getCountries, getCountryCallingCode, parsePhoneNumber, formatPhoneNumber } from 'react-phone-number-input';
 import countries from 'world-countries';
 
-// Country selector component
+// Country selector component with search
 const CountrySelector = ({ value, onChange, placeholder = "Selecione um país" }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  
   const sortedCountries = countries
     .map(country => ({
       code: country.cca2,
@@ -34,22 +37,71 @@ const CountrySelector = ({ value, onChange, placeholder = "Selecione um país" }
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const filteredCountries = sortedCountries.filter(country =>
+    country.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectedCountry = sortedCountries.find(country => country.code === value);
+
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {sortedCountries.map((country) => (
-          <SelectItem key={country.code} value={country.code}>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{country.flag}</span>
-              <span>{country.name}</span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {selectedCountry ? (
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{selectedCountry.flag}</span>
+            <span>{selectedCountry.name}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">{placeholder}</span>
+        )}
+        <svg
+          className="h-4 w-4 opacity-50"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6,9 12,15 18,9"></polyline>
+        </svg>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+          <div className="p-2">
+            <Input
+              placeholder="Buscar país..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {filteredCountries.map((country) => (
+              <button
+                key={country.code}
+                type="button"
+                onClick={() => {
+                  onChange(country.code);
+                  setIsOpen(false);
+                  setSearchTerm("");
+                }}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                <span className="text-lg">{country.flag}</span>
+                <span>{country.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -131,8 +183,30 @@ export function Configuracoes() {
   // Initialize phone values when clinic data loads
   useEffect(() => {
     if (clinic) {
-      setPhoneValue(clinic.phone || "");
-      setCelularValue(clinic.celular || "");
+      // Convert to E.164 format if not already
+      let phoneE164 = "";
+      let celularE164 = "";
+      
+      if (clinic.phone) {
+        try {
+          const parsed = parsePhoneNumber(clinic.phone, 'BR');
+          phoneE164 = parsed ? parsed.format('E.164') : clinic.phone;
+        } catch {
+          phoneE164 = clinic.phone.startsWith('+') ? clinic.phone : `+55${clinic.phone.replace(/\D/g, '')}`;
+        }
+      }
+      
+      if (clinic.celular) {
+        try {
+          const parsed = parsePhoneNumber(clinic.celular, 'BR');
+          celularE164 = parsed ? parsed.format('E.164') : clinic.celular;
+        } catch {
+          celularE164 = clinic.celular.startsWith('+') ? clinic.celular : `+55${clinic.celular.replace(/\D/g, '')}`;
+        }
+      }
+      
+      setPhoneValue(phoneE164);
+      setCelularValue(celularE164);
     }
   }, [clinic]);
 
@@ -474,23 +548,33 @@ export function Configuracoes() {
                   </div>
                   <div>
                     <Label htmlFor="clinic-phone">Telefone Principal</Label>
-                    <PhoneInput
-                      international
-                      defaultCountry="BR"
-                      value={phoneValue}
-                      onChange={(value) => setPhoneValue(value || "")}
-                      className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
+                    <div className="mt-1">
+                      <PhoneInput
+                        international
+                        defaultCountry="BR"
+                        value={phoneValue}
+                        onChange={(value) => setPhoneValue(value || "")}
+                        displayInitialValueAsLocalNumber
+                        numberInputProps={{
+                          className: "flex-1 bg-transparent border-none outline-none text-sm"
+                        }}
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="clinic-celular">Celular/WhatsApp</Label>
-                    <PhoneInput
-                      international
-                      defaultCountry="BR"
-                      value={celularValue}
-                      onChange={(value) => setCelularValue(value || "")}
-                      className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
+                    <div className="mt-1">
+                      <PhoneInput
+                        international
+                        defaultCountry="BR"
+                        value={celularValue}
+                        onChange={(value) => setCelularValue(value || "")}
+                        displayInitialValueAsLocalNumber
+                        numberInputProps={{
+                          className: "flex-1 bg-transparent border-none outline-none text-sm"
+                        }}
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="clinic-email">E-mail</Label>

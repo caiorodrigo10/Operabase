@@ -41,6 +41,64 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
+/* Custom styles for phone input - hide country code display */
+.PhoneInputCountrySelectArrow {
+  display: none;
+}
+
+.PhoneInputCountrySelect {
+  position: relative;
+  padding-right: 0 !important;
+}
+
+.PhoneInputCountryIcon {
+  margin-right: 8px;
+}
+
+.PhoneInputCountry {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  width: auto !important;
+  min-width: auto !important;
+}
+
+.PhoneInputInput {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  flex: 1;
+  padding-left: 8px;
+}
+
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  background-color: hsl(var(--background));
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.PhoneInput:focus-within {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Hide the country calling code text */
+.PhoneInputCountrySelect .PhoneInputCountrySelectArrow,
+.PhoneInputCountry .PhoneInputCountryCallingCode {
+  display: none !important;
+}
+
+/* Keep only the flag visible */
+.PhoneInputCountryIcon--border {
+  box-shadow: none;
+  border: none;
+}
+
 .dark {
   --background: hsl(240, 10%, 3.9%);
   --foreground: hsl(0, 0%, 98%);
