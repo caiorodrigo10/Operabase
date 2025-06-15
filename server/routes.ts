@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 // Storage will be imported dynamically to ensure initialization
 import { setupAuth, isAuthenticated, hasClinicAccess } from "./auth";
-import { flexibleAuth } from "./supabase-auth";
+import { flexibleAuth, supabaseAuth } from "./supabase-auth";
 import { nanoid } from "nanoid";
 import { 
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
@@ -282,8 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ APPOINTMENTS ============
   
   // Get appointments with filters (including Google Calendar events)
-  app.get("/api/appointments", async (req, res) => {
+  app.get("/api/appointments", supabaseAuth, async (req, res) => {
     try {
+      console.log('🚀 Appointments API called');
       const { clinic_id, status, date } = req.query;
       
       if (!clinic_id) {
@@ -301,8 +302,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get appointments from database
       const appointments = await storage.getAppointments(clinicId, filters);
+      console.log('📊 DB appointments found:', appointments.length);
       
       // Get Google Calendar events if user is authenticated and has calendar integration
+      console.log('🔐 User auth check:', !!req.user);
       if (req.user) {
         try {
           console.log('🔍 Fetching calendar integrations for user:', req.user.id);
@@ -397,6 +400,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Combine database appointments with Google Calendar events
           const allAppointments = [...appointments, ...googleEvents];
+          console.log('📊 Final result:', {
+            dbAppointments: appointments.length,
+            googleEvents: googleEvents.length,
+            total: allAppointments.length
+          });
           res.json(allAppointments);
         } catch (integrationError) {
           console.warn('Error fetching calendar integrations:', integrationError);
