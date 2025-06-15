@@ -470,7 +470,7 @@ export function Configuracoes() {
                       international
                       defaultCountry="BR"
                       value={phoneValue}
-                      onChange={setPhoneValue}
+                      onChange={(value) => setPhoneValue(value || "")}
                       className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
@@ -480,7 +480,7 @@ export function Configuracoes() {
                       international
                       defaultCountry="BR"
                       value={celularValue}
-                      onChange={setCelularValue}
+                      onChange={(value) => setCelularValue(value || "")}
                       className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
@@ -636,20 +636,13 @@ export function Configuracoes() {
                 </div>
                 <div>
                   <Label htmlFor="address-country">País</Label>
-                  <Select defaultValue="brasil">
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="brasil">Brasil</SelectItem>
-                      <SelectItem value="portugal">Portugal</SelectItem>
-                      <SelectItem value="argentina">Argentina</SelectItem>
-                      <SelectItem value="chile">Chile</SelectItem>
-                      <SelectItem value="uruguai">Uruguai</SelectItem>
-                      <SelectItem value="paraguai">Paraguai</SelectItem>
-                      <SelectItem value="outros">Outros</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="mt-1">
+                    <CountrySelector
+                      value={clinicConfig.address_country || "BR"}
+                      onChange={(value) => setClinicConfig(prev => ({ ...prev, address_country: value }))}
+                      placeholder="Selecione o país"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
