@@ -59,6 +59,21 @@ const patientSchema = z.object({
   state: z.string().optional(),
   zip_code: z.string().optional(),
   notes: z.string().optional(),
+  // Additional fields for complete form
+  landline_phone: z.string().optional(),
+  address_complement: z.string().optional(),
+  neighborhood: z.string().optional(),
+  responsible_name: z.string().optional(),
+  responsible_cpf: z.string().optional(),
+  responsible_birth_date: z.string().optional(),
+  insurance_type: z.string().optional(),
+  insurance_holder: z.string().optional(),
+  insurance_number: z.string().optional(),
+  insurance_responsible_cpf: z.string().optional(),
+  emergency_contact_name: z.string().optional(),
+  emergency_contact_phone: z.string().optional(),
+  reminder_preference: z.string().optional(),
+  how_found_clinic: z.string().optional(),
 });
 
 type PatientForm = z.infer<typeof patientSchema>;
@@ -219,6 +234,20 @@ export function Consultas() {
       state: "",
       zip_code: "",
       notes: "",
+      landline_phone: "",
+      address_complement: "",
+      neighborhood: "",
+      responsible_name: "",
+      responsible_cpf: "",
+      responsible_birth_date: "",
+      insurance_type: "particular",
+      insurance_holder: "",
+      insurance_number: "",
+      insurance_responsible_cpf: "",
+      emergency_contact_name: "",
+      emergency_contact_phone: "",
+      reminder_preference: "whatsapp",
+      how_found_clinic: "",
     },
   });
 
@@ -1882,7 +1911,7 @@ export function Consultas() {
                     
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="reminder_preference"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Lembretes automáticos</FormLabel>
@@ -1966,11 +1995,11 @@ export function Consultas() {
                     
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="how_found_clinic"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Como conheceu a clínica</FormLabel>
-                          <Select>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue />
@@ -2013,7 +2042,7 @@ export function Consultas() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={patientForm.control}
-                        name="notes"
+                        name="emergency_contact_name"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Nome</FormLabel>
@@ -2027,7 +2056,7 @@ export function Consultas() {
                       
                       <FormField
                         control={patientForm.control}
-                        name="notes"
+                        name="emergency_contact_phone"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Telefone</FormLabel>
@@ -2061,7 +2090,7 @@ export function Consultas() {
                     
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="landline_phone"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Telefone fixo</FormLabel>
@@ -2107,7 +2136,7 @@ export function Consultas() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="address_complement"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Complemento</FormLabel>
@@ -2121,7 +2150,7 @@ export function Consultas() {
                     
                     <FormField
                       control={patientForm.control}
-                      name="notes"
+                      name="neighborhood"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Bairro</FormLabel>
@@ -2179,7 +2208,7 @@ export function Consultas() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={patientForm.control}
-                        name="notes"
+                        name="responsible_name"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Nome</FormLabel>
@@ -2193,7 +2222,7 @@ export function Consultas() {
                       
                       <FormField
                         control={patientForm.control}
-                        name="notes"
+                        name="responsible_cpf"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>CPF</FormLabel>
@@ -2207,7 +2236,7 @@ export function Consultas() {
                       
                       <FormField
                         control={patientForm.control}
-                        name="notes"
+                        name="responsible_birth_date"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Data de nascimento</FormLabel>
