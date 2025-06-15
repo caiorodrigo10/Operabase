@@ -74,13 +74,18 @@ function Router() {
   );
 }
 
+function GleapWrapper() {
+  useGleap(); // Initialize Gleap with user data
+  return <Router />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <GleapWrapper />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
