@@ -28,6 +28,43 @@ import type { Appointment, Contact } from "@/../../shared/schema";
 
 // Status configuration with proper colors and ordering
 const statusConfig = {
+  pendente: { 
+    label: "Pendente", 
+    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    badgeColor: "bg-yellow-500",
+    order: 0
+  },
+  agendada: { 
+    label: "Agendado", 
+    color: "bg-blue-100 text-blue-800 border-blue-200",
+    badgeColor: "bg-blue-500",
+    order: 1
+  },
+  confirmada: { 
+    label: "Confirmado", 
+    color: "bg-green-100 text-green-800 border-green-200",
+    badgeColor: "bg-green-500",
+    order: 2
+  },
+  realizada: { 
+    label: "Realizado", 
+    color: "bg-purple-100 text-purple-800 border-purple-200",
+    badgeColor: "bg-purple-500",
+    order: 3
+  },
+  faltou: { 
+    label: "Faltou", 
+    color: "bg-orange-100 text-orange-800 border-orange-200",
+    badgeColor: "bg-orange-500",
+    order: 4
+  },
+  cancelada: { 
+    label: "Cancelado", 
+    color: "bg-red-100 text-red-800 border-red-200",
+    badgeColor: "bg-red-500",
+    order: 5
+  },
+  // Legacy status support
   scheduled: { 
     label: "Agendado", 
     color: "bg-blue-100 text-blue-800 border-blue-200",
@@ -50,13 +87,13 @@ const statusConfig = {
     label: "Cancelado", 
     color: "bg-red-100 text-red-800 border-red-200",
     badgeColor: "bg-red-500",
-    order: 4
+    order: 5
   },
   no_show: { 
     label: "Faltou", 
     color: "bg-orange-100 text-orange-800 border-orange-200",
     badgeColor: "bg-orange-500",
-    order: 5
+    order: 4
   },
   pending: { 
     label: "Pendente", 
@@ -169,18 +206,22 @@ export function Consultas() {
 
   const getEventColor = (status: string) => {
     const statusMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+      'pendente': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
+      'agendada': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
+      'confirmada': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
+      'realizada': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
+      'faltou': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
+      'cancelada': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
+      // Legacy status support
       'scheduled': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
       'agendado': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
       'confirmed': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-      'confirmada': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
       'completed': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
       'realizado': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
       'cancelled': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
       'cancelado': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
       'no_show': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
-      'faltou': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
       'pending': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
-      'pendente': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
     };
     return statusMap[status] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', dot: 'bg-gray-500' };
   };
