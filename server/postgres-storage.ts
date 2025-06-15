@@ -330,12 +330,7 @@ export class PostgreSQLStorage implements IStorage {
           appointment_type, scheduled_date, duration_minutes, status,
           cancellation_reason, session_notes, next_appointment_suggested,
           payment_status, payment_amount, google_calendar_event_id,
-          created_at, updated_at,
-          observations,
-          return_period,
-          how_found_clinic,
-          tags,
-          receive_reminders
+          created_at, updated_at
         FROM appointments 
         WHERE ${sql.raw(whereClause)}
         ORDER BY scheduled_date ASC
@@ -425,16 +420,39 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async updateAppointment(id: number, updates: Partial<InsertAppointment>): Promise<Appointment | undefined> {
-    const updateData = {
-      ...updates,
-      updated_at: new Date()
-    };
+    try {
+      // For status updates, use direct SQL to avoid schema issues
+      if (updates.status && Object.keys(updates).length === 1) {
+        const result = await db.execute(sql`
+          UPDATE appointments 
+          SET status = ${updates.status}, updated_at = NOW()
+          WHERE id = ${id}
+          RETURNING 
+            id, contact_id, clinic_id, user_id, doctor_name, specialty,
+            appointment_type, scheduled_date, duration_minutes, status,
+            cancellation_reason, session_notes, next_appointment_suggested,
+            payment_status, payment_amount, google_calendar_event_id,
+            created_at, updated_at
+        `);
+        
+        return result.rows[0] as Appointment;
+      }
+      
+      // For other updates, use Drizzle ORM but only with existing schema fields
+      const updateData = {
+        ...updates,
+        updated_at: new Date()
+      };
 
-    const result = await db.update(appointments)
-      .set(updateData)
-      .where(eq(appointments.id, id))
-      .returning();
-    return result[0];
+      const result = await db.update(appointments)
+        .set(updateData)
+        .where(eq(appointments.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      throw error;
+    }
   }
 
   async deleteAppointment(id: number): Promise<boolean> {
