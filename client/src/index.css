@@ -41,36 +41,7 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
-/* Custom styles for phone input - hide country code display */
-.PhoneInputCountrySelectArrow {
-  display: none;
-}
-
-.PhoneInputCountrySelect {
-  position: relative;
-  padding-right: 0 !important;
-}
-
-.PhoneInputCountryIcon {
-  margin-right: 8px;
-}
-
-.PhoneInputCountry {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  width: auto !important;
-  min-width: auto !important;
-}
-
-.PhoneInputInput {
-  border: none !important;
-  outline: none !important;
-  background: transparent !important;
-  flex: 1;
-  padding-left: 8px;
-}
-
+/* Custom styles for phone input - show flag with clean number input */
 .PhoneInput {
   display: flex;
   align-items: center;
@@ -80,6 +51,7 @@
   padding: 8px 12px;
   font-size: 14px;
   transition: border-color 0.2s;
+  min-height: 40px;
 }
 
 .PhoneInput:focus-within {
@@ -87,16 +59,49 @@
   outline-offset: 2px;
 }
 
-/* Hide the country calling code text */
-.PhoneInputCountrySelect .PhoneInputCountrySelectArrow,
-.PhoneInputCountry .PhoneInputCountryCallingCode {
-  display: none !important;
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin-right: 8px;
+  width: auto !important;
+  min-width: auto !important;
 }
 
-/* Keep only the flag visible */
+.PhoneInputCountryIcon {
+  width: 20px;
+  height: 15px;
+  margin-right: 0;
+}
+
 .PhoneInputCountryIcon--border {
   box-shadow: none;
   border: none;
+}
+
+.PhoneInputCountrySelectArrow {
+  display: none !important;
+}
+
+/* Hide the country calling code completely */
+.PhoneInputCountryCallingCode {
+  display: none !important;
+}
+
+.PhoneInputInput {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  flex: 1;
+  padding: 0;
+  font-size: 14px;
+  color: hsl(var(--foreground));
+}
+
+.PhoneInputInput::placeholder {
+  color: hsl(var(--muted-foreground));
 }
 
 .dark {

@@ -554,9 +554,10 @@ export function Configuracoes() {
                         defaultCountry="BR"
                         value={phoneValue}
                         onChange={(value) => setPhoneValue(value || "")}
-                        displayInitialValueAsLocalNumber
+                        placeholder="(11) 99999-9999"
                         numberInputProps={{
-                          className: "flex-1 bg-transparent border-none outline-none text-sm"
+                          className: "flex-1 bg-transparent border-none outline-none text-sm",
+                          placeholder: "(11) 99999-9999"
                         }}
                       />
                     </div>
@@ -569,9 +570,10 @@ export function Configuracoes() {
                         defaultCountry="BR"
                         value={celularValue}
                         onChange={(value) => setCelularValue(value || "")}
-                        displayInitialValueAsLocalNumber
+                        placeholder="(11) 98888-8888"
                         numberInputProps={{
-                          className: "flex-1 bg-transparent border-none outline-none text-sm"
+                          className: "flex-1 bg-transparent border-none outline-none text-sm",
+                          placeholder: "(11) 98888-8888"
                         }}
                       />
                     </div>
