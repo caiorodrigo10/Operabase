@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, UserPlus, Search, Plus, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { FindTimeSlots } from "@/components/FindTimeSlots";
 import type { Contact } from "@/../../shared/schema";
 
 const appointmentFormSchema = z.object({
@@ -588,32 +589,15 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave }: Ap
 
         {/* Find Time Dialog */}
         <Dialog open={findTimeOpen} onOpenChange={setFindTimeOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Encontrar Horário Disponível</DialogTitle>
-              <DialogDescription>
-                Selecione um período para ver os horários disponíveis
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" className="h-16 flex-col">
-                  <span className="text-sm font-medium">Manhã</span>
-                  <span className="text-xs text-slate-500">08:00 - 12:00</span>
-                </Button>
-                <Button variant="outline" className="h-16 flex-col">
-                  <span className="text-sm font-medium">Tarde</span>
-                  <span className="text-xs text-slate-500">13:00 - 17:00</span>
-                </Button>
-                <Button variant="outline" className="h-16 flex-col">
-                  <span className="text-sm font-medium">Noite</span>
-                  <span className="text-xs text-slate-500">18:00 - 21:00</span>
-                </Button>
-              </div>
-              <div className="text-center text-sm text-slate-500">
-                Selecione um período para ver os horários disponíveis
-              </div>
-            </div>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <FindTimeSlots
+              selectedDate={form.watch('scheduled_date')}
+              onTimeSelect={(time: string) => {
+                form.setValue('scheduled_time', time);
+                setFindTimeOpen(false);
+              }}
+              onClose={() => setFindTimeOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </DialogContent>
