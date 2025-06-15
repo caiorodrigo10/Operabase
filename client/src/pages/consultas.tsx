@@ -887,44 +887,33 @@ export function Consultas() {
                 )}
               />
 
-              {/* Contact Selection with Cadastrar button */}
+              {/* Contact Selection with Cadastrar button inline */}
               <FormField
                 control={form.control}
                 name="contact_id"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between mb-2">
-                      <FormLabel>Paciente *</FormLabel>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-4 rounded-md"
-                        onClick={() => setShowNewPatientDialog(true)}
-                      >
-                        <Plus className="mr-1 h-3 w-3" />
-                        Cadastrar
-                      </Button>
-                    </div>
-                    <FormControl>
-                      <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={contactComboboxOpen}
-                            className="w-full justify-between h-11 text-left font-normal px-3"
-                          >
-                            {field.value ? (
-                              <span className="truncate">
-                                {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.name}
-                              </span>
-                            ) : (
-                              <span className="text-gray-500">Buscar paciente...</span>
-                            )}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
+                    <FormLabel className="text-sm text-gray-700">Paciente *</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={contactComboboxOpen}
+                              className="flex-1 justify-between h-11 text-left font-normal px-3"
+                            >
+                              {field.value ? (
+                                <span className="truncate">
+                                  {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.name}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">Buscar paciente...</span>
+                              )}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
                         <PopoverContent className="w-[400px] p-0" align="start">
                           <Command>
                             <CommandInput 
@@ -1001,10 +990,20 @@ export function Consultas() {
                         </PopoverContent>
                       </Popover>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-11 text-blue-500 hover:text-blue-600 hover:bg-blue-50 border-0 font-normal px-4"
+                      onClick={() => setShowNewPatientDialog(true)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Cadastrar
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
               {/* Professional and Consultation Type */}
               <div className="grid grid-cols-2 gap-4">
@@ -1185,21 +1184,7 @@ export function Consultas() {
                 </div>
               )}
 
-              {/* Find Available Slots - Simple Button */}
-              {watchedDuration && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFindTimeSlotsOpen(true)}
-                    className="flex items-center gap-2 text-blue-600"
-                  >
-                    <Clock className="h-4 w-4" />
-                    Encontrar horário
-                  </Button>
-                </div>
-              )}
+
 
               {/* Contact Information */}
               <div className="grid grid-cols-2 gap-4">
