@@ -1301,7 +1301,7 @@ export function Consultas() {
                                 return (
                                   <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                     <div
-                                      className="absolute left-1 right-1 text-xs p-1 bg-blue-100 text-blue-800 rounded cursor-pointer border border-blue-200 hover:bg-blue-200 transition-colors overflow-hidden"
+                                      className="absolute left-1 right-1 text-xs p-1 bg-slate-50 text-slate-700 rounded cursor-pointer border border-slate-200 hover:bg-slate-100 transition-colors overflow-hidden"
                                       style={{ 
                                         top: `${topPosition}px`,
                                         height: `${height}px`,
@@ -1312,9 +1312,7 @@ export function Consultas() {
                                       <div className="flex items-start gap-1 h-full">
                                         <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-0.5`}></div>
                                         <div className="flex-1 overflow-hidden">
-                                          <div className="font-medium truncate">{time}</div>
-                                          <div className="truncate text-xs opacity-90">{patientName}</div>
-                                          <div className="text-xs opacity-75">{duration}min</div>
+                                          <div className="truncate">{patientName}</div>
                                         </div>
                                       </div>
                                     </div>
@@ -1389,7 +1387,7 @@ export function Consultas() {
                             return (
                               <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                 <div
-                                  className="absolute left-2 right-2 text-sm p-3 bg-blue-100 text-blue-800 rounded cursor-pointer border border-blue-200 hover:bg-blue-200 transition-colors overflow-hidden shadow-sm"
+                                  className="absolute left-2 right-2 text-sm p-3 bg-slate-50 text-slate-700 rounded cursor-pointer border border-slate-200 hover:bg-slate-100 transition-colors overflow-hidden shadow-sm"
                                   style={{ 
                                     top: `${topPosition}px`,
                                     height: `${height}px`,
@@ -1400,11 +1398,10 @@ export function Consultas() {
                                   <div className="flex items-start gap-2 h-full">
                                     <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
                                     <div className="flex-1 overflow-hidden">
-                                      <div className="font-semibold truncate">{time} - {patientName}</div>
+                                      <div className="font-semibold truncate">{patientName}</div>
                                       {appointment.doctor_name && !appointment.google_calendar_event_id && (
                                         <div className="text-xs mt-1 opacity-90">Dr. {appointment.doctor_name}</div>
                                       )}
-                                      <div className="text-xs mt-1 opacity-75">Duração: {duration} minutos</div>
                                       {appointment.appointment_type && (
                                         <div className="text-xs mt-1 opacity-90 truncate">{appointment.appointment_type}</div>
                                       )}
