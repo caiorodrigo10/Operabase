@@ -128,11 +128,16 @@ export function Configuracoes() {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  // Initialize phone values when clinic data loads
+  // Initialize phone values and working days when clinic data loads
   useEffect(() => {
     if (clinic) {
       setPhoneValue(clinic.phone || "");
       setCelularValue(clinic.celular || "");
+      
+      // Update working days from clinic data
+      if (clinic.working_days && Array.isArray(clinic.working_days)) {
+        setWorkingDays(clinic.working_days);
+      }
     }
   }, [clinic]);
 
