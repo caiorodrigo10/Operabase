@@ -1337,56 +1337,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Custom auth middleware for calendar routes that works with Supabase
   const calendarAuth = async (req: any, res: any, next: any) => {
     try {
-      // Get session from Supabase
-      const cookies = req.headers.cookie;
-      if (!cookies) {
+      let accessToken = null;
+      
+      // Try Authorization header first (Bearer token)
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        accessToken = authHeader.split(' ')[1];
+        console.log('🔑 Calendar auth: Using Bearer token from header');
+      } else {
+        // Fallback to cookies (Supabase session)
+        const cookies = req.headers.cookie;
+        if (cookies) {
+          const accessTokenMatch = cookies.match(/sb-[^=]+-auth-token=([^;]+)/);
+          if (accessTokenMatch) {
+            try {
+              const tokenData = JSON.parse(decodeURIComponent(accessTokenMatch[1]));
+              accessToken = tokenData.access_token;
+              console.log('🔑 Calendar auth: Using token from cookies');
+            } catch (parseError) {
+              console.log('⚠️ Calendar auth: Failed to parse cookie token');
+            }
+          }
+        }
+      }
+      
+      if (!accessToken) {
+        console.log('❌ Calendar auth: No access token found');
         return res.status(401).json({ error: "Acesso negado" });
       }
       
-      // Extract access token from cookies (Supabase session)
-      const accessTokenMatch = cookies.match(/sb-[^=]+-auth-token=([^;]+)/);
-      if (!accessTokenMatch) {
-        return res.status(401).json({ error: "Acesso negado" });
-      }
+      // Verify token with Supabase
+      const { supabaseAdmin } = await import('./supabase-client');
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
       
-      try {
-        const tokenData = JSON.parse(decodeURIComponent(accessTokenMatch[1]));
-        const accessToken = tokenData.access_token;
-        
-        if (!accessToken) {
-          return res.status(401).json({ error: "Acesso negado" });
-        }
-        
-        // Verify token with Supabase
-        const { supabaseAdmin } = await import('./supabase-client');
-        const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-        
-        if (error || !user) {
-          return res.status(401).json({ error: "Acesso negado" });
-        }
-        
-        // Get user profile
-        const { data: profile } = await supabaseAdmin
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        // Set user in request
-        req.user = {
-          id: user.id,
-          email: user.email,
-          name: profile?.name || user.user_metadata?.name || '',
-          role: profile?.role || 'user',
-          clinic_id: profile?.clinic_id
-        };
-        
-        next();
-      } catch (parseError) {
+      if (error || !user) {
+        console.log('❌ Calendar auth: Token validation failed:', error?.message);
         return res.status(401).json({ error: "Acesso negado" });
       }
+
+      console.log('✅ Calendar auth: User authenticated:', user.email);
+      
+      // Get user profile
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      // Set user in request
+      req.user = {
+        id: user.id,
+        email: user.email,
+        name: profile?.name || user.user_metadata?.name || '',
+        role: profile?.role || 'user',
+        clinic_id: profile?.clinic_id
+      };
+      
+      console.log('👤 Calendar auth: User data set for', req.user.email);
+      next();
     } catch (error) {
-      console.error('Calendar auth error:', error);
+      console.error('❌ Calendar auth error:', error);
       res.status(401).json({ error: "Acesso negado" });
     }
   };
