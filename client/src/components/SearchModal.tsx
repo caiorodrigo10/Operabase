@@ -24,8 +24,16 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: contactsData = [], isLoading } = useQuery<Contact[]>({
-    queryKey: ['/api/contacts'],
+    queryKey: ['/api/contacts', { clinic_id: 1 }], // Using clinic_id 1 for now
+    queryFn: async () => {
+      const response = await fetch('/api/contacts?clinic_id=1');
+      if (!response.ok) {
+        throw new Error('Failed to fetch contacts');
+      }
+      return response.json();
+    },
     enabled: isOpen, // Only fetch when modal is open
+    retry: false,
   });
 
   // Ensure contacts is properly typed
@@ -64,7 +72,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               placeholder="Digite o nome do paciente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-base"
+              className="pl-10 text-base border-slate-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200 focus:outline-none"
               autoFocus
             />
           </div>
