@@ -165,6 +165,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get clinic configuration
+  app.get("/api/clinic/:id/config", async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.id);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const clinic = await storage.getClinic(clinicId);
+      if (!clinic) {
+        return res.status(404).json({ error: "Clinic not found" });
+      }
+      
+      res.json(clinic);
+    } catch (error) {
+      console.error("Error fetching clinic configuration:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update clinic configuration
+  app.put("/api/clinic/:id/config", async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.id);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const validatedData = insertClinicSchema.partial().parse(req.body);
+      const clinic = await storage.updateClinic(clinicId, validatedData);
+      
+      if (!clinic) {
+        return res.status(404).json({ error: "Clinic not found" });
+      }
+      
+      res.json(clinic);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error updating clinic configuration:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ============ CONTACTS ============
   
   // Get contacts with filters

@@ -79,9 +79,34 @@ export const clinics = pgTable("clinics", {
   name: text("name").notNull(),
   responsible: text("responsible").notNull(),
   whatsapp_number: text("whatsapp_number").notNull(),
+  email: text("email"),
+  phone: text("phone"),
   specialties: text("specialties").array(),
-  working_hours: text("working_hours"),
+  
+  // Address fields
+  address_street: text("address_street"),
+  address_number: text("address_number"),
+  address_complement: text("address_complement"),
+  address_neighborhood: text("address_neighborhood"),
+  address_city: text("address_city"),
+  address_state: text("address_state"),
+  address_zip_code: text("address_zip_code"),
+  address_country: text("address_country").default("Brasil"),
+  
+  // Operational information
+  total_professionals: integer("total_professionals").default(1),
+  working_days: jsonb("working_days").default('["monday","tuesday","wednesday","thursday","friday"]'),
+  working_hours: jsonb("working_hours").default('{"start":"08:00","end":"18:00"}'),
+  lunch_break: jsonb("lunch_break").default('{"enabled":true,"start":"12:00","end":"13:00"}'),
+  timezone: text("timezone").default("America/Sao_Paulo"),
+  
+  // Business information
+  cnpj: text("cnpj"),
+  website: text("website"),
+  description: text("description"),
+  
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const contacts = pgTable("contacts", {
@@ -289,6 +314,7 @@ export const insertClinicInvitationSchema = createInsertSchema(clinic_invitation
 export const insertClinicSchema = createInsertSchema(clinics).omit({
   id: true,
   created_at: true,
+  updated_at: true,
 });
 
 export const insertContactSchema = createInsertSchema(contacts).omit({
