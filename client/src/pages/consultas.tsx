@@ -865,11 +865,20 @@ export function Consultas() {
   const watchedDate = form.watch("scheduled_date");
   const watchedTime = form.watch("scheduled_time");
   const watchedDuration = form.watch("duration");
-  const watchedProfessional = form.watch("appointment_name");
+  const watchedProfessionalId = form.watch("user_id");
+
+  // Helper function to get professional name by ID
+  const getProfessionalNameById = React.useCallback((userId: string | number) => {
+    if (!userId) return null;
+    const user = clinicUsers.find((u: any) => (u.id || u.user_id)?.toString() === userId.toString());
+    return user?.name || null;
+  }, [clinicUsers]);
 
   // Separate effect for professional selection - immediate response
   useEffect(() => {
-    if (!watchedProfessional) {
+    const professionalName = getProfessionalNameById(watchedProfessionalId);
+    
+    if (!watchedProfessionalId || !professionalName) {
       setAvailabilityConflict({
         hasConflict: true,
         message: "Selecione um profissional antes de verificar disponibilidade",
@@ -884,34 +893,35 @@ export function Consultas() {
       
       // Auto-load availability if we have date and time
       if (watchedDate && watchedTime && watchedDuration) {
-        checkAvailability(watchedDate, watchedTime, watchedDuration, watchedProfessional);
+        checkAvailability(watchedDate, watchedTime, watchedDuration, professionalName);
         checkWorkingHours(watchedDate, watchedTime);
       }
       
       // Auto-suggest slots if we have date and duration
       if (watchedDate && watchedDuration) {
-        findAvailableSlots(watchedDate, watchedDuration, watchedProfessional);
+        findAvailableSlots(watchedDate, watchedDuration, professionalName);
       }
     }
-  }, [watchedProfessional]);
+  }, [watchedProfessionalId, getProfessionalNameById]);
 
   // Separate effect for date/time changes - with debounce
   useEffect(() => {
-    if (!watchedProfessional) return;
+    const professionalName = getProfessionalNameById(watchedProfessionalId);
+    if (!watchedProfessionalId || !professionalName) return;
 
     const timeoutId = setTimeout(() => {
       if (watchedDate && watchedTime && watchedDuration) {
-        checkAvailability(watchedDate, watchedTime, watchedDuration, watchedProfessional);
+        checkAvailability(watchedDate, watchedTime, watchedDuration, professionalName);
         checkWorkingHours(watchedDate, watchedTime);
       }
       
       if (watchedDate && watchedDuration) {
-        findAvailableSlots(watchedDate, watchedDuration, watchedProfessional);
+        findAvailableSlots(watchedDate, watchedDuration, professionalName);
       }
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedDate, watchedTime, watchedDuration]);
+  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId, getProfessionalNameById]);
 
   useEffect(() => {
     if (!appointmentsLoading) {
@@ -2590,7 +2600,7 @@ export function Consultas() {
           <FindTimeSlots
             selectedDate={watchedDate || ''}
             duration={parseInt(watchedDuration) || 30}
-            professionalName={watchedProfessional}
+            professionalName={getProfessionalNameById(watchedProfessionalId)}
             onTimeSelect={(time, date) => {
               form.setValue("scheduled_time", time);
               form.setValue("scheduled_date", date);
