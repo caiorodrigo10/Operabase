@@ -1314,11 +1314,9 @@ export class PostgreSQLStorage implements IStorage {
         .returning();
 
       if (result[0]) {
-        // Create audit log
+        // Create audit log with valid actions only
         let auditAction = isProfessional ? 'activated' : 'deactivated';
-        if (isActive === false) {
-          auditAction = 'user_deactivated';
-        }
+        // Note: user_deactivated is not a valid action, use 'deactivated' instead
 
         await this.createProfessionalStatusAudit({
           clinic_id: clinicId,
@@ -1451,12 +1449,12 @@ export class PostgreSQLStorage implements IStorage {
         joined_at: new Date()
       });
       
-      // Create audit log
+      // Create audit log using valid action
       await db.insert(professional_status_audit).values({
         clinic_id: userData.clinicId,
         target_user_id: createdUser.id,
         changed_by_user_id: parseInt(userData.createdBy) || 1,
-        action: 'user_created',
+        action: userData.isProfessional ? 'activated' : 'deactivated',
         previous_status: false,
         new_status: userData.isProfessional,
         notes: 'Usuário criado pelo administrador'
