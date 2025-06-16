@@ -931,36 +931,58 @@ export function Consultas() {
     return duration;
   };
 
-  // Collision detection and layout calculation for overlapping events
-  const checkEventsOverlap = (event1: Appointment, event2: Appointment): boolean => {
+  // Memoized collision detection cache for performance optimization
+  const collisionCache = useMemo(() => new Map<string, boolean>(), [appointments]);
+
+  // Optimized collision detection with caching for better performance
+  const checkEventsOverlap = React.useCallback((event1: Appointment, event2: Appointment): boolean => {
     if (!event1.scheduled_date || !event2.scheduled_date) return false;
+    
+    // Use cache key based on appointment IDs to avoid duplicate calculations
+    const cacheKey = `${Math.min(event1.id, event2.id)}-${Math.max(event1.id, event2.id)}`;
+    
+    if (collisionCache.has(cacheKey)) {
+      return collisionCache.get(cacheKey)!;
+    }
     
     const start1 = new Date(event1.scheduled_date).getTime();
     const end1 = start1 + (getAppointmentDuration(event1) * 60 * 1000);
     const start2 = new Date(event2.scheduled_date).getTime();
     const end2 = start2 + (getAppointmentDuration(event2) * 60 * 1000);
     
-    return start1 < end2 && start2 < end1;
-  };
+    const overlaps = start1 < end2 && start2 < end1;
+    
+    // Cache the result to avoid recalculation
+    collisionCache.set(cacheKey, overlaps);
+    
+    return overlaps;
+  }, [getAppointmentDuration, collisionCache]);
 
-  const calculateEventLayout = (appointments: Appointment[], targetDate: Date) => {
+  // Memoized layout cache for performance optimization
+  const layoutCache = useMemo(() => new Map<string, Map<string, { width: number; left: number; group: number }>>(), [appointments]);
+
+  const calculateEventLayout = React.useCallback((appointments: Appointment[], targetDate: Date) => {
+    const dateKey = format(targetDate, 'yyyy-MM-dd');
+    
+    // Check cache first to avoid expensive recalculations
+    if (layoutCache.has(dateKey)) {
+      return layoutCache.get(dateKey)!;
+    }
+
     const dayAppointments = appointments.filter(apt => {
       if (!apt.scheduled_date) return false;
       const aptDate = new Date(apt.scheduled_date);
       return isSameDay(aptDate, targetDate);
     });
 
-    // Debug logging for collision detection
-    if (dayAppointments.length > 1) {
-      console.log('🔍 Collision detection for date:', format(targetDate, 'yyyy-MM-dd'), {
-        totalEvents: dayAppointments.length,
-        events: dayAppointments.map(apt => ({
-          id: apt.id,
-          name: apt.doctor_name || 'Unknown',
-          start: apt.scheduled_date,
-          duration: getAppointmentDuration(apt)
-        }))
-      });
+    // Early return for single or no appointments
+    if (dayAppointments.length <= 1) {
+      const layoutMap = new Map<string, { width: number; left: number; group: number }>();
+      if (dayAppointments.length === 1) {
+        layoutMap.set(dayAppointments[0].id.toString(), { width: 100, left: 0, group: 0 });
+      }
+      layoutCache.set(dateKey, layoutMap);
+      return layoutMap;
     }
 
     // Create collision groups - events that overlap with each other
@@ -1023,19 +1045,6 @@ export function Consultas() {
           return timeA - timeB;
         });
         
-        // Debug collision groups
-        console.log('🔄 Collision group detected:', {
-          groupSize,
-          eventWidth: `${eventWidth}%`,
-          events: sortedGroup.map((apt, idx) => ({
-            id: apt.id,
-            name: apt.doctor_name || 'Unknown',
-            index: idx,
-            leftPosition: `${(idx * (100 / groupSize)) + 0.25}%`,
-            width: `${eventWidth}%`
-          }))
-        });
-        
         sortedGroup.forEach((appointment, index) => {
           const leftPosition = (index * (100 / groupSize)) + 0.25; // Small margin
           layoutMap.set(appointment.id.toString(), {
@@ -1047,8 +1056,10 @@ export function Consultas() {
       }
     });
 
+    // Cache the result for future use
+    layoutCache.set(dateKey, layoutMap);
     return layoutMap;
-  };
+  }, [checkEventsOverlap, layoutCache]);
 
   // Check if appointment spans multiple hours
   const getAppointmentEndHour = (appointment: Appointment): number => {
@@ -1123,37 +1134,50 @@ export function Consultas() {
     }
   };
 
-  const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter((appointment: Appointment) => {
-      if (!appointment.scheduled_date) return false;
+  // Memoized appointment filtering with date-based caching for performance optimization
+  const appointmentsByDate = useMemo(() => {
+    const dateMap = new Map<string, Appointment[]>();
+    
+    appointments.forEach((appointment: Appointment) => {
+      if (!appointment.scheduled_date) return;
+      
       const appointmentDate = new Date(appointment.scheduled_date);
-      const isSameDate = isSameDay(appointmentDate, date);
+      const dateKey = format(appointmentDate, 'yyyy-MM-dd');
       
-      // If no professionals are selected, show all appointments
-      if (selectedProfessionals.length === 0) return isSameDate;
-      
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, []);
+      }
+      dateMap.get(dateKey)!.push(appointment);
+    });
+    
+    return dateMap;
+  }, [appointments]);
+
+  const getAppointmentsForDate = React.useCallback((date: Date) => {
+    const dateKey = format(date, 'yyyy-MM-dd');
+    const dayAppointments = appointmentsByDate.get(dateKey) || [];
+    
+    // If no professionals are selected, show all appointments
+    if (selectedProfessionals.length === 0) return dayAppointments;
+    
+    return dayAppointments.filter((appointment: Appointment) => {
       // For Google Calendar events, all belong to current user
-      // We need to check if current user's integer ID is in selectedProfessionals
       if (appointment.google_calendar_event_id) {
-        // Use memoized current user email and clinic user lookup
         if (currentUserEmail) {
           const clinicUser = clinicUserByEmail.get(currentUserEmail);
           
           if (clinicUser && clinicUser.is_professional) {
-            // Check if this professional is selected
-            return isSameDate && selectedProfessionals.includes(clinicUser.id);
+            return selectedProfessionals.includes(clinicUser.id);
           }
         }
-        
-        // If we can't determine the user, don't show Google Calendar events when filtering
         return false;
       }
       
       // For regular appointments, use doctor_name matching
       const professionalId = getProfessionalIdByName(appointment.doctor_name);
-      return isSameDate && (professionalId ? selectedProfessionals.includes(professionalId) : false);
+      return professionalId ? selectedProfessionals.includes(professionalId) : false;
     });
-  };
+  }, [appointmentsByDate, selectedProfessionals, currentUserEmail, clinicUserByEmail, getProfessionalIdByName]);
 
   // Function to toggle professional selection
   const toggleProfessional = (professionalId: number) => {
