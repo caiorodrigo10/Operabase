@@ -16,7 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X, Eye, MoreVertical, AlertTriangle, Search, Mail, CheckCircle } from "lucide-react";
+import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X, Eye, MoreVertical, AlertTriangle, Search, Mail, CheckCircle, FileText } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useAvailabilityCheck, formatConflictMessage, createTimeSlots } from "@/hooks/useAvailability";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -510,6 +511,25 @@ export function Consultas() {
       return response.json();
     },
   });
+
+  // Pre-select current user when clinicUsers data loads
+  React.useEffect(() => {
+    if (clinicUsers.length > 0 && selectedProfessionals.length === 0) {
+      try {
+        const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
+        const currentUserEmail = authData?.user?.email;
+        
+        if (currentUserEmail) {
+          const currentClinicUser = clinicUsers.find((user: any) => user.email === currentUserEmail);
+          if (currentClinicUser && currentClinicUser.is_professional) {
+            setSelectedProfessionals([currentClinicUser.id]);
+          }
+        }
+      } catch (error) {
+        console.error('Error auto-selecting current user:', error);
+      }
+    }
+  }, [clinicUsers, selectedProfessionals.length]);
 
   // Fetch clinic configuration for working hours validation
   const { data: clinicConfig } = useQuery({
@@ -1612,46 +1632,45 @@ export function Consultas() {
       <div className="bg-white rounded-lg shadow-sm border">
         {/* View Mode Toggle */}
         <div className="p-4 border-b border-slate-200 flex justify-between items-center">
-          <div className="flex space-x-1 bg-slate-100 rounded-lg p-1">
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              onClick={() => setViewMode("list")}
-              className="flex items-center gap-2"
-            >
-              <List className="w-4 h-4" />
-              Lista
-            </Button>
-            <Button
-              variant={viewMode === "calendar" ? "default" : "outline"}
-              onClick={() => setViewMode("calendar")}
-              className="flex items-center gap-2"
-            >
-              <CalendarDays className="w-4 h-4" />
-              Calendário
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex space-x-1 bg-slate-100 rounded-lg p-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "outline"}
+                    onClick={() => setViewMode("list")}
+                    className="flex items-center justify-center w-10 h-10 p-0"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Lista</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === "calendar" ? "default" : "outline"}
+                    onClick={() => setViewMode("calendar")}
+                    className="flex items-center justify-center w-10 h-10 p-0"
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Calendário</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
 
           {/* Professional Filter Buttons - positioned between Lista/Calendário and Dia/Semana/Mês */}
           {viewMode === "calendar" && (
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-slate-600">Filtrar por:</span>
-                
-                {/* All Professionals Button */}
-                <button
-                  onClick={() => setSelectedProfessionals([])}
-                  title="Mostrar todos os profissionais"
-                  className={`
-                    px-3 py-1 rounded-full text-xs font-medium
-                    transition-all duration-200 hover:scale-105
-                    ${selectedProfessionals.length === 0
-                      ? 'bg-green-500 text-white border-2 border-green-600 shadow-md' 
-                      : 'bg-slate-200 text-slate-600 border-2 border-transparent hover:bg-slate-300'
-                    }
-                  `}
-                >
-                  Todos
-                </button>
+                <span className="text-sm font-medium text-slate-600">Profissionais:</span>
 
                 {/* Professional Filter Avatars */}
                 {clinicUsers
