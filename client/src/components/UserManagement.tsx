@@ -95,10 +95,21 @@ export function UserManagement({ clinicId }: UserManagementProps) {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof newUserData) => {
-      return await apiRequest(`/api/clinic/${clinicId}/users`, {
+      const response = await fetch(`/api/clinic/${clinicId}/users`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') ? JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}').access_token : ''}`
+        },
         body: JSON.stringify(userData)
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create user');
+      }
+
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/clinic/${clinicId}/users/management`] });
