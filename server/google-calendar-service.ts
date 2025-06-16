@@ -21,6 +21,19 @@ export interface TokenResponse {
   expiry_date: number;
 }
 
+export interface WebhookInfo {
+  id: string;
+  resourceId: string;
+  expiration: number;
+}
+
+export interface SyncOptions {
+  syncToken?: string;
+  timeMin?: string;
+  timeMax?: string;
+  pageToken?: string;
+}
+
 class GoogleCalendarService {
   private oauth2Client: any;
   private calendar: any;
@@ -306,6 +319,116 @@ class GoogleCalendarService {
     } catch (error) {
       console.error('Error listing calendar events:', error);
       throw new Error('Failed to list calendar events');
+    }
+  }
+
+  // Advanced synchronization methods
+  async getEventsIncremental(calendarId: string, options: SyncOptions): Promise<{ events: any[], nextSyncToken?: string, nextPageToken?: string }> {
+    try {
+      const params: any = {
+        calendarId,
+        maxResults: 250,
+        singleEvents: true
+      };
+
+      // Use sync token for incremental sync if available
+      if (options.syncToken) {
+        params.syncToken = options.syncToken;
+      } else {
+        // First sync or sync token expired - use timeMin
+        params.timeMin = options.timeMin || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days ago
+        if (options.timeMax) {
+          params.timeMax = options.timeMax;
+        }
+        params.orderBy = 'startTime';
+      }
+
+      if (options.pageToken) {
+        params.pageToken = options.pageToken;
+      }
+
+      console.log('🔄 Getting incremental events with params:', JSON.stringify(params, null, 2));
+
+      const response = await this.calendar.events.list(params);
+      
+      return {
+        events: response.data.items || [],
+        nextSyncToken: response.data.nextSyncToken,
+        nextPageToken: response.data.nextPageToken
+      };
+    } catch (error: any) {
+      console.error('Error getting incremental calendar events:', error);
+      
+      // If sync token is invalid, restart with full sync
+      if (error.code === 410 || error.message?.includes('Sync token is no longer valid')) {
+        console.log('🔄 Sync token expired, restarting with full sync');
+        return this.getEventsIncremental(calendarId, { 
+          timeMin: options.timeMin,
+          timeMax: options.timeMax 
+        });
+      }
+      
+      throw new Error('Failed to get incremental calendar events');
+    }
+  }
+
+  async setupWebhook(calendarId: string, webhookUrl: string): Promise<WebhookInfo> {
+    try {
+      const channelId = `taskmed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      const response = await this.calendar.events.watch({
+        calendarId,
+        requestBody: {
+          id: channelId,
+          type: 'web_hook',
+          address: webhookUrl,
+          token: process.env.GOOGLE_WEBHOOK_TOKEN || 'taskmed-webhook-secret'
+        }
+      });
+
+      console.log('📡 Webhook setup successful:', {
+        channelId: response.data.id,
+        resourceId: response.data.resourceId,
+        expiration: response.data.expiration
+      });
+
+      return {
+        id: response.data.id!,
+        resourceId: response.data.resourceId!,
+        expiration: parseInt(response.data.expiration!)
+      };
+    } catch (error) {
+      console.error('Error setting up webhook:', error);
+      throw new Error('Failed to setup calendar webhook');
+    }
+  }
+
+  async stopWebhook(channelId: string, resourceId: string): Promise<void> {
+    try {
+      await this.calendar.channels.stop({
+        requestBody: {
+          id: channelId,
+          resourceId: resourceId
+        }
+      });
+
+      console.log('📡 Webhook stopped successfully:', { channelId, resourceId });
+    } catch (error) {
+      console.error('Error stopping webhook:', error);
+      throw new Error('Failed to stop calendar webhook');
+    }
+  }
+
+  async renewWebhook(calendarId: string, webhookUrl: string, oldChannelId: string, oldResourceId: string): Promise<WebhookInfo> {
+    try {
+      // Stop old webhook
+      await this.stopWebhook(oldChannelId, oldResourceId);
+      
+      // Setup new webhook
+      return await this.setupWebhook(calendarId, webhookUrl);
+    } catch (error) {
+      console.error('Error renewing webhook:', error);
+      throw new Error('Failed to renew calendar webhook');
     }
   }
 }
