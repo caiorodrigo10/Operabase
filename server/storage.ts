@@ -105,6 +105,7 @@ export interface IStorage {
 
   // Calendar Integrations
   getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]>;
+  getCalendarIntegrationsForClinic(clinicId: number): Promise<CalendarIntegration[]>;
   getAllCalendarIntegrations(): Promise<CalendarIntegration[]>;
   getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]>;
   getCalendarIntegration(id: number): Promise<CalendarIntegration | undefined>;
@@ -915,6 +916,10 @@ export class MemStorage implements IStorage {
 
 
   async getCalendarIntegrations(userId: number): Promise<CalendarIntegration[]> {
+    return [];
+  }
+
+  async getCalendarIntegrationsForClinic(clinicId: number): Promise<CalendarIntegration[]> {
     return [];
   }
 

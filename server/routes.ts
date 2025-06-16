@@ -341,6 +341,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ APPOINTMENTS ============
   
+  // Simple in-memory cache for Google Calendar events
+  const calendarCache = new Map<string, { events: any[], timestamp: number }>();
+  const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+  
   // Get appointments with filters (including Google Calendar events)
   app.get("/api/appointments", async (req, res) => {
     try {
@@ -368,8 +372,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let allAppointments = [...appointments];
       
       try {
-        // Get calendar integrations by querying database directly for this clinic
-        const integrations = await storage.getCalendarIntegrationsForClinic(clinicId);
+        // Get calendar integrations for this clinic by filtering existing integrations
+        const allIntegrations = await storage.getCalendarIntegrations(clinicId);
+        const integrations = allIntegrations.filter(integration => integration.clinic_id === clinicId);
         console.log('📅 Calendar integrations found:', integrations.length);
         
         if (integrations.length > 0) {
@@ -378,26 +383,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const integration of integrations) {
             if (integration.is_active && integration.sync_enabled && integration.calendar_id) {
               try {
-                // Set credentials
-                googleCalendarService.setCredentials(
-                  integration.access_token!,
-                  integration.refresh_token || undefined,
-                  integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined
-                );
-                
-                // Get date range for events
+                // Get date range for events - optimize to only fetch 7 days instead of 30
                 const timeMin = filters.date 
                   ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate()).toISOString()
                   : new Date().toISOString();
                 const timeMax = filters.date
                   ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate() + 1).toISOString()
-                  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                  : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
                 
-                const events = await googleCalendarService.listEvents(
-                  integration.calendar_id,
-                  timeMin,
-                  timeMax
-                );
+                // Create cache key for this integration and date range
+                const cacheKey = `${integration.id}_${timeMin}_${timeMax}`;
+                const now = Date.now();
+                
+                // Check cache first
+                const cached = calendarCache.get(cacheKey);
+                let events;
+                
+                if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+                  events = cached.events;
+                  console.log('📊 Using cached Google Calendar events:', events.length);
+                } else {
+                  // Set credentials
+                  googleCalendarService.setCredentials(
+                    integration.access_token!,
+                    integration.refresh_token || undefined,
+                    integration.token_expires_at ? new Date(integration.token_expires_at).getTime() : undefined
+                  );
+                  
+                  events = await googleCalendarService.listEvents(
+                    integration.calendar_id,
+                    timeMin,
+                    timeMax
+                  );
+                  
+                  // Cache the results
+                  calendarCache.set(cacheKey, { events, timestamp: now });
+                  console.log('📊 Fetched and cached Google Calendar events:', events.length);
+                }
                 
                 console.log('📅 Google Calendar events found:', events.length);
                 
