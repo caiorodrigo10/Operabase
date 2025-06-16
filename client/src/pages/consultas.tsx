@@ -571,9 +571,9 @@ export function Consultas() {
 
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `Agendamento para ${dayOfWeek} (dia não útil)`,
+        message: `${dayOfWeek} não é dia útil`,
         type: 'non_working_day',
-        details: `Este não é um dia de funcionamento normal. Dias de funcionamento: ${workingDaysNames}.`
+        details: `Funcionamento: ${workingDaysNames}`
       });
       return;
     }
@@ -581,9 +581,9 @@ export function Consultas() {
     if (!isWorkingHour(time, clinicConfig)) {
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `Agendamento fora do horário comercial`,
+        message: `Fora do horário comercial`,
         type: 'outside_hours',
-        details: `Horário de funcionamento: ${clinicConfig.work_start} às ${clinicConfig.work_end}. Agendamento marcado para ${time}.`
+        details: `Funcionamento: ${clinicConfig.work_start} às ${clinicConfig.work_end}`
       });
       return;
     }
@@ -591,9 +591,9 @@ export function Consultas() {
     if (isLunchTime(time, clinicConfig)) {
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `Agendamento no horário de almoço`,
+        message: `Horário de almoço`,
         type: 'lunch_time',
-        details: `Horário de almoço: ${clinicConfig.lunch_start} às ${clinicConfig.lunch_end}. Agendamento marcado para ${time}.`
+        details: `Almoço: ${clinicConfig.lunch_start} às ${clinicConfig.lunch_end}`
       });
       return;
     }
@@ -1296,7 +1296,7 @@ export function Consultas() {
                         </div>
                       )}
                       <div className="text-xs text-orange-700 font-medium">
-                        ✓ O agendamento ainda pode ser realizado, mas requer atenção especial.
+                        ✓ Agendamento permitido com atenção
                       </div>
                     </div>
                   </div>
