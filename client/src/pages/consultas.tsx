@@ -165,6 +165,7 @@ export function Consultas() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedProfessionals, setSelectedProfessionals] = useState<number[]>([]);
   
   // Create a stable reference for "today" to avoid timezone issues
   const today = useMemo(() => {
@@ -1065,7 +1066,32 @@ export function Consultas() {
     return appointments.filter((appointment: Appointment) => {
       if (!appointment.scheduled_date) return false;
       const appointmentDate = new Date(appointment.scheduled_date);
-      return isSameDay(appointmentDate, date);
+      const isSameDate = isSameDay(appointmentDate, date);
+      
+      // If no professionals are selected, show all appointments
+      if (selectedProfessionals.length === 0) return isSameDate;
+      
+      // If professionals are selected, only show appointments for selected professionals
+      const professionalId = getProfessionalIdByName(appointment.doctor_name);
+      return isSameDate && (professionalId ? selectedProfessionals.includes(professionalId) : false);
+    });
+  };
+
+  // Helper function to get professional ID by name
+  const getProfessionalIdByName = (doctorName: string | null | undefined) => {
+    if (!doctorName) return null;
+    const professional = clinicUsers.find((user: any) => user.name === doctorName);
+    return professional?.id || null;
+  };
+
+  // Function to toggle professional selection
+  const toggleProfessional = (professionalId: number) => {
+    setSelectedProfessionals(prev => {
+      if (prev.includes(professionalId)) {
+        return prev.filter(id => id !== professionalId);
+      } else {
+        return [...prev, professionalId];
+      }
     });
   };
 
@@ -1556,6 +1582,44 @@ export function Consultas() {
             </Button>
           </div>
 
+          {/* Professional Filter Buttons - positioned between Lista/Calendário and Dia/Semana/Mês */}
+          {viewMode === "calendar" && (
+            <div className="flex items-center space-x-2">
+              {/* Professional Filter Avatars */}
+              <div className="flex items-center space-x-2">
+                {clinicUsers
+                  .filter((user: any) => user.is_professional === true)
+                  .map((professional: any) => {
+                    const isSelected = selectedProfessionals.includes(professional.id);
+                    const initials = professional.name
+                      .split(' ')
+                      .map((n: string) => n[0])
+                      .join('')
+                      .substring(0, 2)
+                      .toUpperCase();
+                    
+                    return (
+                      <button
+                        key={professional.id}
+                        onClick={() => toggleProfessional(professional.id)}
+                        title={professional.name}
+                        className={`
+                          w-9 h-9 rounded-full flex items-center justify-center text-xs font-medium
+                          transition-all duration-200 hover:scale-105
+                          ${isSelected 
+                            ? 'bg-blue-500 text-white border-2 border-blue-600 shadow-md' 
+                            : 'bg-slate-200 text-slate-600 border-2 border-transparent hover:bg-slate-300'
+                          }
+                        `}
+                      >
+                        {initials}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
           {viewMode === "calendar" && (
             <div className="flex items-center space-x-4">
               {/* Calendar View Selector */}
@@ -1616,13 +1680,27 @@ export function Consultas() {
           {viewMode === "list" ? (
             /* List View */
             <div className="space-y-4">
-              {appointments.filter((app: Appointment) => !app.google_calendar_event_id).length === 0 ? (
+              {appointments.filter((app: Appointment) => {
+                if (app.google_calendar_event_id) return false;
+                
+                // Apply professional filter
+                if (selectedProfessionals.length === 0) return true;
+                const professionalId = getProfessionalIdByName(app.doctor_name);
+                return professionalId ? selectedProfessionals.includes(professionalId) : false;
+              }).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
                 </div>
               ) : (
                 appointments
-                  .filter((app: Appointment) => !app.google_calendar_event_id)
+                  .filter((app: Appointment) => {
+                    if (app.google_calendar_event_id) return false;
+                    
+                    // Apply professional filter
+                    if (selectedProfessionals.length === 0) return true;
+                    const professionalId = getProfessionalIdByName(app.doctor_name);
+                    return professionalId ? selectedProfessionals.includes(professionalId) : false;
+                  })
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
                   })
