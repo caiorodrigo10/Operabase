@@ -342,8 +342,6 @@ export function Consultas() {
         console.log('🎯 Auto-selecting newly created patient...');
         if (newPatient && newPatient.id) {
           form.setValue("contact_id", newPatient.id.toString());
-          form.setValue("contact_whatsapp", newPatient.phone || "");
-          form.setValue("contact_email", newPatient.email || "");
           console.log('✅ Patient auto-selected with ID:', newPatient.id);
         } else {
           console.warn('⚠️ Unable to auto-select patient - no ID received, will attempt fallback');
@@ -364,8 +362,6 @@ export function Consultas() {
                 
                 if (newlyCreated) {
                   form.setValue("contact_id", newlyCreated.id.toString());
-                  form.setValue("contact_whatsapp", newlyCreated.phone || "");
-                  form.setValue("contact_email", newlyCreated.email || "");
                   console.log('✅ Fallback patient selection successful with ID:', newlyCreated.id);
                 } else {
                   console.warn('⚠️ Fallback patient selection failed - patient not found in contacts list');
@@ -485,7 +481,7 @@ export function Consultas() {
       return response.json();
     },
     staleTime: 30 * 1000, // 30 seconds
-    cacheTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
 
@@ -498,7 +494,7 @@ export function Consultas() {
       return response.json();
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
   });
 
@@ -511,7 +507,7 @@ export function Consultas() {
       return response.json();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
   });
 
@@ -1394,8 +1390,6 @@ export function Consultas() {
                                       value={contact.name}
                                       onSelect={() => {
                                         field.onChange(contact.id.toString());
-                                        form.setValue("contact_whatsapp", contact.phone || "");
-                                        form.setValue("contact_email", contact.email || "");
                                         setContactComboboxOpen(false);
                                         setPatientSearchQuery("");
                                       }}
