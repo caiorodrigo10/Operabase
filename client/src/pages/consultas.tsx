@@ -40,8 +40,7 @@ const appointmentSchema = z.object({
   duration: z.string().min(1, "Duração é obrigatória"),
   type: z.string().min(1, "Tipo é obrigatório"),
   notes: z.string().optional(),
-  contact_whatsapp: z.string().optional(),
-  contact_email: z.string().optional(),
+  tag_id: z.number().optional(),
 });
 
 type AppointmentForm = z.infer<typeof appointmentSchema>;
@@ -224,6 +223,9 @@ export function Consultas() {
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
 
+  // State for selected tag
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
+
   // Form for creating appointments
   const form = useForm<AppointmentForm>({
     resolver: zodResolver(appointmentSchema),
@@ -236,8 +238,7 @@ export function Consultas() {
       duration: "30",
       type: "consulta",
       notes: "",
-      contact_whatsapp: "",
-      contact_email: "",
+      tag_id: undefined,
     },
   });
 
@@ -436,17 +437,6 @@ export function Consultas() {
   // Create appointment mutation
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentForm) => {
-      // Update contact data if modified
-      if (data.contact_whatsapp || data.contact_email) {
-        const contactUpdates: any = {};
-        if (data.contact_whatsapp) contactUpdates.phone = data.contact_whatsapp;
-        if (data.contact_email) contactUpdates.email = data.contact_email;
-        
-        if (Object.keys(contactUpdates).length > 0) {
-          await apiRequest("PUT", `/api/contacts/${data.contact_id}`, contactUpdates);
-        }
-      }
-
       const appointmentData = {
         contact_id: parseInt(data.contact_id),
         user_id: parseInt(data.user_id),
@@ -460,6 +450,7 @@ export function Consultas() {
         payment_status: "pendente",
         payment_amount: 0,
         session_notes: data.notes || null,
+        tag_id: selectedTagId || data.tag_id || null,
       };
       const res = await apiRequest("POST", "/api/appointments", appointmentData);
       return await res.json();
@@ -472,6 +463,7 @@ export function Consultas() {
       });
       setIsCreateDialogOpen(false);
       form.reset();
+      setSelectedTagId(null);
       setAvailabilityConflict(null);
       setSuggestedSlots([]);
     },
@@ -1639,43 +1631,15 @@ export function Consultas() {
 
 
 
-              {/* Contact Information */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="contact_whatsapp"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>WhatsApp</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="(11) 99999-9999"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contact_email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-mail</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="paciente@email.com"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Tag Selector */}
+              <AppointmentTagSelector
+                clinicId={1}
+                selectedTagId={selectedTagId}
+                onTagSelect={(tagId) => {
+                  setSelectedTagId(tagId);
+                  form.setValue("tag_id", tagId || undefined);
+                }}
+              />
 
               {/* Notes */}
               <FormField
