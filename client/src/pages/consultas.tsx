@@ -531,7 +531,7 @@ export function Consultas() {
   // Helper functions for working hours validation
   const getDayOfWeekKey = (date: Date): string => {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    return days[getDay(date)];
+    return days[date.getDay()];
   };
 
   const isWorkingDay = (date: Date, config: any): boolean => {
@@ -560,18 +560,10 @@ export function Consultas() {
       return;
     }
 
-    const selectedDate = new Date(date);
+    // Create date in local timezone to avoid UTC offset issues
+    const [year, month, day] = date.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day);
     const selectedDateTime = new Date(`${date}T${time}`);
-    
-    // Debug logging
-    console.log('🔍 Date check:', {
-      inputDate: date,
-      selectedDate: selectedDate,
-      dayOfWeek: selectedDate.getDay(),
-      dayName: format(selectedDate, 'EEEE', { locale: ptBR }),
-      workingDays: clinicConfig.working_days,
-      dayKey: getDayOfWeekKey(selectedDate)
-    });
     
     // Use enhanced analysis to get detailed warning information
     const dayOfWeek = format(selectedDate, 'EEEE', { locale: ptBR });
