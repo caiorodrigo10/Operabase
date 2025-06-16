@@ -2,6 +2,7 @@ import {
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   clinic_users, clinic_invitations, calendar_integrations, medical_records, password_reset_tokens,
+  appointment_tags,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -18,6 +19,7 @@ import {
   type CalendarIntegration, type InsertCalendarIntegration,
   type MedicalRecord, type InsertMedicalRecord,
   type PasswordResetToken, type InsertPasswordResetToken,
+  type AppointmentTag, type InsertAppointmentTag,
 } from "@shared/schema";
 
 export interface IStorage {

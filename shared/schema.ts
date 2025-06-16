@@ -194,7 +194,7 @@ export const appointments = pgTable("appointments", {
   next_appointment_suggested: timestamp("next_appointment_suggested"),
   return_period: text("return_period"), // sem_retorno, 15_dias, 1_mes, 6_meses, 12_meses, outro
   how_found_clinic: text("how_found_clinic"), // instagram, facebook, google, indicacao_familiar, indicacao_amigo, indicacao_dentista, marketing
-  tags: text("tags").array(), // Etiquetas da consulta
+  tag_id: integer("tag_id").references(() => appointment_tags.id), // Referência para etiqueta da consulta
   receive_reminders: boolean("receive_reminders").default(true), // Se o paciente recebe lembretes
   payment_status: text("payment_status").default("pendente"), // pendente, pago, isento
   payment_amount: integer("payment_amount"), // valor em centavos
@@ -368,7 +368,10 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   updated_at: true,
 });
 
-export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).omit({
+export const insertAppointmentTagSchema = createInsertSchema(appointment_tags, {
+  name: z.string().min(1, "Nome da etiqueta é obrigatório").max(50, "Nome muito longo"),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve estar no formato hexadecimal (#RRGGBB)"),
+}).omit({
   id: true,
   created_at: true,
   updated_at: true,
@@ -571,3 +574,5 @@ export const updateUserProfileSchema = createInsertSchema(users).omit({
 });
 
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
+
+
