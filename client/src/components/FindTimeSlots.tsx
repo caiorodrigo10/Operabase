@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 interface FindTimeSlotsProps {
   selectedDate?: string;
   duration: number;
-  onTimeSelect: (time: string) => void;
+  onTimeSelect: (time: string, date: string) => void;
   onClose: () => void;
 }
 
@@ -82,7 +82,8 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
 
   const handleConfirm = () => {
     if (selectedTime) {
-      onTimeSelect(selectedTime);
+      const dateString = currentDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      onTimeSelect(selectedTime, dateString);
       onClose();
     }
   };

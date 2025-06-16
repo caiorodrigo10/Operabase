@@ -1943,8 +1943,9 @@ export function Consultas() {
           <FindTimeSlots
             selectedDate={watchedDate || format(new Date(), 'yyyy-MM-dd')}
             duration={parseInt(watchedDuration) || 30}
-            onTimeSelect={(time) => {
+            onTimeSelect={(time, date) => {
               form.setValue("scheduled_time", time);
+              form.setValue("scheduled_date", date);
               setFindTimeSlotsOpen(false);
             }}
             onClose={() => setFindTimeSlotsOpen(false)}
