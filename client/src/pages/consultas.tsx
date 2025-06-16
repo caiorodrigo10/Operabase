@@ -844,7 +844,29 @@ export function Consultas() {
 
   // Get appointment duration in minutes
   const getAppointmentDuration = (appointment: Appointment): number => {
-    return appointment.duration_minutes || 60; // Default to 60 minutes if not specified
+    // Debug logging for Sales event specifically
+    if (appointment.doctor_name === 'Sales' || appointment.id?.toString().includes('Sales')) {
+      console.log('🔍 Sales event duration debug:', {
+        id: appointment.id,
+        doctor_name: appointment.doctor_name,
+        duration_minutes: appointment.duration_minutes,
+        type: typeof appointment.duration_minutes,
+        isGoogleEvent: !!appointment.google_calendar_event_id,
+        fullAppointment: appointment
+      });
+    }
+    
+    const duration = appointment.duration_minutes || 60;
+    
+    // Additional debug for unexpected durations
+    if (duration === 15 && appointment.doctor_name === 'Sales') {
+      console.warn('⚠️ Sales event showing 15 minutes - this is incorrect!', {
+        originalDuration: appointment.duration_minutes,
+        calculatedDuration: duration
+      });
+    }
+    
+    return duration;
   };
 
   // Check if appointment spans multiple hours
@@ -1694,11 +1716,21 @@ export function Consultas() {
                         {calendarDays.slice(0, 7).map((day) => {
                           const allDayAppointments = getAppointmentsForDate(day);
                           
-                          // Get appointments that start in this hour slot
+                          // Get appointments that start in this hour slot OR span through this hour
                           const slotAppointments = allDayAppointments.filter((apt: Appointment) => {
                             if (!apt.scheduled_date) return false;
-                            const aptStartHour = new Date(apt.scheduled_date).getHours();
-                            return aptStartHour === hour;
+                            const aptStart = new Date(apt.scheduled_date);
+                            const aptEnd = new Date(aptStart.getTime() + (getAppointmentDuration(apt) * 60000));
+                            const slotStart = new Date(day);
+                            slotStart.setHours(hour, 0, 0, 0);
+                            const slotEnd = new Date(day);
+                            slotEnd.setHours(hour + 1, 0, 0, 0);
+                            
+                            // Show appointment if it starts in this hour OR continues through this hour
+                            const aptStartHour = aptStart.getHours();
+                            const overlapsThisHour = aptStart < slotEnd && aptEnd > slotStart;
+                            
+                            return aptStartHour === hour || overlapsThisHour;
                           });
                           
                           return (
@@ -1756,8 +1788,48 @@ export function Consultas() {
                                 const patientName = getPatientName(appointment.contact_id, appointment);
                                 const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
                                 const duration = getAppointmentDuration(appointment);
-                                const height = getAppointmentHeight(duration);
-                                const topPosition = getAppointmentTopPosition(appointment.scheduled_date);
+                                
+                                const aptStart = new Date(appointment.scheduled_date);
+                                const aptStartHour = aptStart.getHours();
+                                const aptEnd = new Date(aptStart.getTime() + (duration * 60000));
+                                const slotStart = new Date(day);
+                                slotStart.setHours(hour, 0, 0, 0);
+                                const slotEnd = new Date(day);
+                                slotEnd.setHours(hour + 1, 0, 0, 0);
+                                
+                                // Calculate position and height based on whether this is the starting hour or continuation
+                                let topPosition: number;
+                                let adjustedHeight: number;
+                                let displayTime = time;
+                                let isContinuation = false;
+                                
+                                if (aptStartHour === hour) {
+                                  // This is the starting hour - use normal positioning
+                                  topPosition = getAppointmentTopPosition(appointment.scheduled_date);
+                                  
+                                  if (aptEnd <= slotEnd) {
+                                    // Appointment ends within this hour
+                                    adjustedHeight = getAppointmentHeight(duration);
+                                  } else {
+                                    // Appointment extends beyond this hour - fill remaining space
+                                    const minutesFromStartToEndOfHour = (slotEnd.getTime() - aptStart.getTime()) / (1000 * 60);
+                                    adjustedHeight = minutesFromStartToEndOfHour * PIXELS_PER_MINUTE;
+                                  }
+                                } else {
+                                  // This is a continuation hour - fill from top
+                                  topPosition = 0;
+                                  isContinuation = true;
+                                  displayTime = "↳ cont.";
+                                  
+                                  if (aptEnd <= slotEnd) {
+                                    // Appointment ends within this hour
+                                    const minutesFromStartOfHourToEnd = (aptEnd.getTime() - slotStart.getTime()) / (1000 * 60);
+                                    adjustedHeight = minutesFromStartOfHourToEnd * PIXELS_PER_MINUTE;
+                                  } else {
+                                    // Appointment continues beyond this hour - fill entire hour
+                                    adjustedHeight = PIXELS_PER_HOUR;
+                                  }
+                                }
 
                                 return (
                                   <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
@@ -1765,7 +1837,7 @@ export function Consultas() {
                                       className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden`}
                                       style={{ 
                                         top: `${topPosition}px`,
-                                        height: `${height}px`,
+                                        height: `${adjustedHeight}px`,
                                         zIndex: 10
                                       }}
                                       onClick={() => handleAppointmentClick(appointment)}
