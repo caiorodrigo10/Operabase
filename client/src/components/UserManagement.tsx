@@ -126,6 +126,9 @@ export function UserManagement({ clinicId }: UserManagementProps) {
   // Deactivate user mutation
   const deactivateUserMutation = useMutation({
     mutationFn: async (userId: number) => {
+      const user = users.find(u => u.id === userId);
+      if (!user) throw new Error('User not found');
+
       const response = await fetch(`/api/clinic/${clinicId}/users/${userId}/professional-status`, {
         method: 'PUT',
         headers: {
@@ -134,7 +137,9 @@ export function UserManagement({ clinicId }: UserManagementProps) {
         },
         body: JSON.stringify({
           user_id: userId,
+          is_professional: user.is_professional,
           is_active: false,
+          role: user.role,
           notes: 'Usuário inativado pelo administrador'
         })
       });

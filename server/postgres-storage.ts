@@ -1268,7 +1268,9 @@ export class PostgreSQLStorage implements IStorage {
     changedByUserId: number,
     ipAddress?: string,
     userAgent?: string,
-    notes?: string
+    notes?: string,
+    isActive?: boolean,
+    role?: string
   ): Promise<{ success: boolean; clinicUser?: ClinicUser }> {
     try {
       // Get current status for audit
@@ -1286,12 +1288,25 @@ export class PostgreSQLStorage implements IStorage {
 
       const previousStatus = currentUser[0].is_professional || false;
 
-      // Update the professional status
+      // Prepare update data
+      const updateData: any = {
+        is_professional: isProfessional,
+        updated_at: new Date()
+      };
+
+      // Add is_active if provided
+      if (isActive !== undefined) {
+        updateData.is_active = isActive;
+      }
+
+      // Add role if provided
+      if (role !== undefined) {
+        updateData.role = role;
+      }
+
+      // Update the user status
       const result = await db.update(clinic_users)
-        .set({ 
-          is_professional: isProfessional,
-          updated_at: new Date()
-        })
+        .set(updateData)
         .where(and(
           eq(clinic_users.clinic_id, clinicId),
           eq(clinic_users.user_id, targetUserId)
@@ -1300,11 +1315,16 @@ export class PostgreSQLStorage implements IStorage {
 
       if (result[0]) {
         // Create audit log
+        let auditAction = isProfessional ? 'activated' : 'deactivated';
+        if (isActive === false) {
+          auditAction = 'user_deactivated';
+        }
+
         await this.createProfessionalStatusAudit({
           clinic_id: clinicId,
           target_user_id: targetUserId,
           changed_by_user_id: changedByUserId,
-          action: isProfessional ? 'activated' : 'deactivated',
+          action: auditAction,
           previous_status: previousStatus,
           new_status: isProfessional,
           ip_address: ipAddress,

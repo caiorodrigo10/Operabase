@@ -229,6 +229,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user from clinic
+  app.delete("/api/clinic/:clinicId/users/:userId", supabaseAuth, async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(clinicId) || isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid clinic ID or user ID" });
+      }
+
+      const result = await storage.removeUserFromClinic(clinicId, userId);
+      
+      if (result) {
+        res.json({ message: 'Usuário removido com sucesso' });
+      } else {
+        res.status(404).json({ error: 'Usuário não encontrado na clínica' });
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
   // Get clinic configuration
   app.get("/api/clinic/:id/config", async (req, res) => {
     try {

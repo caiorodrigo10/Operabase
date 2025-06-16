@@ -13,7 +13,9 @@ import { z } from 'zod';
 const updateProfessionalStatusSchema = z.object({
   user_id: z.number(),
   is_professional: z.boolean(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  is_active: z.boolean().optional(),
+  role: z.enum(['admin', 'usuario']).optional()
 });
 
 /**
@@ -71,7 +73,7 @@ export async function updateUserProfessionalStatus(req: PermissionRequest, res: 
       });
     }
 
-    const { is_professional, notes } = validation.data;
+    const { is_professional, notes, is_active, role } = validation.data;
 
     // Check if admin can manage this user
     const canManage = await canManageUser(adminUser.id, targetUserId, clinicId);
@@ -94,7 +96,9 @@ export async function updateUserProfessionalStatus(req: PermissionRequest, res: 
       adminUser.id,
       ipAddress,
       userAgent,
-      notes
+      notes,
+      is_active,
+      role
     );
 
     if (!result.success) {
