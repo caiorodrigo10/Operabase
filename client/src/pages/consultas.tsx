@@ -820,7 +820,7 @@ export function Consultas() {
   };
 
   // Find available time slots
-  const findAvailableSlots = async (date: string, duration: string) => {
+  const findAvailableSlots = async (date: string, duration: string, professionalName?: string) => {
     if (!date || !duration) return;
 
     const selectedDate = new Date(date);
@@ -835,7 +835,8 @@ export function Consultas() {
 
         const result = await availabilityCheck.mutateAsync({
           startDateTime: startDateTime.toISOString(),
-          endDateTime: endDateTime.toISOString()
+          endDateTime: endDateTime.toISOString(),
+          professionalName: professionalName
         });
 
         if (!result.conflict) {
@@ -859,17 +860,27 @@ export function Consultas() {
   const watchedDate = form.watch("scheduled_date");
   const watchedTime = form.watch("scheduled_time");
   const watchedDuration = form.watch("duration");
+  const watchedProfessional = form.watch("appointment_name");
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (watchedDate && watchedTime && watchedDuration) {
-        checkAvailability(watchedDate, watchedTime, watchedDuration);
+        // Only check availability if professional is selected
+        if (watchedProfessional) {
+          checkAvailability(watchedDate, watchedTime, watchedDuration, watchedProfessional);
+        } else {
+          setAvailabilityConflict({
+            hasConflict: true,
+            message: "Selecione um profissional antes de verificar disponibilidade",
+            conflictType: "no_professional"
+          });
+        }
         checkWorkingHours(watchedDate, watchedTime);
       }
     }, 500); // Debounce
 
     return () => clearTimeout(timeoutId);
-  }, [watchedDate, watchedTime, watchedDuration]);
+  }, [watchedDate, watchedTime, watchedDuration, watchedProfessional]);
 
   useEffect(() => {
     if (!appointmentsLoading) {
@@ -2542,6 +2553,7 @@ export function Consultas() {
           <FindTimeSlots
             selectedDate={watchedDate || ''}
             duration={parseInt(watchedDuration) || 30}
+            professionalName={watchedProfessional}
             onTimeSelect={(time, date) => {
               form.setValue("scheduled_time", time);
               form.setValue("scheduled_date", date);

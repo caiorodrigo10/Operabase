@@ -591,6 +591,8 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave }: Ap
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <FindTimeSlots
               selectedDate={form.watch('scheduled_date')}
+              duration={form.watch('duration_minutes') || 60}
+              professionalName={form.watch('doctor_name')}
               onTimeSelect={(time: string) => {
                 form.setValue('scheduled_time', time);
                 setFindTimeOpen(false);

@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 interface FindTimeSlotsProps {
   selectedDate?: string;
   duration: number;
+  professionalName?: string;
   onTimeSelect: (time: string, date: string) => void;
   onClose: () => void;
 }
@@ -31,7 +32,7 @@ interface ClinicConfig {
   lunch_end: string;
 }
 
-export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }: FindTimeSlotsProps) {
+export function FindTimeSlots({ selectedDate, duration, professionalName, onTimeSelect, onClose }: FindTimeSlotsProps) {
   const [currentDate, setCurrentDate] = useState(() => {
     if (selectedDate && selectedDate !== '') {
       // Create date from string and ensure it's at local midnight to avoid timezone issues
@@ -158,6 +159,11 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
     return existingAppointments.some((appointment: any) => {
       const appointmentDate = new Date(appointment.scheduled_date).toISOString().split('T')[0];
       if (appointmentDate !== currentDateStr) return false;
+
+      // Only check conflicts for the selected professional
+      if (professionalName && appointment.doctor_name !== professionalName) {
+        return false;
+      }
 
       const appointmentTime = new Date(appointment.scheduled_date).toLocaleTimeString('pt-BR', { 
         hour: '2-digit', 
