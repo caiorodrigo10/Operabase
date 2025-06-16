@@ -1122,6 +1122,32 @@ export class PostgreSQLStorage implements IStorage {
         setPairs.push(`calendar_name = $${paramIndex++}`);
         values.push(updates.calendar_name);
       }
+      
+      // Add new advanced sync fields
+      if (updates.sync_token !== undefined) {
+        setPairs.push(`sync_token = $${paramIndex++}`);
+        values.push(updates.sync_token);
+      }
+      if (updates.watch_channel_id !== undefined) {
+        setPairs.push(`watch_channel_id = $${paramIndex++}`);
+        values.push(updates.watch_channel_id);
+      }
+      if (updates.watch_resource_id !== undefined) {
+        setPairs.push(`watch_resource_id = $${paramIndex++}`);
+        values.push(updates.watch_resource_id);
+      }
+      if (updates.watch_expires_at !== undefined) {
+        setPairs.push(`watch_expires_at = $${paramIndex++}`);
+        values.push(updates.watch_expires_at);
+      }
+      if (updates.sync_in_progress !== undefined) {
+        setPairs.push(`sync_in_progress = $${paramIndex++}`);
+        values.push(updates.sync_in_progress);
+      }
+      if (updates.last_sync_trigger !== undefined) {
+        setPairs.push(`last_sync_trigger = $${paramIndex++}`);
+        values.push(updates.last_sync_trigger);
+      }
 
       // Always update timestamp
       setPairs.push(`updated_at = NOW()`);
@@ -1134,26 +1160,9 @@ export class PostgreSQLStorage implements IStorage {
       
       console.log('📋 Generated SQL query:', query);
       console.log('📋 Query parameters:', values);
-
-      // Remove sync_preference field from the update completely
-      let fixedQuery = query;
-      let fixedValues = [...values];
-      
-      // If sync_preference is in the query, remove it and adjust parameter numbers
-      if (query.includes('sync_preference')) {
-        // Remove sync_preference from the SET clause
-        fixedQuery = query.replace(/sync_preference = \$\d+,?\s*/, '');
-        // Remove the sync_preference value (index 1)
-        fixedValues = [values[0], values[2]]; // calendar_id and id
-        // Fix parameter numbering in WHERE clause
-        fixedQuery = fixedQuery.replace('WHERE id = $3', 'WHERE id = $2');
-      }
-      
-      console.log('📋 Fixed SQL query:', fixedQuery);
-      console.log('📋 Fixed parameters:', fixedValues);
       
       const pool = (db as any)._.session.client;
-      const result = await pool.query(fixedQuery, fixedValues);
+      const result = await pool.query(query, values);
       console.log('✅ Update result:', result.rows[0]);
       
       return result.rows[0] as CalendarIntegration | undefined;
@@ -1519,18 +1528,17 @@ export class PostgreSQLStorage implements IStorage {
     return result.length > 0;
   }
 
-  async deleteGoogleCalendarEvents(userId: string | number, calendarId?: string): Promise<number> {
+  async deleteGoogleCalendarEvents(userId: string | number, calendarId?: string, eventId?: string): Promise<number> {
     try {
-      console.log('🗑️ Deleting Google Calendar events for user:', { userId, calendarId });
+      console.log('🗑️ Deleting Google Calendar events for user:', { userId, calendarId, eventId });
       
-      // Use SQL query to handle the deletion properly
-      const result = await db.execute(sql`
-        DELETE FROM appointments 
-        WHERE user_id = ${userId.toString()} 
-        AND google_calendar_event_id IS NOT NULL
-        RETURNING *
-      `);
+      let query = sql`DELETE FROM appointments WHERE user_id = ${userId.toString()} AND google_calendar_event_id IS NOT NULL`;
       
+      if (eventId) {
+        query = sql`DELETE FROM appointments WHERE user_id = ${userId.toString()} AND google_calendar_event_id = ${eventId}`;
+      }
+      
+      const result = await db.execute(query);
       const deletedCount = result.rowCount || 0;
       
       console.log(`🗑️ Successfully deleted ${deletedCount} Google Calendar events`);
@@ -1539,6 +1547,54 @@ export class PostgreSQLStorage implements IStorage {
     } catch (error) {
       console.error('❌ Error deleting Google Calendar events:', error);
       return 0;
+    }
+  }
+
+  // Advanced Calendar Sync Methods
+  async getCalendarIntegrationsForWebhookRenewal(renewalThreshold: Date): Promise<CalendarIntegration[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM calendar_integrations 
+        WHERE is_active = true 
+        AND sync_enabled = true 
+        AND watch_expires_at IS NOT NULL 
+        AND watch_expires_at <= ${renewalThreshold.toISOString()}
+      `);
+      
+      return result.rows as CalendarIntegration[];
+    } catch (error) {
+      console.error('❌ Error getting integrations for webhook renewal:', error);
+      return [];
+    }
+  }
+
+  async getCalendarIntegrationByWebhook(channelId: string, resourceId: string): Promise<CalendarIntegration | undefined> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM calendar_integrations 
+        WHERE watch_channel_id = ${channelId} 
+        AND watch_resource_id = ${resourceId}
+        LIMIT 1
+      `);
+      
+      return result.rows[0] as CalendarIntegration | undefined;
+    } catch (error) {
+      console.error('❌ Error getting integration by webhook:', error);
+      return undefined;
+    }
+  }
+
+  async getAppointmentsByGoogleEventId(eventId: string): Promise<Appointment[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM appointments 
+        WHERE google_calendar_event_id = ${eventId}
+      `);
+      
+      return result.rows as Appointment[];
+    } catch (error) {
+      console.error('❌ Error getting appointments by Google event ID:', error);
+      return [];
     }
   }
 }

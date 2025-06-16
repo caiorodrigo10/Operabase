@@ -115,7 +115,22 @@ export interface IStorage {
   createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration>;
   updateCalendarIntegration(id: number, updates: Partial<InsertCalendarIntegration>): Promise<CalendarIntegration | undefined>;
   deleteCalendarIntegration(id: number): Promise<boolean>;
-  deleteGoogleCalendarEvents(userId: string | number, calendarId?: string): Promise<number>;
+  deleteGoogleCalendarEvents(userId: string | number, calendarId?: string, eventId?: string): Promise<number>;
+  
+  // Advanced Calendar Sync Methods
+  getCalendarIntegrationsForWebhookRenewal(renewalThreshold: Date): Promise<CalendarIntegration[]>;
+  getCalendarIntegrationByWebhook(channelId: string, resourceId: string): Promise<CalendarIntegration | undefined>;
+  getAppointmentsByGoogleEventId(eventId: string): Promise<Appointment[]>;
+
+  // User Management
+  createUserInClinic(userData: {
+    name: string;
+    email: string;
+    role: 'admin' | 'usuario';
+    isProfessional: boolean;
+    clinicId: number;
+    createdBy: string;
+  }): Promise<{ success: boolean; user?: any; error?: string }>;
 
   // Medical Records
   getMedicalRecords(contactId: number): Promise<MedicalRecord[]>;
