@@ -115,6 +115,7 @@ export interface IStorage {
   createCalendarIntegration(integration: InsertCalendarIntegration): Promise<CalendarIntegration>;
   updateCalendarIntegration(id: number, updates: Partial<InsertCalendarIntegration>): Promise<CalendarIntegration | undefined>;
   deleteCalendarIntegration(id: number): Promise<boolean>;
+  deleteGoogleCalendarEvents(userId: string | number, calendarId?: string): Promise<number>;
 
   // Medical Records
   getMedicalRecords(contactId: number): Promise<MedicalRecord[]>;
@@ -954,6 +955,10 @@ export class MemStorage implements IStorage {
   
   async deleteCalendarIntegration(id: number): Promise<boolean> {
     return false;
+  }
+
+  async deleteGoogleCalendarEvents(userId: string | number, calendarId?: string): Promise<number> {
+    return 0;
   }
 }
 

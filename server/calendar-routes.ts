@@ -454,10 +454,27 @@ export async function deleteCalendarIntegration(req: any, res: Response) {
       return res.status(404).json({ error: 'Calendar integration not found' });
     }
 
+    console.log('🗑️ Deleting calendar integration and associated events:', {
+      integrationId: integration.id,
+      userId: integration.user_id,
+      email: integration.email,
+      calendarId: integration.calendar_id
+    });
+
+    // First, delete all Google Calendar events associated with this integration
+    const deletedEventsCount = await storage.deleteGoogleCalendarEvents(integration.user_id, integration.calendar_id);
+    console.log(`🗑️ Deleted ${deletedEventsCount} Google Calendar events`);
+
+    // Then delete the integration itself
     const deleted = await storage.deleteCalendarIntegration(integration.id);
     
     if (deleted) {
-      res.json({ success: true });
+      console.log('✅ Calendar integration deleted successfully');
+      res.json({ 
+        success: true, 
+        deletedEventsCount,
+        message: `Integration deleted and ${deletedEventsCount} synchronized events removed`
+      });
     } else {
       res.status(500).json({ error: 'Failed to delete integration' });
     }
