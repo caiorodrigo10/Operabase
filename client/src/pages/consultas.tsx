@@ -449,6 +449,7 @@ export function Consultas() {
         payment_amount: 0,
         session_notes: data.notes || null,
         tag_id: selectedTagId || data.tag_id || null,
+        receive_reminders: true
       };
       const res = await apiRequest("POST", "/api/appointments", appointmentData);
       return await res.json();
@@ -881,19 +882,8 @@ export function Consultas() {
       if (availabilityConflict?.conflictType === "no_professional") {
         setAvailabilityConflict(null);
       }
-      
-      // Auto-load availability if we have date and time
-      if (watchedDate && watchedTime && watchedDuration) {
-        checkAvailability(watchedDate, watchedTime, watchedDuration, professionalName);
-        checkWorkingHours(watchedDate, watchedTime);
-      }
-      
-      // Auto-suggest slots if we have date and duration
-      if (watchedDate && watchedDuration) {
-        findAvailableSlots(watchedDate, watchedDuration, professionalName);
-      }
     }
-  }, [watchedProfessionalId, getProfessionalNameById, watchedDate, watchedTime, watchedDuration]);
+  }, [watchedProfessionalId]);
 
   // Separate effect for date/time changes - with debounce
   useEffect(() => {
