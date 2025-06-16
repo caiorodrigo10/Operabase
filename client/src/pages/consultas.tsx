@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X, Eye, MoreVertical, AlertTriangle, Search, Mail } from "lucide-react";
+import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X, Eye, MoreVertical, AlertTriangle, Search, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAvailabilityCheck, formatConflictMessage, createTimeSlots } from "@/hooks/useAvailability";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -571,7 +571,7 @@ export function Consultas() {
 
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `${dayOfWeek} não é dia útil`,
+        message: `é ${dayOfWeek.toLowerCase()}`,
         type: 'non_working_day',
         details: `Funcionamento: ${workingDaysNames}`
       });
@@ -581,7 +581,7 @@ export function Consultas() {
     if (!isWorkingHour(time, clinicConfig)) {
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `Fora do horário comercial`,
+        message: `é fora do horário`,
         type: 'outside_hours',
         details: `Funcionamento: ${clinicConfig.work_start} às ${clinicConfig.work_end}`
       });
@@ -591,7 +591,7 @@ export function Consultas() {
     if (isLunchTime(time, clinicConfig)) {
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `Horário de almoço`,
+        message: `é horário de almoço`,
         type: 'lunch_time',
         details: `Almoço: ${clinicConfig.lunch_start} às ${clinicConfig.lunch_end}`
       });
@@ -1267,37 +1267,38 @@ export function Consultas() {
                 </div>
               </div>
 
-              {/* Availability Check Status */}
+              {/* Smart Availability Status - Combined availability + context */}
               {availabilityConflict && (
                 <div className={`p-3 rounded-lg border ${
                   availabilityConflict.hasConflict
                     ? "bg-red-50 border-red-200 text-red-800"
-                    : "bg-green-50 border-green-200 text-green-800"
+                    : workingHoursWarning && workingHoursWarning.hasWarning
+                      ? "bg-orange-50 border-orange-200 text-orange-800"
+                      : "bg-green-50 border-green-200 text-green-800"
                 }`}>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-sm font-medium">{availabilityConflict.message}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Enhanced Working Hours Warning with detailed information */}
-              {workingHoursWarning && workingHoursWarning.hasWarning && (
-                <div className="p-4 rounded-lg border bg-orange-50 border-orange-200 text-orange-800">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    {availabilityConflict.hasConflict ? (
+                      <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    ) : workingHoursWarning && workingHoursWarning.hasWarning ? (
+                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    )}
                     <div className="flex-1">
-                      <div className="font-medium text-sm mb-1">
-                        {workingHoursWarning.message}
+                      <div className="text-sm font-medium">
+                        {availabilityConflict.hasConflict ? (
+                          availabilityConflict.message
+                        ) : workingHoursWarning && workingHoursWarning.hasWarning ? (
+                          <>Horário livre, mas {workingHoursWarning.message.toLowerCase()}</>
+                        ) : (
+                          'Horário disponível'
+                        )}
                       </div>
-                      {workingHoursWarning.details && (
-                        <div className="text-xs text-orange-700 mb-2">
+                      {!availabilityConflict.hasConflict && workingHoursWarning && workingHoursWarning.hasWarning && workingHoursWarning.details && (
+                        <div className="text-xs text-orange-700 mt-1">
                           {workingHoursWarning.details}
                         </div>
                       )}
-                      <div className="text-xs text-orange-700 font-medium">
-                        ✓ Agendamento permitido com atenção
-                      </div>
                     </div>
                   </div>
                 </div>
