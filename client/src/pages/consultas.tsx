@@ -1782,47 +1782,11 @@ export function Consultas() {
                                 const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
                                 const duration = getAppointmentDuration(appointment);
                                 
+                                // Calculate position within the hour slot
                                 const aptStart = new Date(appointment.scheduled_date);
-                                const aptStartHour = aptStart.getHours();
-                                const aptEnd = new Date(aptStart.getTime() + (duration * 60000));
-                                const slotStart = new Date(day);
-                                slotStart.setHours(hour, 0, 0, 0);
-                                const slotEnd = new Date(day);
-                                slotEnd.setHours(hour + 1, 0, 0, 0);
-                                
-                                // Calculate position and height based on whether this is the starting hour or continuation
-                                let topPosition: number;
-                                let adjustedHeight: number;
-                                let displayTime = time;
-                                let isContinuation = false;
-                                
-                                if (aptStartHour === hour) {
-                                  // This is the starting hour - use normal positioning
-                                  topPosition = getAppointmentTopPosition(appointment.scheduled_date);
-                                  
-                                  if (aptEnd <= slotEnd) {
-                                    // Appointment ends within this hour
-                                    adjustedHeight = getAppointmentHeight(duration);
-                                  } else {
-                                    // Appointment extends beyond this hour - fill remaining space
-                                    const minutesFromStartToEndOfHour = (slotEnd.getTime() - aptStart.getTime()) / (1000 * 60);
-                                    adjustedHeight = minutesFromStartToEndOfHour * PIXELS_PER_MINUTE;
-                                  }
-                                } else {
-                                  // This is a continuation hour - fill from top
-                                  topPosition = 0;
-                                  isContinuation = true;
-                                  displayTime = "↳ cont.";
-                                  
-                                  if (aptEnd <= slotEnd) {
-                                    // Appointment ends within this hour
-                                    const minutesFromStartOfHourToEnd = (aptEnd.getTime() - slotStart.getTime()) / (1000 * 60);
-                                    adjustedHeight = minutesFromStartOfHourToEnd * PIXELS_PER_MINUTE;
-                                  } else {
-                                    // Appointment continues beyond this hour - fill entire hour
-                                    adjustedHeight = PIXELS_PER_HOUR;
-                                  }
-                                }
+                                const startMinutes = aptStart.getMinutes();
+                                const topPosition = startMinutes * PIXELS_PER_MINUTE;
+                                const height = getAppointmentHeight(duration);
 
                                 return (
                                   <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
@@ -1830,7 +1794,7 @@ export function Consultas() {
                                       className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden`}
                                       style={{ 
                                         top: `${topPosition}px`,
-                                        height: `${adjustedHeight}px`,
+                                        height: `${height}px`,
                                         zIndex: 10
                                       }}
                                       onClick={() => handleAppointmentClick(appointment)}
@@ -1839,11 +1803,11 @@ export function Consultas() {
                                         <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-0.5`}></div>
                                         <div className="flex-1 overflow-hidden">
                                           <div className="truncate">
-                                            {isContinuation ? `${patientName}` : `${displayTime} ${patientName}`}
+                                            {time} {patientName}
                                           </div>
-                                          {isContinuation && (
-                                            <div className="text-xs opacity-75">continua...</div>
-                                          )}
+                                          <div className="text-xs opacity-75">
+                                            {duration}min
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
