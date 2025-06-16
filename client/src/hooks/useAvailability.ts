@@ -5,6 +5,7 @@ interface AvailabilityRequest {
   startDateTime: string;
   endDateTime: string;
   excludeAppointmentId?: number;
+  professionalName?: string;
 }
 
 interface ConflictDetails {

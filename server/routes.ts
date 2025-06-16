@@ -1681,7 +1681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check availability for appointment scheduling
   app.post('/api/availability/check', async (req, res) => {
     try {
-      const { startDateTime, endDateTime, excludeAppointmentId } = req.body;
+      const { startDateTime, endDateTime, excludeAppointmentId, professionalName } = req.body;
       
       if (!startDateTime || !endDateTime) {
         return res.status(400).json({ error: "Start and end datetime are required" });
@@ -1697,15 +1697,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check for conflicts with existing appointments
       const existingAppointments = await storage.getAppointmentsByDateRange(startDate, endDate);
       
+      // Filter appointments by professional if specified
+      let relevantAppointments = existingAppointments;
+      if (professionalName) {
+        relevantAppointments = existingAppointments.filter(apt => 
+          apt.doctor_name === professionalName
+        );
+      }
+      
       let conflictingAppointment = null;
       if (excludeAppointmentId) {
-        conflictingAppointment = existingAppointments.find(apt => 
+        conflictingAppointment = relevantAppointments.find(apt => 
           apt.id !== excludeAppointmentId && 
           new Date(apt.scheduled_date!) < endDate &&
           new Date(apt.scheduled_date!).getTime() + ((apt.duration_minutes || 60) * 60000) > startDate.getTime()
         );
       } else {
-        conflictingAppointment = existingAppointments.find(apt => 
+        conflictingAppointment = relevantAppointments.find(apt => 
           new Date(apt.scheduled_date!) < endDate &&
           new Date(apt.scheduled_date!).getTime() + ((apt.duration_minutes || 60) * 60000) > startDate.getTime()
         );
@@ -1730,8 +1738,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for conflicts with Google Calendar events
       try {
-        // Get all active calendar integrations
-        const integrations = await storage.getAllCalendarIntegrations();
+        // Get calendar integrations
+        let integrations = await storage.getAllCalendarIntegrations();
+        
+        // If professional is specified, filter integrations by professional's email
+        if (professionalName) {
+          // Get clinic users to find professional's email
+          const clinicUsers = await storage.getClinicUsers(1); // Assuming clinic_id = 1
+          const professional = clinicUsers.find(cu => cu.user.name === professionalName);
+          
+          if (professional && professional.user.email) {
+            integrations = integrations.filter(integration => 
+              integration.user_email === professional.user.email
+            );
+          } else {
+            // If professional not found or no email, no calendar conflicts for this professional
+            integrations = [];
+          }
+        }
         
         for (const integration of integrations) {
           if (!integration.sync_enabled || !integration.access_token) continue;

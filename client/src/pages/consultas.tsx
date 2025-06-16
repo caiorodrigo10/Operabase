@@ -783,7 +783,7 @@ export function Consultas() {
   };
 
   // Function to check availability when date/time changes
-  const checkAvailability = async (date: string, time: string, duration: string) => {
+  const checkAvailability = async (date: string, time: string, duration: string, professionalName?: string) => {
     if (!date || !time || !duration) {
       setAvailabilityConflict(null);
       return;
@@ -796,7 +796,8 @@ export function Consultas() {
     try {
       const result = await availabilityCheck.mutateAsync({
         startDateTime: startDateTime.toISOString(),
-        endDateTime: endDateTime.toISOString()
+        endDateTime: endDateTime.toISOString(),
+        professionalName: professionalName
       });
 
       if (result.conflict) {
