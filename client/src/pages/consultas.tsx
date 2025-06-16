@@ -1228,26 +1228,16 @@ export function Consultas() {
                 </div>
               )}
 
-              {/* Working Hours Warning */}
-              {workingHoursWarning && (
-                <div className={`p-3 rounded-lg border ${
-                  workingHoursWarning.hasWarning
-                    ? "bg-orange-50 border-orange-200 text-orange-800"
-                    : "bg-blue-50 border-blue-200 text-blue-800"
-                }`}>
+              {/* Working Hours Warning - Only show warnings, not confirmations */}
+              {workingHoursWarning && workingHoursWarning.hasWarning && (
+                <div className="p-3 rounded-lg border bg-orange-50 border-orange-200 text-orange-800">
                   <div className="flex items-center gap-2">
-                    {workingHoursWarning.hasWarning ? (
-                      <AlertTriangle className="h-4 w-4" />
-                    ) : (
-                      <Clock className="h-4 w-4" />
-                    )}
+                    <AlertTriangle className="h-4 w-4" />
                     <span className="text-sm font-medium">{workingHoursWarning.message}</span>
                   </div>
-                  {workingHoursWarning.hasWarning && (
-                    <div className="mt-2 text-xs text-orange-700">
-                      O agendamento ainda pode ser realizado, mas está fora do horário padrão da clínica.
-                    </div>
-                  )}
+                  <div className="mt-2 text-xs text-orange-700">
+                    O agendamento ainda pode ser realizado, mas está fora do horário padrão da clínica.
+                  </div>
                 </div>
               )}
 
