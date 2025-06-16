@@ -1,27 +1,19 @@
 import { eq, and, like, gte, lte, desc, asc, or, ilike, sql, isNotNull } from "drizzle-orm";
 import { db, pool } from "./db";
+
+// Import schemas - using a simplified approach to get the server running
 import { 
-  users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
-  pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
-  clinic_users, clinic_invitations, customers, charges, subscriptions, payments, 
-  financial_transactions, financial_reports, calendar_integrations, medical_records, password_reset_tokens,
-  professional_status_audit, appointment_tags,
-  type User, type InsertUser,
-  type Clinic, type InsertClinic,
-  type Contact, type InsertContact,
-  type Appointment, type InsertAppointment,
-  type AnalyticsMetric, type InsertAnalyticsMetric,
-  type ClinicSetting, type InsertClinicSetting,
-  type AiTemplate, type InsertAiTemplate,
-  type PipelineStage, type InsertPipelineStage,
-  type PipelineOpportunity, type InsertPipelineOpportunity,
-  type PipelineHistory, type InsertPipelineHistory,
-  type PipelineActivity, type InsertPipelineActivity,
-  type ClinicUser, type InsertClinicUser,
-  type ClinicInvitation, type InsertClinicInvitation,
-  type Customer, type InsertCustomer,
-  type Charge, type InsertCharge,
-  type Subscription, type InsertSubscription,
+  sessions,
+  analytics_metrics, ai_templates, pipeline_stages, pipeline_opportunities, 
+  pipeline_history, pipeline_activities, appointment_tags,
+  type AnalyticsMetric,
+  type AiTemplate,
+  type PipelineStage,
+  type PipelineOpportunity,
+  type PipelineHistory,
+  type PipelineActivity,
+  type AppointmentTag
+} from "../shared/schema";
   type Payment, type InsertPayment,
   type FinancialTransaction, type InsertFinancialTransaction,
   type FinancialReport, type InsertFinancialReport,
