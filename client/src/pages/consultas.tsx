@@ -1716,21 +1716,14 @@ export function Consultas() {
                         {calendarDays.slice(0, 7).map((day) => {
                           const allDayAppointments = getAppointmentsForDate(day);
                           
-                          // Get appointments that start in this hour slot OR span through this hour
+                          // Only show appointments that START in this hour (not continuations)
                           const slotAppointments = allDayAppointments.filter((apt: Appointment) => {
                             if (!apt.scheduled_date) return false;
                             const aptStart = new Date(apt.scheduled_date);
-                            const aptEnd = new Date(aptStart.getTime() + (getAppointmentDuration(apt) * 60000));
-                            const slotStart = new Date(day);
-                            slotStart.setHours(hour, 0, 0, 0);
-                            const slotEnd = new Date(day);
-                            slotEnd.setHours(hour + 1, 0, 0, 0);
-                            
-                            // Show appointment if it starts in this hour OR continues through this hour
                             const aptStartHour = aptStart.getHours();
-                            const overlapsThisHour = aptStart < slotEnd && aptEnd > slotStart;
                             
-                            return aptStartHour === hour || overlapsThisHour;
+                            // Only show appointments that actually start in this hour
+                            return aptStartHour === hour;
                           });
                           
                           return (
