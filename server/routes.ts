@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 // Storage will be imported dynamically to ensure initialization
 import { setupAuth, isAuthenticated, hasClinicAccess } from "./auth";
+import { createApiRouter } from "./api/v1";
 import { flexibleAuth, supabaseAuth } from "./supabase-auth";
 import { nanoid } from "nanoid";
 import { 
@@ -40,6 +41,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import storage dynamically to ensure initialization is complete
   const { getStorage } = await import('./storage');
   const storage = await getStorage();
+  
+  // 🎯 NOVA ESTRUTURA MODULAR (Feature Flag)
+  if (process.env.USE_MODULAR_ROUTES === 'true') {
+    console.log('🏗️ Using new modular route structure...');
+    const apiRouter = createApiRouter(storage);
+    app.use('/api', apiRouter);
+    
+    // Skip old monolithic routes when using modular structure
+    const httpServer = createServer(app);
+    return httpServer;
+  }
+  
+  console.log('📝 Using legacy monolithic route structure...');
   
   // ============ AUTHENTICATION ============
   
