@@ -869,6 +869,125 @@ export function Consultas() {
     return duration;
   };
 
+  // Collision detection and layout calculation for overlapping events
+  const checkEventsOverlap = (event1: Appointment, event2: Appointment): boolean => {
+    if (!event1.scheduled_date || !event2.scheduled_date) return false;
+    
+    const start1 = new Date(event1.scheduled_date).getTime();
+    const end1 = start1 + (getAppointmentDuration(event1) * 60 * 1000);
+    const start2 = new Date(event2.scheduled_date).getTime();
+    const end2 = start2 + (getAppointmentDuration(event2) * 60 * 1000);
+    
+    return start1 < end2 && start2 < end1;
+  };
+
+  const calculateEventLayout = (appointments: Appointment[], targetDate: Date) => {
+    const dayAppointments = appointments.filter(apt => {
+      if (!apt.scheduled_date) return false;
+      const aptDate = new Date(apt.scheduled_date);
+      return isSameDay(aptDate, targetDate);
+    });
+
+    // Debug logging for collision detection
+    if (dayAppointments.length > 1) {
+      console.log('🔍 Collision detection for date:', format(targetDate, 'yyyy-MM-dd'), {
+        totalEvents: dayAppointments.length,
+        events: dayAppointments.map(apt => ({
+          id: apt.id,
+          name: apt.doctor_name || 'Unknown',
+          start: apt.scheduled_date,
+          duration: getAppointmentDuration(apt)
+        }))
+      });
+    }
+
+    // Create collision groups - events that overlap with each other
+    const collisionGroups: Appointment[][] = [];
+    const processedEvents = new Set<string>();
+
+    dayAppointments.forEach(appointment => {
+      if (processedEvents.has(appointment.id.toString())) return;
+
+      const collisionGroup = [appointment];
+      processedEvents.add(appointment.id.toString());
+
+      // Find all events that overlap with this event
+      let foundNewOverlaps = true;
+      while (foundNewOverlaps) {
+        foundNewOverlaps = false;
+        
+        dayAppointments.forEach(otherAppointment => {
+          if (processedEvents.has(otherAppointment.id.toString())) return;
+          
+          // Check if this event overlaps with ANY event in the current group
+          const overlapsWithGroup = collisionGroup.some(groupEvent => 
+            checkEventsOverlap(groupEvent, otherAppointment)
+          );
+
+          if (overlapsWithGroup) {
+            collisionGroup.push(otherAppointment);
+            processedEvents.add(otherAppointment.id.toString());
+            foundNewOverlaps = true;
+          }
+        });
+      }
+
+      if (collisionGroup.length > 0) {
+        collisionGroups.push(collisionGroup);
+      }
+    });
+
+    // Calculate layout for each event based on collision groups
+    const layoutMap = new Map<string, { width: number; left: number; group: number }>();
+
+    collisionGroups.forEach((group, groupIndex) => {
+      const groupSize = group.length;
+      
+      if (groupSize === 1) {
+        // No collision, use full width
+        layoutMap.set(group[0].id.toString(), {
+          width: 100,
+          left: 0,
+          group: groupIndex
+        });
+      } else {
+        // Multiple events, distribute horizontally
+        const eventWidth = (100 / groupSize) - 0.5; // Small gap between events
+        
+        // Sort events by start time for consistent ordering
+        const sortedGroup = [...group].sort((a, b) => {
+          const timeA = new Date(a.scheduled_date!).getTime();
+          const timeB = new Date(b.scheduled_date!).getTime();
+          return timeA - timeB;
+        });
+        
+        // Debug collision groups
+        console.log('🔄 Collision group detected:', {
+          groupSize,
+          eventWidth: `${eventWidth}%`,
+          events: sortedGroup.map((apt, idx) => ({
+            id: apt.id,
+            name: apt.doctor_name || 'Unknown',
+            index: idx,
+            leftPosition: `${(idx * (100 / groupSize)) + 0.25}%`,
+            width: `${eventWidth}%`
+          }))
+        });
+        
+        sortedGroup.forEach((appointment, index) => {
+          const leftPosition = (index * (100 / groupSize)) + 0.25; // Small margin
+          layoutMap.set(appointment.id.toString(), {
+            width: eventWidth,
+            left: leftPosition,
+            group: groupIndex
+          });
+        });
+      }
+    });
+
+    return layoutMap;
+  };
+
   // Check if appointment spans multiple hours
   const getAppointmentEndHour = (appointment: Appointment): number => {
     if (!appointment.scheduled_date) return 0;
@@ -1772,6 +1891,7 @@ export function Consultas() {
                     <div className="absolute inset-0 pointer-events-none">
                       {calendarDays.slice(0, 7).map((day, dayIndex) => {
                         const dayAppointments = getAppointmentsForDate(day);
+                        const layoutMap = calculateEventLayout(appointments, day);
                         
                         return dayAppointments.map((appointment: Appointment) => {
                           if (!appointment.scheduled_date) return null;
@@ -1791,10 +1911,18 @@ export function Consultas() {
                           const topPosition = totalMinutesFromStart * PIXELS_PER_MINUTE;
                           const height = duration * PIXELS_PER_MINUTE;
                           
-                          // Calculate left position based on day column
+                          // Get collision layout information
+                          const layout = layoutMap.get(appointment.id.toString()) || { width: 100, left: 0, group: 0 };
+                          
+                          // Calculate left position based on day column and collision layout
                           const timeColumnWidth = 12.5; // 1/8 = 12.5% for time column
                           const dayColumnWidth = 12.5; // 1/8 = 12.5% for each day column
-                          const leftPosition = timeColumnWidth + (dayIndex * dayColumnWidth);
+                          const baseDayPosition = timeColumnWidth + (dayIndex * dayColumnWidth);
+                          
+                          // Apply collision layout within the day column
+                          const eventWidth = (dayColumnWidth * layout.width) / 100;
+                          const eventLeftOffset = (dayColumnWidth * layout.left) / 100;
+                          const finalLeftPosition = baseDayPosition + eventLeftOffset;
                           
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
@@ -1802,10 +1930,10 @@ export function Consultas() {
                                 className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto`}
                                 style={{ 
                                   top: `${topPosition}px`,
-                                  left: `calc(${leftPosition}% + 2px)`,
-                                  width: `calc(${dayColumnWidth}% - 4px)`,
+                                  left: `calc(${finalLeftPosition}% + 2px)`,
+                                  width: `calc(${eventWidth}% - 4px)`,
                                   height: `${height}px`,
-                                  zIndex: 10
+                                  zIndex: 10 + layout.group
                                 }}
                                 onClick={() => handleAppointmentClick(appointment)}
                               >
@@ -1915,52 +2043,68 @@ export function Consultas() {
                             </div>
                           ))}
                           
-                          {/* Appointments positioned absolutely */}
-                          {getAppointmentsForDate(currentDate).map((appointment: Appointment) => {
-                            if (!appointment.scheduled_date) return null;
+                          {/* Appointments positioned absolutely with collision detection */}
+                          {(() => {
+                            const dayAppointments = getAppointmentsForDate(currentDate);
+                            const layoutMap = calculateEventLayout(appointments, currentDate);
                             
-                            const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
-                            const patientName = getPatientName(appointment.contact_id, appointment);
-                            const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
-                            const duration = getAppointmentDuration(appointment);
-                            const height = getAppointmentHeight(duration);
-                            
-                            const startDate = new Date(appointment.scheduled_date);
-                            const startHour = startDate.getHours();
-                            const startMinutes = startDate.getMinutes();
-                            
-                            // Calculate position from 8 AM start
-                            const hourOffset = startHour - 8;
-                            const totalMinutesFromStart = (hourOffset * 60) + startMinutes;
-                            const topPosition = totalMinutesFromStart * PIXELS_PER_MINUTE;
+                            return dayAppointments.map((appointment: Appointment) => {
+                              if (!appointment.scheduled_date) return null;
+                              
+                              const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
+                              const patientName = getPatientName(appointment.contact_id, appointment);
+                              const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
+                              const duration = getAppointmentDuration(appointment);
+                              const height = getAppointmentHeight(duration);
+                              
+                              const startDate = new Date(appointment.scheduled_date);
+                              const startHour = startDate.getHours();
+                              const startMinutes = startDate.getMinutes();
+                              
+                              // Calculate position from 8 AM start
+                              const hourOffset = startHour - 8;
+                              const totalMinutesFromStart = (hourOffset * 60) + startMinutes;
+                              const topPosition = totalMinutesFromStart * PIXELS_PER_MINUTE;
 
-                            return (
-                              <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
-                                <div
-                                  className={`absolute left-2 right-2 text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm`}
-                                  style={{ 
-                                    top: `${topPosition}px`,
-                                    height: `${height}px`,
-                                    zIndex: 10
-                                  }}
-                                  onClick={() => handleAppointmentClick(appointment)}
-                                >
-                                  <div className="flex items-start gap-1.5 h-full">
-                                    <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
-                                    <div className="flex-1 overflow-hidden">
-                                      <div className="text-xs truncate">{patientName}</div>
-                                      {appointment.doctor_name && !appointment.google_calendar_event_id && (
-                                        <div className="text-xs mt-1 opacity-90">Dr. {appointment.doctor_name}</div>
-                                      )}
-                                      {appointment.appointment_type && (
-                                        <div className="text-xs mt-1 opacity-90 truncate">{appointment.appointment_type}</div>
-                                      )}
+                              // Get collision layout information
+                              const layout = layoutMap.get(appointment.id.toString()) || { width: 100, left: 0, group: 0 };
+                              
+                              // Calculate horizontal positioning based on collision detection
+                              const containerPadding = 8; // left-2 = 8px
+                              const availableWidth = `calc(100% - ${containerPadding * 2}px)`;
+                              const eventWidth = `calc(${availableWidth} * ${layout.width / 100})`;
+                              const leftOffset = `calc(${containerPadding}px + ${availableWidth} * ${layout.left / 100})`;
+
+                              return (
+                                <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
+                                  <div
+                                    className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm`}
+                                    style={{ 
+                                      top: `${topPosition}px`,
+                                      left: leftOffset,
+                                      width: eventWidth,
+                                      height: `${height}px`,
+                                      zIndex: 10 + layout.group
+                                    }}
+                                    onClick={() => handleAppointmentClick(appointment)}
+                                  >
+                                    <div className="flex items-start gap-1.5 h-full">
+                                      <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
+                                      <div className="flex-1 overflow-hidden">
+                                        <div className="text-xs truncate">{patientName}</div>
+                                        {appointment.doctor_name && !appointment.google_calendar_event_id && (
+                                          <div className="text-xs mt-1 opacity-90">Dr. {appointment.doctor_name}</div>
+                                        )}
+                                        {appointment.appointment_type && (
+                                          <div className="text-xs mt-1 opacity-90 truncate">{appointment.appointment_type}</div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </EventTooltip>
-                            );
-                          })}
+                                </EventTooltip>
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
                     </div>
