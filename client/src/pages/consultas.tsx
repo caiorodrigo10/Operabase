@@ -482,7 +482,7 @@ export function Consultas() {
     },
   });
 
-  // Fetch appointments
+  // Fetch appointments with optimized caching
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
     queryKey: ['/api/appointments', { clinic_id: 1 }],
     queryFn: async () => {
@@ -490,9 +490,12 @@ export function Consultas() {
       if (!response.ok) throw new Error('Failed to fetch appointments');
       return response.json();
     },
+    staleTime: 30 * 1000, // 30 seconds
+    cacheTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch contacts for patient names
+  // Fetch contacts with optimized caching
   const { data: contacts = [] } = useQuery({
     queryKey: ['/api/contacts', { clinic_id: 1 }],
     queryFn: async () => {
@@ -500,9 +503,12 @@ export function Consultas() {
       if (!response.ok) throw new Error('Failed to fetch contacts');
       return response.json();
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch users for doctor names
+  // Fetch users with optimized caching
   const { data: clinicUsers = [] } = useQuery({
     queryKey: ['/api/clinic/1/users/management'],
     queryFn: async () => {
@@ -510,26 +516,58 @@ export function Consultas() {
       if (!response.ok) throw new Error('Failed to fetch clinic users');
       return response.json();
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 15 * 60 * 1000, // 15 minutes
+    refetchOnWindowFocus: false,
   });
 
-  // Pre-select current user when clinicUsers data loads
+  // Pre-select current user when clinicUsers data loads - optimized version
   React.useEffect(() => {
-    if (clinicUsers.length > 0 && selectedProfessionals.length === 0) {
-      try {
-        const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
-        const currentUserEmail = authData?.user?.email;
-        
-        if (currentUserEmail) {
-          const currentClinicUser = clinicUsers.find((user: any) => user.email === currentUserEmail);
-          if (currentClinicUser && currentClinicUser.is_professional) {
-            setSelectedProfessionals([currentClinicUser.id]);
-          }
-        }
-      } catch (error) {
-        console.error('Error auto-selecting current user:', error);
+    if (clinicUsers.length > 0 && selectedProfessionals.length === 0 && currentUserEmail) {
+      const currentClinicUser = clinicUserByEmail.get(currentUserEmail);
+      if (currentClinicUser && currentClinicUser.is_professional) {
+        setSelectedProfessionals([currentClinicUser.id]);
       }
     }
-  }, [clinicUsers, selectedProfessionals.length]);
+  }, [clinicUsers.length, selectedProfessionals.length, currentUserEmail, clinicUserByEmail]);
+
+  // Memoized current user email for performance
+  const currentUserEmail = useMemo(() => {
+    try {
+      const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
+      return authData?.user?.email || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Memoized clinic user lookup by email
+  const clinicUserByEmail = useMemo(() => {
+    const map = new Map<string, any>();
+    clinicUsers.forEach((user: any) => {
+      if (user.email) {
+        map.set(user.email, user);
+      }
+    });
+    return map;
+  }, [clinicUsers]);
+
+  // Memoized professional ID lookup for performance
+  const professionalNameToIdMap = useMemo(() => {
+    const map = new Map<string, number>();
+    clinicUsers.forEach((user: any) => {
+      if (user.name) {
+        map.set(user.name, user.id);
+      }
+    });
+    return map;
+  }, [clinicUsers]);
+
+  // Optimized helper function to get professional ID by name
+  const getProfessionalIdByName = React.useCallback((doctorName: string | null | undefined) => {
+    if (!doctorName) return null;
+    return professionalNameToIdMap.get(doctorName) || null;
+  }, [professionalNameToIdMap]);
 
   // Fetch clinic configuration for working hours validation
   const { data: clinicConfig } = useQuery({
@@ -539,6 +577,9 @@ export function Consultas() {
       if (!response.ok) throw new Error('Failed to fetch clinic config');
       return response.json();
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    cacheTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
     select: (data: any) => ({
       working_days: data.working_days || ['monday','tuesday','wednesday','thursday','friday'],
       work_start: data.work_start || "08:00",
@@ -1132,26 +1173,43 @@ export function Consultas() {
     });
   };
 
-  // Helper function to get professional ID by name
-  const getProfessionalIdByName = (doctorName: string | null | undefined) => {
-    if (!doctorName) return null;
-    const professional = clinicUsers.find((user: any) => user.name === doctorName);
-    return professional?.id || null;
-  };
+  // Memoized current user email for performance
+  const currentUserEmail = useMemo(() => {
+    try {
+      const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
+      return authData?.user?.email || null;
+    } catch {
+      return null;
+    }
+  }, []);
 
-  // Debug function to log appointment filtering
-  const debugAppointmentFilter = (appointment: any) => {
-    console.log('🔍 Debug appointment:', {
-      id: appointment.id,
-      doctor_name: appointment.doctor_name,
-      user_id: appointment.user_id,
-      created_by: appointment.created_by,
-      google_calendar_event_id: appointment.google_calendar_event_id,
-      professionalId: getProfessionalIdByName(appointment.doctor_name),
-      selectedProfessionals,
-      clinicUsers: clinicUsers.map(u => ({ id: u.id, name: u.name }))
+  // Memoized clinic user lookup by email
+  const clinicUserByEmail = useMemo(() => {
+    const map = new Map<string, any>();
+    clinicUsers.forEach((user: any) => {
+      if (user.email) {
+        map.set(user.email, user);
+      }
     });
-  };
+    return map;
+  }, [clinicUsers]);
+
+  // Memoized professional ID lookup for performance
+  const professionalNameToIdMap = useMemo(() => {
+    const map = new Map<string, number>();
+    clinicUsers.forEach((user: any) => {
+      if (user.name) {
+        map.set(user.name, user.id);
+      }
+    });
+    return map;
+  }, [clinicUsers]);
+
+  // Optimized helper function to get professional ID by name
+  const getProfessionalIdByName = React.useCallback((doctorName: string | null | undefined) => {
+    if (!doctorName) return null;
+    return professionalNameToIdMap.get(doctorName) || null;
+  }, [professionalNameToIdMap]);
 
   // Function to toggle professional selection
   const toggleProfessional = (professionalId: number) => {
