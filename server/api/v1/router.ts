@@ -4,6 +4,9 @@ import { createAppointmentsRoutes } from '../../domains/appointments/appointment
 import { createContactsRoutes } from '../../domains/contacts/contacts.routes';
 import { createClinicsRoutes } from '../../domains/clinics/clinics.routes';
 import { createCalendarRoutes } from '../../domains/calendar/calendar.routes';
+import { createMedicalRecordsRoutes } from '../../domains/medical-records/medical-records.routes';
+import { createPipelineRoutes } from '../../domains/pipeline/pipeline.routes';
+import { createAnalyticsRoutes } from '../../domains/analytics/analytics.routes';
 
 export function createApiRouter(storage: any): Router {
   const apiRouter = Router();
@@ -37,10 +40,19 @@ export function createApiRouter(storage: any): Router {
   const calendarRoutes = createCalendarRoutes(storage);
   apiRouter.use('/', calendarRoutes);
 
+  // Medical Records domain routes
+  const medicalRecordsRoutes = createMedicalRecordsRoutes(storage);
+  apiRouter.use('/', medicalRecordsRoutes);
+
+  // Pipeline domain routes
+  const pipelineRoutes = createPipelineRoutes(storage);
+  apiRouter.use('/', pipelineRoutes);
+
+  // Analytics domain routes
+  const analyticsRoutes = createAnalyticsRoutes(storage);
+  apiRouter.use('/', analyticsRoutes);
+
   // TODO: Add other domain routes as they are migrated
-  // apiRouter.use('/', createMedicalRecordsRoutes(storage));
-  // apiRouter.use('/', createPipelineRoutes(storage));
-  // apiRouter.use('/', createAnalyticsRoutes(storage));
 
   return apiRouter;
 }
