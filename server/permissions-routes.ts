@@ -23,8 +23,10 @@ const updateProfessionalStatusSchema = z.object({
 export async function getClinicUsersForManagement(req: PermissionRequest, res: Response) {
   try {
     const clinicId = parseInt(req.params.clinicId);
+    console.log(`🔍 Getting users for clinic ${clinicId}`);
     
     const clinicUsers = await storage.getClinicUsers(clinicId);
+    console.log(`📊 Found ${clinicUsers.length} users in clinic ${clinicId}`);
     
     // Format response with necessary info for management
     const usersData = clinicUsers.map(cu => ({
@@ -38,6 +40,7 @@ export async function getClinicUsersForManagement(req: PermissionRequest, res: R
       last_login: cu.user.last_login
     }));
 
+    console.log(`📋 Formatted user data:`, usersData);
     res.json(usersData);
   } catch (error) {
     console.error('Error getting clinic users for management:', error);
