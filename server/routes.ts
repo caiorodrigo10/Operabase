@@ -22,6 +22,18 @@ import {
   updateLinkedCalendarSettings
 } from "./calendar-routes";
 import { googleCalendarService } from "./google-calendar-service";
+import {
+  requireClinicAdmin,
+  requireProfessionalStatus,
+  requireClinicAccess
+} from "./permissions-middleware";
+import {
+  getClinicUsersForManagement,
+  updateUserProfessionalStatus,
+  getProfessionalStatusAudit,
+  getUserProfessionalStatusAudit,
+  getCurrentUserPermissions
+} from "./permissions-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Import storage dynamically to ensure initialization is complete
@@ -1494,26 +1506,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
   
-  // Initialize Google Calendar OAuth
-  app.get('/api/calendar/auth/google', calendarAuth, initGoogleCalendarAuth);
+  // Initialize Google Calendar OAuth - REQUIRES PROFESSIONAL STATUS
+  app.get('/api/calendar/auth/google', calendarAuth, requireProfessionalStatus('clinic_id'), initGoogleCalendarAuth);
   
   // Google Calendar OAuth callback
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
   
-  // Get user's calendar integrations
-  app.get('/api/calendar/integrations', calendarAuth, getUserCalendarIntegrations);
+  // Get user's calendar integrations - REQUIRES PROFESSIONAL STATUS
+  app.get('/api/calendar/integrations', calendarAuth, requireProfessionalStatus('clinic_id'), getUserCalendarIntegrations);
   
-  // Update calendar sync preferences
-  app.put('/api/calendar/integrations/:integrationId/sync', calendarAuth, updateCalendarSyncPreferences);
+  // Update calendar sync preferences - REQUIRES PROFESSIONAL STATUS
+  app.put('/api/calendar/integrations/:integrationId/sync', calendarAuth, requireProfessionalStatus('clinic_id'), updateCalendarSyncPreferences);
   
-  // Delete calendar integration
-  app.delete('/api/calendar/integrations/:integrationId', calendarAuth, deleteCalendarIntegration);
+  // Delete calendar integration - REQUIRES PROFESSIONAL STATUS
+  app.delete('/api/calendar/integrations/:integrationId', calendarAuth, requireProfessionalStatus('clinic_id'), deleteCalendarIntegration);
   
-  // Get user calendars from Google Calendar
-  app.get('/api/calendar/integrations/:integrationId/calendars', calendarAuth, getUserCalendars);
+  // Get user calendars from Google Calendar - REQUIRES PROFESSIONAL STATUS
+  app.get('/api/calendar/integrations/:integrationId/calendars', calendarAuth, requireProfessionalStatus('clinic_id'), getUserCalendars);
   
-  // Update linked calendar settings
-  app.put('/api/calendar/integrations/:integrationId/linked-calendar', calendarAuth, updateLinkedCalendarSettings);
+  // Update linked calendar settings - REQUIRES PROFESSIONAL STATUS
+  app.put('/api/calendar/integrations/:integrationId/linked-calendar', calendarAuth, requireProfessionalStatus('clinic_id'), updateLinkedCalendarSettings);
 
   // Check availability for appointment scheduling
   app.post('/api/availability/check', async (req, res) => {
@@ -2116,6 +2128,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  // ============ PROFESSIONAL STATUS MANAGEMENT ============
+  
+  // Get users for management (admin only)
+  app.get('/api/clinic/:clinicId/users/management', isAuthenticated, requireClinicAdmin(), getClinicUsersForManagement);
+  
+  // Update professional status (admin only)
+  app.put('/api/clinic/:clinicId/users/:userId/professional-status', isAuthenticated, requireClinicAdmin(), updateUserProfessionalStatus);
+  
+  // Get professional status audit log (admin only)
+  app.get('/api/clinic/:clinicId/audit/professional-status', isAuthenticated, requireClinicAdmin(), getProfessionalStatusAudit);
+  
+  // Get user-specific professional status audit (admin only)
+  app.get('/api/clinic/:clinicId/users/:userId/professional-status-audit', isAuthenticated, requireClinicAdmin(), getUserProfessionalStatusAudit);
+  
+  // Get current user's permissions
+  app.get('/api/user/permissions', isAuthenticated, getCurrentUserPermissions);
 
   const httpServer = createServer(app);
   return httpServer;
