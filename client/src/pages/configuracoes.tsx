@@ -323,6 +323,27 @@ export function Configuracoes() {
     },
   });
 
+  const forceRefreshMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/calendar/force-refresh");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Cache atualizado",
+        description: "Próxima consulta buscará dados atualizados do Google Calendar",
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar cache",
+        description: "Não foi possível limpar o cache do calendário",
+        variant: "destructive",
+      });
+    },
+  });
+
   const saveLinkedCalendarMutation = useMutation({
     mutationFn: async ({ 
       integrationId, 
@@ -1039,6 +1060,43 @@ export function Configuracoes() {
                                       <Settings className="w-4 h-4 mr-2" />
                                       Configurar
                                     </Button>
+                                  </div>
+
+                                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                    <div className="flex items-center space-x-3">
+                                      <RefreshCw className="w-5 h-5 text-green-600" />
+                                      <div>
+                                        <p className="font-medium text-sm">Atualizar Eventos</p>
+                                        <p className="text-xs text-slate-600">Forçar sincronização imediata com Google Calendar</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => syncFromGoogleMutation.mutate()}
+                                        disabled={syncFromGoogleMutation.isPending}
+                                      >
+                                        {syncFromGoogleMutation.isPending ? (
+                                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                          <RefreshCw className="w-4 h-4 mr-2" />
+                                        )}
+                                        Sincronizar
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => forceRefreshMutation.mutate()}
+                                        disabled={forceRefreshMutation.isPending}
+                                      >
+                                        {forceRefreshMutation.isPending ? (
+                                          <RefreshCw className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                          <RefreshCw className="w-4 h-4" />
+                                        )}
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
