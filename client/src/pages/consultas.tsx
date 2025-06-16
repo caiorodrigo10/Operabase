@@ -185,6 +185,7 @@ export function Consultas() {
     hasWarning: boolean;
     message: string;
     type: 'non_working_day' | 'outside_hours' | 'lunch_time' | null;
+    details?: string;
   } | null>(null);
   const [suggestedSlots, setSuggestedSlots] = useState<Array<{
     date: string;
@@ -554,12 +555,25 @@ export function Consultas() {
     }
 
     const selectedDate = new Date(date);
+    const selectedDateTime = new Date(`${date}T${time}`);
+    
+    // Use enhanced analysis to get detailed warning information
+    const dayOfWeek = format(selectedDate, 'EEEE', { locale: ptBR });
     
     if (!isWorkingDay(selectedDate, clinicConfig)) {
+      const workingDaysNames = clinicConfig.working_days?.map((day: string) => {
+        const dayNames: { [key: string]: string } = {
+          'monday': 'Segunda', 'tuesday': 'Terça', 'wednesday': 'Quarta',
+          'thursday': 'Quinta', 'friday': 'Sexta', 'saturday': 'Sábado', 'sunday': 'Domingo'
+        };
+        return dayNames[day];
+      }).join(', ') || 'Dias úteis não configurados';
+
       setWorkingHoursWarning({
         hasWarning: true,
-        message: "Este dia não está configurado como dia útil da clínica",
-        type: 'non_working_day'
+        message: `Agendamento para ${dayOfWeek} (dia não útil)`,
+        type: 'non_working_day',
+        details: `Este não é um dia de funcionamento normal. Dias de funcionamento: ${workingDaysNames}.`
       });
       return;
     }
@@ -567,8 +581,9 @@ export function Consultas() {
     if (!isWorkingHour(time, clinicConfig)) {
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `Horário fora do funcionamento da clínica (${clinicConfig.work_start} às ${clinicConfig.work_end})`,
-        type: 'outside_hours'
+        message: `Agendamento fora do horário comercial`,
+        type: 'outside_hours',
+        details: `Horário de funcionamento: ${clinicConfig.work_start} às ${clinicConfig.work_end}. Agendamento marcado para ${time}.`
       });
       return;
     }
@@ -576,17 +591,15 @@ export function Consultas() {
     if (isLunchTime(time, clinicConfig)) {
       setWorkingHoursWarning({
         hasWarning: true,
-        message: `Horário durante o almoço da clínica (${clinicConfig.lunch_start} às ${clinicConfig.lunch_end})`,
-        type: 'lunch_time'
+        message: `Agendamento no horário de almoço`,
+        type: 'lunch_time',
+        details: `Horário de almoço: ${clinicConfig.lunch_start} às ${clinicConfig.lunch_end}. Agendamento marcado para ${time}.`
       });
       return;
     }
 
-    setWorkingHoursWarning({
-      hasWarning: false,
-      message: "Horário dentro do funcionamento da clínica",
-      type: null
-    });
+    // Clear warnings for normal working hours
+    setWorkingHoursWarning(null);
   };
 
   // Helper functions for calendar background colors
@@ -601,32 +614,72 @@ export function Consultas() {
     return !isWorkingHour(timeString, clinicConfig) || isLunchTime(timeString, clinicConfig);
   };
 
-  // Check if a time slot is available for quick create (15-minute slots)
-  const isTimeSlotAvailable = (date: Date, hour: number, minute: number = 0): boolean => {
-    if (!clinicConfig) return false;
+  // Enhanced function: Allow booking in any slot, but analyze availability status
+  const analyzeTimeSlot = (date: Date, hour: number, minute: number = 0) => {
+    if (!clinicConfig) return {
+      isClickable: true,
+      hasWarning: false,
+      warningType: null,
+      isOptimal: true
+    };
     
-    // Check if day is working day
-    if (isUnavailableDay(date)) return false;
-    
-    // Check if hour is working hour
-    if (isUnavailableHour(hour)) return false;
-    
-    // Check if there are existing appointments at this time
-    const dayAppointments = getAppointmentsForDate(date);
     const slotDateTime = new Date(date);
     slotDateTime.setHours(hour, minute, 0, 0);
     
+    // Check for appointment conflicts first
+    const dayAppointments = getAppointmentsForDate(date);
     const hasConflict = dayAppointments.some((apt: Appointment) => {
       if (!apt.scheduled_date) return false;
       const aptDate = new Date(apt.scheduled_date);
       const aptEndDate = new Date(aptDate.getTime() + (getAppointmentDuration(apt) * 60000));
       
-      // Check if slot overlaps with existing appointment
-      const slotEnd = new Date(slotDateTime.getTime() + (15 * 60000)); // 15 minutes
+      const slotEnd = new Date(slotDateTime.getTime() + (15 * 60000));
       return (slotDateTime < aptEndDate && slotEnd > aptDate);
     });
     
-    return !hasConflict;
+    // If there's a conflict, slot is not clickable
+    if (hasConflict) {
+      return {
+        isClickable: false,
+        hasWarning: false,
+        warningType: null,
+        isOptimal: false
+      };
+    }
+    
+    // All slots are clickable, but check for warnings
+    const isWorkingDay = !isUnavailableDay(date);
+    const isWorkingHour = !isUnavailableHour(hour);
+    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    const isLunchHour = clinicConfig.has_lunch_break && isLunchTime(timeString, clinicConfig);
+    
+    // Determine warning type
+    let warningType = null;
+    let hasWarning = false;
+    
+    if (!isWorkingDay) {
+      warningType = 'non-working-day';
+      hasWarning = true;
+    } else if (!isWorkingHour && !isLunchHour) {
+      warningType = 'outside-hours';
+      hasWarning = true;
+    } else if (isLunchHour) {
+      warningType = 'lunch-time';
+      hasWarning = true;
+    }
+    
+    return {
+      isClickable: true, // Always allow clicking
+      hasWarning,
+      warningType,
+      isOptimal: !hasWarning // Optimal means no warnings
+    };
+  };
+
+  // Legacy function for backward compatibility - now allows all non-conflicting slots
+  const isTimeSlotAvailable = (date: Date, hour: number, minute: number = 0): boolean => {
+    const analysis = analyzeTimeSlot(date, hour, minute);
+    return analysis.isClickable;
   };
 
   // Handle quick create appointment
@@ -1228,15 +1281,24 @@ export function Consultas() {
                 </div>
               )}
 
-              {/* Working Hours Warning - Only show warnings, not confirmations */}
+              {/* Enhanced Working Hours Warning with detailed information */}
               {workingHoursWarning && workingHoursWarning.hasWarning && (
-                <div className="p-3 rounded-lg border bg-orange-50 border-orange-200 text-orange-800">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="text-sm font-medium">{workingHoursWarning.message}</span>
-                  </div>
-                  <div className="mt-2 text-xs text-orange-700">
-                    O agendamento ainda pode ser realizado, mas está fora do horário padrão da clínica.
+                <div className="p-4 rounded-lg border bg-orange-50 border-orange-200 text-orange-800">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm mb-1">
+                        {workingHoursWarning.message}
+                      </div>
+                      {workingHoursWarning.details && (
+                        <div className="text-xs text-orange-700 mb-2">
+                          {workingHoursWarning.details}
+                        </div>
+                      )}
+                      <div className="text-xs text-orange-700 font-medium">
+                        ✓ O agendamento ainda pode ser realizado, mas requer atenção especial.
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
