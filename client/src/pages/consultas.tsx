@@ -1071,7 +1071,42 @@ export function Consultas() {
       // If no professionals are selected, show all appointments
       if (selectedProfessionals.length === 0) return isSameDate;
       
-      // If professionals are selected, only show appointments for selected professionals
+      // For Google Calendar events, all belong to current user
+      // We need to check if current user's integer ID is in selectedProfessionals
+      if (appointment.google_calendar_event_id) {
+        // Get current user's email from localStorage
+        try {
+          const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
+          const currentUserEmail = authData?.user?.email;
+          
+          console.log('🔍 Google Calendar filtering debug:', {
+            currentUserEmail,
+            selectedProfessionals,
+            clinicUsers: clinicUsers.map((u: any) => ({ id: u.id, email: u.email, is_professional: u.is_professional }))
+          });
+          
+          if (currentUserEmail) {
+            // Find the clinic user that matches this email
+            const clinicUser = clinicUsers.find((user: any) => user.email === currentUserEmail);
+            
+            console.log('🔍 Found clinic user:', clinicUser);
+            
+            if (clinicUser && clinicUser.is_professional) {
+              // Check if this professional is selected
+              const shouldShow = isSameDate && selectedProfessionals.includes(clinicUser.id);
+              console.log('🔍 Should show appointment:', shouldShow, { clinicUserId: clinicUser.id, selectedProfessionals });
+              return shouldShow;
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing auth data:', error);
+        }
+        
+        // If we can't determine the user, don't show Google Calendar events when filtering
+        return false;
+      }
+      
+      // For regular appointments, use doctor_name matching
       const professionalId = getProfessionalIdByName(appointment.doctor_name);
       return isSameDate && (professionalId ? selectedProfessionals.includes(professionalId) : false);
     });
@@ -1082,6 +1117,20 @@ export function Consultas() {
     if (!doctorName) return null;
     const professional = clinicUsers.find((user: any) => user.name === doctorName);
     return professional?.id || null;
+  };
+
+  // Debug function to log appointment filtering
+  const debugAppointmentFilter = (appointment: any) => {
+    console.log('🔍 Debug appointment:', {
+      id: appointment.id,
+      doctor_name: appointment.doctor_name,
+      user_id: appointment.user_id,
+      created_by: appointment.created_by,
+      google_calendar_event_id: appointment.google_calendar_event_id,
+      professionalId: getProfessionalIdByName(appointment.doctor_name),
+      selectedProfessionals,
+      clinicUsers: clinicUsers.map(u => ({ id: u.id, name: u.name }))
+    });
   };
 
   // Function to toggle professional selection
