@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Pencil, Plus, User, Users, UserPlus } from 'lucide-react';
+import { Pencil, Plus, User, Users, UserPlus, Trash2, UserX, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -33,6 +34,8 @@ export function UserManagement({ clinicId }: UserManagementProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({
     name: '',
     email: '',
@@ -120,9 +123,95 @@ export function UserManagement({ clinicId }: UserManagementProps) {
     }
   });
 
+  // Deactivate user mutation
+  const deactivateUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/clinic/${clinicId}/users/${userId}/professional-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') ? JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}').access_token : ''}`
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          is_active: false,
+          notes: 'Usuário inativado pelo administrador'
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to deactivate user');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/clinic/${clinicId}/users/management`] });
+      toast({
+        title: "Usuário inativado",
+        description: "O usuário foi inativado com sucesso",
+      });
+      setDeactivateDialogOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao inativar usuário",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/clinic/${clinicId}/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') ? JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}').access_token : ''}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete user');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/clinic/${clinicId}/users/management`] });
+      toast({
+        title: "Usuário removido",
+        description: "O usuário foi removido permanentemente",
+      });
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao remover usuário",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setEditDialogOpen(true);
+  };
+
+  const handleDeactivateUser = (user: User) => {
+    setSelectedUser(user);
+    setDeactivateDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
   };
 
   const handleUpdateUser = () => {
@@ -287,16 +376,37 @@ export function UserManagement({ clinicId }: UserManagementProps) {
                   </div>
                 </div>
 
-                {/* Edit Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditUser(user)}
-                  className="flex items-center gap-2"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Editar
-                </Button>
+                {/* Actions Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <MoreVertical className="h-4 w-4" />
+                      Ações
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => handleDeactivateUser(user)}
+                      disabled={!user.is_active}
+                      className="text-orange-600"
+                    >
+                      <UserX className="mr-2 h-4 w-4" />
+                      {user.is_active ? 'Inativar' : 'Já inativo'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDeleteUser(user)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </Card>
           ))
@@ -372,6 +482,95 @@ export function UserManagement({ clinicId }: UserManagementProps) {
               className="bg-blue-600 hover:bg-blue-700"
             >
               {updateUserMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate User Dialog */}
+      <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Inativar Usuário</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja inativar este usuário? Ele ficará oculto mas poderá ser reativado posteriormente.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUser && (
+            <div className="py-4">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={selectedUser.avatar_url} alt={selectedUser.name} />
+                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                    {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{selectedUser.name}</p>
+                  <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeactivateDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => selectedUser && deactivateUserMutation.mutate(selectedUser.id)}
+              disabled={deactivateUserMutation.isPending}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {deactivateUserMutation.isPending ? 'Inativando...' : 'Inativar Usuário'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir Usuário</DialogTitle>
+            <DialogDescription>
+              Esta ação é permanente e não pode ser desfeita. Todos os dados do usuário serão removidos.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUser && (
+            <div className="py-4">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={selectedUser.avatar_url} alt={selectedUser.name} />
+                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                    {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{selectedUser.name}</p>
+                  <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800">
+                  ⚠️ Esta ação é irreversível. O usuário será permanentemente removido do sistema.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => selectedUser && deleteUserMutation.mutate(selectedUser.id)}
+              disabled={deleteUserMutation.isPending}
+              variant="destructive"
+            >
+              {deleteUserMutation.isPending ? 'Excluindo...' : 'Excluir Permanentemente'}
             </Button>
           </DialogFooter>
         </DialogContent>
