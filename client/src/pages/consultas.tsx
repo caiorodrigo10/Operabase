@@ -39,7 +39,6 @@ const appointmentSchema = z.object({
   duration: z.string().min(1, "Duração é obrigatória"),
   type: z.string().min(1, "Tipo é obrigatório"),
   notes: z.string().optional(),
-  tag_id: z.number().optional(),
 });
 
 type AppointmentForm = z.infer<typeof appointmentSchema>;
@@ -236,7 +235,6 @@ export function Consultas() {
       duration: "30",
       type: "consulta",
       notes: "",
-      tag_id: undefined,
     },
   });
 
@@ -448,7 +446,6 @@ export function Consultas() {
         payment_status: "pendente",
         payment_amount: 0,
         session_notes: data.notes || null,
-        tag_id: selectedTagId || data.tag_id || null,
         receive_reminders: true
       };
       const res = await apiRequest("POST", "/api/appointments", appointmentData);
@@ -462,7 +459,6 @@ export function Consultas() {
       });
       setIsCreateDialogOpen(false);
       form.reset();
-      setSelectedTagId(null);
       setAvailabilityConflict(null);
       setSuggestedSlots([]);
     },
