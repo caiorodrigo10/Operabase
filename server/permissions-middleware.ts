@@ -3,7 +3,7 @@ import { storage } from './storage-factory';
 
 interface AuthenticatedRequest extends Request {
   user?: {
-    id: number;
+    id: string | number;
     email: string;
     name: string;
     role: string;
@@ -46,7 +46,7 @@ export const requireClinicAdmin = (clinicIdParam: string = 'clinicId') => {
 
       // Get user's role in this clinic
       const clinicUsers = await storage.getClinicUsers(clinicId);
-      const userInClinic = clinicUsers.find(cu => cu.user.id === user.id);
+      const userInClinic = clinicUsers.find(cu => cu.user.id.toString() === user.id.toString());
 
       if (!userInClinic) {
         return res.status(403).json({ 

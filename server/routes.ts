@@ -2184,7 +2184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ PROFESSIONAL STATUS MANAGEMENT ============
   
   // Get users for management (admin only)
-  app.get('/api/clinic/:clinicId/users/management', isAuthenticated, requireClinicAdmin(), getClinicUsersForManagement);
+  app.get('/api/clinic/:clinicId/users/management', supabaseAuth, getClinicUsersForManagement);
   
   // Update professional status (admin only)
   app.put('/api/clinic/:clinicId/users/:userId/professional-status', isAuthenticated, requireClinicAdmin(), updateUserProfessionalStatus);
