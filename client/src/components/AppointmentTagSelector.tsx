@@ -110,8 +110,8 @@ export function AppointmentTagSelector({ clinicId, selectedTagId, onTagSelect }:
       <Label className="text-sm font-medium text-gray-700">Etiqueta</Label>
       <div className="flex gap-2">
         <Select 
-          value={selectedTagId?.toString() || ''} 
-          onValueChange={(value) => onTagSelect(value ? parseInt(value) : null)}
+          value={selectedTagId?.toString() || 'no-tag'} 
+          onValueChange={(value) => onTagSelect(value === 'no-tag' ? null : parseInt(value))}
         >
           <SelectTrigger className="flex-1 h-11">
             <SelectValue placeholder="Selecione uma etiqueta">
@@ -127,7 +127,7 @@ export function AppointmentTagSelector({ clinicId, selectedTagId, onTagSelect }:
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">
+            <SelectItem value="no-tag">
               <div className="flex items-center gap-2">
                 <X className="w-3 h-3 text-gray-400" />
                 <span>Sem etiqueta</span>

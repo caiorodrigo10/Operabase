@@ -777,7 +777,7 @@ export function Consultas() {
   };
 
   // Function to check availability when date/time changes
-  const checkAvailability = async (date: string, time: string, duration: string, professionalName?: string) => {
+  const checkAvailability = React.useCallback(async (date: string, time: string, duration: string, professionalName?: string) => {
     if (!date || !time || !duration) {
       setAvailabilityConflict(null);
       setIsCheckingAvailability(false);
@@ -815,10 +815,10 @@ export function Consultas() {
     } finally {
       setIsCheckingAvailability(false);
     }
-  };
+  }, [availabilityCheck]);
 
   // Find available time slots
-  const findAvailableSlots = async (date: string, duration: string, professionalName?: string) => {
+  const findAvailableSlots = React.useCallback(async (date: string, duration: string, professionalName?: string) => {
     if (!date || !duration) return;
 
     const selectedDate = new Date(date);
@@ -852,7 +852,7 @@ export function Consultas() {
     }
 
     setSuggestedSlots(availableSlots);
-  };
+  }, [availabilityCheck]);
 
   // Watch form fields for availability checking
   const watchedDate = form.watch("scheduled_date");
@@ -914,7 +914,7 @@ export function Consultas() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId]);
+  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId, checkAvailability, checkWorkingHours, findAvailableSlots]);
 
   useEffect(() => {
     if (!appointmentsLoading) {
