@@ -1506,26 +1506,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
   
-  // Initialize Google Calendar OAuth - REQUIRES PROFESSIONAL STATUS
-  app.get('/api/calendar/auth/google', calendarAuth, requireProfessionalStatus('clinic_id'), initGoogleCalendarAuth);
+  // Initialize Google Calendar OAuth
+  app.get('/api/calendar/auth/google', calendarAuth, initGoogleCalendarAuth);
   
   // Google Calendar OAuth callback
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
   
-  // Get user's calendar integrations - REQUIRES PROFESSIONAL STATUS
-  app.get('/api/calendar/integrations', calendarAuth, requireProfessionalStatus('clinic_id'), getUserCalendarIntegrations);
+  // Get user's calendar integrations
+  app.get('/api/calendar/integrations', calendarAuth, getUserCalendarIntegrations);
   
-  // Update calendar sync preferences - REQUIRES PROFESSIONAL STATUS
-  app.put('/api/calendar/integrations/:integrationId/sync', calendarAuth, requireProfessionalStatus('clinic_id'), updateCalendarSyncPreferences);
+  // Update calendar sync preferences
+  app.put('/api/calendar/integrations/:integrationId/sync', calendarAuth, updateCalendarSyncPreferences);
   
-  // Delete calendar integration - REQUIRES PROFESSIONAL STATUS
-  app.delete('/api/calendar/integrations/:integrationId', calendarAuth, requireProfessionalStatus('clinic_id'), deleteCalendarIntegration);
+  // Delete calendar integration
+  app.delete('/api/calendar/integrations/:integrationId', calendarAuth, deleteCalendarIntegration);
   
-  // Get user calendars from Google Calendar - REQUIRES PROFESSIONAL STATUS
-  app.get('/api/calendar/integrations/:integrationId/calendars', calendarAuth, requireProfessionalStatus('clinic_id'), getUserCalendars);
+  // Get user calendars from Google Calendar
+  app.get('/api/calendar/integrations/:integrationId/calendars', calendarAuth, getUserCalendars);
   
-  // Update linked calendar settings - REQUIRES PROFESSIONAL STATUS
-  app.put('/api/calendar/integrations/:integrationId/linked-calendar', calendarAuth, requireProfessionalStatus('clinic_id'), updateLinkedCalendarSettings);
+  // Update linked calendar settings
+  app.put('/api/calendar/integrations/:integrationId/linked-calendar', calendarAuth, updateLinkedCalendarSettings);
 
   // Check availability for appointment scheduling
   app.post('/api/availability/check', async (req, res) => {

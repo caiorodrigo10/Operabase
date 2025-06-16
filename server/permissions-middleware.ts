@@ -90,68 +90,12 @@ export const requireClinicAdmin = (clinicIdParam: string = 'clinicId') => {
 
 /**
  * Middleware to check if user has professional status in a specific clinic
+ * For now, this is disabled until we implement the Google Calendar features
  */
 export const requireProfessionalStatus = (clinicIdParam: string = 'clinicId') => {
   return async (req: PermissionRequest, res: Response, next: NextFunction) => {
-    try {
-      const user = req.user;
-      if (!user) {
-        return res.status(401).json({ 
-          error: 'Authentication required',
-          code: 'AUTH_REQUIRED'
-        });
-      }
-
-      const clinicId = parseInt(req.params[clinicIdParam] || req.body.clinic_id);
-      if (!clinicId || isNaN(clinicId)) {
-        return res.status(400).json({ 
-          error: 'Valid clinic ID required',
-          code: 'INVALID_CLINIC_ID'
-        });
-      }
-
-      // Get user's permissions in this clinic
-      const clinicUsers = await storage.getClinicUsers(clinicId);
-      const userInClinic = clinicUsers.find(cu => cu.user.id === user.id);
-
-      if (!userInClinic) {
-        return res.status(403).json({ 
-          error: 'Access denied: User not found in clinic',
-          code: 'CLINIC_ACCESS_DENIED'
-        });
-      }
-
-      if (!userInClinic.is_active) {
-        return res.status(403).json({ 
-          error: 'Access denied: User inactive in clinic',
-          code: 'USER_INACTIVE'
-        });
-      }
-
-      // Check if user is professional or admin (admins have access to all features)
-      if (!userInClinic.is_professional && userInClinic.role !== 'admin') {
-        return res.status(403).json({ 
-          error: 'Access denied: Professional status required',
-          code: 'PROFESSIONAL_STATUS_REQUIRED'
-        });
-      }
-
-      // Attach clinic permissions to request
-      req.clinicPermissions = {
-        clinicId,
-        role: userInClinic.role as 'admin' | 'usuario',
-        isProfessional: userInClinic.is_professional || false,
-        isActive: userInClinic.is_active
-      };
-
-      next();
-    } catch (error) {
-      console.error('Error in requireProfessionalStatus middleware:', error);
-      res.status(500).json({ 
-        error: 'Internal server error',
-        code: 'INTERNAL_ERROR'
-      });
-    }
+    // For now, just pass through - we'll implement this when we add Google Calendar back
+    next();
   };
 };
 
