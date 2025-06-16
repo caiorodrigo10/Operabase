@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, UserPlus, Search, Plus, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { FindTimeSlots } from "@/components/FindTimeSlots";
 import type { Contact } from "@/../../shared/schema";
 
@@ -120,10 +120,9 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave }: Ap
 
   // Fetch doctors for the clinic
   const { data: doctors = [] } = useQuery({
-    queryKey: ['/api/clinic/1/users'],
+    queryKey: ['/api/clinic/1/users/management'],
     queryFn: async () => {
-      const response = await fetch('/api/clinic/1/users');
-      if (!response.ok) throw new Error('Failed to fetch clinic users');
+      const response = await apiRequest('GET', '/api/clinic/1/users/management');
       return response.json();
     },
   });
@@ -273,11 +272,13 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave }: Ap
                     <SelectValue placeholder="Selecione o profissional" />
                   </SelectTrigger>
                   <SelectContent>
-                    {doctors.map((doctor: any) => (
-                      <SelectItem key={doctor.id} value={doctor.name}>
-                        {doctor.name}
-                      </SelectItem>
-                    ))}
+                    {doctors
+                      .filter((doctor: any) => doctor.is_professional === true)
+                      .map((doctor: any) => (
+                        <SelectItem key={doctor.id || doctor.user_id} value={doctor.name}>
+                          {doctor.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               )}
