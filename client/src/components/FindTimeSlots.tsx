@@ -33,8 +33,10 @@ interface ClinicConfig {
 
 export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }: FindTimeSlotsProps) {
   const [currentDate, setCurrentDate] = useState(() => {
-    if (selectedDate) {
-      return new Date(selectedDate);
+    if (selectedDate && selectedDate !== '') {
+      // Create date from string and ensure it's at local midnight to avoid timezone issues
+      const date = new Date(selectedDate + 'T00:00:00');
+      return date;
     }
     return new Date();
   });

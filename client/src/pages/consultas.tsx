@@ -1941,7 +1941,7 @@ export function Consultas() {
       <Dialog open={findTimeSlotsOpen} onOpenChange={setFindTimeSlotsOpen}>
         <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto z-[60]">
           <FindTimeSlots
-            selectedDate={watchedDate || format(new Date(), 'yyyy-MM-dd')}
+            selectedDate={watchedDate || ''}
             duration={parseInt(watchedDuration) || 30}
             onTimeSelect={(time, date) => {
               form.setValue("scheduled_time", time);
