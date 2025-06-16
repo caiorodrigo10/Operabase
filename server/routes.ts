@@ -818,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ APPOINTMENT TAGS ============
   
   // Get appointment tags for a clinic
-  app.get("/api/clinic/:clinicId/appointment-tags", supabaseAuth, requireClinicAccess(), async (req, res) => {
+  app.get("/api/clinic/:clinicId/appointment-tags", async (req, res) => {
     try {
       const clinicId = parseInt(req.params.clinicId);
       if (isNaN(clinicId)) {
@@ -834,7 +834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new appointment tag
-  app.post("/api/clinic/:clinicId/appointment-tags", supabaseAuth, requireClinicAccess(), async (req, res) => {
+  app.post("/api/clinic/:clinicId/appointment-tags", async (req, res) => {
     try {
       const clinicId = parseInt(req.params.clinicId);
       if (isNaN(clinicId)) {
