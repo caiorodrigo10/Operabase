@@ -525,6 +525,10 @@ export function Consultas() {
   };
 
   const isLunchTime = (time: string, config: any): boolean => {
+    // If lunch break is disabled, never block lunch time
+    if (!config?.has_lunch_break) {
+      return false;
+    }
     if (!config?.lunch_start || !config?.lunch_end) return false;
     return time >= config.lunch_start && time < config.lunch_end;
   };
