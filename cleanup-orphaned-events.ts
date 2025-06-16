@@ -9,8 +9,8 @@ async function cleanupOrphanedEvents() {
     const result = await db.execute(sql`
       DELETE FROM appointments 
       WHERE google_calendar_event_id IS NOT NULL
-      AND user_id NOT IN (
-        SELECT DISTINCT user_id 
+      AND user_id::text NOT IN (
+        SELECT DISTINCT user_id::text
         FROM calendar_integrations 
         WHERE is_active = true
       )
