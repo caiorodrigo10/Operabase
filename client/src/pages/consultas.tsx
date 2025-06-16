@@ -222,7 +222,7 @@ export function Consultas() {
       user_id: "",
       scheduled_date: "",
       scheduled_time: "",
-      duration: "60",
+      duration: "30",
       type: "consulta",
       notes: "",
       contact_whatsapp: "",
@@ -1771,21 +1771,46 @@ export function Consultas() {
                               className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
-                              {/* 15-minute grid lines for appointment column */}
-                              {[1, 2, 3].map((quarter) => (
-                                <div 
-                                  key={quarter}
-                                  className="absolute left-0 right-0 border-t border-slate-100"
-                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
-                                />
-                              ))}
+                              {/* 15-minute clickable slots */}
+                              {[0, 15, 30, 45].map((minute) => {
+                                const isSlotAvailable = isTimeSlotAvailable(currentDate, hour, minute);
+                                const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                                
+                                return (
+                                  <div
+                                    key={`${minute}`}
+                                    className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
+                                    style={{ 
+                                      top: `${(minute / 60) * PIXELS_PER_HOUR}px`, 
+                                      height: `${PIXELS_PER_QUARTER}px` 
+                                    }}
+                                    onClick={() => {
+                                      if (isSlotAvailable) {
+                                        handleQuickCreateAppointment(currentDate, hour, minute);
+                                      }
+                                    }}
+                                  >
+                                    {/* Quarter hour border */}
+                                    <div className="absolute top-0 left-0 right-0 border-t border-slate-100" />
+                                    
+                                    {/* Time indicator on hover */}
+                                    {isSlotAvailable && (
+                                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                        <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
+                                          {timeLabel}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                               
                               {/* Hour boundary line */}
                               <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200"></div>
                               
                               {/* Lunch time highlighting */}
                               {hour === 12 && (
-                                <div className="absolute inset-0 bg-slate-50 opacity-30" />
+                                <div className="absolute inset-0 bg-slate-50 opacity-30 pointer-events-none" />
                               )}
                             </div>
                           ))}
