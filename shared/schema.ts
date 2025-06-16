@@ -44,17 +44,40 @@ export const clinic_users = pgTable("clinic_users", {
   id: serial("id").primaryKey(),
   clinic_id: integer("clinic_id").notNull(),
   user_id: integer("user_id").notNull(),
-  role: varchar("role").notNull().default("user"), // admin, manager, user, readonly
+  role: varchar("role").notNull().default("usuario"), // admin, usuario
+  is_professional: boolean("is_professional").notNull().default(false), // Controlled only by admins
   permissions: jsonb("permissions"), // Specific permissions for this clinic
   is_active: boolean("is_active").notNull().default(true),
   invited_by: integer("invited_by"),
   invited_at: timestamp("invited_at"),
   joined_at: timestamp("joined_at"),
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [
   unique().on(table.clinic_id, table.user_id),
   index("idx_clinic_users_clinic").on(table.clinic_id),
   index("idx_clinic_users_user").on(table.user_id),
+  index("idx_clinic_users_professional").on(table.is_professional),
+]);
+
+// Professional status audit log
+export const professional_status_audit = pgTable("professional_status_audit", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  target_user_id: integer("target_user_id").notNull(), // User whose status was changed
+  changed_by_user_id: integer("changed_by_user_id").notNull(), // Admin who made the change
+  action: varchar("action").notNull(), // 'activated' or 'deactivated'
+  previous_status: boolean("previous_status").notNull(),
+  new_status: boolean("new_status").notNull(),
+  ip_address: varchar("ip_address"),
+  user_agent: text("user_agent"),
+  notes: text("notes"), // Optional reason for the change
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_professional_audit_clinic").on(table.clinic_id),
+  index("idx_professional_audit_target").on(table.target_user_id),
+  index("idx_professional_audit_changed_by").on(table.changed_by_user_id),
+  index("idx_professional_audit_created").on(table.created_at),
 ]);
 
 // Clinic invitations for onboarding new team members
@@ -391,10 +414,17 @@ export const insertPipelineActivitySchema = createInsertSchema(pipeline_activiti
   updated_at: true,
 });
 
+export const insertProfessionalStatusAuditSchema = createInsertSchema(professional_status_audit).omit({
+  id: true,
+  created_at: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type ClinicUser = typeof clinic_users.$inferSelect;
 export type InsertClinicUser = z.infer<typeof insertClinicUserSchema>;
+export type ProfessionalStatusAudit = typeof professional_status_audit.$inferSelect;
+export type InsertProfessionalStatusAudit = z.infer<typeof insertProfessionalStatusAuditSchema>;
 export type ClinicInvitation = typeof clinic_invitations.$inferSelect;
 export type InsertClinicInvitation = z.infer<typeof insertClinicInvitationSchema>;
 export type Clinic = typeof clinics.$inferSelect;

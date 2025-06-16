@@ -5,6 +5,7 @@ import {
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   clinic_users, clinic_invitations, customers, charges, subscriptions, payments, 
   financial_transactions, financial_reports, calendar_integrations, medical_records, password_reset_tokens,
+  professional_status_audit,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -26,7 +27,8 @@ import {
   type FinancialReport, type InsertFinancialReport,
   type CalendarIntegration, type InsertCalendarIntegration,
   type MedicalRecord, type InsertMedicalRecord,
-  type PasswordResetToken, type InsertPasswordResetToken
+  type PasswordResetToken, type InsertPasswordResetToken,
+  type ProfessionalStatusAudit, type InsertProfessionalStatusAudit
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -1152,6 +1154,131 @@ export class PostgreSQLStorage implements IStorage {
     await db.update(password_reset_tokens)
       .set({ used: true })
       .where(eq(password_reset_tokens.id, id));
+  }
+
+  // ============ PROFESSIONAL STATUS MANAGEMENT ============
+
+  async updateProfessionalStatus(
+    clinicId: number,
+    targetUserId: number,
+    isProfessional: boolean,
+    changedByUserId: number,
+    ipAddress?: string,
+    userAgent?: string,
+    notes?: string
+  ): Promise<{ success: boolean; clinicUser?: ClinicUser }> {
+    try {
+      // Get current status for audit
+      const currentUser = await db.select()
+        .from(clinic_users)
+        .where(and(
+          eq(clinic_users.clinic_id, clinicId),
+          eq(clinic_users.user_id, targetUserId)
+        ))
+        .limit(1);
+
+      if (!currentUser[0]) {
+        return { success: false };
+      }
+
+      const previousStatus = currentUser[0].is_professional || false;
+
+      // Update the professional status
+      const result = await db.update(clinic_users)
+        .set({ 
+          is_professional: isProfessional,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(clinic_users.clinic_id, clinicId),
+          eq(clinic_users.user_id, targetUserId)
+        ))
+        .returning();
+
+      if (result[0]) {
+        // Create audit log
+        await this.createProfessionalStatusAudit({
+          clinic_id: clinicId,
+          target_user_id: targetUserId,
+          changed_by_user_id: changedByUserId,
+          action: isProfessional ? 'activated' : 'deactivated',
+          previous_status: previousStatus,
+          new_status: isProfessional,
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          notes: notes
+        });
+
+        return { success: true, clinicUser: result[0] };
+      }
+
+      return { success: false };
+    } catch (error) {
+      console.error('Error updating professional status:', error);
+      return { success: false };
+    }
+  }
+
+  async createProfessionalStatusAudit(audit: InsertProfessionalStatusAudit): Promise<ProfessionalStatusAudit> {
+    const result = await db.insert(professional_status_audit)
+      .values(audit)
+      .returning();
+    return result[0];
+  }
+
+  async getProfessionalStatusAudit(clinicId: number, limit = 50): Promise<ProfessionalStatusAudit[]> {
+    return await db.select()
+      .from(professional_status_audit)
+      .where(eq(professional_status_audit.clinic_id, clinicId))
+      .orderBy(desc(professional_status_audit.created_at))
+      .limit(limit);
+  }
+
+  async getUserProfessionalStatusAudit(userId: number, clinicId: number): Promise<ProfessionalStatusAudit[]> {
+    return await db.select()
+      .from(professional_status_audit)
+      .where(and(
+        eq(professional_status_audit.target_user_id, userId),
+        eq(professional_status_audit.clinic_id, clinicId)
+      ))
+      .orderBy(desc(professional_status_audit.created_at));
+  }
+
+  async checkUserProfessionalStatus(userId: number, clinicId: number): Promise<boolean> {
+    const result = await db.select({ is_professional: clinic_users.is_professional })
+      .from(clinic_users)
+      .where(and(
+        eq(clinic_users.user_id, userId),
+        eq(clinic_users.clinic_id, clinicId),
+        eq(clinic_users.is_active, true)
+      ))
+      .limit(1);
+
+    return result[0]?.is_professional || false;
+  }
+
+  async getUserClinicRole(userId: number, clinicId: number): Promise<{ role: string; isProfessional: boolean; isActive: boolean } | null> {
+    const result = await db.select({
+      role: clinic_users.role,
+      is_professional: clinic_users.is_professional,
+      is_active: clinic_users.is_active
+    })
+      .from(clinic_users)
+      .where(and(
+        eq(clinic_users.user_id, userId),
+        eq(clinic_users.clinic_id, clinicId)
+      ))
+      .limit(1);
+
+    if (!result[0]) {
+      return null;
+    }
+
+    return {
+      role: result[0].role,
+      isProfessional: result[0].is_professional || false,
+      isActive: result[0].is_active
+    };
   }
 }
 
