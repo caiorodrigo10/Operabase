@@ -1686,8 +1686,8 @@ export function Consultas() {
                               <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200" />
                               
                               {/* Lunch time highlighting */}
-                              {hour === 12 && (
-                                <div className="absolute inset-0 bg-slate-50 opacity-30" />
+                              {hour === 12 && clinicConfig?.has_lunch_break && (
+                                <div className="absolute inset-0 bg-slate-50 opacity-30 pointer-events-none" />
                               )}
                               
                               {slotAppointments.map((appointment: Appointment) => {
@@ -1809,7 +1809,7 @@ export function Consultas() {
                               <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200"></div>
                               
                               {/* Lunch time highlighting */}
-                              {hour === 12 && (
+                              {hour === 12 && clinicConfig?.has_lunch_break && (
                                 <div className="absolute inset-0 bg-slate-50 opacity-30 pointer-events-none" />
                               )}
                             </div>
