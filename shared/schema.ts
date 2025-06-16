@@ -136,10 +136,7 @@ export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics)
   created_at: true,
 });
 
-export const insertClinicSettingSchema = createInsertSchema(clinic_settings).omit({
-  id: true,
-  updated_at: true,
-});
+// clinic_settings schema moved to domains/settings/settings.schema.ts
 
 export const insertAiTemplateSchema = createInsertSchema(ai_templates).omit({
   id: true,
@@ -171,10 +168,7 @@ export const insertPipelineActivitySchema = createInsertSchema(pipeline_activiti
   updated_at: true,
 });
 
-export const insertProfessionalStatusAuditSchema = createInsertSchema(professional_status_audit).omit({
-  id: true,
-  created_at: true,
-});
+// professional_status_audit schema moved to domains/clinics/clinics.schema.ts
 
 // Type definitions for remaining schemas
 export type AppointmentTag = typeof appointment_tags.$inferSelect;

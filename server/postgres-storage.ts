@@ -1,7 +1,37 @@
 import { eq, and, like, gte, lte, desc, asc, or, ilike, sql, isNotNull } from "drizzle-orm";
 import { db, pool } from "./db";
 
-// Import schemas - using a simplified approach to get the server running
+// Import from domain schemas
+import { 
+  users, type User, type InsertUser 
+} from "./domains/auth/auth.schema";
+
+import { 
+  clinics, clinic_users, clinic_invitations, professional_status_audit,
+  type Clinic, type InsertClinic,
+  type ClinicUser, type InsertClinicUser,
+  type ClinicInvitation, type InsertClinicInvitation,
+  type ProfessionalStatusAudit, type InsertProfessionalStatusAudit
+} from "./domains/clinics/clinics.schema";
+
+import { 
+  contacts, conversations, messages,
+  type Contact, type InsertContact,
+  type Conversation, type InsertConversation,
+  type Message, type InsertMessage
+} from "./domains/contacts/contacts.schema";
+
+import { 
+  appointments,
+  type Appointment, type InsertAppointment
+} from "./domains/appointments/appointments.schema";
+
+import { 
+  medical_records,
+  type MedicalRecord, type InsertMedicalRecord
+} from "./domains/medical-records/medical-records.schema";
+
+// Import remaining schemas from shared
 import { 
   sessions,
   analytics_metrics, ai_templates, pipeline_stages, pipeline_opportunities, 
@@ -14,15 +44,6 @@ import {
   type PipelineActivity,
   type AppointmentTag
 } from "../shared/schema";
-  type Payment, type InsertPayment,
-  type FinancialTransaction, type InsertFinancialTransaction,
-  type FinancialReport, type InsertFinancialReport,
-  type CalendarIntegration, type InsertCalendarIntegration,
-  type MedicalRecord, type InsertMedicalRecord,
-  type PasswordResetToken, type InsertPasswordResetToken,
-  type AppointmentTag, type InsertAppointmentTag,
-  type ProfessionalStatusAudit, type InsertProfessionalStatusAudit
-} from "@shared/schema";
 import type { IStorage } from "./storage";
 
 export class PostgreSQLStorage implements IStorage {

@@ -1,10 +1,9 @@
-import { postgresStorage } from './postgres-storage.js';
-import type { IStorage } from './storage.js';
+import { minimalStorage } from './storage-minimal';
+import type { IStorage } from './storage';
 
 export function createStorage(): IStorage {
-  // Por enquanto, mantemos PostgreSQL até a migração estar completa
-  console.log('💾 Usando PostgreSQL como storage');
-  return postgresStorage;
+  console.log('💾 Using minimal storage for server startup');
+  return minimalStorage;
 }
 
 export const storage = createStorage();
