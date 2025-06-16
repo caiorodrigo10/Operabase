@@ -1582,7 +1582,7 @@ export function Consultas() {
                                 return (
                                   <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                     <div
-                                      className="absolute left-1 right-1 text-xs p-1 bg-slate-50 text-slate-700 rounded cursor-pointer border border-slate-200 hover:bg-slate-100 transition-colors overflow-hidden"
+                                      className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden`}
                                       style={{ 
                                         top: `${topPosition}px`,
                                         height: `${height}px`,
