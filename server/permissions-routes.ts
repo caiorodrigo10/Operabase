@@ -82,12 +82,21 @@ export async function updateUserProfessionalStatus(req: PermissionRequest, res: 
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || 'unknown';
 
+    // Convert admin user UUID to integer ID
+    const adminUserRecord = await storage.getUserByEmail(adminUser.email);
+    if (!adminUserRecord) {
+      return res.status(404).json({ 
+        error: 'Admin user not found',
+        code: 'ADMIN_USER_NOT_FOUND'
+      });
+    }
+
     // Update professional status
     const result = await storage.updateProfessionalStatus(
       clinicId,
       targetUserId,
       is_professional,
-      adminUser.id,
+      adminUserRecord.id,
       ipAddress,
       userAgent,
       notes,
