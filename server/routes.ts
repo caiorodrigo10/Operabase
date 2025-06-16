@@ -372,15 +372,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let allAppointments = [...appointments];
       
       try {
-        // Get calendar integrations for this clinic by filtering existing integrations
-        const allIntegrations = await storage.getCalendarIntegrations(clinicId);
-        const integrations = allIntegrations.filter(integration => integration.clinic_id === clinicId);
+        // Get calendar integrations for this clinic
+        const integrations = await storage.getCalendarIntegrationsForClinic(clinicId);
         console.log('📅 Calendar integrations found:', integrations.length);
         
         if (integrations.length > 0) {
           const { googleCalendarService } = await import('./google-calendar-service');
           
-          for (const integration of integrations) {
+          // Process all integrations in parallel for better performance
+          const calendarPromises = integrations.map(async (integration) => {
             if (integration.is_active && integration.sync_enabled && integration.calendar_id) {
               try {
                 // Get date range for events - optimize to only fetch 7 days instead of 30
@@ -474,7 +474,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
             }
-          }
+            return null; // Return null for failed integrations
+          });
+
+          // Wait for all calendar integrations to complete in parallel
+          await Promise.allSettled(calendarPromises);
         }
       } catch (integrationError) {
         console.warn('Error fetching calendar integrations:', integrationError);

@@ -923,10 +923,6 @@ export class MemStorage implements IStorage {
     return [];
   }
 
-  async getCalendarIntegrationsForClinic(clinicId: number): Promise<CalendarIntegration[]> {
-    return [];
-  }
-
   async getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]> {
     return [];
   }
