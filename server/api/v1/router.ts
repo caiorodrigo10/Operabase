@@ -1,6 +1,7 @@
 
 import { Router } from 'express';
 import { createAuthRoutes } from '../../domains/auth/auth.routes';
+import { createAppointmentsRoutes } from '../../domains/appointments/appointments.routes';
 
 export function createApiRouter(storage: any): Router {
   const apiRouter = Router();
@@ -18,8 +19,11 @@ export function createApiRouter(storage: any): Router {
   const authRoutes = createAuthRoutes(storage);
   apiRouter.use('/', authRoutes);
 
+  // Appointments domain routes
+  const appointmentsRoutes = createAppointmentsRoutes(storage);
+  apiRouter.use('/', appointmentsRoutes);
+
   // TODO: Add other domain routes as they are migrated
-  // apiRouter.use('/', createAppointmentsRoutes(storage));
   // apiRouter.use('/', createContactsRoutes(storage));
   // apiRouter.use('/', createClinicsRoutes(storage));
   // apiRouter.use('/', createCalendarRoutes(storage));

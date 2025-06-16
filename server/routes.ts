@@ -42,8 +42,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { getStorage } = await import('./storage');
   const storage = await getStorage();
   
-  // 🎯 NOVA ESTRUTURA MODULAR (Feature Flag)
-  if (process.env.USE_MODULAR_ROUTES === 'true') {
+  // 🎯 NOVA ESTRUTURA MODULAR (Ativada por padrão)
+  const useModularRoutes = process.env.USE_MODULAR_ROUTES !== 'false'; // Default to true
+  
+  if (useModularRoutes) {
     console.log('🏗️ Using new modular route structure...');
     const apiRouter = createApiRouter(storage);
     app.use('/api', apiRouter);
@@ -53,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return httpServer;
   }
   
-  console.log('📝 Using legacy monolithic route structure...');
+  console.log('📝 Using legacy monolithic route structure (fallback)...');
   
   // ============ AUTHENTICATION ============
   
