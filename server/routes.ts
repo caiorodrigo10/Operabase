@@ -430,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Simple in-memory cache for Google Calendar events
   const calendarCache = new Map<string, { events: any[], timestamp: number }>();
-  const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+  const CACHE_DURATION = 30 * 1000; // 30 seconds - shorter cache for faster sync
   
   // Get appointments with filters (including Google Calendar events)
   app.get("/api/appointments", async (req, res) => {
@@ -514,32 +514,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 for (const event of events) {
                   if (event.start?.dateTime && event.summary) {
                     const startDate = new Date(event.start.dateTime);
-                    const endDate = new Date(event.end?.dateTime || event.start.dateTime);
-                    const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+                    let endDate = new Date(event.end?.dateTime || event.start.dateTime);
+                    
+                    // If no end time, default to 1 hour duration
+                    if (!event.end?.dateTime) {
+                      endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+                    }
+                    
+                    const durationMinutes = Math.max(15, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60))); // Minimum 15 minutes
                     
                     // Check if this event is already in our database
                     const existsInDb = appointments.some(apt => apt.google_calendar_event_id === event.id);
                     
                     if (!existsInDb) {
-                      allAppointments.push({
-                        id: `gc_${event.id}`, // Prefix to distinguish from DB appointments
-                        contact_id: null,
-                        user_id: integration.user_id,
-                        clinic_id: clinicId,
-                        doctor_name: event.summary,
-                        specialty: 'Evento do Google Calendar',
-                        appointment_type: 'google_calendar',
-                        scheduled_date: startDate,
-                        duration_minutes: durationMinutes,
-                        status: 'scheduled',
-                        payment_status: 'pending',
-                        payment_amount: 0,
-                        session_notes: event.description || null,
-                        created_at: new Date(),
-                        updated_at: new Date(),
-                        google_calendar_event_id: event.id,
-                        is_google_calendar_event: true
-                      } as any);
+                      // Filter events from the past (more than 1 day old) unless specifically requested
+                      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                      if (filters.date || startDate > oneDayAgo) {
+                        allAppointments.push({
+                          id: `gc_${event.id}`, // Prefix to distinguish from DB appointments
+                          contact_id: null,
+                          user_id: integration.user_id,
+                          clinic_id: clinicId,
+                          doctor_name: event.summary,
+                          specialty: 'Evento do Google Calendar',
+                          appointment_type: 'google_calendar',
+                          scheduled_date: startDate,
+                          duration_minutes: durationMinutes,
+                          status: startDate > new Date() ? 'scheduled' : 'completed',
+                          payment_status: 'pending',
+                          payment_amount: 0,
+                          session_notes: event.description || null,
+                          created_at: new Date(),
+                          updated_at: new Date(),
+                          google_calendar_event_id: event.id,
+                          is_google_calendar_event: true
+                        } as any);
+                      }
                     }
                   }
                 }
@@ -1877,6 +1887,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Não autenticado" });
       }
 
+      // Clear cache to force fresh data
+      calendarCache.clear();
+      console.log('🔄 Calendar cache cleared for manual sync');
+
       const { syncCalendarEventsToSystem } = await import('./calendar-routes');
       
       // Get user's calendar integrations
@@ -1893,6 +1907,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error syncing from Google Calendar:", error);
       res.status(500).json({ error: "Erro na sincronização", details: error.message });
+    }
+  });
+
+  // Force refresh Google Calendar events (clear cache)
+  app.post("/api/calendar/force-refresh", isAuthenticated, async (req, res) => {
+    try {
+      calendarCache.clear();
+      console.log('🔄 Calendar cache cleared - next request will fetch fresh data');
+      res.json({ success: true, message: "Cache limpo - próxima consulta buscará dados atualizados" });
+    } catch (error: any) {
+      console.error("Error clearing calendar cache:", error);
+      res.status(500).json({ error: "Erro ao limpar cache" });
     }
   });
 
