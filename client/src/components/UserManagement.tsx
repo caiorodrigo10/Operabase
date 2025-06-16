@@ -256,75 +256,10 @@ export function UserManagement({ clinicId }: UserManagementProps) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
-          <Dialog open={showAuditDialog} onOpenChange={setShowAuditDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                Ver Auditoria
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Log de Auditoria - Status Profissional</DialogTitle>
-                <DialogDescription>
-                  Histórico de alterações no status profissional dos usuários
-                </DialogDescription>
-              </DialogHeader>
-              
-              {auditLoading ? (
-                <div className="flex items-center justify-center p-6">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <span className="ml-2">Carregando auditoria...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {auditLog.length === 0 ? (
-                    <p className="text-center text-gray-500 py-4">
-                      Nenhuma alteração registrada ainda
-                    </p>
-                  ) : (
-                    auditLog.map((log: AuditLog) => (
-                      <Card key={log.id} className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="font-medium">
-                              {log.target_user_name} - Status {log.action === 'activated' ? 'Ativado' : 'Desativado'}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Por: {log.changed_by_user_name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {formatDate(log.created_at)}
-                            </div>
-                            {log.notes && (
-                              <div className="text-sm bg-gray-50 p-2 rounded mt-2">
-                                <strong>Observações:</strong> {log.notes}
-                              </div>
-                            )}
-                          </div>
-                          <Badge variant={log.action === 'activated' ? 'default' : 'secondary'}>
-                            {log.previous_status ? 'Profissional' : 'Usuário'} → {log.new_status ? 'Profissional' : 'Usuário'}
-                          </Badge>
-                        </div>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
-      <Alert>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Importante:</strong> Apenas usuários com status "Profissional" podem acessar recursos como integração com Google Calendar. 
-          Administradores sempre têm acesso a todos os recursos.
-        </AlertDescription>
-      </Alert>
-
+      {/* User List */}
       <div className="grid gap-4">
         {users.length === 0 ? (
           <Card>
@@ -334,85 +269,113 @@ export function UserManagement({ clinicId }: UserManagementProps) {
           </Card>
         ) : (
           users.map((user: User) => (
-            <Card key={user.id} className="p-6">
+            <Card key={user.id} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {user.role === 'admin' ? (
-                      <ShieldCheck className="h-8 w-8 text-blue-600" />
-                    ) : user.is_professional ? (
-                      <Shield className="h-8 w-8 text-green-600" />
-                    ) : (
-                      <Users className="h-8 w-8 text-gray-400" />
-                    )}
-                  </div>
+                  {/* Avatar */}
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={user.avatar_url} alt={user.name} />
+                    <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                      {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   
+                  {/* User Info */}
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{user.name}</h3>
-                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                        {user.role === 'admin' ? 'Administrador' : 'Usuário'}
-                      </Badge>
-                      {user.is_professional && (
-                        <Badge variant="outline" className="text-green-700 border-green-300">
-                          Profissional
-                        </Badge>
-                      )}
-                    </div>
+                    <h3 className="font-semibold text-lg">{user.name}</h3>
                     <p className="text-gray-600">{user.email}</p>
-                    <div className="text-sm text-gray-500 mt-1">
-                      Entrou em: {formatDate(user.joined_at)}
-                      {user.last_login && (
-                        <span className="ml-4">
-                          Último acesso: {formatDate(user.last_login)}
-                        </span>
-                      )}
-                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-700">
-                      Status Profissional
-                    </div>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="text-sm text-gray-600">
-                        {user.is_professional ? 'Ativo' : 'Inativo'}
-                      </span>
-                      <Switch
-                        checked={user.is_professional}
-                        onCheckedChange={(checked) => handleStatusChange(user, checked)}
-                        disabled={updateStatusMutation.isPending || user.role === 'admin'}
-                      />
-                    </div>
-                    {user.role === 'admin' && (
-                      <div className="text-xs text-blue-600 mt-1">
-                        Admins sempre têm acesso
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {/* Edit Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditUser(user)}
+                  className="flex items-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Editar
+                </Button>
               </div>
-
-              {selectedUser?.id === user.id && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Observações sobre a alteração (opcional):
-                  </label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Motivo da alteração do status profissional..."
-                    className="w-full"
-                    rows={3}
-                  />
-                </div>
-              )}
             </Card>
           ))
         )}
       </div>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              Altere o role e status profissional do usuário.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUser && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUser.avatar_url} alt={selectedUser.name} />
+                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium text-lg">
+                    {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedUser.name}</h3>
+                  <p className="text-gray-600">{selectedUser.email}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Função</Label>
+                <Select
+                  value={selectedUser.role}
+                  onValueChange={(value: 'admin' | 'usuario') => 
+                    setSelectedUser(prev => prev ? { ...prev, role: value } : null)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="usuario">Usuário</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit-professional"
+                  checked={selectedUser.is_professional}
+                  onCheckedChange={(checked) => 
+                    setSelectedUser(prev => prev ? { ...prev, is_professional: checked } : null)
+                  }
+                />
+                <Label htmlFor="edit-professional">Status Profissional</Label>
+              </div>
+              <p className="text-sm text-gray-600">
+                Usuários com status profissional têm acesso a recursos avançados como integração de calendário.
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleUpdateUser}
+              disabled={updateUserMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {updateUserMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
