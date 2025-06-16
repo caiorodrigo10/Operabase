@@ -33,6 +33,10 @@ import {
 import type { IStorage } from "./storage";
 
 export class PostgreSQLStorage implements IStorage {
+  constructor() {
+    // Initialize profiles table and create missing user profile on startup
+    this.initializeProfiles().catch(console.error);
+  }
   
   async testConnection(): Promise<void> {
     try {
@@ -44,6 +48,48 @@ export class PostgreSQLStorage implements IStorage {
     } catch (error) {
       console.error('❌ Database connection failed:', error);
       throw new Error(`PostgreSQL connection test failed: ${error}`);
+    }
+  }
+
+  private async initializeProfiles(): Promise<void> {
+    try {
+      const client = await pool.connect();
+      
+      // Create profiles table if it doesn't exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS profiles (
+          id uuid PRIMARY KEY,
+          name text,
+          email text,
+          role text DEFAULT 'user',
+          clinic_id integer,
+          created_at timestamp with time zone DEFAULT now(),
+          updated_at timestamp with time zone DEFAULT now()
+        );
+      `);
+      
+      // Create the missing user profile for current authenticated user
+      await client.query(`
+        INSERT INTO profiles (id, name, email, role, clinic_id)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          email = EXCLUDED.email,
+          role = EXCLUDED.role,
+          clinic_id = EXCLUDED.clinic_id,
+          updated_at = now();
+      `, [
+        '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4',
+        'Caio Rodrigo',
+        'cr@caiorodrigo.com.br',
+        'super_admin',
+        1
+      ]);
+      
+      client.release();
+      console.log('✅ Profiles table initialized and user profile created');
+    } catch (error) {
+      console.error('❌ Profile initialization failed:', error);
     }
   }
   
