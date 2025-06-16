@@ -218,6 +218,9 @@ export function Consultas() {
     y: 0
   });
   
+  // Add missing selectedTagId state
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
+  
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
 
