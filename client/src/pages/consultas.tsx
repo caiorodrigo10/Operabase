@@ -1283,11 +1283,13 @@ export function Consultas() {
                             <SelectValue placeholder="Selecione o profissional" />
                           </SelectTrigger>
                           <SelectContent>
-                            {clinicUsers.map((user: any) => (
-                              <SelectItem key={user.user_id} value={user.user_id.toString()}>
-                                {user.name}
-                              </SelectItem>
-                            ))}
+                            {clinicUsers
+                              .filter((user: any) => user.is_professional === true)
+                              .map((user: any) => (
+                                <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                                  {user.name}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </FormControl>
