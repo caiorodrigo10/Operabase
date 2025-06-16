@@ -189,6 +189,7 @@ export function Consultas() {
     message: string;
     conflictType?: string;
   } | null>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [workingHoursWarning, setWorkingHoursWarning] = useState<{
     hasWarning: boolean;
     message: string;
@@ -786,9 +787,11 @@ export function Consultas() {
   const checkAvailability = async (date: string, time: string, duration: string, professionalName?: string) => {
     if (!date || !time || !duration) {
       setAvailabilityConflict(null);
+      setIsCheckingAvailability(false);
       return;
     }
 
+    setIsCheckingAvailability(true);
     const startDateTime = new Date(`${date}T${time}`);
     const durationMinutes = parseInt(duration);
     const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
@@ -816,6 +819,8 @@ export function Consultas() {
     } catch (error) {
       console.error('Erro ao verificar disponibilidade:', error);
       setAvailabilityConflict(null);
+    } finally {
+      setIsCheckingAvailability(false);
     }
   };
 
@@ -862,25 +867,51 @@ export function Consultas() {
   const watchedDuration = form.watch("duration");
   const watchedProfessional = form.watch("appointment_name");
 
+  // Separate effect for professional selection - immediate response
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    if (!watchedProfessional) {
+      setAvailabilityConflict({
+        hasConflict: true,
+        message: "Selecione um profissional antes de verificar disponibilidade",
+        conflictType: "no_professional"
+      });
+      setSuggestedSlots([]);
+    } else {
+      // Professional selected - clear the warning immediately
+      if (availabilityConflict?.conflictType === "no_professional") {
+        setAvailabilityConflict(null);
+      }
+      
+      // Auto-load availability if we have date and time
       if (watchedDate && watchedTime && watchedDuration) {
-        // Only check availability if professional is selected
-        if (watchedProfessional) {
-          checkAvailability(watchedDate, watchedTime, watchedDuration, watchedProfessional);
-        } else {
-          setAvailabilityConflict({
-            hasConflict: true,
-            message: "Selecione um profissional antes de verificar disponibilidade",
-            conflictType: "no_professional"
-          });
-        }
+        checkAvailability(watchedDate, watchedTime, watchedDuration, watchedProfessional);
         checkWorkingHours(watchedDate, watchedTime);
       }
-    }, 500); // Debounce
+      
+      // Auto-suggest slots if we have date and duration
+      if (watchedDate && watchedDuration) {
+        findAvailableSlots(watchedDate, watchedDuration, watchedProfessional);
+      }
+    }
+  }, [watchedProfessional]);
+
+  // Separate effect for date/time changes - with debounce
+  useEffect(() => {
+    if (!watchedProfessional) return;
+
+    const timeoutId = setTimeout(() => {
+      if (watchedDate && watchedTime && watchedDuration) {
+        checkAvailability(watchedDate, watchedTime, watchedDuration, watchedProfessional);
+        checkWorkingHours(watchedDate, watchedTime);
+      }
+      
+      if (watchedDate && watchedDuration) {
+        findAvailableSlots(watchedDate, watchedDuration, watchedProfessional);
+      }
+    }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedDate, watchedTime, watchedDuration, watchedProfessional]);
+  }, [watchedDate, watchedTime, watchedDuration]);
 
   useEffect(() => {
     if (!appointmentsLoading) {
@@ -1553,16 +1584,20 @@ export function Consultas() {
               </div>
 
               {/* Smart Availability Status - Combined availability + context */}
-              {availabilityConflict && (
+              {(availabilityConflict || isCheckingAvailability) && (
                 <div className={`p-3 rounded-lg border ${
-                  availabilityConflict.hasConflict
-                    ? "bg-red-50 border-red-200 text-red-800"
-                    : workingHoursWarning && workingHoursWarning.hasWarning
-                      ? "bg-orange-50 border-orange-200 text-orange-800"
-                      : "bg-green-50 border-green-200 text-green-800"
+                  isCheckingAvailability
+                    ? "bg-blue-50 border-blue-200 text-blue-800"
+                    : availabilityConflict?.hasConflict
+                      ? "bg-red-50 border-red-200 text-red-800"
+                      : workingHoursWarning && workingHoursWarning.hasWarning
+                        ? "bg-orange-50 border-orange-200 text-orange-800"
+                        : "bg-green-50 border-green-200 text-green-800"
                 }`}>
                   <div className="flex items-start gap-3">
-                    {availabilityConflict.hasConflict ? (
+                    {isCheckingAvailability ? (
+                      <div className="w-4 h-4 mt-0.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    ) : availabilityConflict?.hasConflict ? (
                       <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     ) : workingHoursWarning && workingHoursWarning.hasWarning ? (
                       <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -1571,7 +1606,9 @@ export function Consultas() {
                     )}
                     <div className="flex-1">
                       <div className="text-sm font-medium">
-                        {availabilityConflict.hasConflict ? (
+                        {isCheckingAvailability ? (
+                          'Verificando disponibilidade...'
+                        ) : availabilityConflict?.hasConflict ? (
                           availabilityConflict.message
                         ) : workingHoursWarning && workingHoursWarning.hasWarning ? (
                           <>Horário livre, mas {workingHoursWarning.message.toLowerCase()}</>
@@ -1579,7 +1616,7 @@ export function Consultas() {
                           'Horário disponível'
                         )}
                       </div>
-                      {!availabilityConflict.hasConflict && workingHoursWarning && workingHoursWarning.hasWarning && workingHoursWarning.details && (
+                      {!isCheckingAvailability && !availabilityConflict?.hasConflict && workingHoursWarning && workingHoursWarning.hasWarning && workingHoursWarning.details && (
                         <div className="text-xs text-orange-700 mt-1">
                           {workingHoursWarning.details}
                         </div>
