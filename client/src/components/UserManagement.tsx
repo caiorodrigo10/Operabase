@@ -45,6 +45,13 @@ export function UserManagement({ clinicId }: UserManagementProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [notes, setNotes] = useState('');
   const [showAuditDialog, setShowAuditDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    role: 'usuario' as 'admin' | 'usuario',
+    is_professional: false
+  });
   const queryClient = useQueryClient();
 
   // Fetch users for management
@@ -96,6 +103,37 @@ export function UserManagement({ clinicId }: UserManagementProps) {
       toast({
         title: "Erro ao atualizar status",
         description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: typeof newUserData) => {
+      return await apiRequest(`/api/clinic/${clinicId}/users`, {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/clinic/${clinicId}/users/management`] });
+      toast({
+        title: "Usuário criado",
+        description: data.message,
+      });
+      setShowCreateDialog(false);
+      setNewUserData({
+        name: '',
+        email: '',
+        role: 'usuario',
+        is_professional: false
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao criar usuário",
+        description: error.message || 'Erro interno do servidor',
         variant: "destructive",
       });
     }
@@ -155,63 +193,150 @@ export function UserManagement({ clinicId }: UserManagementProps) {
           </p>
         </div>
         
-        <Dialog open={showAuditDialog} onOpenChange={setShowAuditDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              Ver Auditoria
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Log de Auditoria - Status Profissional</DialogTitle>
-              <DialogDescription>
-                Histórico de alterações no status profissional dos usuários
-              </DialogDescription>
-            </DialogHeader>
-            
-            {auditLoading ? (
-              <div className="flex items-center justify-center p-6">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span className="ml-2">Carregando auditoria...</span>
+        <div className="flex gap-2">
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+                <UserPlus className="h-4 w-4" />
+                Criar Usuário
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Criar Novo Usuário</DialogTitle>
+                <DialogDescription>
+                  Adicione um novo usuário à clínica. O usuário será automaticamente vinculado a esta clínica.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome Completo</Label>
+                  <Input
+                    id="name"
+                    value={newUserData.name}
+                    onChange={(e) => setNewUserData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Digite o nome completo"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Digite o email"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="role">Função</Label>
+                  <Select
+                    value={newUserData.role}
+                    onValueChange={(value: 'admin' | 'usuario') => 
+                      setNewUserData(prev => ({ ...prev, role: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a função" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="usuario">Usuário</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="professional"
+                    checked={newUserData.is_professional}
+                    onCheckedChange={(checked) => 
+                      setNewUserData(prev => ({ ...prev, is_professional: checked }))
+                    }
+                  />
+                  <Label htmlFor="professional">Status Profissional</Label>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Usuários com status profissional têm acesso a recursos avançados como integração de calendário.
+                </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {auditLog.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4">
-                    Nenhuma alteração registrada ainda
-                  </p>
-                ) : (
-                  auditLog.map((log: AuditLog) => (
-                    <Card key={log.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <div className="font-medium">
-                            {log.target_user_name} - Status {log.action === 'activated' ? 'Ativado' : 'Desativado'}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            Por: {log.changed_by_user_name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {formatDate(log.created_at)}
-                          </div>
-                          {log.notes && (
-                            <div className="text-sm bg-gray-50 p-2 rounded mt-2">
-                              <strong>Observações:</strong> {log.notes}
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => createUserMutation.mutate(newUserData)}
+                  disabled={createUserMutation.isPending || !newUserData.name || !newUserData.email}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {createUserMutation.isPending ? 'Criando...' : 'Criar Usuário'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={showAuditDialog} onOpenChange={setShowAuditDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                Ver Auditoria
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Log de Auditoria - Status Profissional</DialogTitle>
+                <DialogDescription>
+                  Histórico de alterações no status profissional dos usuários
+                </DialogDescription>
+              </DialogHeader>
+              
+              {auditLoading ? (
+                <div className="flex items-center justify-center p-6">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Carregando auditoria...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {auditLog.length === 0 ? (
+                    <p className="text-center text-gray-500 py-4">
+                      Nenhuma alteração registrada ainda
+                    </p>
+                  ) : (
+                    auditLog.map((log: AuditLog) => (
+                      <Card key={log.id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {log.target_user_name} - Status {log.action === 'activated' ? 'Ativado' : 'Desativado'}
                             </div>
-                          )}
+                            <div className="text-sm text-gray-600">
+                              Por: {log.changed_by_user_name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {formatDate(log.created_at)}
+                            </div>
+                            {log.notes && (
+                              <div className="text-sm bg-gray-50 p-2 rounded mt-2">
+                                <strong>Observações:</strong> {log.notes}
+                              </div>
+                            )}
+                          </div>
+                          <Badge variant={log.action === 'activated' ? 'default' : 'secondary'}>
+                            {log.previous_status ? 'Profissional' : 'Usuário'} → {log.new_status ? 'Profissional' : 'Usuário'}
+                          </Badge>
                         </div>
-                        <Badge variant={log.action === 'activated' ? 'default' : 'secondary'}>
-                          {log.previous_status ? 'Profissional' : 'Usuário'} → {log.new_status ? 'Profissional' : 'Usuário'}
-                        </Badge>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Alert>
