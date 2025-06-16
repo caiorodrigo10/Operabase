@@ -221,8 +221,7 @@ export function Consultas() {
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
 
-  // State for selected tag
-  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
+
 
   // Form for creating appointments
   const form = useForm<AppointmentForm>({
@@ -445,8 +444,7 @@ export function Consultas() {
         status: "agendada",
         payment_status: "pendente",
         payment_amount: 0,
-        session_notes: data.notes || null,
-        receive_reminders: true
+        session_notes: data.notes || null
       };
       const res = await apiRequest("POST", "/api/appointments", appointmentData);
       return await res.json();

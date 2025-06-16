@@ -190,7 +190,6 @@ export const appointments = pgTable("appointments", {
   status: text("status").notNull(), // agendada, confirmada, paciente_aguardando, paciente_em_atendimento, finalizada, faltou, cancelada_paciente, cancelada_dentista
   cancellation_reason: text("cancellation_reason"),
   session_notes: text("session_notes"),
-  receive_reminders: boolean("receive_reminders").default(true),
   payment_status: text("payment_status").default("pendente"),
   payment_amount: integer("payment_amount"),
   google_calendar_event_id: text("google_calendar_event_id"),

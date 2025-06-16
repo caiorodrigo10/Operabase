@@ -549,7 +549,9 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
-    const result = await db.insert(appointments).values(insertAppointment).returning();
+    // Remove fields that don't exist in the actual database table
+    const { receive_reminders, ...cleanAppointment } = insertAppointment as any;
+    const result = await db.insert(appointments).values(cleanAppointment).returning();
     return result[0];
   }
 
