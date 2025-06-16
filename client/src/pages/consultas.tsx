@@ -1190,13 +1190,14 @@ export function Consultas() {
     });
   };
 
-  const showDayEvents = (date: Date, events: Appointment[]) => {
+  // Memoized showDayEvents function to reduce re-renders and improve performance
+  const showDayEvents = React.useCallback((date: Date, events: Appointment[]) => {
     setDayEventsDialog({
       open: true,
       date,
       events
     });
-  };
+  }, []);
 
   if (isLoading) {
     return (
