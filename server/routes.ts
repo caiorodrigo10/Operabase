@@ -21,6 +21,7 @@ import {
   getUserCalendars,
   updateLinkedCalendarSettings
 } from "./calendar-routes";
+import { setupCalendarWebhookRoutes } from "./calendar-webhook-routes";
 import { googleCalendarService } from "./google-calendar-service";
 import {
   requireClinicAdmin,
@@ -2435,6 +2436,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get current user's permissions
   app.get('/api/user/permissions', isAuthenticated, getCurrentUserPermissions);
+
+  // ============ CALENDAR WEBHOOK INTEGRATION ============
+  
+  // Setup advanced calendar webhook routes and sync manager
+  const syncManager = setupCalendarWebhookRoutes(app, storage);
+  
+  // Initialize automatic sync processes on server startup
+  setTimeout(async () => {
+    try {
+      console.log('🔄 Initializing calendar sync manager...');
+      
+      // Setup webhook renewal process (run every hour)
+      setInterval(async () => {
+        try {
+          await (syncManager as any).renewExpiringWebhooks();
+        } catch (error) {
+          console.error('❌ Error in webhook renewal process:', error);
+        }
+      }, 60 * 60 * 1000); // 1 hour
+      
+      console.log('✅ Calendar sync manager initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing calendar sync manager:', error);
+    }
+  }, 5000); // Wait 5 seconds after server startup
 
   const httpServer = createServer(app);
   return httpServer;
