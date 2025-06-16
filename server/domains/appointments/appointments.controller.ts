@@ -1,6 +1,6 @@
-
 import { Request, Response } from 'express';
 import { AppointmentsService } from './appointments.service';
+import { AppointmentsRepository } from './appointments.repository';
 import { 
   createAppointmentSchema, 
   updateAppointmentSchema,
@@ -13,27 +13,28 @@ export class AppointmentsController {
   private service: AppointmentsService;
 
   constructor(storage: Storage) {
-    this.service = new AppointmentsService(storage);
+    const repository = new AppointmentsRepository(storage);
+    this.service = new AppointmentsService(repository);
   }
 
   async getAppointments(req: Request, res: Response) {
     try {
       console.log('🚀 Appointments API called');
       const { clinic_id, status, date } = req.query;
-      
+
       if (!clinic_id) {
         return res.status(400).json({ error: "clinic_id is required" });
       }
-      
+
       const clinicId = parseInt(clinic_id as string);
       if (isNaN(clinicId)) {
         return res.status(400).json({ error: "Invalid clinic ID" });
       }
-      
+
       const filters: any = {};
       if (status) filters.status = status as string;
       if (date) filters.date = new Date(date as string);
-      
+
       const appointments = await this.service.getAppointments(clinicId, filters);
       console.log('📊 Total appointments:', appointments.length);
       res.json(appointments);
@@ -49,12 +50,12 @@ export class AppointmentsController {
       if (isNaN(appointmentId)) {
         return res.status(400).json({ error: "Invalid appointment ID" });
       }
-      
+
       const appointment = await this.service.getAppointmentById(appointmentId);
       if (!appointment) {
         return res.status(404).json({ error: "Appointment not found" });
       }
-      
+
       res.json(appointment);
     } catch (error: any) {
       console.error("Error fetching appointment:", error);
@@ -68,7 +69,7 @@ export class AppointmentsController {
       if (isNaN(contactId)) {
         return res.status(400).json({ error: "Invalid contact ID" });
       }
-      
+
       const appointments = await this.service.getAppointmentsByContact(contactId);
       res.json(appointments);
     } catch (error: any) {
@@ -86,7 +87,7 @@ export class AppointmentsController {
           ? new Date(req.body.scheduled_date) 
           : req.body.scheduled_date
       };
-      
+
       const validatedData = createAppointmentSchema.parse(requestData);
       const appointment = await this.service.createAppointment(validatedData);
 
@@ -106,14 +107,14 @@ export class AppointmentsController {
       if (isNaN(appointmentId)) {
         return res.status(400).json({ error: "Invalid appointment ID" });
       }
-      
+
       const validatedData = updateAppointmentSchema.parse(req.body);
       const appointment = await this.service.updateAppointment(appointmentId, validatedData);
-      
+
       if (!appointment) {
         return res.status(404).json({ error: "Appointment not found" });
       }
-      
+
       res.json(appointment);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -130,19 +131,19 @@ export class AppointmentsController {
       if (isNaN(appointmentId)) {
         return res.status(400).json({ error: "Invalid appointment ID" });
       }
-      
+
       // Only allow status updates via PATCH
       const { status } = req.body;
       if (!status) {
         return res.status(400).json({ error: "Status is required" });
       }
-      
+
       const appointment = await this.service.updateAppointmentStatus(appointmentId, status.toString());
-      
+
       if (!appointment) {
         return res.status(404).json({ error: "Appointment not found" });
       }
-      
+
       res.json(appointment);
     } catch (error: any) {
       console.error("Error updating appointment status:", error);
@@ -156,10 +157,10 @@ export class AppointmentsController {
       if (isNaN(appointmentId)) {
         return res.status(400).json({ error: "Invalid appointment ID" });
       }
-      
+
       // Get user ID from authenticated request
       const userId = (req as any).user?.id || '';
-      
+
       const result = await this.service.deleteAppointment(appointmentId, userId);
       res.json(result);
     } catch (error: any) {

@@ -1,13 +1,13 @@
 
 import { Request, Response } from 'express';
 import { ContactsService } from './contacts.service';
+import { ContactsRepository } from './contacts.repository';
 import { createContactSchema, updateContactSchema, contactStatusUpdateSchema } from './contacts.types';
 
 export class ContactsController {
   private service: ContactsService;
 
   constructor(storage: any) {
-    const { ContactsRepository } = require('./contacts.repository');
     const repository = new ContactsRepository(storage);
     this.service = new ContactsService(repository);
   }

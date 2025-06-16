@@ -1,7 +1,7 @@
-
 import { Request, Response } from 'express';
 import { ClinicsService } from './clinics.service';
-import { createClinicSchema, updateClinicSchema, createUserInClinicSchema } from './clinics.types';
+import { ClinicsRepository } from './clinics.repository';
+import { createClinicSchema, updateClinicSchema } from './clinics.types';
 
 export class ClinicsController {
   private service: ClinicsService;
@@ -18,7 +18,7 @@ export class ClinicsController {
       if (isNaN(clinicId)) {
         return res.status(400).json({ error: "Invalid clinic ID" });
       }
-      
+
       const clinic = await this.service.getClinicById(clinicId);
       res.json(clinic);
     } catch (error: any) {
@@ -50,16 +50,16 @@ export class ClinicsController {
       if (isNaN(clinicId)) {
         return res.status(400).json({ error: "Invalid clinic ID" });
       }
-      
+
       const validatedData = updateClinicSchema.parse(req.body);
       const clinic = await this.service.updateClinic(clinicId, validatedData);
-      
+
       res.json(clinic);
     } catch (error: any) {
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Invalid data", details: error.errors });
       }
-      
+
       console.error("Error updating clinic:", error);
       if (error.message === 'Clinic not found') {
         return res.status(404).json({ error: error.message });
@@ -74,7 +74,7 @@ export class ClinicsController {
       if (isNaN(clinicId)) {
         return res.status(400).json({ error: "Invalid clinic ID" });
       }
-      
+
       const clinicUsers = await this.service.getClinicUsers(clinicId);
       res.json(clinicUsers);
     } catch (error: any) {
@@ -105,7 +105,7 @@ export class ClinicsController {
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Invalid data", details: error.errors });
       }
-      
+
       console.error('Error creating user:', error);
       res.status(500).json({ error: error.message || 'Erro interno do servidor' });
     }
@@ -115,7 +115,7 @@ export class ClinicsController {
     try {
       const clinicId = parseInt(req.params.clinicId);
       const userId = parseInt(req.params.userId);
-      
+
       if (isNaN(clinicId) || isNaN(userId)) {
         return res.status(400).json({ error: "Invalid clinic ID or user ID" });
       }
