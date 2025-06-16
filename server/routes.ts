@@ -470,23 +470,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const calendarPromises = integrations.map(async (integration) => {
             if (integration.is_active && integration.sync_enabled && integration.calendar_id) {
               try {
-                // Get date range for events - optimize to only fetch 7 days instead of 30
+                // Get date range for events - fetch from start of today to 7 days ahead
+                const currentDate = new Date();
                 const timeMin = filters.date 
                   ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate()).toISOString()
-                  : new Date().toISOString();
+                  : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).toISOString(); // Start of today
                 const timeMax = filters.date
                   ? new Date(filters.date.getFullYear(), filters.date.getMonth(), filters.date.getDate() + 1).toISOString()
                   : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
                 
+                console.log('📅 Fetching events from:', timeMin, 'to:', timeMax);
+                
                 // Create cache key for this integration and date range
                 const cacheKey = `${integration.id}_${timeMin}_${timeMax}`;
-                const now = Date.now();
+                const currentTime = Date.now();
                 
                 // Check cache first
                 const cached = calendarCache.get(cacheKey);
                 let events;
                 
-                if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+                if (cached && (currentTime - cached.timestamp) < CACHE_DURATION) {
                   events = cached.events;
                   console.log('📊 Using cached Google Calendar events:', events.length);
                 } else {
@@ -504,32 +507,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   );
                   
                   // Cache the results
-                  calendarCache.set(cacheKey, { events, timestamp: now });
+                  calendarCache.set(cacheKey, { events, timestamp: currentTime });
                   console.log('📊 Fetched and cached Google Calendar events:', events.length);
                 }
                 
                 console.log('📅 Google Calendar events found:', events.length);
                 
+                // Debug: Log all events to understand what we're getting
+                console.log('🔍 All events from Google Calendar:');
+                events.forEach((event, index) => {
+                  console.log(`Event ${index + 1}:`, {
+                    id: event.id,
+                    summary: event.summary,
+                    start: event.start?.dateTime || event.start?.date,
+                    end: event.end?.dateTime || event.end?.date,
+                    allDay: !event.start?.dateTime
+                  });
+                });
+                
                 // Convert Google Calendar events to appointment format
                 for (const event of events) {
-                  if (event.start?.dateTime && event.summary) {
-                    const startDate = new Date(event.start.dateTime);
-                    let endDate = new Date(event.end?.dateTime || event.start.dateTime);
+                  // Handle both timed events and all-day events
+                  if (event.summary && (event.start?.dateTime || event.start?.date)) {
+                    let startDate: Date;
+                    let endDate: Date;
+                    let isAllDay = false;
                     
-                    // If no end time, default to 1 hour duration
-                    if (!event.end?.dateTime) {
-                      endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+                    if (event.start?.dateTime) {
+                      // Timed event
+                      startDate = new Date(event.start.dateTime);
+                      endDate = new Date(event.end?.dateTime || event.start.dateTime);
+                      
+                      // If no end time, default to 1 hour duration
+                      if (!event.end?.dateTime) {
+                        endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+                      }
+                    } else {
+                      // All-day event
+                      isAllDay = true;
+                      startDate = new Date(event.start.date + 'T00:00:00');
+                      endDate = new Date(event.end?.date || event.start.date);
+                      if (event.end?.date) {
+                        // Google Calendar all-day events have exclusive end dates, so subtract a day
+                        endDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+                      }
+                      endDate.setHours(23, 59, 59, 999); // End of the day
                     }
                     
-                    const durationMinutes = Math.max(15, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60))); // Minimum 15 minutes
+                    const durationMinutes = isAllDay ? 
+                      24 * 60 : // Full day for all-day events
+                      Math.max(15, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60))); // Minimum 15 minutes for timed events
+                    
+                    console.log(`🎯 Processing event "${event.summary}":`, {
+                      isAllDay,
+                      startDate: startDate.toISOString(),
+                      endDate: endDate.toISOString(),
+                      durationMinutes
+                    });
                     
                     // Check if this event is already in our database
                     const existsInDb = appointments.some(apt => apt.google_calendar_event_id === event.id);
                     
                     if (!existsInDb) {
-                      // Filter events from the past (more than 1 day old) unless specifically requested
-                      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-                      if (filters.date || startDate > oneDayAgo) {
+                      // Show all events for today and future dates
+                      const startOfToday = new Date();
+                      startOfToday.setHours(0, 0, 0, 0);
+                      
+                      if (filters.date || startDate >= startOfToday || isAllDay) {
+                        console.log(`✅ Including event "${event.summary}" in results`);
                         allAppointments.push({
                           id: `gc_${event.id}`, // Prefix to distinguish from DB appointments
                           contact_id: null,
