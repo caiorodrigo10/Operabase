@@ -475,12 +475,19 @@ export const calendar_integrations = pgTable("calendar_integrations", {
   is_active: boolean("is_active").default(true),
   sync_enabled: boolean("sync_enabled").default(true),
   last_sync_at: timestamp("last_sync_at"),
-  sync_errors: text("sync_errors"), // Changed from text to match actual structure
+  sync_errors: text("sync_errors"),
+  sync_token: text("sync_token"), // For incremental sync
+  watch_channel_id: text("watch_channel_id"), // Webhook channel ID
+  watch_resource_id: text("watch_resource_id"), // Google resource ID
+  watch_expires_at: timestamp("watch_expires_at"), // Webhook expiration
+  sync_in_progress: boolean("sync_in_progress").default(false), // Lock mechanism
+  last_sync_trigger: text("last_sync_trigger"), // webhook, login, manual, etc
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_calendar_user").on(table.user_id),
   index("idx_calendar_clinic").on(table.clinic_id),
+  index("idx_calendar_watch").on(table.watch_channel_id),
   unique().on(table.user_id, table.email, table.provider),
 ]);
 
