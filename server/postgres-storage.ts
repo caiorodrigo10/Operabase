@@ -543,10 +543,6 @@ export class PostgreSQLStorage implements IStorage {
       
       return {
         ...row,
-        observations: row.observations || '',
-        return_period: row.return_period || '',
-        how_found_clinic: row.how_found_clinic || '',
-        tags: row.tags || [],
         receive_reminders: row.receive_reminders !== false
       } as Appointment;
     }

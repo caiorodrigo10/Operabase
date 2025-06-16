@@ -190,15 +190,11 @@ export const appointments = pgTable("appointments", {
   status: text("status").notNull(), // agendada, confirmada, paciente_aguardando, paciente_em_atendimento, finalizada, faltou, cancelada_paciente, cancelada_dentista
   cancellation_reason: text("cancellation_reason"),
   session_notes: text("session_notes"),
-  observations: text("observations"), // Campo de observações livre
-  next_appointment_suggested: timestamp("next_appointment_suggested"),
-  return_period: text("return_period"), // sem_retorno, 15_dias, 1_mes, 6_meses, 12_meses, outro
-  how_found_clinic: text("how_found_clinic"), // instagram, facebook, google, indicacao_familiar, indicacao_amigo, indicacao_dentista, marketing
-  tag_id: integer("tag_id").references(() => appointment_tags.id), // Referência para etiqueta da consulta
-  receive_reminders: boolean("receive_reminders").default(true), // Se o paciente recebe lembretes
-  payment_status: text("payment_status").default("pendente"), // pendente, pago, isento
-  payment_amount: integer("payment_amount"), // valor em centavos
-  google_calendar_event_id: text("google_calendar_event_id"), // Link to Google Calendar event
+  tag_id: integer("tag_id").references(() => appointment_tags.id),
+  receive_reminders: boolean("receive_reminders").default(true),
+  payment_status: text("payment_status").default("pendente"),
+  payment_amount: integer("payment_amount"),
+  google_calendar_event_id: text("google_calendar_event_id"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [

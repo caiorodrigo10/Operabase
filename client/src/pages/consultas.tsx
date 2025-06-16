@@ -887,8 +887,10 @@ export function Consultas() {
 
   // Separate effect for date/time changes - with debounce
   useEffect(() => {
+    if (!watchedProfessionalId) return;
+    
     const professionalName = getProfessionalNameById(watchedProfessionalId);
-    if (!watchedProfessionalId || !professionalName) return;
+    if (!professionalName) return;
 
     const timeoutId = setTimeout(() => {
       if (watchedDate && watchedTime && watchedDuration) {
@@ -896,10 +898,10 @@ export function Consultas() {
         checkWorkingHours(watchedDate, watchedTime);
       }
       
-      if (watchedDate && watchedDuration) {
+      if (watchedDate && watchedDuration && !watchedTime) {
         findAvailableSlots(watchedDate, watchedDuration, professionalName);
       }
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId]);
