@@ -1682,7 +1682,7 @@ export function Consultas() {
                       <div className="flex-1 bg-white">
                         <div className="p-2 text-center font-medium border-b bg-slate-50">Compromissos</div>
                         <div className="relative">
-                          {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
+                          {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                             <div 
                               key={hour} 
                               className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
