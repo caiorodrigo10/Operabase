@@ -27,6 +27,7 @@ import { ptBR } from "date-fns/locale";
 import { EventTooltip } from "@/components/EventTooltip";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
 import { FindTimeSlots } from "@/components/FindTimeSlots";
+import { AppointmentTagSelector } from "@/components/AppointmentTagSelector";
 import type { Appointment, Contact } from "@/../../shared/schema";
 
 // Schema for appointment creation form
@@ -902,7 +903,7 @@ export function Consultas() {
         findAvailableSlots(watchedDate, watchedDuration, professionalName);
       }
     }
-  }, [watchedProfessionalId, getProfessionalNameById]);
+  }, [watchedProfessionalId, clinicUsers]);
 
   // Separate effect for date/time changes - with debounce
   useEffect(() => {
@@ -921,7 +922,7 @@ export function Consultas() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId, getProfessionalNameById]);
+  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId]);
 
   useEffect(() => {
     if (!appointmentsLoading) {
