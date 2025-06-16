@@ -1809,10 +1809,10 @@ export function Consultas() {
                                 }}
                                 onClick={() => handleAppointmentClick(appointment)}
                               >
-                                <div className="flex items-start gap-2 h-full">
-                                  <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
+                                <div className="flex items-start gap-1.5 h-full">
+                                  <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
                                   <div className="flex-1 overflow-hidden">
-                                    <div className="font-semibold truncate">{time} {patientName}</div>
+                                    <div className="text-xs truncate">{patientName}</div>
                                     <div className="text-xs opacity-80 mt-1">
                                       {duration}min
                                     </div>
@@ -1945,10 +1945,10 @@ export function Consultas() {
                                   }}
                                   onClick={() => handleAppointmentClick(appointment)}
                                 >
-                                  <div className="flex items-start gap-2 h-full">
-                                    <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
+                                  <div className="flex items-start gap-1.5 h-full">
+                                    <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
                                     <div className="flex-1 overflow-hidden">
-                                      <div className="font-semibold truncate">{patientName}</div>
+                                      <div className="text-xs truncate">{patientName}</div>
                                       {appointment.doctor_name && !appointment.google_calendar_event_id && (
                                         <div className="text-xs mt-1 opacity-90">Dr. {appointment.doctor_name}</div>
                                       )}
