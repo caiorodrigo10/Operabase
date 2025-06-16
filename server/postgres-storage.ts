@@ -541,17 +541,12 @@ export class PostgreSQLStorage implements IStorage {
       const row = result.rows[0];
       if (!row) return undefined;
       
-      return {
-        ...row,
-        receive_reminders: row.receive_reminders !== false
-      } as Appointment;
+      return row as Appointment;
     }
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
-    // Remove fields that don't exist in the actual database table
-    const { receive_reminders, ...cleanAppointment } = insertAppointment as any;
-    const result = await db.insert(appointments).values(cleanAppointment).returning();
+    const result = await db.insert(appointments).values(insertAppointment).returning();
     return result[0];
   }
 
