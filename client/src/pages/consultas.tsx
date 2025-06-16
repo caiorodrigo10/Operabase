@@ -1584,9 +1584,27 @@ export function Consultas() {
 
           {/* Professional Filter Buttons - positioned between Lista/Calendário and Dia/Semana/Mês */}
           {viewMode === "calendar" && (
-            <div className="flex items-center space-x-2">
-              {/* Professional Filter Avatars */}
+            <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-slate-600">Filtrar por:</span>
+                
+                {/* All Professionals Button */}
+                <button
+                  onClick={() => setSelectedProfessionals([])}
+                  title="Mostrar todos os profissionais"
+                  className={`
+                    px-3 py-1 rounded-full text-xs font-medium
+                    transition-all duration-200 hover:scale-105
+                    ${selectedProfessionals.length === 0
+                      ? 'bg-green-500 text-white border-2 border-green-600 shadow-md' 
+                      : 'bg-slate-200 text-slate-600 border-2 border-transparent hover:bg-slate-300'
+                    }
+                  `}
+                >
+                  Todos
+                </button>
+
+                {/* Professional Filter Avatars */}
                 {clinicUsers
                   .filter((user: any) => user.is_professional === true)
                   .map((professional: any) => {
