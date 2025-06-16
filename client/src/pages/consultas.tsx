@@ -163,7 +163,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 export function Consultas() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-  const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
+  const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   
   // Create a stable reference for "today" to avoid timezone issues
