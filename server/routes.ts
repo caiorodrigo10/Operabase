@@ -260,6 +260,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new user in clinic
+  app.post("/api/clinic/:clinicId/users", supabaseAuth, async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+
+      // Check if current user is admin
+      const currentUserRole = await storage.getUserClinicRole(req.user?.id, clinicId);
+      if (!currentUserRole || currentUserRole.role !== 'admin') {
+        return res.status(403).json({ error: "Apenas administradores podem criar usuários" });
+      }
+
+      const { name, email, role, is_professional } = req.body;
+
+      if (!name || !email || !role) {
+        return res.status(400).json({ error: "Nome, email e role são obrigatórios" });
+      }
+
+      if (!['admin', 'usuario'].includes(role)) {
+        return res.status(400).json({ error: "Role deve ser 'admin' ou 'usuario'" });
+      }
+
+      const result = await storage.createUserInClinic({
+        name,
+        email,
+        role,
+        isProfessional: is_professional || false,
+        clinicId,
+        createdBy: req.user?.id || ''
+      });
+
+      if (result.success) {
+        res.json({ 
+          message: 'Usuário criado com sucesso',
+          user: result.user 
+        });
+      } else {
+        res.status(400).json({ error: result.error });
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
   // Get clinic configuration
   app.get("/api/clinic/:id/config", async (req, res) => {
     try {

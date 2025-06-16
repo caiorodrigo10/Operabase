@@ -5,10 +5,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, Shield, ShieldCheck, History, AlertTriangle } from 'lucide-react';
+import { Users, Shield, ShieldCheck, History, AlertTriangle, Plus, UserPlus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface User {
   id: number;

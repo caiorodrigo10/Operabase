@@ -160,18 +160,35 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getClinicUsers(clinicId: number): Promise<(ClinicUser & { user: User })[]> {
-    const result = await db
-      .select()
-      .from(clinic_users)
-      .innerJoin(users, eq(clinic_users.user_id, users.id))
-      .where(and(
-        eq(clinic_users.clinic_id, clinicId),
-        eq(clinic_users.is_active, true)
-      ));
+    // Use raw SQL to join with profiles table from Supabase
+    const result = await db.execute(sql`
+      SELECT 
+        cu.*,
+        p.id as user_id,
+        p.name as user_name,
+        p.email as user_email,
+        p.created_at as user_created_at,
+        p.updated_at as user_updated_at
+      FROM clinic_users cu
+      JOIN profiles p ON cu.user_id = p.id
+      WHERE cu.clinic_id = ${clinicId}
+      ORDER BY cu.role DESC, p.name ASC
+    `);
     
-    return result.map(row => ({
-      ...row.clinic_users,
-      user: row.users
+    return result.rows.map((row: any) => ({
+      user_id: row.user_id,
+      clinic_id: row.clinic_id,
+      role: row.role,
+      is_professional: row.is_professional || false,
+      is_active: row.is_active,
+      joined_at: row.joined_at,
+      user: {
+        id: row.user_id,
+        name: row.user_name,
+        email: row.user_email,
+        created_at: row.user_created_at,
+        updated_at: row.user_updated_at
+      }
     }));
   }
 
@@ -1279,6 +1296,70 @@ export class PostgreSQLStorage implements IStorage {
       isProfessional: result[0].is_professional || false,
       isActive: result[0].is_active
     };
+  }
+  // ============ USER CREATION ============
+  
+  async createUserInClinic(userData: {
+    name: string;
+    email: string;
+    role: 'admin' | 'usuario';
+    isProfessional: boolean;
+    clinicId: number;
+    createdBy: string;
+  }): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      // Check if email already exists
+      const existingUser = await db.execute(sql`
+        SELECT id FROM profiles WHERE email = ${userData.email}
+      `);
+      
+      if (existingUser.rows.length > 0) {
+        return { success: false, error: 'Email já está em uso no sistema' };
+      }
+      
+      // Create user in Supabase Auth and get the ID
+      // For now, we'll create a placeholder in profiles and let Supabase handle auth
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Insert into profiles table
+      await db.execute(sql`
+        INSERT INTO profiles (id, name, email, role, created_at, updated_at)
+        VALUES (${userId}, ${userData.name}, ${userData.email}, 'user', NOW(), NOW())
+      `);
+      
+      // Insert into clinic_users table
+      await db.execute(sql`
+        INSERT INTO clinic_users (user_id, clinic_id, role, is_professional, is_active, joined_at)
+        VALUES (${userId}, ${userData.clinicId}, ${userData.role}, ${userData.isProfessional}, true, NOW())
+      `);
+      
+      // Create audit log
+      await db.execute(sql`
+        INSERT INTO professional_status_audit (
+          clinic_id, target_user_id, changed_by_user_id, action, 
+          previous_status, new_status, notes, created_at
+        )
+        VALUES (
+          ${userData.clinicId}, ${userId}, ${userData.createdBy}, 
+          'user_created', false, ${userData.isProfessional}, 
+          'Usuário criado pelo administrador', NOW()
+        )
+      `);
+      
+      return { 
+        success: true, 
+        user: {
+          id: userId,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          is_professional: userData.isProfessional
+        }
+      };
+    } catch (error) {
+      console.error('Error creating user in clinic:', error);
+      return { success: false, error: 'Erro interno do servidor' };
+    }
   }
 }
 
