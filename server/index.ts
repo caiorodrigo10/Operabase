@@ -47,18 +47,13 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Redirect root to /taskmed
-  app.get('/', (req, res) => {
-    res.redirect('/taskmed');
-  });
-
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
-    await setupVite(app, server, '/taskmed');
+    await setupVite(app, server);
   } else {
-    serveStatic(app, '/taskmed');
+    serveStatic(app);
   }
 
   // ALWAYS serve the app on port 5000
