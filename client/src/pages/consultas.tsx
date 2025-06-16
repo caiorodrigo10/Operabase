@@ -196,6 +196,19 @@ export function Consultas() {
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
   const [isCreatingPatient, setIsCreatingPatient] = useState(false);
   const [patientFormTab, setPatientFormTab] = useState("basic");
+  const [quickCreateHover, setQuickCreateHover] = useState<{
+    show: boolean;
+    date: Date | null;
+    hour: number | null;
+    x: number;
+    y: number;
+  }>({
+    show: false,
+    date: null,
+    hour: null,
+    x: 0,
+    y: 0
+  });
   
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
@@ -586,6 +599,41 @@ export function Consultas() {
     if (!clinicConfig) return false;
     const timeString = `${hour.toString().padStart(2, '0')}:00`;
     return !isWorkingHour(timeString, clinicConfig) || isLunchTime(timeString, clinicConfig);
+  };
+
+  // Check if a time slot is available for quick create
+  const isTimeSlotAvailable = (date: Date, hour: number): boolean => {
+    if (!clinicConfig) return false;
+    
+    // Check if day is working day
+    if (isUnavailableDay(date)) return false;
+    
+    // Check if hour is working hour
+    if (isUnavailableHour(hour)) return false;
+    
+    // Check if there are existing appointments at this time
+    const dayAppointments = getAppointmentsForDate(date);
+    const hasConflict = dayAppointments.some((apt: Appointment) => {
+      if (!apt.scheduled_date) return false;
+      const aptDate = new Date(apt.scheduled_date);
+      return aptDate.getHours() === hour;
+    });
+    
+    return !hasConflict;
+  };
+
+  // Handle quick create appointment
+  const handleQuickCreateAppointment = (date: Date, hour: number) => {
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    const formattedTime = `${hour.toString().padStart(2, '0')}:00`;
+    
+    // Pre-fill the form with selected date and time
+    form.setValue("scheduled_date", formattedDate);
+    form.setValue("scheduled_time", formattedTime);
+    form.setValue("duration", "60"); // Default duration
+    form.setValue("type", "consulta"); // Default type
+    
+    setIsCreateDialogOpen(true);
   };
 
   const getCalendarCellBackgroundClass = (date: Date, hour?: number): string => {
@@ -1585,11 +1633,32 @@ export function Consultas() {
                             return aptStartHour === hour;
                           });
                           
+                          const isAvailable = isTimeSlotAvailable(day, hour);
+                          
                           return (
                             <div 
                               key={`${day.toISOString()}-${hour}`} 
-                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative overflow-hidden`}
+                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative overflow-hidden group ${isAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
+                              onClick={() => {
+                                if (isAvailable) {
+                                  handleQuickCreateAppointment(day, hour);
+                                }
+                              }}
+                              onMouseEnter={(e) => {
+                                if (isAvailable) {
+                                  setQuickCreateHover({
+                                    show: true,
+                                    date: day,
+                                    hour: hour,
+                                    x: e.clientX,
+                                    y: e.clientY
+                                  });
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                setQuickCreateHover(prev => ({ ...prev, show: false }));
+                              }}
                             >
                               {/* 15-minute grid lines for day columns */}
                               {[1, 2, 3].map((quarter) => (
@@ -1607,6 +1676,16 @@ export function Consultas() {
                               {hour === 12 && (
                                 <div className="absolute inset-0 bg-slate-50 opacity-50" />
                               )}
+                              
+                              {/* Quick create time indicator on hover */}
+                              {isAvailable && (
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                  <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
+                                    {hour.toString().padStart(2, '0')}:00
+                                  </div>
+                                </div>
+                              )}
+                              
                               {slotAppointments.map((appointment: Appointment) => {
                                 const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                                 const patientName = getPatientName(appointment.contact_id, appointment);
