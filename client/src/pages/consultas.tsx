@@ -1694,52 +1694,36 @@ export function Consultas() {
                   
                   {/* Calendar body with absolute positioned appointments */}
                   <div className="relative">
-                  
-                  {/* Time slots grid */}
-                  <div className="grid grid-cols-8 gap-px">
-                    {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
-                      <div key={hour} className="contents">
-                        {/* Time label with improved formatting */}
-                        <div className="bg-white p-2 text-sm text-slate-600 border-r flex items-start justify-center relative" style={{ height: `${PIXELS_PER_HOUR}px` }}>
-                          <span className="font-medium">{hour.toString().padStart(2, '0')}h</span>
-                          
-                          {/* 15-minute grid lines */}
-                          <div className="absolute inset-x-0 top-0 h-full">
-                            {[1, 2, 3].map((quarter) => (
-                              <div 
-                                key={quarter}
-                                className="absolute left-0 right-0 border-t border-slate-100"
-                                style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* Day columns */}
-                        {calendarDays.slice(0, 7).map((day) => {
-                          const allDayAppointments = getAppointmentsForDate(day);
-                          
-                          // Only show appointments that START in this hour (not continuations)
-                          const slotAppointments = allDayAppointments.filter((apt: Appointment) => {
-                            if (!apt.scheduled_date) return false;
-                            const aptStart = new Date(apt.scheduled_date);
-                            const aptStartHour = aptStart.getHours();
+                    {/* Background grid without appointments */}
+                    <div className="grid grid-cols-8 gap-px">
+                      {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
+                        <div key={hour} className="contents">
+                          {/* Time label */}
+                          <div className="bg-white p-2 text-sm text-slate-600 border-r flex items-start justify-center relative" style={{ height: `${PIXELS_PER_HOUR}px` }}>
+                            <span className="font-medium">{hour.toString().padStart(2, '0')}h</span>
                             
-                            // Only show appointments that actually start in this hour
-                            return aptStartHour === hour;
-                          });
+                            {/* 15-minute grid lines */}
+                            <div className="absolute inset-x-0 top-0 h-full">
+                              {[1, 2, 3].map((quarter) => (
+                                <div 
+                                  key={quarter}
+                                  className="absolute left-0 right-0 border-t border-slate-100"
+                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
+                                />
+                              ))}
+                            </div>
+                          </div>
                           
-                          return (
+                          {/* Day columns with only clickable slots */}
+                          {calendarDays.slice(0, 7).map((day, dayIndex) => (
                             <div 
                               key={`${day.toISOString()}-${hour}`} 
-                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative overflow-hidden`}
+                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
                               {/* 15-minute clickable slots */}
                               {[0, 15, 30, 45].map((minute) => {
                                 const isSlotAvailable = isTimeSlotAvailable(day, hour, minute);
-                                const slotDateTime = new Date(day);
-                                slotDateTime.setHours(hour, minute, 0, 0);
                                 const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
                                 
                                 return (
@@ -1762,7 +1746,7 @@ export function Consultas() {
                                     {/* Time indicator on hover */}
                                     {isSlotAvailable && (
                                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                                        <div className="bg-blue-100 border border-blue-300 rounded px-1 py-0.5 text-xs font-medium text-blue-800">
+                                        <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
                                           {timeLabel}
                                         </div>
                                       </div>
@@ -1778,50 +1762,68 @@ export function Consultas() {
                               {hour === 12 && clinicConfig?.has_lunch_break && (
                                 <div className="absolute inset-0 bg-slate-50 opacity-30 pointer-events-none" />
                               )}
-                              
-                              {slotAppointments.map((appointment: Appointment) => {
-                                const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
-                                const patientName = getPatientName(appointment.contact_id, appointment);
-                                const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
-                                const duration = getAppointmentDuration(appointment);
-                                
-                                // Calculate position within the hour slot
-                                const aptStart = new Date(appointment.scheduled_date);
-                                const startMinutes = aptStart.getMinutes();
-                                const topPosition = startMinutes * PIXELS_PER_MINUTE;
-                                const height = getAppointmentHeight(duration);
-
-                                return (
-                                  <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
-                                    <div
-                                      className={`absolute left-1 right-1 text-xs p-1 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden`}
-                                      style={{ 
-                                        top: `${topPosition}px`,
-                                        height: `${height}px`,
-                                        zIndex: 10
-                                      }}
-                                      onClick={() => handleAppointmentClick(appointment)}
-                                    >
-                                      <div className="flex items-start gap-1 h-full">
-                                        <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-0.5`}></div>
-                                        <div className="flex-1 overflow-hidden">
-                                          <div className="truncate">
-                                            {time} {patientName}
-                                          </div>
-                                          <div className="text-xs opacity-75">
-                                            {duration}min
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </EventTooltip>
-                                );
-                              })}
                             </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Absolutely positioned appointments overlay */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {calendarDays.slice(0, 7).map((day, dayIndex) => {
+                        const dayAppointments = getAppointmentsForDate(day);
+                        
+                        return dayAppointments.map((appointment: Appointment) => {
+                          if (!appointment.scheduled_date) return null;
+                          
+                          const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
+                          const patientName = getPatientName(appointment.contact_id, appointment);
+                          const time = appointment.scheduled_date ? format(new Date(appointment.scheduled_date), 'HH:mm') : '';
+                          const duration = getAppointmentDuration(appointment);
+                          
+                          const aptStart = new Date(appointment.scheduled_date);
+                          const startHour = aptStart.getHours();
+                          const startMinutes = aptStart.getMinutes();
+                          
+                          // Calculate position from the start of the calendar (7 AM)
+                          const hourOffset = startHour - 7;
+                          const totalMinutesFromStart = (hourOffset * 60) + startMinutes;
+                          const topPosition = totalMinutesFromStart * PIXELS_PER_MINUTE;
+                          const height = duration * PIXELS_PER_MINUTE;
+                          
+                          // Calculate left position based on day column
+                          const timeColumnWidth = 12.5; // 1/8 = 12.5% for time column
+                          const dayColumnWidth = 12.5; // 1/8 = 12.5% for each day column
+                          const leftPosition = timeColumnWidth + (dayIndex * dayColumnWidth);
+                          
+                          return (
+                            <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
+                              <div
+                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto`}
+                                style={{ 
+                                  top: `${topPosition}px`,
+                                  left: `calc(${leftPosition}% + 2px)`,
+                                  width: `calc(${dayColumnWidth}% - 4px)`,
+                                  height: `${height}px`,
+                                  zIndex: 10
+                                }}
+                                onClick={() => handleAppointmentClick(appointment)}
+                              >
+                                <div className="flex items-start gap-2 h-full">
+                                  <div className={`w-3 h-3 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
+                                  <div className="flex-1 overflow-hidden">
+                                    <div className="font-semibold truncate">{time} {patientName}</div>
+                                    <div className="text-xs opacity-80 mt-1">
+                                      {duration}min
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </EventTooltip>
                           );
-                        })}
-                      </div>
-                    ))}
+                        });
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
