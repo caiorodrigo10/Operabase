@@ -432,6 +432,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const calendarCache = new Map<string, { events: any[], timestamp: number }>();
   const CACHE_DURATION = 30 * 1000; // 30 seconds - shorter cache for faster sync
   
+  // Force refresh calendar cache endpoint
+  app.post("/api/calendar/force-refresh", isAuthenticated, async (req, res) => {
+    try {
+      console.log('🔄 Force refreshing calendar cache...');
+      
+      // Clear all cache entries
+      const cacheSize = calendarCache.size;
+      calendarCache.clear();
+      
+      console.log(`✅ Cleared ${cacheSize} cache entries`);
+      res.json({ 
+        success: true, 
+        message: `Cleared ${cacheSize} cache entries`,
+        cacheClearedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error clearing calendar cache:', error);
+      res.status(500).json({ error: 'Failed to clear calendar cache' });
+    }
+  });
+  
   // Get appointments with filters (including Google Calendar events)
   app.get("/api/appointments", async (req, res) => {
     try {
