@@ -128,6 +128,13 @@ export interface IStorage {
   createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   markPasswordResetTokenAsUsed(id: number): Promise<void>;
+
+  // Appointment Tags
+  getAppointmentTags(clinicId: number): Promise<AppointmentTag[]>;
+  getAppointmentTag(id: number): Promise<AppointmentTag | undefined>;
+  createAppointmentTag(tag: InsertAppointmentTag): Promise<AppointmentTag>;
+  updateAppointmentTag(id: number, updates: Partial<InsertAppointmentTag>): Promise<AppointmentTag | undefined>;
+  deleteAppointmentTag(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

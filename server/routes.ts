@@ -8,7 +8,7 @@ import {
   insertClinicSchema, insertContactSchema, insertAppointmentSchema,
   insertAnalyticsMetricSchema, insertClinicSettingSchema, insertAiTemplateSchema,
   insertPipelineStageSchema, insertPipelineOpportunitySchema, insertPipelineActivitySchema,
-  insertClinicInvitationSchema, insertMedicalRecordSchema
+  insertClinicInvitationSchema, insertMedicalRecordSchema, insertAppointmentTagSchema
 } from "@shared/schema";
 import {
   initGoogleCalendarAuth,
@@ -811,6 +811,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Appointment deleted successfully" });
     } catch (error) {
       console.error("Error deleting appointment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ============ APPOINTMENT TAGS ============
+  
+  // Get appointment tags for a clinic
+  app.get("/api/clinic/:clinicId/appointment-tags", supabaseAuth, requireClinicAccess(), async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const tags = await storage.getAppointmentTags(clinicId);
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching appointment tags:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create new appointment tag
+  app.post("/api/clinic/:clinicId/appointment-tags", supabaseAuth, requireClinicAccess(), async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+
+      // Validate request body
+      const parseResult = insertAppointmentTagSchema.safeParse({
+        ...req.body,
+        clinic_id: clinicId
+      });
+
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Validation failed", 
+          details: parseResult.error.issues 
+        });
+      }
+
+      // Check for duplicate tag name in the same clinic
+      const existingTags = await storage.getAppointmentTags(clinicId);
+      const isDuplicate = existingTags.some(tag => 
+        tag.name.toLowerCase() === parseResult.data.name.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        return res.status(400).json({ 
+          error: "Já existe uma etiqueta com este nome" 
+        });
+      }
+
+      const tag = await storage.createAppointmentTag(parseResult.data);
+      res.status(201).json(tag);
+    } catch (error) {
+      console.error("Error creating appointment tag:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update appointment tag
+  app.put("/api/appointment-tags/:id", supabaseAuth, async (req, res) => {
+    try {
+      const tagId = parseInt(req.params.id);
+      if (isNaN(tagId)) {
+        return res.status(400).json({ error: "Invalid tag ID" });
+      }
+
+      const tag = await storage.updateAppointmentTag(tagId, req.body);
+      if (!tag) {
+        return res.status(404).json({ error: "Tag not found" });
+      }
+
+      res.json(tag);
+    } catch (error) {
+      console.error("Error updating appointment tag:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Delete appointment tag
+  app.delete("/api/appointment-tags/:id", supabaseAuth, async (req, res) => {
+    try {
+      const tagId = parseInt(req.params.id);
+      if (isNaN(tagId)) {
+        return res.status(400).json({ error: "Invalid tag ID" });
+      }
+
+      const success = await storage.deleteAppointmentTag(tagId);
+      if (!success) {
+        return res.status(404).json({ error: "Tag not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting appointment tag:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

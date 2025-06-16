@@ -5,7 +5,7 @@ import {
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   clinic_users, clinic_invitations, customers, charges, subscriptions, payments, 
   financial_transactions, financial_reports, calendar_integrations, medical_records, password_reset_tokens,
-  professional_status_audit,
+  professional_status_audit, appointment_tags,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -28,6 +28,7 @@ import {
   type CalendarIntegration, type InsertCalendarIntegration,
   type MedicalRecord, type InsertMedicalRecord,
   type PasswordResetToken, type InsertPasswordResetToken,
+  type AppointmentTag, type InsertAppointmentTag,
   type ProfessionalStatusAudit, type InsertProfessionalStatusAudit
 } from "@shared/schema";
 import type { IStorage } from "./storage";
@@ -1474,6 +1475,48 @@ export class PostgreSQLStorage implements IStorage {
       console.error('Error creating user in clinic:', error);
       return { success: false, error: 'Erro interno do servidor' };
     }
+  }
+
+  // Appointment Tags methods
+  async getAppointmentTags(clinicId: number): Promise<AppointmentTag[]> {
+    return await db.select()
+      .from(appointment_tags)
+      .where(and(
+        eq(appointment_tags.clinic_id, clinicId),
+        eq(appointment_tags.is_active, true)
+      ))
+      .orderBy(asc(appointment_tags.name));
+  }
+
+  async getAppointmentTag(id: number): Promise<AppointmentTag | undefined> {
+    const result = await db.select()
+      .from(appointment_tags)
+      .where(eq(appointment_tags.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async createAppointmentTag(tag: InsertAppointmentTag): Promise<AppointmentTag> {
+    const result = await db.insert(appointment_tags)
+      .values(tag)
+      .returning();
+    return result[0];
+  }
+
+  async updateAppointmentTag(id: number, updates: Partial<InsertAppointmentTag>): Promise<AppointmentTag | undefined> {
+    const result = await db.update(appointment_tags)
+      .set({ ...updates, updated_at: new Date() })
+      .where(eq(appointment_tags.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAppointmentTag(id: number): Promise<boolean> {
+    const result = await db.update(appointment_tags)
+      .set({ is_active: false, updated_at: new Date() })
+      .where(eq(appointment_tags.id, id))
+      .returning();
+    return result.length > 0;
   }
 }
 
