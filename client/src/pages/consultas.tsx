@@ -221,6 +221,13 @@ export function Consultas() {
   // Add missing selectedTagId state
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   
+  // Initialize selectedTagId if not defined for backward compatibility
+  useEffect(() => {
+    if (typeof selectedTagId === 'undefined') {
+      setSelectedTagId(null);
+    }
+  }, []);
+  
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
 

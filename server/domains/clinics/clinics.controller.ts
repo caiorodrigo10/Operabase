@@ -1,13 +1,12 @@
 import { Request, Response } from 'express';
 import { ClinicsService } from './clinics.service';
 import { ClinicsRepository } from './clinics.repository';
-import { createClinicSchema, updateClinicSchema } from './clinics.types';
+import { createClinicSchema, updateClinicSchema, createUserInClinicSchema } from './clinics.types';
 
 export class ClinicsController {
   private service: ClinicsService;
 
   constructor(storage: any) {
-    const { ClinicsRepository } = require('./clinics.repository');
     const repository = new ClinicsRepository(storage);
     this.service = new ClinicsService(repository);
   }
