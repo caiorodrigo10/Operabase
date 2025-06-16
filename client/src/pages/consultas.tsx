@@ -608,7 +608,7 @@ export function Consultas() {
     return time >= config.lunch_start && time < config.lunch_end;
   };
 
-  const checkWorkingHours = (date: string, time: string) => {
+  const checkWorkingHours = React.useCallback((date: string, time: string) => {
     if (!date || !time || !clinicConfig) {
       setWorkingHoursWarning(null);
       return;
@@ -662,7 +662,7 @@ export function Consultas() {
 
     // Clear warnings for normal working hours
     setWorkingHoursWarning(null);
-  };
+  }, [clinicConfig]);
 
   // Helper functions for calendar background colors
   const isUnavailableDay = (date: Date): boolean => {
@@ -893,7 +893,7 @@ export function Consultas() {
         findAvailableSlots(watchedDate, watchedDuration, professionalName);
       }
     }
-  }, [watchedProfessionalId, clinicUsers]);
+  }, [watchedProfessionalId, getProfessionalNameById, watchedDate, watchedTime, watchedDuration]);
 
   // Separate effect for date/time changes - with debounce
   useEffect(() => {
@@ -912,7 +912,7 @@ export function Consultas() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId, checkAvailability, checkWorkingHours, findAvailableSlots]);
+  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId]);
 
   useEffect(() => {
     if (!appointmentsLoading) {
