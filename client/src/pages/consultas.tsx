@@ -1298,7 +1298,10 @@ export function Consultas() {
                 <Button
                   variant={calendarView === "day" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setCalendarView("day")}
+                  onClick={() => {
+                    setCalendarView("day");
+                    setCurrentDate(new Date());
+                  }}
                   className="text-xs"
                 >
                   Dia
