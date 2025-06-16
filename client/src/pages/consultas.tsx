@@ -503,7 +503,8 @@ export function Consultas() {
       work_start: data.work_start || "08:00",
       work_end: data.work_end || "18:00", 
       lunch_start: data.lunch_start || "12:00",
-      lunch_end: data.lunch_end || "13:00"
+      lunch_end: data.lunch_end || "13:00",
+      has_lunch_break: data.has_lunch_break
     })
   });
 
