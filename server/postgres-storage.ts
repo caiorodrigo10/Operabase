@@ -1,4 +1,4 @@
-import { eq, and, like, gte, lte, desc, asc, or, ilike, sql } from "drizzle-orm";
+import { eq, and, like, gte, lte, desc, asc, or, ilike, sql, isNotNull } from "drizzle-orm";
 import { db, pool } from "./db";
 import { 
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
@@ -1517,6 +1517,29 @@ export class PostgreSQLStorage implements IStorage {
       .where(eq(appointment_tags.id, id))
       .returning();
     return result.length > 0;
+  }
+
+  async deleteGoogleCalendarEvents(userId: string | number, calendarId?: string): Promise<number> {
+    try {
+      console.log('🗑️ Deleting Google Calendar events for user:', { userId, calendarId });
+      
+      // Use SQL query to handle the deletion properly
+      const result = await db.execute(sql`
+        DELETE FROM appointments 
+        WHERE user_id = ${userId.toString()} 
+        AND google_calendar_event_id IS NOT NULL
+        RETURNING *
+      `);
+      
+      const deletedCount = result.rowCount || 0;
+      
+      console.log(`🗑️ Successfully deleted ${deletedCount} Google Calendar events`);
+      return deletedCount;
+      
+    } catch (error) {
+      console.error('❌ Error deleting Google Calendar events:', error);
+      return 0;
+    }
   }
 }
 
