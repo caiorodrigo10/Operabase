@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -562,6 +562,16 @@ export function Consultas() {
 
     const selectedDate = new Date(date);
     const selectedDateTime = new Date(`${date}T${time}`);
+    
+    // Debug logging
+    console.log('🔍 Date check:', {
+      inputDate: date,
+      selectedDate: selectedDate,
+      dayOfWeek: selectedDate.getDay(),
+      dayName: format(selectedDate, 'EEEE', { locale: ptBR }),
+      workingDays: clinicConfig.working_days,
+      dayKey: getDayOfWeekKey(selectedDate)
+    });
     
     // Use enhanced analysis to get detailed warning information
     const dayOfWeek = format(selectedDate, 'EEEE', { locale: ptBR });
@@ -1603,7 +1613,7 @@ export function Consultas() {
                     const dayAppointments = getAppointmentsForDate(day);
                     const isCurrentMonth = isSameMonth(day, currentDate);
                     const backgroundClass = getCalendarCellBackgroundClass(day);
-                    const isToday = isSameDay(day, new Date());
+                    const isToday = isSameDay(day, today);
                     
                     return (
                       <div
@@ -1661,7 +1671,7 @@ export function Consultas() {
                     {calendarDays.slice(0, 7).map((day) => (
                       <div key={day.toISOString()} className="bg-slate-50 p-2 text-center">
                         <div className="text-sm font-medium">{format(day, 'EEE', { locale: ptBR })}</div>
-                        <div className={`text-lg ${isSameDay(day, new Date()) ? 'text-blue-600 font-bold' : ''}`}>
+                        <div className={`text-lg ${isSameDay(day, today) ? 'text-blue-600 font-bold' : ''}`}>
                           {format(day, 'd')}
                         </div>
                       </div>
