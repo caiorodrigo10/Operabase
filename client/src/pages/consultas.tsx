@@ -1692,6 +1692,9 @@ export function Consultas() {
                     ))}
                   </div>
                   
+                  {/* Calendar body with absolute positioned appointments */}
+                  <div className="relative">
+                  
                   {/* Time slots grid */}
                   <div className="grid grid-cols-8 gap-px">
                     {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
