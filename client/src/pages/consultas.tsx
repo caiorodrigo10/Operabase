@@ -709,8 +709,9 @@ export function Consultas() {
   };
 
   // Calendar height and positioning helpers
-  const PIXELS_PER_HOUR = 60; // Base height for 1 hour slot
-  const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60; // 1 pixel per minute
+  const PIXELS_PER_HOUR = 120; // Base height for 1 hour slot (doubled for better visibility)
+  const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60; // 2 pixels per minute
+  const PIXELS_PER_QUARTER = PIXELS_PER_HOUR / 4; // 30 pixels for 15-minute segments
 
   // Calculate appointment height based on duration
   const getAppointmentHeight = (durationMinutes: number): number => {
@@ -1557,9 +1558,20 @@ export function Consultas() {
                   <div className="grid grid-cols-8 gap-px">
                     {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
                       <div key={hour} className="contents">
-                        {/* Time label */}
-                        <div className="bg-white p-2 text-sm text-slate-600 border-r flex items-start justify-center" style={{ height: `${PIXELS_PER_HOUR}px` }}>
-                          {hour}:00
+                        {/* Time label with improved formatting */}
+                        <div className="bg-white p-2 text-sm text-slate-600 border-r flex items-start justify-center relative" style={{ height: `${PIXELS_PER_HOUR}px` }}>
+                          <span className="font-medium">{hour.toString().padStart(2, '0')}h</span>
+                          
+                          {/* 15-minute grid lines */}
+                          <div className="absolute inset-x-0 top-0 h-full">
+                            {[1, 2, 3].map((quarter) => (
+                              <div 
+                                key={quarter}
+                                className="absolute left-0 right-0 border-t border-slate-100"
+                                style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
+                              />
+                            ))}
+                          </div>
                         </div>
                         
                         {/* Day columns */}
@@ -1579,6 +1591,22 @@ export function Consultas() {
                               className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative overflow-hidden`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
+                              {/* 15-minute grid lines for day columns */}
+                              {[1, 2, 3].map((quarter) => (
+                                <div 
+                                  key={quarter}
+                                  className="absolute left-0 right-0 border-t border-slate-100"
+                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
+                                />
+                              ))}
+                              
+                              {/* Hour boundary line */}
+                              <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200" />
+                              
+                              {/* Lunch time highlighting */}
+                              {hour === 12 && (
+                                <div className="absolute inset-0 bg-slate-50 opacity-50" />
+                              )}
                               {slotAppointments.map((appointment: Appointment) => {
                                 const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
                                 const patientName = getPatientName(appointment.contact_id, appointment);
@@ -1631,10 +1659,21 @@ export function Consultas() {
                         {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
                           <div 
                             key={hour} 
-                            className="p-2 text-sm text-slate-600 border-b flex items-start justify-center"
+                            className="p-2 text-sm text-slate-600 border-b flex items-start justify-center relative"
                             style={{ height: `${PIXELS_PER_HOUR}px` }}
                           >
-                            {hour}:00
+                            <span className="font-medium">{hour.toString().padStart(2, '0')}h</span>
+                            
+                            {/* 15-minute grid lines for time column */}
+                            <div className="absolute inset-x-0 top-0 h-full">
+                              {[1, 2, 3].map((quarter) => (
+                                <div 
+                                  key={quarter}
+                                  className="absolute left-0 right-0 border-t border-slate-200"
+                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
+                                />
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1649,8 +1688,22 @@ export function Consultas() {
                               className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
-                              {/* Hour grid line */}
-                              <div className="absolute top-0 left-0 right-0 h-px bg-slate-200"></div>
+                              {/* 15-minute grid lines for appointment column */}
+                              {[1, 2, 3].map((quarter) => (
+                                <div 
+                                  key={quarter}
+                                  className="absolute left-0 right-0 border-t border-slate-100"
+                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
+                                />
+                              ))}
+                              
+                              {/* Hour boundary line */}
+                              <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200"></div>
+                              
+                              {/* Lunch time highlighting */}
+                              {hour === 12 && (
+                                <div className="absolute inset-0 bg-slate-50 opacity-30" />
+                              )}
                             </div>
                           ))}
                           
