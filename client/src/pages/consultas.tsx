@@ -1048,15 +1048,15 @@ export function Consultas() {
 
   const getCalendarDays = () => {
     if (calendarView === 'week') {
-      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const end = endOfWeek(currentDate, { weekStartsOn: 1 });
       return eachDayOfInterval({ start, end });
     } else if (calendarView === 'day') {
       return [currentDate];
     } else {
       // Month view
-      const start = startOfWeek(startOfMonth(currentDate));
-      const end = endOfWeek(endOfMonth(currentDate));
+      const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
+      const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
       return eachDayOfInterval({ start, end });
     }
   };
@@ -1735,7 +1735,7 @@ export function Consultas() {
               {calendarView === "month" && (
                 <div className="grid grid-cols-7 gap-px bg-slate-200 rounded-lg overflow-hidden">
                   {/* Calendar headers */}
-                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                  {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => (
                     <div key={day} className="bg-slate-50 p-2 text-center text-sm font-medium text-slate-600">
                       {day}
                     </div>
