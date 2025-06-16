@@ -1556,7 +1556,7 @@ export function Consultas() {
                   
                   {/* Time slots grid */}
                   <div className="grid grid-cols-8 gap-px">
-                    {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
+                    {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                       <div key={hour} className="contents">
                         {/* Time label with improved formatting */}
                         <div className="bg-white p-2 text-sm text-slate-600 border-r flex items-start justify-center relative" style={{ height: `${PIXELS_PER_HOUR}px` }}>
@@ -1656,7 +1656,7 @@ export function Consultas() {
                       {/* Time column */}
                       <div className="w-24 bg-slate-50">
                         <div className="p-2 text-center font-medium border-b">Hora</div>
-                        {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
+                        {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                           <div 
                             key={hour} 
                             className="p-2 text-sm text-slate-600 border-b flex items-start justify-center relative"
