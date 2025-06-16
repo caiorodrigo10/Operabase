@@ -177,6 +177,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ USER MANAGEMENT ROUTES ============
+  
+  // Get users for admin management
+  app.get("/api/clinic/:clinicId/users/management", supabaseAuth, async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const clinicUsers = await storage.getClinicUsers(clinicId);
+      
+      // Format response with necessary info for management
+      const usersData = clinicUsers.map(cu => ({
+        id: cu.user.id,
+        name: cu.user.name,
+        email: cu.user.email,
+        role: cu.role,
+        is_professional: cu.is_professional || false,
+        is_active: cu.is_active,
+        joined_at: cu.joined_at,
+        last_login: cu.user.last_login
+      }));
+
+      res.json(usersData);
+    } catch (error) {
+      console.error('Error getting clinic users for management:', error);
+      res.status(500).json({ 
+        error: 'Failed to get clinic users'
+      });
+    }
+  });
+  
+  // Update user professional status
+  app.put("/api/clinic/:clinicId/users/:userId/professional-status", supabaseAuth, async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      const userId = parseInt(req.params.userId);
+      const { is_professional, notes } = req.body;
+      
+      if (isNaN(clinicId) || isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid clinic or user ID" });
+      }
+      
+      // Update professional status
+      const result = await storage.updateProfessionalStatus(
+        userId,
+        clinicId,
+        is_professional,
+        req.user?.id,
+        notes
+      );
+      
+      if (result.success) {
+        res.json({ 
+          message: is_professional ? 'Status profissional ativado' : 'Status profissional desativado',
+          user: result.clinicUser 
+        });
+      } else {
+        res.status(400).json({ error: 'Failed to update professional status' });
+      }
+    } catch (error) {
+      console.error('Error updating professional status:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+  // Get professional status audit log  
+  app.get("/api/clinic/:clinicId/audit/professional-status", supabaseAuth, async (req, res) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      
+      const auditLogs = await storage.getProfessionalStatusAudit(clinicId);
+      res.json(auditLogs);
+    } catch (error) {
+      console.error('Error getting audit logs:', error);
+      res.status(500).json({ error: 'Failed to get audit logs' });
+    }
+  });
+
   // Get clinic configuration
   app.get("/api/clinic/:id/config", async (req, res) => {
     try {

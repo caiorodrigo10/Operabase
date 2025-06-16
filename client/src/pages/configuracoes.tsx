@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save, Phone } from "lucide-react";
+import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save, Phone, Users } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
 import countries from 'world-countries';
+import { UserManagement } from '@/components/UserManagement';
 
 // Country selector component
 const CountrySelector = ({ value, onChange, placeholder = "Selecione um país" }: {
@@ -473,8 +474,9 @@ export function Configuracoes() {
         </div>
 
         <Tabs defaultValue="clinic" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="clinic">Clínica</TabsTrigger>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="integrations">Integrações</TabsTrigger>
             <TabsTrigger value="ai">IA Livia</TabsTrigger>
             <TabsTrigger value="system">Sistema</TabsTrigger>
@@ -851,6 +853,10 @@ export function Configuracoes() {
                 )}
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <UserManagement clinicId={1} />
           </TabsContent>
 
           <TabsContent value="integrations" className="space-y-6">
