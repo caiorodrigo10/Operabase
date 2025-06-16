@@ -568,7 +568,7 @@ export function Consultas() {
       return response.json();
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false,
     select: (data: any) => ({
       working_days: data.working_days || ['monday','tuesday','wednesday','thursday','friday'],
