@@ -601,8 +601,8 @@ export function Consultas() {
     return !isWorkingHour(timeString, clinicConfig) || isLunchTime(timeString, clinicConfig);
   };
 
-  // Check if a time slot is available for quick create
-  const isTimeSlotAvailable = (date: Date, hour: number): boolean => {
+  // Check if a time slot is available for quick create (15-minute slots)
+  const isTimeSlotAvailable = (date: Date, hour: number, minute: number = 0): boolean => {
     if (!clinicConfig) return false;
     
     // Check if day is working day
@@ -613,24 +613,31 @@ export function Consultas() {
     
     // Check if there are existing appointments at this time
     const dayAppointments = getAppointmentsForDate(date);
+    const slotDateTime = new Date(date);
+    slotDateTime.setHours(hour, minute, 0, 0);
+    
     const hasConflict = dayAppointments.some((apt: Appointment) => {
       if (!apt.scheduled_date) return false;
       const aptDate = new Date(apt.scheduled_date);
-      return aptDate.getHours() === hour;
+      const aptEndDate = new Date(aptDate.getTime() + (getAppointmentDuration(apt) * 60000));
+      
+      // Check if slot overlaps with existing appointment
+      const slotEnd = new Date(slotDateTime.getTime() + (15 * 60000)); // 15 minutes
+      return (slotDateTime < aptEndDate && slotEnd > aptDate);
     });
     
     return !hasConflict;
   };
 
   // Handle quick create appointment
-  const handleQuickCreateAppointment = (date: Date, hour: number) => {
+  const handleQuickCreateAppointment = (date: Date, hour: number, minute: number = 0) => {
     const formattedDate = format(date, 'yyyy-MM-dd');
-    const formattedTime = `${hour.toString().padStart(2, '0')}:00`;
+    const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     
     // Pre-fill the form with selected date and time
     form.setValue("scheduled_date", formattedDate);
     form.setValue("scheduled_time", formattedTime);
-    form.setValue("duration", "60"); // Default duration
+    form.setValue("duration", "30"); // Default duration
     form.setValue("type", "consulta"); // Default type
     
     setIsCreateDialogOpen(true);
@@ -1633,57 +1640,54 @@ export function Consultas() {
                             return aptStartHour === hour;
                           });
                           
-                          const isAvailable = isTimeSlotAvailable(day, hour);
-                          
                           return (
                             <div 
                               key={`${day.toISOString()}-${hour}`} 
-                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative overflow-hidden group ${isAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
+                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative overflow-hidden`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
-                              onClick={() => {
-                                if (isAvailable) {
-                                  handleQuickCreateAppointment(day, hour);
-                                }
-                              }}
-                              onMouseEnter={(e) => {
-                                if (isAvailable) {
-                                  setQuickCreateHover({
-                                    show: true,
-                                    date: day,
-                                    hour: hour,
-                                    x: e.clientX,
-                                    y: e.clientY
-                                  });
-                                }
-                              }}
-                              onMouseLeave={() => {
-                                setQuickCreateHover(prev => ({ ...prev, show: false }));
-                              }}
                             >
-                              {/* 15-minute grid lines for day columns */}
-                              {[1, 2, 3].map((quarter) => (
-                                <div 
-                                  key={quarter}
-                                  className="absolute left-0 right-0 border-t border-slate-100"
-                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
-                                />
-                              ))}
+                              {/* 15-minute clickable slots */}
+                              {[0, 15, 30, 45].map((minute) => {
+                                const isSlotAvailable = isTimeSlotAvailable(day, hour, minute);
+                                const slotDateTime = new Date(day);
+                                slotDateTime.setHours(hour, minute, 0, 0);
+                                const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                                
+                                return (
+                                  <div
+                                    key={`${minute}`}
+                                    className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
+                                    style={{ 
+                                      top: `${(minute / 60) * PIXELS_PER_HOUR}px`, 
+                                      height: `${PIXELS_PER_QUARTER}px` 
+                                    }}
+                                    onClick={() => {
+                                      if (isSlotAvailable) {
+                                        handleQuickCreateAppointment(day, hour, minute);
+                                      }
+                                    }}
+                                  >
+                                    {/* Quarter hour border */}
+                                    <div className="absolute top-0 left-0 right-0 border-t border-slate-100" />
+                                    
+                                    {/* Time indicator on hover */}
+                                    {isSlotAvailable && (
+                                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                        <div className="bg-blue-100 border border-blue-300 rounded px-1 py-0.5 text-xs font-medium text-blue-800">
+                                          {timeLabel}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                               
                               {/* Hour boundary line */}
                               <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200" />
                               
                               {/* Lunch time highlighting */}
                               {hour === 12 && (
-                                <div className="absolute inset-0 bg-slate-50 opacity-50" />
-                              )}
-                              
-                              {/* Quick create time indicator on hover */}
-                              {isAvailable && (
-                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                                  <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
-                                    {hour.toString().padStart(2, '0')}:00
-                                  </div>
-                                </div>
+                                <div className="absolute inset-0 bg-slate-50 opacity-30" />
                               )}
                               
                               {slotAppointments.map((appointment: Appointment) => {
