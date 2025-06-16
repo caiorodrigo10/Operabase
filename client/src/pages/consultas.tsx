@@ -521,16 +521,6 @@ export function Consultas() {
     refetchOnWindowFocus: false,
   });
 
-  // Pre-select current user when clinicUsers data loads - optimized version
-  React.useEffect(() => {
-    if (clinicUsers.length > 0 && selectedProfessionals.length === 0 && currentUserEmail) {
-      const currentClinicUser = clinicUserByEmail.get(currentUserEmail);
-      if (currentClinicUser && currentClinicUser.is_professional) {
-        setSelectedProfessionals([currentClinicUser.id]);
-      }
-    }
-  }, [clinicUsers.length, selectedProfessionals.length, currentUserEmail, clinicUserByEmail]);
-
   // Memoized current user email for performance
   const currentUserEmail = useMemo(() => {
     try {
@@ -551,6 +541,16 @@ export function Consultas() {
     });
     return map;
   }, [clinicUsers]);
+
+  // Pre-select current user when clinicUsers data loads - optimized version
+  React.useEffect(() => {
+    if (clinicUsers.length > 0 && selectedProfessionals.length === 0 && currentUserEmail) {
+      const currentClinicUser = clinicUserByEmail.get(currentUserEmail);
+      if (currentClinicUser && currentClinicUser.is_professional) {
+        setSelectedProfessionals([currentClinicUser.id]);
+      }
+    }
+  }, [clinicUsers.length, selectedProfessionals.length, currentUserEmail, clinicUserByEmail]);
 
   // Memoized professional ID lookup for performance
   const professionalNameToIdMap = useMemo(() => {
@@ -1135,32 +1135,14 @@ export function Consultas() {
       // For Google Calendar events, all belong to current user
       // We need to check if current user's integer ID is in selectedProfessionals
       if (appointment.google_calendar_event_id) {
-        // Get current user's email from localStorage
-        try {
-          const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
-          const currentUserEmail = authData?.user?.email;
+        // Use memoized current user email and clinic user lookup
+        if (currentUserEmail) {
+          const clinicUser = clinicUserByEmail.get(currentUserEmail);
           
-          console.log('🔍 Google Calendar filtering debug:', {
-            currentUserEmail,
-            selectedProfessionals,
-            clinicUsers: clinicUsers.map((u: any) => ({ id: u.id, email: u.email, is_professional: u.is_professional }))
-          });
-          
-          if (currentUserEmail) {
-            // Find the clinic user that matches this email
-            const clinicUser = clinicUsers.find((user: any) => user.email === currentUserEmail);
-            
-            console.log('🔍 Found clinic user:', clinicUser);
-            
-            if (clinicUser && clinicUser.is_professional) {
-              // Check if this professional is selected
-              const shouldShow = isSameDate && selectedProfessionals.includes(clinicUser.id);
-              console.log('🔍 Should show appointment:', shouldShow, { clinicUserId: clinicUser.id, selectedProfessionals });
-              return shouldShow;
-            }
+          if (clinicUser && clinicUser.is_professional) {
+            // Check if this professional is selected
+            return isSameDate && selectedProfessionals.includes(clinicUser.id);
           }
-        } catch (error) {
-          console.error('Error parsing auth data:', error);
         }
         
         // If we can't determine the user, don't show Google Calendar events when filtering
@@ -1172,44 +1154,6 @@ export function Consultas() {
       return isSameDate && (professionalId ? selectedProfessionals.includes(professionalId) : false);
     });
   };
-
-  // Memoized current user email for performance
-  const currentUserEmail = useMemo(() => {
-    try {
-      const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
-      return authData?.user?.email || null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  // Memoized clinic user lookup by email
-  const clinicUserByEmail = useMemo(() => {
-    const map = new Map<string, any>();
-    clinicUsers.forEach((user: any) => {
-      if (user.email) {
-        map.set(user.email, user);
-      }
-    });
-    return map;
-  }, [clinicUsers]);
-
-  // Memoized professional ID lookup for performance
-  const professionalNameToIdMap = useMemo(() => {
-    const map = new Map<string, number>();
-    clinicUsers.forEach((user: any) => {
-      if (user.name) {
-        map.set(user.name, user.id);
-      }
-    });
-    return map;
-  }, [clinicUsers]);
-
-  // Optimized helper function to get professional ID by name
-  const getProfessionalIdByName = React.useCallback((doctorName: string | null | undefined) => {
-    if (!doctorName) return null;
-    return professionalNameToIdMap.get(doctorName) || null;
-  }, [professionalNameToIdMap]);
 
   // Function to toggle professional selection
   const toggleProfessional = (professionalId: number) => {
