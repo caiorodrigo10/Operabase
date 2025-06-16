@@ -165,6 +165,12 @@ export function Consultas() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Create a stable reference for "today" to avoid timezone issues
+  const today = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
