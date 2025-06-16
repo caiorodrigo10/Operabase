@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, Shield, ShieldCheck, History, AlertTriangle, Plus, UserPlus } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Pencil, Plus, User, Users, UserPlus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -23,18 +22,7 @@ interface User {
   is_active: boolean;
   joined_at: string;
   last_login?: string;
-}
-
-interface AuditLog {
-  id: number;
-  target_user_name: string;
-  changed_by_user_name: string;
-  action: 'activated' | 'deactivated';
-  previous_status: boolean;
-  new_status: boolean;
-  notes?: string;
-  ip_address?: string;
-  created_at: string;
+  avatar_url?: string;
 }
 
 interface UserManagementProps {
@@ -43,9 +31,8 @@ interface UserManagementProps {
 
 export function UserManagement({ clinicId }: UserManagementProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [notes, setNotes] = useState('');
-  const [showAuditDialog, setShowAuditDialog] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({
     name: '',
     email: '',
@@ -60,15 +47,9 @@ export function UserManagement({ clinicId }: UserManagementProps) {
     enabled: !!clinicId
   });
 
-  // Fetch audit log
-  const { data: auditLog = [], isLoading: auditLoading } = useQuery({
-    queryKey: [`/api/clinic/${clinicId}/audit/professional-status`],
-    enabled: showAuditDialog && !!clinicId
-  });
-
-  // Update professional status mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ userId, isProfessional, notes }: { userId: number; isProfessional: boolean; notes?: string }) => {
+  // Update user mutation (role and professional status)
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, role, isProfessional }: { userId: number; role: string; isProfessional: boolean }) => {
       const response = await fetch(`/api/clinic/${clinicId}/users/${userId}/professional-status`, {
         method: 'PUT',
         headers: {
@@ -78,25 +59,25 @@ export function UserManagement({ clinicId }: UserManagementProps) {
         body: JSON.stringify({
           user_id: userId,
           is_professional: isProfessional,
-          notes
+          role: role,
+          notes: `Role atualizado para ${role}, Status profissional: ${isProfessional ? 'Ativo' : 'Inativo'}`
         })
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update professional status');
+        throw new Error(error.error || 'Failed to update user');
       }
 
       return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/clinic/${clinicId}/users/management`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/clinic/${clinicId}/audit/professional-status`] });
       toast({
-        title: "Status atualizado",
+        title: "Usuário atualizado",
         description: data.message,
       });
-      setNotes('');
+      setEditDialogOpen(false);
       setSelectedUser(null);
     },
     onError: (error: Error) => {
@@ -122,7 +103,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
         title: "Usuário criado",
         description: data.message,
       });
-      setShowCreateDialog(false);
+      setCreateDialogOpen(false);
       setNewUserData({
         name: '',
         email: '',
@@ -139,21 +120,18 @@ export function UserManagement({ clinicId }: UserManagementProps) {
     }
   });
 
-  const handleStatusChange = (user: User, isProfessional: boolean) => {
-    if (user.role === 'admin' && !isProfessional) {
-      toast({
-        title: "Ação não permitida",
-        description: "Administradores não podem ter o status profissional removido",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
-    updateStatusMutation.mutate({
-      userId: user.id,
-      isProfessional,
-      notes: notes.trim() || undefined
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = () => {
+    if (!selectedUser) return;
+    
+    updateUserMutation.mutate({
+      userId: selectedUser.id,
+      role: selectedUser.role,
+      isProfessional: selectedUser.is_professional
     });
   };
 
@@ -194,7 +172,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
         </div>
         
         <div className="flex gap-2">
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
                 <UserPlus className="h-4 w-4" />
@@ -265,7 +243,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
               </div>
               
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
                   Cancelar
                 </Button>
                 <Button
