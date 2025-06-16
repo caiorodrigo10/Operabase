@@ -1845,7 +1845,12 @@ export function Consultas() {
                                       <div className="flex items-start gap-1 h-full">
                                         <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-0.5`}></div>
                                         <div className="flex-1 overflow-hidden">
-                                          <div className="truncate">{patientName}</div>
+                                          <div className="truncate">
+                                            {isContinuation ? `${patientName}` : `${displayTime} ${patientName}`}
+                                          </div>
+                                          {isContinuation && (
+                                            <div className="text-xs opacity-75">continua...</div>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
