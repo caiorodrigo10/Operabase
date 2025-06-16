@@ -86,6 +86,46 @@ export class PostgreSQLStorage implements IStorage {
         1
       ]);
       
+      // Check if user exists in main users table, if not create them
+      const existingUserResult = await client.query(`
+        SELECT id FROM users WHERE email = $1
+      `, ['cr@caiorodrigo.com.br']);
+      
+      let userId;
+      if (existingUserResult.rows.length === 0) {
+        // Create user in main users table
+        const createUserResult = await client.query(`
+          INSERT INTO users (email, name, password, role, is_active)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING id;
+        `, [
+          'cr@caiorodrigo.com.br',
+          'Caio Rodrigo',
+          '$2b$10$placeholder',
+          'super_admin',
+          true
+        ]);
+        userId = createUserResult.rows[0].id;
+      } else {
+        userId = existingUserResult.rows[0].id;
+      }
+      
+      // Add to clinic_users if not exists
+      await client.query(`
+        INSERT INTO clinic_users (user_id, clinic_id, role, is_professional, is_active, joined_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        ON CONFLICT (clinic_id, user_id) DO UPDATE SET
+          role = EXCLUDED.role,
+          is_professional = EXCLUDED.is_professional,
+          is_active = EXCLUDED.is_active;
+      `, [
+        userId,
+        1, // clinic_id
+        'admin', // role
+        true, // is_professional
+        true // is_active
+      ]);
+      
       client.release();
       console.log('✅ Profiles table initialized and user profile created');
     } catch (error) {
@@ -1354,50 +1394,60 @@ export class PostgreSQLStorage implements IStorage {
     createdBy: string;
   }): Promise<{ success: boolean; user?: any; error?: string }> {
     try {
-      // Check if email already exists
-      const existingUser = await db.execute(sql`
-        SELECT id FROM profiles WHERE email = ${userData.email}
-      `);
+      // Check if email already exists in users table
+      const existingUser = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
       
-      if (existingUser.rows.length > 0) {
+      if (existingUser.length > 0) {
         return { success: false, error: 'Email já está em uso no sistema' };
       }
       
-      // Create user in Supabase Auth and get the ID
-      // For now, we'll create a placeholder in profiles and let Supabase handle auth
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Insert into profiles table
-      await db.execute(sql`
-        INSERT INTO profiles (id, name, email, role, created_at, updated_at)
-        VALUES (${userId}, ${userData.name}, ${userData.email}, 'user', NOW(), NOW())
+      // Check if email already exists in profiles table (Supabase users)
+      const existingProfile = await db.execute(sql`
+        SELECT id FROM profiles WHERE email = ${userData.email}
       `);
       
-      // Insert into clinic_users table
-      await db.execute(sql`
-        INSERT INTO clinic_users (user_id, clinic_id, role, is_professional, is_active, joined_at)
-        VALUES (${userId}, ${userData.clinicId}, ${userData.role}, ${userData.isProfessional}, true, NOW())
-      `);
+      if (existingProfile.rows.length > 0) {
+        return { success: false, error: 'Email já está em uso no sistema' };
+      }
+      
+      // Create user in main users table first
+      const newUser = await db.insert(users).values({
+        name: userData.name,
+        email: userData.email,
+        password: '$2b$10$placeholder', // Placeholder password, will be set during first login
+        role: userData.role,
+        is_active: true
+      }).returning();
+      
+      const createdUser = newUser[0];
+      
+      // Add user to clinic_users table
+      await db.insert(clinic_users).values({
+        user_id: createdUser.id,
+        clinic_id: userData.clinicId,
+        role: userData.role,
+        is_professional: userData.isProfessional,
+        is_active: true,
+        joined_at: new Date()
+      });
       
       // Create audit log
-      await db.execute(sql`
-        INSERT INTO professional_status_audit (
-          clinic_id, target_user_id, changed_by_user_id, action, 
-          previous_status, new_status, notes, created_at
-        )
-        VALUES (
-          ${userData.clinicId}, ${userId}, ${userData.createdBy}, 
-          'user_created', false, ${userData.isProfessional}, 
-          'Usuário criado pelo administrador', NOW()
-        )
-      `);
+      await db.insert(professional_status_audit).values({
+        clinic_id: userData.clinicId,
+        target_user_id: createdUser.id,
+        changed_by_user_id: parseInt(userData.createdBy) || 1,
+        action: 'user_created',
+        previous_status: false,
+        new_status: userData.isProfessional,
+        notes: 'Usuário criado pelo administrador'
+      });
       
       return { 
         success: true, 
         user: {
-          id: userId,
-          name: userData.name,
-          email: userData.email,
+          id: createdUser.id,
+          name: createdUser.name,
+          email: createdUser.email,
           role: userData.role,
           is_professional: userData.isProfessional
         }
