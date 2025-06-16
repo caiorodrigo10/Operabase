@@ -2210,7 +2210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/clinic/:clinicId/users/management', supabaseAuth, getClinicUsersForManagement);
   
   // Update professional status (admin only)
-  app.put('/api/clinic/:clinicId/users/:userId/professional-status', isAuthenticated, requireClinicAdmin(), updateUserProfessionalStatus);
+  app.put('/api/clinic/:clinicId/users/:userId/professional-status', supabaseAuth, updateUserProfessionalStatus);
   
   // Get professional status audit log (admin only)
   app.get('/api/clinic/:clinicId/audit/professional-status', isAuthenticated, requireClinicAdmin(), getProfessionalStatusAudit);
