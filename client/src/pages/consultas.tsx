@@ -502,9 +502,9 @@ export function Consultas() {
 
   // Fetch users for doctor names
   const { data: clinicUsers = [] } = useQuery({
-    queryKey: ['/api/clinic/1/users'],
+    queryKey: ['/api/clinic/1/users/management'],
     queryFn: async () => {
-      const response = await fetch('/api/clinic/1/users');
+      const response = await fetch('/api/clinic/1/users/management');
       if (!response.ok) throw new Error('Failed to fetch clinic users');
       return response.json();
     },
@@ -1286,7 +1286,7 @@ export function Consultas() {
                             {clinicUsers
                               .filter((user: any) => user.is_professional === true)
                               .map((user: any) => (
-                                <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                                <SelectItem key={user.id || user.user_id} value={(user.id || user.user_id)?.toString()}>
                                   {user.name}
                                 </SelectItem>
                               ))}
