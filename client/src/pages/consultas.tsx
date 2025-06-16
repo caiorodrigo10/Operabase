@@ -32,7 +32,6 @@ import type { Appointment, Contact } from "@/../../shared/schema";
 
 // Schema for appointment creation form
 const appointmentSchema = z.object({
-  appointment_name: z.string().min(1, "Nome do compromisso é obrigatório"),
   contact_id: z.string().min(1, "Contato é obrigatório"),
   user_id: z.string().min(1, "Profissional é obrigatório"),
   scheduled_date: z.string().min(1, "Data é obrigatória"),
@@ -230,7 +229,6 @@ export function Consultas() {
   const form = useForm<AppointmentForm>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      appointment_name: "",
       contact_id: "",
       user_id: "",
       scheduled_date: "",
@@ -433,11 +431,15 @@ export function Consultas() {
   // Create appointment mutation
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentForm) => {
+      // Get the selected contact to use patient name
+      const selectedContact = contacts.find((contact: Contact) => contact.id.toString() === data.contact_id);
+      const patientName = selectedContact?.name || "Paciente";
+      
       const appointmentData = {
         contact_id: parseInt(data.contact_id),
         user_id: parseInt(data.user_id),
         clinic_id: 1,
-        doctor_name: data.appointment_name,
+        doctor_name: patientName,
         specialty: data.type,
         appointment_type: data.type,
         scheduled_date: new Date(`${data.scheduled_date}T${data.scheduled_time}`),
@@ -1297,24 +1299,6 @@ export function Consultas() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit((data) => createAppointmentMutation.mutate(data))} className="space-y-4">
-              {/* Appointment Name */}
-              <FormField
-                control={form.control}
-                name="appointment_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Compromisso *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: Consulta Dr. Silva, Retorno Cardiologia..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Contact Selection with Cadastrar button inline */}
               <FormField
                 control={form.control}
