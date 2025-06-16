@@ -123,6 +123,52 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
     return undefined;
   };
 
+  // Fetch existing appointments for conflict checking
+  const { data: existingAppointments = [] } = useQuery({
+    queryKey: ['/api/appointments', { clinic_id: 1 }],
+    queryFn: async () => {
+      const response = await fetch('/api/appointments?clinic_id=1');
+      if (!response.ok) throw new Error('Failed to fetch appointments');
+      return response.json();
+    },
+  });
+
+  // Helper function to convert time string to minutes
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Helper function to convert minutes to time string
+  const minutesToTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
+  // Check if a time slot conflicts with existing appointments
+  const hasConflict = (startTime: string, endTime: string): boolean => {
+    const slotStart = timeToMinutes(startTime);
+    const slotEnd = timeToMinutes(endTime);
+    const currentDateStr = currentDate.toISOString().split('T')[0];
+
+    return existingAppointments.some((appointment: any) => {
+      const appointmentDate = new Date(appointment.scheduled_date).toISOString().split('T')[0];
+      if (appointmentDate !== currentDateStr) return false;
+
+      const appointmentTime = new Date(appointment.scheduled_date).toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      const appointmentStart = timeToMinutes(appointmentTime);
+      const appointmentEnd = appointmentStart + appointment.duration_minutes;
+
+      // Check if time slots overlap
+      return (slotStart < appointmentEnd && slotEnd > appointmentStart);
+    });
+  };
+
   // Generate time slots based on clinic configuration
   useEffect(() => {
     if (!clinicConfig) return;
@@ -133,39 +179,62 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
       const evening: TimeSlot[] = [];
 
       // Parse work hours
-      const [workStartHour, workStartMinute] = clinicConfig.work_start.split(':').map(Number);
-      const [workEndHour, workEndMinute] = clinicConfig.work_end.split(':').map(Number);
+      const workStartMinutes = timeToMinutes(clinicConfig.work_start);
+      const workEndMinutes = timeToMinutes(clinicConfig.work_end);
+      const lunchStartMinutes = timeToMinutes(clinicConfig.lunch_start);
+      const lunchEndMinutes = timeToMinutes(clinicConfig.lunch_end);
       
-      // Generate slots from work start to work end in 30-minute intervals
-      const startHour = Math.max(6, workStartHour); // Start from 6 AM minimum
-      const endHour = Math.min(22, workEndHour); // End at 10 PM maximum
-      
-      for (let hour = startHour; hour < endHour; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const start = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          const endHour = minute === 30 ? hour + 1 : hour;
-          const endMinute = minute === 30 ? 0 : minute + 30;
-          const end = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
-          
-          const unavailabilityReason = getUnavailabilityReason(currentDate, start, clinicConfig);
-          const isAvailable = !unavailabilityReason;
-          
-          const timeSlot: TimeSlot = {
-            startTime: start,
-            endTime: end,
-            label: `${start} - ${end}`,
-            available: isAvailable,
-            reason: unavailabilityReason
-          };
+      // Generate slots in 30-minute intervals, but check for full duration availability
+      for (let currentMinutes = workStartMinutes; currentMinutes < workEndMinutes; currentMinutes += 30) {
+        const slotEndMinutes = currentMinutes + duration;
+        
+        // Skip if slot would exceed work hours
+        if (slotEndMinutes > workEndMinutes) continue;
+        
+        const startTime = minutesToTime(currentMinutes);
+        const endTime = minutesToTime(slotEndMinutes);
+        
+        // Check availability for the entire duration
+        let isAvailable = true;
+        let unavailabilityReason: string | undefined;
 
-          // Categorize time slots
-          if (hour < 12) {
-            morning.push(timeSlot);
-          } else if (hour < 18) {
-            afternoon.push(timeSlot);
-          } else {
-            evening.push(timeSlot);
+        // Check if it's a working day
+        if (!isWorkingDay(currentDate, clinicConfig)) {
+          unavailabilityReason = "Dia não útil";
+          isAvailable = false;
+        }
+
+        // Check lunch break conflicts (only if lunch break is enabled)
+        if (isAvailable && clinicConfig.has_lunch_break) {
+          // Check if any part of the appointment overlaps with lunch time
+          if (currentMinutes < lunchEndMinutes && slotEndMinutes > lunchStartMinutes) {
+            unavailabilityReason = "Conflito com horário de almoço";
+            isAvailable = false;
           }
+        }
+
+        // Check conflicts with existing appointments
+        if (isAvailable && hasConflict(startTime, endTime)) {
+          unavailabilityReason = "Horário ocupado";
+          isAvailable = false;
+        }
+        
+        const timeSlot: TimeSlot = {
+          startTime,
+          endTime,
+          label: `${startTime} - ${endTime}`,
+          available: isAvailable,
+          reason: unavailabilityReason
+        };
+
+        // Categorize time slots
+        const hour = Math.floor(currentMinutes / 60);
+        if (hour < 12) {
+          morning.push(timeSlot);
+        } else if (hour < 18) {
+          afternoon.push(timeSlot);
+        } else {
+          evening.push(timeSlot);
         }
       }
 
@@ -173,51 +242,51 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
     };
 
     generateTimeSlots();
-  }, [currentDate, clinicConfig]);
+  }, [currentDate, clinicConfig, duration, existingAppointments]);
 
-  const renderTimeSlots = (slots: TimeSlot[], title: string) => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium text-slate-700">{title}</h3>
-      <div className="grid grid-cols-2 gap-2">
-        {slots.map((slot) => (
-          <Button
-            key={slot.startTime}
-            variant={selectedTime === slot.startTime ? "default" : "outline"}
-            className={`h-auto p-3 flex flex-col items-start justify-start text-left relative ${
-              !slot.available 
-                ? 'opacity-50 border-orange-200 bg-orange-50 hover:bg-orange-100' 
-                : slot.available && selectedTime !== slot.startTime
-                ? 'border-green-200 bg-green-50 hover:bg-green-100' 
-                : ''
-            }`}
-            onClick={() => handleTimeSelect(slot.startTime)}
-          >
-            <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4" />
-              <span className="font-medium">{slot.label}</span>
-            </div>
-            <div className="flex items-center space-x-2 mt-1">
-              {slot.available ? (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                  Disponível
-                </Badge>
-              ) : (
-                <>
-                  <AlertTriangle className="w-3 h-3 text-orange-600" />
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
-                    {slot.reason}
-                  </Badge>
-                </>
-              )}
-            </div>
-            <span className="text-xs text-slate-500 mt-1">
-              Duração: {duration} min
-            </span>
-          </Button>
-        ))}
+  const renderTimeSlots = (slots: TimeSlot[], title: string) => {
+    // Only show available slots
+    const availableSlots = slots.filter(slot => slot.available);
+    
+    if (availableSlots.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-3">
+        <h3 className="text-base font-medium text-slate-700">{title}</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {availableSlots.map((slot) => (
+            <Button
+              key={slot.startTime}
+              variant={selectedTime === slot.startTime ? "default" : "outline"}
+              className={`h-auto p-2 flex flex-col items-center justify-center text-center relative transition-all ${
+                selectedTime === slot.startTime
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                  : 'border-green-200 bg-green-50 hover:bg-green-100 text-green-800 hover:border-green-300'
+              }`}
+              onClick={() => handleTimeSelect(slot.startTime)}
+            >
+              <div className="flex items-center space-x-1">
+                <Clock className="w-3 h-3" />
+                <span className="font-medium text-sm">{slot.label}</span>
+              </div>
+              <Badge 
+                variant="secondary" 
+                className={`text-xs mt-1 ${
+                  selectedTime === slot.startTime 
+                    ? 'bg-blue-700 text-blue-100 border-blue-600' 
+                    : 'bg-green-100 text-green-700 border-green-200'
+                }`}
+              >
+                Disponível
+              </Badge>
+            </Button>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Check if selected date is a working day
   const isSelectedDateWorkingDay = clinicConfig ? isWorkingDay(currentDate, clinicConfig) : true;
@@ -280,10 +349,38 @@ export function FindTimeSlots({ selectedDate, duration, onTimeSelect, onClose }:
       </div>
 
       {/* Time Slots */}
-      <div className="space-y-8 mb-8">
-        {timeSlots.morning.length > 0 && renderTimeSlots(timeSlots.morning, "Manhã")}
-        {timeSlots.afternoon.length > 0 && renderTimeSlots(timeSlots.afternoon, "Tarde")}
-        {timeSlots.evening.length > 0 && renderTimeSlots(timeSlots.evening, "Noite")}
+      <div className="space-y-6 mb-8">
+        {(() => {
+          const hasAvailableSlots = 
+            timeSlots.morning.some(slot => slot.available) ||
+            timeSlots.afternoon.some(slot => slot.available) ||
+            timeSlots.evening.some(slot => slot.available);
+
+          if (!hasAvailableSlots) {
+            return (
+              <div className="text-center py-12 bg-slate-50 rounded-lg border">
+                <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-700 mb-2">
+                  Nenhum horário disponível
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  Não há horários disponíveis para consultas de {duration} minutos neste dia.
+                </p>
+                <p className="text-sm text-slate-500">
+                  Tente selecionar outro dia ou ajustar a duração da consulta.
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <>
+              {renderTimeSlots(timeSlots.morning, "Manhã")}
+              {renderTimeSlots(timeSlots.afternoon, "Tarde")}
+              {renderTimeSlots(timeSlots.evening, "Noite")}
+            </>
+          );
+        })()}
       </div>
 
       {/* Action Buttons */}
