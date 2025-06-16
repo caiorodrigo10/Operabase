@@ -160,19 +160,19 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getClinicUsers(clinicId: number): Promise<(ClinicUser & { user: User })[]> {
-    // Use raw SQL to join with profiles table from Supabase
+    // Use raw SQL to join with users table
     const result = await db.execute(sql`
       SELECT 
         cu.*,
-        p.id as user_id,
-        p.name as user_name,
-        p.email as user_email,
-        p.created_at as user_created_at,
-        p.updated_at as user_updated_at
+        u.id as user_id,
+        u.name as user_name,
+        u.email as user_email,
+        u.created_at as user_created_at,
+        u.updated_at as user_updated_at
       FROM clinic_users cu
-      JOIN profiles p ON cu.user_id = p.id
+      JOIN users u ON cu.user_id = u.id
       WHERE cu.clinic_id = ${clinicId}
-      ORDER BY cu.role DESC, p.name ASC
+      ORDER BY cu.role DESC, u.name ASC
     `);
     
     return result.rows.map((row: any) => ({
