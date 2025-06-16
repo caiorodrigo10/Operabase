@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, date, jsonb, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, date, jsonb, index, unique, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,7 +15,7 @@ export const sessions = pgTable(
 
 // Enhanced users table for email/password authentication
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   email: varchar("email").notNull().unique(),
   password: varchar("password").notNull(),
   name: varchar("name").notNull(),
@@ -29,7 +29,7 @@ export const users = pgTable("users", {
 // Password reset tokens table
 export const password_reset_tokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull(),
+  user_id: uuid("user_id").notNull(),
   token: varchar("token", { length: 255 }).notNull().unique(),
   expires_at: timestamp("expires_at").notNull(),
   used: boolean("used").notNull().default(false),
@@ -43,12 +43,12 @@ export const password_reset_tokens = pgTable("password_reset_tokens", {
 export const clinic_users = pgTable("clinic_users", {
   id: serial("id").primaryKey(),
   clinic_id: integer("clinic_id").notNull(),
-  user_id: integer("user_id").notNull(),
+  user_id: uuid("user_id").notNull(),
   role: varchar("role").notNull().default("usuario"), // admin, usuario
   is_professional: boolean("is_professional").notNull().default(false), // Controlled only by admins
   permissions: jsonb("permissions"), // Specific permissions for this clinic
   is_active: boolean("is_active").notNull().default(true),
-  invited_by: integer("invited_by"),
+  invited_by: uuid("invited_by"),
   invited_at: timestamp("invited_at"),
   joined_at: timestamp("joined_at"),
   created_at: timestamp("created_at").defaultNow(),
