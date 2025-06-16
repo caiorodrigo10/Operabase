@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, date, jsonb, index, unique, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index, unique, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -13,198 +13,12 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Enhanced users table for email/password authentication
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey(),
-  email: varchar("email").notNull().unique(),
-  password: varchar("password").notNull(),
-  name: varchar("name").notNull(),
-  role: varchar("role").notNull().default("admin"), // super_admin, admin, manager, user
-  is_active: boolean("is_active").notNull().default(true),
-  last_login: timestamp("last_login"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
-
-// Password reset tokens table
-export const password_reset_tokens = pgTable("password_reset_tokens", {
-  id: serial("id").primaryKey(),
-  user_id: uuid("user_id").notNull(),
-  token: varchar("token", { length: 255 }).notNull().unique(),
-  expires_at: timestamp("expires_at").notNull(),
-  used: boolean("used").notNull().default(false),
-  created_at: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_password_reset_tokens_user").on(table.user_id),
-  index("idx_password_reset_tokens_token").on(table.token),
-]);
-
-// Clinic-User relationship table for multi-tenant access
-export const clinic_users = pgTable("clinic_users", {
-  id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").notNull(),
-  user_id: uuid("user_id").notNull(),
-  role: varchar("role").notNull().default("usuario"), // admin, usuario
-  is_professional: boolean("is_professional").notNull().default(false), // Controlled only by admins
-  permissions: jsonb("permissions"), // Specific permissions for this clinic
-  is_active: boolean("is_active").notNull().default(true),
-  invited_by: uuid("invited_by"),
-  invited_at: timestamp("invited_at"),
-  joined_at: timestamp("joined_at"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  unique().on(table.clinic_id, table.user_id),
-  index("idx_clinic_users_clinic").on(table.clinic_id),
-  index("idx_clinic_users_user").on(table.user_id),
-  index("idx_clinic_users_professional").on(table.is_professional),
-]);
-
-// Professional status audit log
-export const professional_status_audit = pgTable("professional_status_audit", {
-  id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").notNull(),
-  target_user_id: integer("target_user_id").notNull(), // User whose status was changed
-  changed_by_user_id: integer("changed_by_user_id").notNull(), // Admin who made the change
-  action: varchar("action").notNull(), // 'activated' or 'deactivated'
-  previous_status: boolean("previous_status").notNull(),
-  new_status: boolean("new_status").notNull(),
-  ip_address: varchar("ip_address"),
-  user_agent: text("user_agent"),
-  notes: text("notes"), // Optional reason for the change
-  created_at: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_professional_audit_clinic").on(table.clinic_id),
-  index("idx_professional_audit_target").on(table.target_user_id),
-  index("idx_professional_audit_changed_by").on(table.changed_by_user_id),
-  index("idx_professional_audit_created").on(table.created_at),
-]);
-
-// Clinic invitations for onboarding new team members
-export const clinic_invitations = pgTable("clinic_invitations", {
-  id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").notNull(),
-  email: varchar("email").notNull(),
-  role: varchar("role").notNull(),
-  permissions: jsonb("permissions"),
-  token: varchar("token").notNull().unique(),
-  invited_by: integer("invited_by").notNull(),
-  expires_at: timestamp("expires_at").notNull(),
-  accepted_at: timestamp("accepted_at"),
-  created_at: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_invitations_email").on(table.email),
-  index("idx_invitations_token").on(table.token),
-]);
-
-export const clinics = pgTable("clinics", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  responsible: text("responsible").notNull(),
-  phone: text("phone"),
-  phone_country_code: text("phone_country_code").default("+55"),
-  celular: text("celular").notNull(),
-  celular_country_code: text("celular_country_code").default("+55"),
-  email: text("email"),
-  specialties: text("specialties").array(),
-  
-  // Address fields
-  address_street: text("address_street"),
-  address_number: text("address_number"),
-  address_complement: text("address_complement"),
-  address_neighborhood: text("address_neighborhood"),
-  address_city: text("address_city"),
-  address_state: text("address_state"),
-  address_zip: text("address_zip"),
-  address_country: text("address_country").default("BR"),
-  
-  // Operational information
-  total_professionals: integer("total_professionals").default(1),
-  working_days: text("working_days").array().default(['monday','tuesday','wednesday','thursday','friday']),
-  work_start: text("work_start").default("08:00"),
-  work_end: text("work_end").default("18:00"),
-  has_lunch_break: boolean("has_lunch_break").default(true),
-  lunch_start: text("lunch_start").default("12:00"),
-  lunch_end: text("lunch_end").default("13:00"),
-  timezone: text("timezone").default("America/Sao_Paulo"),
-  
-  // Business information
-  cnpj: text("cnpj"),
-  website: text("website"),
-  description: text("description"),
-  
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
-
-export const contacts = pgTable("contacts", {
-  id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
-  name: text("name").notNull(),
-  phone: text("phone").notNull(),
-  email: text("email"),
-  age: integer("age"),
-  gender: text("gender"),
-  profession: text("profession"),
-  address: text("address"),
-  emergency_contact: text("emergency_contact"),
-  medical_history: text("medical_history"),
-  current_medications: text("current_medications").array(),
-  allergies: text("allergies").array(),
-  status: text("status").notNull(), // novo, em_conversa, agendado, realizado, pos_atendimento
-  priority: text("priority").default("normal"), // baixa, normal, alta, urgente
-  source: text("source").default("whatsapp"), // whatsapp, site, indicacao, outros
-  notes: text("notes"),
-  first_contact: timestamp("first_contact").defaultNow(),
-  last_interaction: timestamp("last_interaction").defaultNow(),
-});
-
-export const conversations = pgTable("conversations", {
-  id: serial("id").primaryKey(),
-  contact_id: integer("contact_id").references(() => contacts.id),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
-  status: text("status").notNull(),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
-
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  conversation_id: integer("conversation_id").references(() => conversations.id),
-  sender_type: text("sender_type").notNull(), // patient, ai
-  content: text("content").notNull(),
-  ai_action: text("ai_action"), // agendou_consulta, enviou_followup, etc
-  timestamp: timestamp("timestamp").defaultNow(),
-});
-
-export const appointments = pgTable("appointments", {
-  id: serial("id").primaryKey(),
-  contact_id: integer("contact_id").references(() => contacts.id).notNull(),
-  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
-  user_id: integer("user_id").references(() => users.id).notNull(), // Required: user who created/owns the appointment
-  doctor_name: text("doctor_name"),
-  specialty: text("specialty"),
-  appointment_type: text("appointment_type"), // primeira_consulta, retorno, avaliacao, emergencia
-  scheduled_date: timestamp("scheduled_date"),
-  duration_minutes: integer("duration_minutes").default(60),
-  status: text("status").notNull(), // agendada, confirmada, paciente_aguardando, paciente_em_atendimento, finalizada, faltou, cancelada_paciente, cancelada_dentista
-  cancellation_reason: text("cancellation_reason"),
-  session_notes: text("session_notes"),
-  payment_status: text("payment_status").default("pendente"),
-  payment_amount: integer("payment_amount"),
-  google_calendar_event_id: text("google_calendar_event_id"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_appointments_user").on(table.user_id),
-  index("idx_appointments_contact").on(table.contact_id),
-  index("idx_appointments_clinic").on(table.clinic_id),
-]);
+// Remaining schemas for features that haven't been fully modularized yet
 
 // Tabela para etiquetas de consultas (appointment tags)
 export const appointment_tags = pgTable("appointment_tags", {
   id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").references(() => clinics.id).notNull(),
+  clinic_id: integer("clinic_id").notNull(),
   name: text("name").notNull(),
   color: text("color").notNull(), // Cor da etiqueta em hexadecimal
   is_active: boolean("is_active").default(true),
@@ -217,7 +31,7 @@ export const appointment_tags = pgTable("appointment_tags", {
 // Tabela para métricas e analytics
 export const analytics_metrics = pgTable("analytics_metrics", {
   id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
+  clinic_id: integer("clinic_id").notNull(),
   metric_type: text("metric_type").notNull(), // daily_messages, appointments_scheduled, conversion_rate, etc
   value: integer("value").notNull(),
   date: timestamp("date").notNull(),
@@ -225,21 +39,10 @@ export const analytics_metrics = pgTable("analytics_metrics", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
-// Tabela para configurações da clínica
-export const clinic_settings = pgTable("clinic_settings", {
-  id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
-  setting_key: text("setting_key").notNull(),
-  setting_value: text("setting_value").notNull(),
-  setting_type: text("setting_type").notNull(), // string, number, boolean, json
-  description: text("description"),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
-
 // Tabela para templates de mensagens da IA
 export const ai_templates = pgTable("ai_templates", {
   id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
+  clinic_id: integer("clinic_id").notNull(),
   template_name: text("template_name").notNull(),
   template_type: text("template_type").notNull(), // greeting, appointment_confirmation, follow_up, etc
   content: text("content").notNull(),
@@ -252,7 +55,7 @@ export const ai_templates = pgTable("ai_templates", {
 // Tabela para estágios do pipeline
 export const pipeline_stages = pgTable("pipeline_stages", {
   id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
+  clinic_id: integer("clinic_id").notNull(),
   name: text("name").notNull(), // "Novos Contatos", "Qualificação", "Proposta", etc
   description: text("description"),
   order_position: integer("order_position").notNull(),
@@ -266,9 +69,9 @@ export const pipeline_stages = pgTable("pipeline_stages", {
 // Tabela para oportunidades do pipeline
 export const pipeline_opportunities = pgTable("pipeline_opportunities", {
   id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").references(() => clinics.id),
-  contact_id: integer("contact_id").references(() => contacts.id),
-  stage_id: integer("stage_id").references(() => pipeline_stages.id),
+  clinic_id: integer("clinic_id").notNull(),
+  contact_id: integer("contact_id").notNull(),
+  stage_id: integer("stage_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   value: integer("value"), // valor estimado em centavos
@@ -291,9 +94,9 @@ export const pipeline_opportunities = pgTable("pipeline_opportunities", {
 // Tabela para histórico de movimentações no pipeline
 export const pipeline_history = pgTable("pipeline_history", {
   id: serial("id").primaryKey(),
-  opportunity_id: integer("opportunity_id").references(() => pipeline_opportunities.id),
-  from_stage_id: integer("from_stage_id").references(() => pipeline_stages.id),
-  to_stage_id: integer("to_stage_id").references(() => pipeline_stages.id),
+  opportunity_id: integer("opportunity_id").notNull(),
+  from_stage_id: integer("from_stage_id"),
+  to_stage_id: integer("to_stage_id").notNull(),
   changed_by: text("changed_by"),
   notes: text("notes"),
   duration_in_stage: integer("duration_in_stage"), // tempo em dias no estágio anterior
@@ -303,7 +106,7 @@ export const pipeline_history = pgTable("pipeline_history", {
 // Tabela para atividades relacionadas às oportunidades
 export const pipeline_activities = pgTable("pipeline_activities", {
   id: serial("id").primaryKey(),
-  opportunity_id: integer("opportunity_id").references(() => pipeline_opportunities.id),
+  opportunity_id: integer("opportunity_id").notNull(),
   activity_type: text("activity_type").notNull(), // call, email, meeting, whatsapp, note, task
   title: text("title").notNull(),
   description: text("description"),
@@ -317,50 +120,7 @@ export const pipeline_activities = pgTable("pipeline_activities", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
-
-export const insertClinicUserSchema = createInsertSchema(clinic_users).omit({
-  id: true,
-  created_at: true,
-});
-
-export const insertClinicInvitationSchema = createInsertSchema(clinic_invitations).omit({
-  id: true,
-  created_at: true,
-});
-
-export const insertClinicSchema = createInsertSchema(clinics).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
-
-export const insertContactSchema = createInsertSchema(contacts).omit({
-  id: true,
-  first_contact: true,
-  last_interaction: true,
-});
-
-export const insertConversationSchema = createInsertSchema(conversations).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
-
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  timestamp: true,
-});
-
-export const insertAppointmentSchema = createInsertSchema(appointments).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+// Schemas for remaining non-modularized features
 
 export const insertAppointmentTagSchema = createInsertSchema(appointment_tags, {
   name: z.string().min(1, "Nome da etiqueta é obrigatório").max(50, "Nome muito longo"),
@@ -416,40 +176,14 @@ export const insertProfessionalStatusAuditSchema = createInsertSchema(profession
   created_at: true,
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type ClinicUser = typeof clinic_users.$inferSelect;
-export type InsertClinicUser = z.infer<typeof insertClinicUserSchema>;
-export type ProfessionalStatusAudit = typeof professional_status_audit.$inferSelect;
-export type InsertProfessionalStatusAudit = z.infer<typeof insertProfessionalStatusAuditSchema>;
-export type ClinicInvitation = typeof clinic_invitations.$inferSelect;
-export type InsertClinicInvitation = z.infer<typeof insertClinicInvitationSchema>;
-export type Clinic = typeof clinics.$inferSelect;
-export type InsertClinic = z.infer<typeof insertClinicSchema>;
-export type Contact = typeof contacts.$inferSelect;
-export type InsertContact = z.infer<typeof insertContactSchema>;
-export type Conversation = typeof conversations.$inferSelect;
-export type InsertConversation = z.infer<typeof insertConversationSchema>;
-export type Message = typeof messages.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Appointment = typeof appointments.$inferSelect;
-export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+// Type definitions for remaining schemas
 export type AppointmentTag = typeof appointment_tags.$inferSelect;
-export type InsertAppointmentTag = z.infer<typeof insertAppointmentTagSchema>;
 export type AnalyticsMetric = typeof analytics_metrics.$inferSelect;
-export type InsertAnalyticsMetric = z.infer<typeof insertAnalyticsMetricSchema>;
-export type ClinicSetting = typeof clinic_settings.$inferSelect;
-export type InsertClinicSetting = z.infer<typeof insertClinicSettingSchema>;
 export type AiTemplate = typeof ai_templates.$inferSelect;
-export type InsertAiTemplate = z.infer<typeof insertAiTemplateSchema>;
 export type PipelineStage = typeof pipeline_stages.$inferSelect;
-export type InsertPipelineStage = z.infer<typeof insertPipelineStageSchema>;
 export type PipelineOpportunity = typeof pipeline_opportunities.$inferSelect;
-export type InsertPipelineOpportunity = z.infer<typeof insertPipelineOpportunitySchema>;
 export type PipelineHistory = typeof pipeline_history.$inferSelect;
-export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
 export type PipelineActivity = typeof pipeline_activities.$inferSelect;
-export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;
 
 
 
