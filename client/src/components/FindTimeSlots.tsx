@@ -213,6 +213,18 @@ export function FindTimeSlots({ selectedDate, duration, professionalName, onTime
           isAvailable = false;
         }
 
+        // Check if time slot has already passed for today
+        const now = new Date();
+        const isToday = currentDate.toDateString() === now.toDateString();
+        
+        if (isAvailable && isToday) {
+          const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+          if (currentMinutes <= currentTimeMinutes) {
+            unavailabilityReason = "Horário já passou";
+            isAvailable = false;
+          }
+        }
+
         // Check lunch break conflicts (only if lunch break is enabled)
         if (isAvailable && clinicConfig.has_lunch_break) {
           // Check if any part of the appointment overlaps with lunch time

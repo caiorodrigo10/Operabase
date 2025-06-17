@@ -120,6 +120,22 @@ export class AppointmentsService {
         throw new Error("Invalid datetime format");
       }
 
+      // Check if the appointment time is in the past
+      const now = new Date();
+      if (startDate <= now) {
+        return {
+          available: false,
+          conflict: true,
+          conflictType: 'appointment',
+          conflictDetails: {
+            id: 'past-time',
+            title: 'Horário já passou',
+            startTime: startDate.toISOString(),
+            endTime: endDate.toISOString()
+          }
+        };
+      }
+
       // Check for conflicts with existing appointments
       const existingAppointments = await this.repository.findByDateRange(startDate, endDate);
       
@@ -219,7 +235,20 @@ export class AppointmentsService {
       const availableSlots: { startTime: string; endTime: string; duration: number }[] = [];
       const slotDuration = duration * 60000; // Convert to milliseconds
 
+      // For today, start from current time if it's later than work start
       let currentTime = new Date(dayStart);
+      const now = new Date();
+      const isToday = targetDate.toDateString() === now.toDateString();
+      
+      if (isToday && now > dayStart) {
+        // Round up to next 30-minute slot
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const nextSlotMinutes = Math.ceil(currentMinutes / 30) * 30;
+        const nextSlotTime = new Date(targetDate);
+        nextSlotTime.setHours(Math.floor(nextSlotMinutes / 60), nextSlotMinutes % 60, 0, 0);
+        
+        currentTime = nextSlotTime > dayStart ? nextSlotTime : dayStart;
+      }
 
       for (const block of busyBlocks) {
         // Check if there's a gap before this block
