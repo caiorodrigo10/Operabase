@@ -336,4 +336,68 @@ export class AppointmentsService {
     // Implementation would remove from Google Calendar
     console.log('TODO: Remove appointment from Google Calendar:', appointmentId);
   }
+
+  async reassignOrphanedAppointments(clinicId: number): Promise<{ updated: number; message: string }> {
+    try {
+      console.log('🔧 Starting appointment reassignment for clinic:', clinicId);
+
+      // Get all appointments for the clinic
+      const appointments = await this.repository.findAll(clinicId);
+      console.log('📊 Found appointments:', appointments.length);
+
+      // Get active professionals in the clinic
+      const activeProfessionals = await this.storage.getClinicUsers(clinicId);
+      const activeProfessionalIds = activeProfessionals
+        .filter(user => user.is_professional && user.is_active)
+        .map(user => user.id);
+      
+      console.log('👨‍⚕️ Active professional IDs:', activeProfessionalIds);
+
+      if (activeProfessionalIds.length === 0) {
+        throw new Error('No active professionals found in clinic');
+      }
+
+      // Find appointments with invalid user_ids (not in active professionals)
+      const orphanedAppointments = appointments.filter(apt => 
+        !activeProfessionalIds.includes(apt.user_id)
+      );
+      
+      console.log('🔍 Found orphaned appointments:', orphanedAppointments.length);
+
+      if (orphanedAppointments.length === 0) {
+        return { updated: 0, message: 'No orphaned appointments found' };
+      }
+
+      // Reassign orphaned appointments to the first active professional (usually admin)
+      const targetProfessionalId = activeProfessionalIds[0];
+      const targetProfessional = activeProfessionals.find(p => p.id === targetProfessionalId);
+      
+      console.log('🎯 Reassigning to professional:', targetProfessional?.name, 'ID:', targetProfessionalId);
+
+      let updatedCount = 0;
+      
+      for (const appointment of orphanedAppointments) {
+        try {
+          await this.repository.update(appointment.id, {
+            user_id: targetProfessionalId,
+            doctor_name: targetProfessional?.name || 'Professional'
+          });
+          updatedCount++;
+          console.log('✅ Updated appointment:', appointment.id);
+        } catch (error) {
+          console.error('❌ Failed to update appointment:', appointment.id, error);
+        }
+      }
+
+      console.log('🎉 Reassignment completed. Updated:', updatedCount, 'appointments');
+      
+      return { 
+        updated: updatedCount, 
+        message: `Successfully reassigned ${updatedCount} appointments to ${targetProfessional?.name}` 
+      };
+    } catch (error) {
+      console.error('💥 Error in reassignOrphanedAppointments:', error);
+      throw error;
+    }
+  }
 }

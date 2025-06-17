@@ -185,6 +185,27 @@ export class AppointmentsController {
     }
   }
 
+  async reassignAppointments(req: Request, res: Response) {
+    try {
+      const { clinic_id } = req.params;
+      const clinicId = parseInt(clinic_id);
+      
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+
+      console.log('🔧 Starting appointment reassignment for clinic:', clinicId);
+
+      const result = await this.service.reassignOrphanedAppointments(clinicId);
+      
+      console.log('✅ Appointment reassignment completed:', result);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error reassigning appointments:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  }
+
   async checkAvailability(req: Request, res: Response) {
     try {
       const validatedData = availabilityRequestSchema.parse(req.body);
