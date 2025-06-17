@@ -25,17 +25,18 @@ export interface Appointment {
 // DTOs for requests
 export interface CreateAppointmentDto {
   contact_id: number;
-  user_id: string;
+  user_id: string | number;
   clinic_id: number;
-  doctor_name: string;
-  specialty: string;
-  appointment_type: string;
-  scheduled_date: Date;
-  duration_minutes: number;
-  status: string;
-  payment_status: string;
-  payment_amount: number;
-  session_notes?: string;
+  type: string;
+  scheduled_date: string;
+  scheduled_time: string;
+  duration: number;
+  notes?: string;
+  tag_id?: number;
+  status?: string;
+  payment_status?: string;
+  location?: string;
+  price?: number;
 }
 
 export interface UpdateAppointmentDto {

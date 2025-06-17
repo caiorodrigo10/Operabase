@@ -4,9 +4,8 @@ import { AppointmentsRepository } from './appointments.repository';
 import { 
   createAppointmentSchema, 
   updateAppointmentSchema,
-  availabilityRequestSchema,
-  timeSlotRequestSchema
-} from './appointments.types';
+  updateAppointmentStatusSchema
+} from '../../shared/schemas/index';
 import type { IStorage } from '../../storage';
 
 export class AppointmentsController {

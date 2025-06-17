@@ -52,6 +52,7 @@ export const createAppointmentSchema = appointmentSchema.omit({
   notes: z.union([z.string(), z.null()]).optional(),
   location: z.union([z.string(), z.null()]).optional(),
   price: z.union([z.number().min(0), z.null()]).optional(),
+  tag_id: z.number().int().positive().optional(),
 });
 
 // Appointment update schema (partial)

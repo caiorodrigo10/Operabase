@@ -19,6 +19,7 @@ export const appointments = pgTable("appointments", {
   payment_status: text("payment_status").default("pendente"),
   payment_amount: integer("payment_amount"),
   google_calendar_event_id: text("google_calendar_event_id"),
+  tag_id: integer("tag_id"), // Reference to appointment_tags table
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [

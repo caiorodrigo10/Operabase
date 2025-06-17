@@ -133,7 +133,7 @@ export class ContactsController {
       const validatedData = updateContactStatusSchema.parse(req.body);
       const updatedContact = await this.service.updateContactStatus(contactId, validatedData.status);
 
-      res.json(contact);
+      res.json(updatedContact);
     } catch (error: any) {
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Invalid data", details: error.errors });
