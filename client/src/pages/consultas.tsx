@@ -243,6 +243,16 @@ export function Consultas() {
   // Add missing selectedTagId state
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   
+  // Enhanced drag and drop state
+  const [dragState, setDragState] = useState({
+    isDragging: false,
+    draggedAppointment: null as Appointment | null,
+    mousePosition: { x: 0, y: 0 },
+    hoveredSlot: null as string | null,
+    previewTime: null as string | null,
+    dragPreviewVisible: false
+  });
+  
   // Initialize selectedTagId if not defined for backward compatibility
   useEffect(() => {
     if (typeof selectedTagId === 'undefined') {
@@ -250,6 +260,65 @@ export function Consultas() {
     }
   }, []);
   
+  // Helper functions for enhanced drag and drop
+  const getDropZoneClass = (isHovered: boolean, hasConflict: boolean, isValidTime: boolean) => {
+    if (hasConflict) return 'drop-zone-invalid';
+    if (isHovered && isValidTime) return 'drop-zone-valid';
+    if (isHovered) return 'bg-yellow-100 border-2 border-yellow-300 border-dashed';
+    return '';
+  };
+
+  const checkSlotConflict = (targetDate: Date, targetHour: number, targetMinute: number, draggedAppointment: Appointment) => {
+    if (!draggedAppointment) return false;
+    
+    const dayAppointments = getAppointmentsForDate(targetDate);
+    const targetTime = targetHour * 60 + targetMinute; // Convert to minutes
+    const appointmentDuration = draggedAppointment.duration_minutes || 30;
+    
+    return dayAppointments.some(apt => {
+      if (apt.id === draggedAppointment.id) return false; // Don't check against itself
+      
+      const aptDate = new Date(apt.scheduled_date);
+      const aptTime = aptDate.getHours() * 60 + aptDate.getMinutes();
+      const aptDuration = apt.duration_minutes || 30;
+      
+      // Check for time overlap
+      return (targetTime < aptTime + aptDuration) && (targetTime + appointmentDuration > aptTime);
+    });
+  };
+
+  // Floating drag preview component
+  const DragPreview = () => {
+    if (!dragState.dragPreviewVisible || !dragState.draggedAppointment) return null;
+
+    const appointment = dragState.draggedAppointment;
+    const contact = contacts.find(c => c.id === appointment.contact_id);
+
+    return (
+      <div 
+        className="fixed pointer-events-none z-50 transition-opacity duration-200"
+        style={{ 
+          left: dragState.mousePosition.x - 60, 
+          top: dragState.mousePosition.y - 30,
+          transform: 'rotate(2deg)',
+          opacity: dragState.dragPreviewVisible ? 0.9 : 0
+        }}
+      >
+        <div className="bg-white border-2 border-blue-400 rounded-lg p-2 shadow-xl max-w-48">
+          <div className="text-xs font-medium text-blue-800 truncate">
+            {contact?.name || 'Paciente'}
+          </div>
+          <div className="text-xs text-gray-600">
+            {dragState.previewTime && `Novo horário: ${dragState.previewTime}`}
+          </div>
+          <div className="text-xs text-gray-500">
+            {appointment.duration_minutes}min
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
 
@@ -1314,38 +1383,78 @@ export function Consultas() {
     };
   };
 
+  // Enhanced drag handlers with visual feedback
   const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
+    // Set transparent drag image to hide default ghost
+    const dragImage = document.createElement('div');
+    dragImage.style.opacity = '0';
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    
+    // Update enhanced drag state
+    setDragState({
+      isDragging: true,
+      draggedAppointment: appointment,
+      mousePosition: { x: e.clientX, y: e.clientY },
+      hoveredSlot: null,
+      previewTime: null,
+      dragPreviewVisible: true
+    });
+    
+    // Legacy state for compatibility
     setDraggedAppointment(appointment);
     setIsDragging(true);
-    
-    // Create custom drag image
-    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
-    dragImage.style.opacity = '0.8';
-    dragImage.style.transform = 'rotate(2deg)';
-    e.dataTransfer.setDragImage(dragImage, 0, 0);
     
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify(appointment));
     
-    console.log('🎯 Drag started:', appointment.id);
+    // Cleanup drag image
+    setTimeout(() => document.body.removeChild(dragImage), 0);
+    
+    console.log('🎯 Enhanced drag started:', appointment.id);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    if (!isDragging || !draggedAppointment) return;
+    if (!dragState.isDragging || !dragState.draggedAppointment) return;
     
     const calendarElement = e.currentTarget as HTMLElement;
     const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
     
+    // Update mouse position for drag preview
+    setDragState(prev => ({
+      ...prev,
+      mousePosition: { x: e.clientX, y: e.clientY }
+    }));
+    
     if (timeSlot.isValid) {
+      // Generate preview time string
+      const previewTime = `${timeSlot.hour.toString().padStart(2, '0')}:${(timeSlot.minute || 0).toString().padStart(2, '0')}`;
+      const slotKey = `${format(timeSlot.date, 'yyyy-MM-dd')}-${previewTime}`;
+      
+      // Update enhanced drag state with hover information
+      setDragState(prev => ({
+        ...prev,
+        hoveredSlot: slotKey,
+        previewTime: previewTime
+      }));
+      
+      // Legacy state for compatibility
       setDragOverSlot({
         date: timeSlot.date,
         hour: timeSlot.hour,
         minute: timeSlot.minute || 0
       });
     } else {
+      setDragState(prev => ({
+        ...prev,
+        hoveredSlot: null,
+        previewTime: null
+      }));
       setDragOverSlot(null);
     }
   };
@@ -1353,7 +1462,16 @@ export function Consultas() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     
-    if (!draggedAppointment || !dragOverSlot) {
+    if (!dragState.draggedAppointment || !dragOverSlot) {
+      // Reset all drag states
+      setDragState({
+        isDragging: false,
+        draggedAppointment: null,
+        mousePosition: { x: 0, y: 0 },
+        hoveredSlot: null,
+        previewTime: null,
+        dragPreviewVisible: false
+      });
       setIsDragging(false);
       setDraggedAppointment(null);
       setDragOverSlot(null);
@@ -1364,6 +1482,15 @@ export function Consultas() {
     const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
     
     if (!timeSlot.isValid) {
+      // Reset all drag states for invalid drop
+      setDragState({
+        isDragging: false,
+        draggedAppointment: null,
+        mousePosition: { x: 0, y: 0 },
+        hoveredSlot: null,
+        previewTime: null,
+        dragPreviewVisible: false
+      });
       setIsDragging(false);
       setDraggedAppointment(null);
       setDragOverSlot(null);
@@ -1371,7 +1498,7 @@ export function Consultas() {
     }
     
     // Parse original date and time
-    const originalDate = new Date(draggedAppointment.scheduled_date);
+    const originalDate = new Date(dragState.draggedAppointment.scheduled_date);
     const originalTime = format(originalDate, 'HH:mm');
     
     // Create new date and time
@@ -1383,16 +1510,31 @@ export function Consultas() {
     const isSameTime = originalTime === newTime;
     
     if (isSameDate && isSameTime) {
+      // Reset all drag states for no change
+      setDragState({
+        isDragging: false,
+        draggedAppointment: null,
+        mousePosition: { x: 0, y: 0 },
+        hoveredSlot: null,
+        previewTime: null,
+        dragPreviewVisible: false
+      });
       setIsDragging(false);
       setDraggedAppointment(null);
       setDragOverSlot(null);
       return;
     }
     
+    // Hide drag preview during confirmation
+    setDragState(prev => ({
+      ...prev,
+      dragPreviewVisible: false
+    }));
+    
     // Show confirmation dialog
     setDragConfirmDialog({
       open: true,
-      appointment: draggedAppointment,
+      appointment: dragState.draggedAppointment,
       oldDate: originalDate,
       newDate: newDate,
       oldTime: originalTime,
