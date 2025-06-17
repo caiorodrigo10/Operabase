@@ -1247,6 +1247,12 @@ export function Consultas() {
         return true;
       }
       
+      // ADDITIONAL FIX: If doctor_name exists but no professional match, still show appointment
+      if (!professionalId) {
+        console.log('⚠️ Doctor name exists but no professional match - showing appointment anyway');
+        return true;
+      }
+      
       return isIncluded;
     });
     
