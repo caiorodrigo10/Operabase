@@ -74,9 +74,7 @@ export function createApiRouter(storage: any): Router {
   const userProfileRoutes = createUserProfileRoutes(storage);
   apiRouter.use('/', userProfileRoutes);
 
-  // Observability domain routes
-  const observabilityRoutes = createObservabilityRoutes();
-  apiRouter.use('/v1/observability', observabilityRoutes);
+  // Observability routes are handled directly in index.ts
 
   // Load Testing domain routes
   const loadTestingRoutes = createLoadTestingRoutes();
