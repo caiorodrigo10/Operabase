@@ -113,7 +113,8 @@ router.get('/metrics/clinic/:clinicId', isAuthenticated, hasClinicAccess('clinic
 
     // Filter endpoints for this clinic
     const clinicEndpoints = new Map();
-    for (const [endpoint, data] of globalMetrics.apiEndpoints) {
+    const endpointEntries = Array.from(globalMetrics.apiEndpoints.entries());
+    for (const [endpoint, data] of endpointEntries) {
       if (endpoint.includes('clinic') || endpoint.includes('contacts') || 
           endpoint.includes('appointments') || endpoint.includes('medical')) {
         clinicEndpoints.set(endpoint, data);

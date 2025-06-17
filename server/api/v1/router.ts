@@ -11,7 +11,7 @@ import { createSettingsRoutes } from '../../domains/settings/settings.routes';
 import { createAiTemplatesRoutes } from '../../domains/ai-templates/ai-templates.routes';
 import { createAppointmentTagsRoutes } from '../../domains/appointment-tags/appointment-tags.routes';
 import { createUserProfileRoutes } from '../../domains/user-profile/user-profile.routes';
-import { createObservabilityRoutes } from './observability/observability.routes';
+// Observability routes are now integrated directly in index.ts
 import { createLoadTestingRoutes } from './load-testing/load-testing.routes';
 
 export function createApiRouter(storage: any): Router {

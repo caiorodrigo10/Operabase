@@ -5,7 +5,7 @@ import { createStorage } from "./storage-factory";
 import { setupAuth } from "./auth";
 import { tenantIsolationMiddleware } from "./shared/tenant-isolation.middleware";
 import { cacheInterceptorMiddleware, cacheInvalidationMiddleware } from "./shared/cache-interceptor.middleware";
-import { observabilityMiddleware, medicalComplianceMiddleware, errorTrackingMiddleware, correlationMiddleware } from "./shared/observability-middleware";
+import { performanceTrackingMiddleware, auditLoggingMiddleware, errorLoggingMiddleware } from "./shared/observability-middleware.js";
 import { performanceMonitor } from "./shared/performance-monitor";
 import { cacheService } from "./shared/redis-cache.service";
 import { tenantContext } from "./shared/tenant-context.provider";
@@ -61,10 +61,9 @@ app.use((req, res, next) => {
   // Setup authentication
   setupAuth(app, storage);
   
-  // Apply comprehensive middleware chain to all API routes
-  app.use('/api', correlationMiddleware);
-  app.use('/api', observabilityMiddleware);
-  app.use('/api', medicalComplianceMiddleware);
+  // Apply Phase 3 observability middleware chain to all API routes
+  app.use('/api', performanceTrackingMiddleware);
+  app.use('/api', auditLoggingMiddleware);
   app.use('/api', cacheInterceptorMiddleware as any);
   app.use('/api', tenantIsolationMiddleware as any);
   app.use('/api', cacheInvalidationMiddleware as any);
@@ -72,6 +71,10 @@ app.use((req, res, next) => {
   // Setup API routes
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
+  
+  // Add Phase 3 observability endpoints
+  const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
+  app.use('/api/observability', observabilityRoutes);
   
   // Health and monitoring endpoints
   app.get('/api/health', async (req, res) => {
@@ -106,7 +109,7 @@ app.use((req, res, next) => {
   const server = http.createServer(app);
 
   // Global error handler with observability
-  app.use(errorTrackingMiddleware);
+  app.use(errorLoggingMiddleware);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

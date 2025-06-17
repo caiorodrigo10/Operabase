@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
+import { promises as fs } from 'fs';
 import path from 'path';
-import { tenantContext } from './tenant-context.provider.js';
 import { nanoid } from 'nanoid';
+import { tenantContext } from './tenant-context.provider.js';
 
 /**
  * Log entry interface for structured logging
@@ -44,21 +44,18 @@ export class StructuredLoggerService {
   private currentDate: string;
   private logQueue: LogEntry[] = [];
   private flushInterval: NodeJS.Timeout | undefined;
-  private readonly maxQueueSize = 200; // Increased for better batching
-  private readonly flushIntervalMs = 3000; // 3 seconds for faster processing
+  private readonly maxQueueSize = 200;
+  private readonly flushIntervalMs = 3000;
   
-  // Phase 3: Performance metrics
   private metrics = {
     totalLogs: 0,
-    logsPerSecond: 0,
-    avgProcessingTime: 0,
-    errorCount: 0,
-    queueSize: 0,
-    lastFlushTime: Date.now()
+    errorLogs: 0,
+    lastFlushTime: Date.now(),
+    flushCount: 0
   };
 
   constructor() {
-    this.logDirectory = process.env.LOG_DIRECTORY || './logs';
+    this.logDirectory = path.join(process.cwd(), 'logs');
     this.currentDate = new Date().toISOString().split('T')[0];
     this.initializeLogDirectory();
     this.startPeriodicFlush();
@@ -71,10 +68,9 @@ export class StructuredLoggerService {
     try {
       await fs.mkdir(this.logDirectory, { recursive: true });
       
-      // Create subdirectories for different log types
-      const subdirs = ['api', 'audit', 'security', 'performance', 'errors'];
-      for (const subdir of subdirs) {
-        await fs.mkdir(path.join(this.logDirectory, subdir), { recursive: true });
+      // Create category-specific directories
+      for (const category of Object.values(LogCategory)) {
+        await fs.mkdir(path.join(this.logDirectory, category), { recursive: true });
       }
     } catch (error) {
       console.error('Failed to initialize log directory:', error);
@@ -97,7 +93,7 @@ export class StructuredLoggerService {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
     }
-    this.flushLogs(); // Final flush
+    this.flushLogs();
   }
 
   /**
@@ -170,8 +166,12 @@ export class StructuredLoggerService {
    */
   private addToQueue(entry: LogEntry): void {
     this.logQueue.push(entry);
+    this.metrics.totalLogs++;
     
-    // Force flush if queue is full
+    if (entry.level === 'ERROR') {
+      this.metrics.errorLogs++;
+    }
+    
     if (this.logQueue.length >= this.maxQueueSize) {
       this.flushLogs();
     }
@@ -185,9 +185,9 @@ export class StructuredLoggerService {
 
     const logsToFlush = [...this.logQueue];
     this.logQueue = [];
+    this.metrics.flushCount++;
 
     try {
-      // Group logs by category for efficient writing
       const logsByCategory = new Map<string, LogEntry[]>();
       
       for (const log of logsToFlush) {
@@ -197,15 +197,14 @@ export class StructuredLoggerService {
         logsByCategory.get(log.category)!.push(log);
       }
 
-      // Write logs to respective files
       const writePromises = Array.from(logsByCategory.entries()).map(
         ([category, logs]) => this.writeLogsToFile(category, logs)
       );
 
       await Promise.all(writePromises);
+      this.metrics.lastFlushTime = Date.now();
     } catch (error) {
       console.error('Failed to flush logs:', error);
-      // Re-add logs to queue if write fails
       this.logQueue.unshift(...logsToFlush);
     }
   }
@@ -233,8 +232,6 @@ export class StructuredLoggerService {
   error(category: LogCategory, action: string, details: Record<string, any> = {}, resource?: string): void {
     const entry = this.createLogEntry('ERROR', category, action, details, resource);
     this.addToQueue(entry);
-    
-    // Also log to console for immediate visibility
     console.error(`[${category.toUpperCase()}] ${action}:`, details);
   }
 
@@ -313,21 +310,18 @@ export class StructuredLoggerService {
     endTime?: Date;
     userId?: number;
   }): Promise<LogEntry[]> {
-    const results: LogEntry[] = [];
     const limit = Math.min(filters.limit || 100, 500);
 
     try {
-      // For production, this would read from log files or database
-      // For now, return recent logs from memory queue
       let filteredLogs = [...this.logQueue];
 
-      // Apply filters
       if (filters.clinicId) {
         filteredLogs = filteredLogs.filter(log => log.clinic_id === filters.clinicId);
       }
 
       if (filters.level) {
-        filteredLogs = filteredLogs.filter(log => log.level === filters.level.toUpperCase());
+        const levelFilter = filters.level.toUpperCase();
+        filteredLogs = filteredLogs.filter(log => log.level === levelFilter);
       }
 
       if (filters.category) {
@@ -346,7 +340,6 @@ export class StructuredLoggerService {
         );
       }
 
-      // Sort by timestamp descending and apply limit
       filteredLogs.sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
@@ -371,127 +364,4 @@ export class StructuredLoggerService {
   }
 }
 
-// Singleton instance
 export const structuredLogger = new StructuredLoggerService();
-  logPerformance(action: string, metrics: Record<string, number>, details: Record<string, any> = {}): void {
-    this.info(LogCategory.PERFORMANCE, action, { ...details, metrics });
-  }
-
-  /**
-   * Get logs for a specific tenant (clinic)
-   */
-  async getLogsByTenant(clinicId: number, category?: LogCategory, limit: number = 100): Promise<LogEntry[]> {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const categories = category ? [category] : Object.values(LogCategory);
-      const logs: LogEntry[] = [];
-
-      for (const cat of categories) {
-        const filename = `${cat}-${today}.jsonl`;
-        const filepath = path.join(this.logDirectory, cat, filename);
-        
-        try {
-          const content = await fs.readFile(filepath, 'utf-8');
-          const lines = content.trim().split('\n').filter(line => line.trim());
-          
-          for (const line of lines) {
-            try {
-              const log: LogEntry = JSON.parse(line);
-              if (log.clinic_id === clinicId) {
-                logs.push(log);
-              }
-            } catch (parseError) {
-              // Skip malformed log lines
-            }
-          }
-        } catch (fileError) {
-          // File doesn't exist, continue
-        }
-      }
-
-      // Sort by timestamp and limit
-      return logs
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, limit);
-    } catch (error) {
-      console.error('Failed to retrieve logs:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get performance metrics from logs
-   */
-  async getPerformanceMetrics(hours: number = 24): Promise<{
-    avgResponseTime: number;
-    errorRate: number;
-    requestCount: number;
-    slowQueries: LogEntry[];
-  }> {
-    try {
-      const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-      const apiLogs = await this.getRecentLogs(LogCategory.API, cutoff);
-      
-      if (apiLogs.length === 0) {
-        return { avgResponseTime: 0, errorRate: 0, requestCount: 0, slowQueries: [] };
-      }
-
-      const totalResponseTime = apiLogs.reduce((sum, log) => sum + (log.response_time || 0), 0);
-      const errorCount = apiLogs.filter(log => log.level === 'ERROR').length;
-      const slowQueries = apiLogs.filter(log => (log.response_time || 0) > 1000);
-
-      return {
-        avgResponseTime: totalResponseTime / apiLogs.length,
-        errorRate: (errorCount / apiLogs.length) * 100,
-        requestCount: apiLogs.length,
-        slowQueries
-      };
-    } catch (error) {
-      console.error('Failed to get performance metrics:', error);
-      return { avgResponseTime: 0, errorRate: 0, requestCount: 0, slowQueries: [] };
-    }
-  }
-
-  /**
-   * Get recent logs for a category
-   */
-  private async getRecentLogs(category: LogCategory, since: Date): Promise<LogEntry[]> {
-    const today = new Date().toISOString().split('T')[0];
-    const filename = `${category}-${today}.jsonl`;
-    const filepath = path.join(this.logDirectory, category, filename);
-    
-    try {
-      const content = await fs.readFile(filepath, 'utf-8');
-      const lines = content.trim().split('\n').filter(line => line.trim());
-      const logs: LogEntry[] = [];
-      
-      for (const line of lines) {
-        try {
-          const log: LogEntry = JSON.parse(line);
-          if (new Date(log.timestamp) >= since) {
-            logs.push(log);
-          }
-        } catch (parseError) {
-          // Skip malformed log lines
-        }
-      }
-      
-      return logs;
-    } catch (error) {
-      return [];
-    }
-  }
-}
-
-// Singleton instance
-export const structuredLogger = new StructuredLoggerService();
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  structuredLogger.stop();
-});
-
-process.on('SIGINT', () => {
-  structuredLogger.stop();
-  process.exit(0);
-});
