@@ -462,36 +462,40 @@ export class PostgreSQLStorage implements IStorage {
   
   async getAppointments(clinicId: number, filters?: { status?: string; date?: Date }): Promise<Appointment[]> {
     try {
-      let conditions = [`clinic_id = ${clinicId}`];
+      let conditions = [`a.clinic_id = ${clinicId}`];
 
       if (filters?.status) {
-        conditions.push(`status = '${filters.status}'`);
+        conditions.push(`a.status = '${filters.status}'`);
       }
 
       if (filters?.date) {
         const dateStr = filters.date.toISOString().split('T')[0];
-        conditions.push(`DATE(scheduled_date) = '${dateStr}'`);
+        conditions.push(`DATE(a.scheduled_date) = '${dateStr}'`);
       }
 
       const whereClause = conditions.join(' AND ');
       
+      // Buscar agendamentos com informações do usuário profissional dinamicamente
       const result = await db.execute(sql`
         SELECT 
-          id, contact_id, clinic_id, user_id, doctor_name, specialty,
-          appointment_type, scheduled_date, duration_minutes, status,
-          cancellation_reason, session_notes, next_appointment_suggested,
-          payment_status, payment_amount, google_calendar_event_id,
-          created_at, updated_at
-        FROM appointments 
+          a.id, a.contact_id, a.clinic_id, a.user_id, 
+          COALESCE(u.name, a.doctor_name) as doctor_name,
+          a.specialty, a.appointment_type, a.scheduled_date, a.duration_minutes, 
+          a.status, a.cancellation_reason, a.session_notes, a.next_appointment_suggested,
+          a.payment_status, a.payment_amount, a.google_calendar_event_id,
+          a.created_at, a.updated_at
+        FROM appointments a
+        LEFT JOIN clinic_users cu ON cu.user_id = a.user_id AND cu.clinic_id = a.clinic_id
+        LEFT JOIN users u ON u.id = cu.user_id
         WHERE ${sql.raw(whereClause)}
-        ORDER BY scheduled_date ASC
+        ORDER BY a.scheduled_date ASC
         LIMIT 500
       `);
       
       return result.rows as Appointment[];
     } catch (error) {
-      console.error('Error fetching appointments:', error);
-      // Fallback para quando há problemas com colunas
+      console.error('Error fetching appointments with user data:', error);
+      // Fallback simples para compatibilidade
       const result = await db.execute(sql`
         SELECT 
           id, contact_id, clinic_id, user_id, doctor_name, specialty,
@@ -520,24 +524,22 @@ export class PostgreSQLStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         SELECT 
-          id, contact_id, clinic_id, user_id, doctor_name, specialty,
-          appointment_type, scheduled_date, duration_minutes, status,
-          cancellation_reason, session_notes, next_appointment_suggested,
-          payment_status, payment_amount, google_calendar_event_id,
-          created_at, updated_at,
-          observations,
-          return_period,
-          how_found_clinic,
-          tags,
-          receive_reminders
-        FROM appointments 
-        WHERE id = ${id}
+          a.id, a.contact_id, a.clinic_id, a.user_id, 
+          COALESCE(u.name, a.doctor_name) as doctor_name,
+          a.specialty, a.appointment_type, a.scheduled_date, a.duration_minutes, 
+          a.status, a.cancellation_reason, a.session_notes, a.next_appointment_suggested,
+          a.payment_status, a.payment_amount, a.google_calendar_event_id,
+          a.created_at, a.updated_at
+        FROM appointments a
+        LEFT JOIN clinic_users cu ON cu.user_id = a.user_id AND cu.clinic_id = a.clinic_id
+        LEFT JOIN users u ON u.id = cu.user_id
+        WHERE a.id = ${id}
         LIMIT 1
       `);
       
-      return result.rows[0] as Appointment;
+      return result.rows[0] as Appointment | undefined;
     } catch (error) {
-      console.error('Error fetching appointment:', error);
+      console.error('Error fetching appointment with user data:', error);
       // Fallback simples
       const result = await db.execute(sql`
         SELECT 
@@ -551,10 +553,7 @@ export class PostgreSQLStorage implements IStorage {
         LIMIT 1
       `);
       
-      const row = result.rows[0];
-      if (!row) return undefined;
-      
-      return row as Appointment;
+      return result.rows[0] as Appointment | undefined;
     }
   }
 
