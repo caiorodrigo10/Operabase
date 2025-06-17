@@ -1594,7 +1594,7 @@ export function Consultas() {
 
   // Handle appointment move with @dnd-kit
   const handleAppointmentMove = (appointmentId: number, newDate: Date, newTime: string) => {
-    const appointment = appointments.find(a => a.id === appointmentId);
+    const appointment = appointments.find((a: Appointment) => a.id === appointmentId);
     if (!appointment) return;
 
     const newDateTime = new Date(newDate);
@@ -2502,7 +2502,7 @@ export function Consultas() {
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                               <DraggableAppointment
-                                appointment={appointment}
+                                appointment={appointment as any}
                                 style={{ 
                                   top: `${topPosition}px`,
                                   left: `calc(${finalLeftPosition}% + 2px)`,
