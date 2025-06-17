@@ -166,7 +166,7 @@ export function Consultas() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
+  const [selectedProfessional, setSelectedProfessional] = useState<number | 'all' | null>(null);
   
   // Create a stable reference for "today" to avoid timezone issues
   const today = useMemo(() => {
@@ -1209,9 +1209,9 @@ export function Consultas() {
     console.log('📊 Raw appointments for date:', dayAppointments);
     console.log('👤 Selected professional:', selectedProfessional);
     
-    // If no professional is selected, show all appointments
-    if (selectedProfessional === null) {
-      console.log('✅ No professional filter - showing all appointments:', dayAppointments.length);
+    // If no professional is selected or "all" is selected, show all appointments
+    if (selectedProfessional === null || selectedProfessional === 'all') {
+      console.log('✅ No professional filter or "all" selected - showing all appointments:', dayAppointments.length);
       return dayAppointments;
     }
     
@@ -1231,14 +1231,15 @@ export function Consultas() {
         return false;
       }
       
-      // For regular appointments, handle orphaned appointments (user_id 2, 3) - assign to Caio Rodrigo (4)
+      // For regular appointments, use STRICT filtering - only show appointments that truly belong to selected professional
       const validUserIds = [4, 5, 6]; // Valid professional IDs
-      const appointmentUserId = validUserIds.includes(appointment.user_id) ? appointment.user_id : 4; // Default to Caio Rodrigo for orphaned appointments
-      const isIncluded = appointmentUserId === selectedProfessional;
-      console.log('👨‍⚕️ Regular appointment filter:', { 
+      const hasValidUserId = validUserIds.includes(appointment.user_id);
+      const isIncluded = hasValidUserId && appointment.user_id === selectedProfessional;
+      
+      console.log('👨‍⚕️ Regular appointment filter (STRICT):', { 
         appointmentId: appointment.id, 
         userId: appointment.user_id,
-        mappedUserId: appointmentUserId,
+        hasValidUserId,
         selectedProfessional,
         isIncluded 
       });
@@ -1251,7 +1252,7 @@ export function Consultas() {
   }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
   // Function to select professional (single selection only)
-  const selectProfessional = (professionalId: number) => {
+  const selectProfessional = (professionalId: number | 'all') => {
     // If clicking the same professional, deselect them
     if (selectedProfessional === professionalId) {
       setSelectedProfessional(null);
@@ -1727,6 +1728,22 @@ export function Consultas() {
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium text-slate-600">Profissionais:</span>
 
+                {/* "All" Button */}
+                <button
+                  onClick={() => selectProfessional('all')}
+                  title="Ver todas as consultas"
+                  className={`
+                    px-3 py-1 rounded-full text-xs font-medium
+                    transition-all duration-200 hover:scale-105
+                    ${selectedProfessional === 'all' 
+                      ? 'bg-green-500 text-white border-2 border-green-600 shadow-md' 
+                      : 'bg-slate-200 text-slate-600 border-2 border-transparent hover:bg-slate-300'
+                    }
+                  `}
+                >
+                  Todas
+                </button>
+
                 {/* Professional Filter Avatars */}
                 {clinicUsers
                   .filter((user: any) => user.is_professional === true)
@@ -1825,15 +1842,14 @@ export function Consultas() {
                 // Don't hide Google Calendar events in list view
                 // if (app.google_calendar_event_id) return false;
                 
-                // Apply professional filter - show all if no filter is active
-                if (selectedProfessional === null) return true;
+                // Apply professional filter - show all if no filter is active or "all" is selected
+                if (selectedProfessional === null || selectedProfessional === 'all') return true;
                 
-                // Check if appointment user_id matches selected professional
-                // Also handle orphaned appointments (user_id 2, 3) - assign to Caio Rodrigo (4)
+                // Use STRICT filtering - only show appointments that truly belong to selected professional
                 const validUserIds = [4, 5, 6]; // Valid professional IDs
-                const appointmentUserId = validUserIds.includes(app.user_id) ? app.user_id : 4; // Default to Caio Rodrigo for orphaned appointments
+                const hasValidUserId = validUserIds.includes(app.user_id);
                 
-                return appointmentUserId === selectedProfessional;
+                return hasValidUserId && app.user_id === selectedProfessional;
               }).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
@@ -1844,15 +1860,14 @@ export function Consultas() {
                     // Don't hide Google Calendar events in list view
                     // if (app.google_calendar_event_id) return false;
                     
-                    // Apply professional filter - show all if no filter is active
-                    if (selectedProfessional === null) return true;
+                    // Apply professional filter - show all if no filter is active or "all" is selected
+                    if (selectedProfessional === null || selectedProfessional === 'all') return true;
                     
-                    // Check if appointment user_id matches selected professional
-                    // Also handle orphaned appointments (user_id 2, 3) - assign to Caio Rodrigo (4)
+                    // Use STRICT filtering - only show appointments that truly belong to selected professional
                     const validUserIds = [4, 5, 6]; // Valid professional IDs
-                    const appointmentUserId = validUserIds.includes(app.user_id) ? app.user_id : 4; // Default to Caio Rodrigo for orphaned appointments
+                    const hasValidUserId = validUserIds.includes(app.user_id);
                     
-                    return appointmentUserId === selectedProfessional;
+                    return hasValidUserId && app.user_id === selectedProfessional;
                   })
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
