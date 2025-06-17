@@ -1398,17 +1398,7 @@ export function Consultas() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     
-    if (!dragState.draggedAppointment || !dragOverSlot) {
-      // Reset all drag states
-      setDragState({
-        isDragging: false,
-        draggedAppointment: null,
-        mousePosition: { x: 0, y: 0 },
-        hoveredSlot: null,
-        previewTime: null,
-        dragPreviewVisible: false,
-        dragOverSlot: null
-      });
+    if (!draggedAppointment || !dragOverSlot) {
       setIsDragging(false);
       setDraggedAppointment(null);
       setDragOverSlot(null);
@@ -1419,16 +1409,6 @@ export function Consultas() {
     const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
     
     if (!timeSlot.isValid) {
-      // Reset all drag states for invalid drop
-      setDragState({
-        isDragging: false,
-        draggedAppointment: null,
-        mousePosition: { x: 0, y: 0 },
-        hoveredSlot: null,
-        previewTime: null,
-        dragPreviewVisible: false,
-        dragOverSlot: null
-      });
       setIsDragging(false);
       setDraggedAppointment(null);
       setDragOverSlot(null);
@@ -1436,7 +1416,7 @@ export function Consultas() {
     }
     
     // Parse original date and time
-    const scheduledDate = dragState.draggedAppointment.scheduled_date;
+    const scheduledDate = draggedAppointment.scheduled_date;
     if (!scheduledDate) return;
     const originalDate = new Date(scheduledDate);
     const originalTime = format(originalDate, 'HH:mm');
@@ -1450,32 +1430,16 @@ export function Consultas() {
     const isSameTime = originalTime === newTime;
     
     if (isSameDate && isSameTime) {
-      // Reset all drag states for no change
-      setDragState({
-        isDragging: false,
-        draggedAppointment: null,
-        mousePosition: { x: 0, y: 0 },
-        hoveredSlot: null,
-        previewTime: null,
-        dragPreviewVisible: false,
-        dragOverSlot: null
-      });
       setIsDragging(false);
       setDraggedAppointment(null);
       setDragOverSlot(null);
       return;
     }
     
-    // Hide drag preview during confirmation
-    setDragState(prev => ({
-      ...prev,
-      dragPreviewVisible: false
-    }));
-    
     // Show confirmation dialog
     setDragConfirmDialog({
       open: true,
-      appointment: dragState.draggedAppointment,
+      appointment: draggedAppointment,
       oldDate: originalDate,
       newDate: newDate,
       oldTime: originalTime,
@@ -2389,9 +2353,9 @@ export function Consultas() {
                             <div 
                               key={`${day.toISOString()}-${hour}`} 
                               className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative ${
-                                dragState.dragOverSlot && 
-                                dragState.dragOverSlot.date.getTime() === day.getTime() && 
-                                dragState.dragOverSlot.hour === hour 
+                                dragOverSlot && 
+                                dragOverSlot.date.getTime() === day.getTime() && 
+                                dragOverSlot.hour === hour 
                                   ? 'bg-blue-100 ring-2 ring-blue-300 ring-inset' 
                                   : ''
                               }`}
@@ -2561,9 +2525,9 @@ export function Consultas() {
                             <div 
                               key={hour} 
                               className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)} ${
-                                dragState.dragOverSlot && 
-                                dragState.dragOverSlot.date.getTime() === currentDate.getTime() && 
-                                dragState.dragOverSlot.hour === hour 
+                                dragOverSlot && 
+                                dragOverSlot.date.getTime() === currentDate.getTime() && 
+                                dragOverSlot.hour === hour 
                                   ? 'bg-blue-100 ring-2 ring-blue-300 ring-inset' 
                                   : ''
                               }`}
@@ -2652,8 +2616,8 @@ export function Consultas() {
                                     onDragStart={(e) => handleDragStart(e, appointment)}
                                     onDragEnd={handleDragEnd}
                                     className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-all duration-300 overflow-hidden shadow-sm ${
-                                      dragState.isDragging && dragState.draggedAppointment?.id === appointment.id 
-                                        ? 'opacity-30 ring-2 ring-blue-400 ring-offset-2' 
+                                      isDragging && draggedAppointment?.id === appointment.id 
+                                        ? 'opacity-50' 
                                         : 'hover:shadow-lg hover:scale-105'
                                     }`}
                                     style={{ 
@@ -3457,9 +3421,6 @@ export function Consultas() {
           </Form>
         </DialogContent>
       </Dialog>
-
-      {/* Floating Drag Preview */}
-      <DragPreview />
 
       {/* Drag and Drop Confirmation Dialog */}
       <Dialog open={dragConfirmDialog.open} onOpenChange={(open) => !open && cancelDragUpdate()}>
