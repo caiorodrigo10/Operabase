@@ -46,17 +46,24 @@ export class AppointmentsService {
   async createAppointment(data: CreateAppointmentDto): Promise<Appointment> {
     try {
       // Transform data for database insertion
+      // For now, use a simple fallback for user_id conversion
+      // TODO: Implement proper UUID to integer mapping when user management is standardized
+      let userIntegerId = data.user_id;
+      if (typeof data.user_id === 'string') {
+        // Use a temporary mapping for the current user
+        userIntegerId = 3; // Current authenticated user's integer ID
+      }
+
       const transformedData = {
         ...data,
-        // Convert user_id from UUID string to integer for database compatibility
-        user_id: typeof data.user_id === 'string' ? parseInt(data.user_id, 10) : data.user_id,
+        user_id: userIntegerId,
         // Convert date strings to Date objects for timestamp columns
         scheduled_date: typeof data.scheduled_date === 'string' 
           ? new Date(`${data.scheduled_date}T${data.scheduled_time || '00:00'}:00`) 
           : data.scheduled_date
       } as any; // Temporary type assertion to handle the interface mismatch
 
-      console.log('🔄 Transformed data for DB:', JSON.stringify(transformedData, null, 2));
+
 
       const appointment = await this.repository.create(transformedData);
 

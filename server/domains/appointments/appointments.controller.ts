@@ -84,11 +84,6 @@ export class AppointmentsController {
 
   async createAppointment(req: Request, res: Response) {
     try {
-      // Debug log to see what we're receiving
-      console.log('📥 Raw request body:', JSON.stringify(req.body, null, 2));
-      console.log('📝 scheduled_date type:', typeof req.body.scheduled_date);
-      console.log('📝 scheduled_date value:', req.body.scheduled_date);
-      
       const validatedData = createAppointmentSchema.parse(req.body);
       
       // Transform validated data to match DTO interface
