@@ -130,7 +130,7 @@ async function applyPerformanceOptimizations() {
       ORDER BY tablename, indexname
     `);
 
-    console.log(`✅ Created ${indexCheck.length} multi-tenant indexes`);
+    console.log(`✅ Created ${indexCheck.rows?.length || 0} multi-tenant indexes`);
 
     // 8. Check slow query potential
     console.log('\n8️⃣ Checking query performance potential...');
