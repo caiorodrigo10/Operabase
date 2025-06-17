@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ContactsService } from './contacts.service';
 import { ContactsRepository } from './contacts.repository';
-import { createContactSchema, updateContactSchema, contactStatusUpdateSchema } from './contacts.types';
+import { createContactSchema, updateContactSchema, updateContactStatusSchema } from '../../shared/schemas/index';
 import { CacheMiddleware } from '../../cache-middleware.js';
 
 export class ContactsController {
@@ -130,8 +130,8 @@ export class ContactsController {
         return res.status(400).json({ error: "Invalid contact ID" });
       }
 
-      const { status } = contactStatusUpdateSchema.parse(req.body);
-      const contact = await this.service.updateContactStatus(contactId, status);
+      const validatedData = updateContactStatusSchema.parse(req.body);
+      const updatedContact = await this.service.updateContactStatus(contactId, validatedData.status);
 
       res.json(contact);
     } catch (error: any) {
