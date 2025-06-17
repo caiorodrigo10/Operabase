@@ -4,6 +4,9 @@ import { createApiRouter } from "./api/v1";
 import { createStorage } from "./storage-factory";
 import { setupAuth } from "./auth";
 import { tenantIsolationMiddleware } from "./shared/tenant-isolation.middleware";
+import { cacheInterceptorMiddleware, cacheInvalidationMiddleware } from "./shared/cache-interceptor.middleware";
+import { performanceMonitor } from "./shared/performance-monitor";
+import { tenantContext } from "./shared/tenant-context.provider";
 import http from "http";
 
 const app = express();
@@ -47,8 +50,10 @@ app.use((req, res, next) => {
   // Setup authentication
   setupAuth(app, storage);
   
-  // Apply tenant isolation middleware to all API routes
+  // Apply cache and tenant middleware chain to all API routes
+  app.use('/api', cacheInterceptorMiddleware as any);
   app.use('/api', tenantIsolationMiddleware as any);
+  app.use('/api', cacheInvalidationMiddleware as any);
   
   // Setup API routes
   const apiRouter = createApiRouter(storage);
