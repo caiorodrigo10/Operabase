@@ -1347,26 +1347,30 @@ export function Consultas() {
   }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
   // Drag and Drop Functions
+  // Enhanced coordinate conversion with 5-minute precision
   const convertCoordinatesToTimeSlot = (clientX: number, clientY: number, calendarElement: HTMLElement) => {
     const rect = calendarElement.getBoundingClientRect();
     const relativeX = clientX - rect.left;
     const relativeY = clientY - rect.top;
     
-    // Calculate which day column (for week view)
-    const dayWidth = calendarView === 'week' ? rect.width / 7 : rect.width;
-    const dayIndex = Math.floor(relativeX / dayWidth);
+    // Calculate day column with time column adjustment for week view
+    const dayWidth = calendarView === 'week' ? rect.width / 8 : rect.width; // 8 = time column + 7 days
+    const timeColumnWidth = calendarView === 'week' ? rect.width / 8 : 0;
+    const adjustedX = relativeX - timeColumnWidth;
+    const dayIndex = Math.floor(adjustedX / (dayWidth - timeColumnWidth / 7));
     
-    // Calculate time slot based on Y position
-    const headerHeight = 60; // Approximate header height
-    const timeSlotHeight = 60; // Each hour slot height
-    const startHour = 7; // Calendar starts at 7 AM
-    
+    // Calculate precise time with 5-minute intervals
+    const headerHeight = 60;
     const slotY = relativeY - headerHeight;
-    const hourFromTop = Math.floor(slotY / timeSlotHeight);
-    const minuteFromTop = Math.floor((slotY % timeSlotHeight) / (timeSlotHeight / 4)) * 15; // 15-minute intervals
+    const PIXELS_PER_HOUR = 60;
+    const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60;
     
-    const targetHour = startHour + hourFromTop;
-    const targetMinute = minuteFromTop;
+    // Convert Y position to minutes from start time (7am) with 5-minute snap
+    const totalMinutesFromStart = Math.round((slotY / PIXELS_PER_MINUTE) / 5) * 5;
+    
+    const startHour = 7;
+    const targetHour = startHour + Math.floor(totalMinutesFromStart / 60);
+    const targetMinute = totalMinutesFromStart % 60;
     
     // Calculate target date
     let targetDate: Date;
@@ -1381,7 +1385,7 @@ export function Consultas() {
       date: targetDate,
       hour: targetHour,
       minute: targetMinute,
-      isValid: targetHour >= 7 && targetHour <= 22 && dayIndex >= 0 && dayIndex < (calendarView === 'week' ? 7 : 1)
+      isValid: targetHour >= 7 && targetHour <= 22 && targetMinute >= 0 && targetMinute < 60 && dayIndex >= 0 && dayIndex < (calendarView === 'week' ? 7 : 1)
     };
   };
 
