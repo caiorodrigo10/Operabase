@@ -1,5 +1,5 @@
 
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 import type { 
   Appointment, 
   CreateAppointmentDto, 
@@ -8,7 +8,7 @@ import type {
 } from './appointments.types';
 
 export class AppointmentsRepository {
-  constructor(private storage: Storage) {}
+  constructor(private storage: IStorage) {}
 
   async findAll(clinicId: number, filters: AppointmentFilters = {}): Promise<Appointment[]> {
     return this.storage.getAppointments(clinicId, filters);

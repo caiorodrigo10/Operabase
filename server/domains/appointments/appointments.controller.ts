@@ -7,14 +7,13 @@ import {
   availabilityRequestSchema,
   timeSlotRequestSchema
 } from './appointments.types';
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 
 export class AppointmentsController {
   private service: AppointmentsService;
 
-  constructor(storage: Storage) {
-    const repository = new AppointmentsRepository(storage);
-    this.service = new AppointmentsService(repository);
+  constructor(storage: IStorage) {
+    this.service = new AppointmentsService(storage);
   }
 
   async getAppointments(req: Request, res: Response) {

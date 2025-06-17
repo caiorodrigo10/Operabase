@@ -10,12 +10,12 @@ import type {
   TimeSlotResponse
 } from './appointments.types';
 import { AppointmentsRepository } from './appointments.repository';
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 
 export class AppointmentsService {
   private repository: AppointmentsRepository;
 
-  constructor(private storage: Storage) {
+  constructor(private storage: IStorage) {
     this.repository = new AppointmentsRepository(storage);
   }
 
