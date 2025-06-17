@@ -16,7 +16,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertContactSchema } from "@/../../shared/schema";
+import { insertContactSchema } from "../../../server/domains/contacts/contacts.schema";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -32,7 +32,7 @@ import {
   UserPlus,
   FileText
 } from "lucide-react";
-import type { Contact, InsertContact } from "@/../../shared/schema";
+import type { Contact, InsertContact } from "../../../server/domains/contacts/contacts.schema";
 
 const statusLabels = {
   novo: { label: "Novo", color: "bg-slate-100 text-slate-800" },

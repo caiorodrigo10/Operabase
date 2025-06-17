@@ -15,7 +15,7 @@ import { Calendar, Clock, User, UserPlus, Search, Plus, X, AlertTriangle } from 
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { FindTimeSlots } from "@/components/FindTimeSlots";
-import type { Contact } from "@/../../shared/schema";
+import type { Contact } from "../../../server/domains/contacts/contacts.schema";
 
 const appointmentFormSchema = z.object({
   contact_id: z.number().min(1, "Paciente é obrigatório"),

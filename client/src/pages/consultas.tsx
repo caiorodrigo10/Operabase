@@ -28,7 +28,8 @@ import { EventTooltip } from "@/components/EventTooltip";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
 import { FindTimeSlots } from "@/components/FindTimeSlots";
 import { AppointmentTagSelector } from "@/components/AppointmentTagSelector";
-import type { Appointment, Contact } from "@/../../shared/schema";
+import type { Appointment } from "../../../server/domains/appointments/appointments.schema";
+import type { Contact } from "../../../server/domains/contacts/contacts.schema";
 
 // Schema for appointment creation form
 const appointmentSchema = z.object({
