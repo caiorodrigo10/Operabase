@@ -180,10 +180,22 @@ export function Consultas() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
   
-  // Simplified drag and drop states
+  // Google Calendar-style drag and drop states
   const [isDragging, setIsDragging] = useState(false);
   const [draggedAppointment, setDraggedAppointment] = useState<Appointment | null>(null);
-  const [dragOverSlot, setDragOverSlot] = useState<{date: Date, hour: number, minute?: number} | null>(null);
+  const [ghostElement, setGhostElement] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    appointment: Appointment | null;
+    targetSlot: {date: Date, hour: number, minute: number} | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    appointment: null,
+    targetSlot: null
+  });
   const [dragConfirmDialog, setDragConfirmDialog] = useState<{
     open: boolean;
     appointment: Appointment | null;
@@ -1357,40 +1369,51 @@ export function Consultas() {
     };
   };
 
-  // Simplified drag start - Google Calendar style
+  // Google Calendar-style drag start with ghost element
   const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
     setIsDragging(true);
     setDraggedAppointment(appointment);
     
+    // Create ghost element that follows mouse
+    setGhostElement({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      appointment: appointment,
+      targetSlot: null
+    });
+    
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify(appointment));
     
-    // Add dragging class to original element for visual feedback
-    const element = e.currentTarget as HTMLElement;
-    element.style.opacity = '0.5';
+    // Hide default browser drag image
+    const emptyImg = new Image();
+    e.dataTransfer.setDragImage(emptyImg, 0, 0);
     
-    console.log('🎯 Drag started:', appointment.id);
+    console.log('🎯 Ghost drag started:', appointment.id);
   };
 
-  // Simple drag over handler without throttling
+  // Google Calendar-style drag over with ghost element positioning
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
     if (!isDragging || !draggedAppointment) return;
     
+    // Update ghost element position to follow mouse
     const calendarElement = e.currentTarget as HTMLElement;
     const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
     
-    if (timeSlot.isValid) {
-      setDragOverSlot({
+    setGhostElement(prev => ({
+      ...prev,
+      x: e.clientX,
+      y: e.clientY,
+      targetSlot: timeSlot.isValid ? {
         date: timeSlot.date,
         hour: timeSlot.hour,
         minute: timeSlot.minute
-      });
-    } else {
-      setDragOverSlot(null);
-    }
+      } : null
+    }));
   };
 
 
@@ -1398,22 +1421,14 @@ export function Consultas() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     
-    if (!draggedAppointment || !dragOverSlot) {
+    if (!draggedAppointment || !ghostElement.targetSlot) {
       setIsDragging(false);
       setDraggedAppointment(null);
-      setDragOverSlot(null);
+      setGhostElement(prev => ({ ...prev, visible: false }));
       return;
     }
     
-    const calendarElement = e.currentTarget as HTMLElement;
-    const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
-    
-    if (!timeSlot.isValid) {
-      setIsDragging(false);
-      setDraggedAppointment(null);
-      setDragOverSlot(null);
-      return;
-    }
+    const targetSlot = ghostElement.targetSlot;
     
     // Parse original date and time
     const scheduledDate = draggedAppointment.scheduled_date;
@@ -1422,8 +1437,8 @@ export function Consultas() {
     const originalTime = format(originalDate, 'HH:mm');
     
     // Create new date and time
-    const newDate = timeSlot.date;
-    const newTime = `${timeSlot.hour.toString().padStart(2, '0')}:${timeSlot.minute.toString().padStart(2, '0')}`;
+    const newDate = targetSlot.date;
+    const newTime = `${targetSlot.hour.toString().padStart(2, '0')}:${targetSlot.minute.toString().padStart(2, '0')}`;
     
     // Check if there's actually a change
     const isSameDate = isSameDay(originalDate, newDate);
@@ -1432,7 +1447,7 @@ export function Consultas() {
     if (isSameDate && isSameTime) {
       setIsDragging(false);
       setDraggedAppointment(null);
-      setDragOverSlot(null);
+      setGhostElement(prev => ({ ...prev, visible: false }));
       return;
     }
     
@@ -1447,13 +1462,15 @@ export function Consultas() {
     });
     
     setIsDragging(false);
-    setDragOverSlot(null);
+    setGhostElement(prev => ({ ...prev, visible: false }));
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
     setDraggedAppointment(null);
-    setDragOverSlot(null);
+    setGhostElement(prev => ({ ...prev, visible: false }));
+    
+    console.log('🎯 Ghost drag ended');
   };
 
   // Update appointment mutation for drag and drop
