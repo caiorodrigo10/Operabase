@@ -1374,6 +1374,27 @@ export function Consultas() {
     setIsDragging(true);
     setDraggedAppointment(appointment);
     
+    // Create custom drag image to replace favicon
+    const dragImage = document.createElement('div');
+    dragImage.style.cssText = `
+      position: absolute;
+      top: -1000px;
+      left: -1000px;
+      width: 1px;
+      height: 1px;
+      background: transparent;
+      pointer-events: none;
+    `;
+    document.body.appendChild(dragImage);
+    
+    // Set custom drag image (eliminates favicon cursor)
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    
+    // Clean up drag image after a moment
+    setTimeout(() => {
+      document.body.removeChild(dragImage);
+    }, 0);
+    
     // Create ghost element that follows mouse
     setGhostElement({
       visible: true,
@@ -2341,7 +2362,7 @@ export function Consultas() {
                   
                   {/* Calendar body with absolute positioned appointments */}
                   <div 
-                    className="relative"
+                    className={`relative calendar-container ${isDragging ? 'dragging' : ''}`}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                   >
@@ -2462,7 +2483,7 @@ export function Consultas() {
                                 draggable={true}
                                 onDragStart={(e) => handleDragStart(e, appointment)}
                                 onDragEnd={handleDragEnd}
-                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto ${isDragging && draggedAppointment?.id === appointment.id ? 'opacity-50' : ''}`}
+                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto appointment-card ${isDragging && draggedAppointment?.id === appointment.id ? 'dragging opacity-50' : ''}`}
                                 style={{ 
                                   top: `${topPosition}px`,
                                   left: `calc(${finalLeftPosition}% + 2px)`,

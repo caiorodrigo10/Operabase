@@ -61,6 +61,15 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Custom drag cursor with directional arrows */
+.calendar-container {
+  cursor: grab;
+}
+
+.calendar-container.dragging {
+  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTcgMTRMMTIgOUwxNyAxNCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNNyAxMEwxMiAxNUwxNyAxMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K') 12 12, move !important;
+}
+
 [draggable="true"]:active {
   cursor: grabbing;
 }
@@ -72,6 +81,38 @@
   transform-origin: center;
   will-change: transform;
   z-index: 9999;
+  opacity: 0.8;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Snap visual feedback */
+.snap-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: hsl(207, 90%, 54%);
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+  z-index: 1000;
+  animation: snapPulse 0.3s ease-in-out;
+}
+
+@keyframes snapPulse {
+  0% { opacity: 0; transform: scaleY(0.5); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+/* Drop zone highlighting */
+.calendar-container.dragging .time-slot:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px dashed hsl(207, 90%, 54%);
+}
+
+/* Enhanced appointment card during drag */
+.appointment-card.dragging {
+  opacity: 0.6;
+  transform: scale(0.95);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 /* Drag animation effects */
