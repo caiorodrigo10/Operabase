@@ -1,4 +1,16 @@
 import React, { useState, useEffect, useMemo } from "react";
+
+// Throttle utility for drag performance optimization
+function throttle<T extends (...args: any[]) => any>(func: T, limit: number): T {
+  let inThrottle: boolean;
+  return ((...args: any[]) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  }) as T;
+}
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -289,33 +301,47 @@ export function Consultas() {
     });
   };
 
-  // Floating drag preview component
+  // Enhanced floating drag preview with 5-minute precision
   const DragPreview = () => {
     if (!dragState.dragPreviewVisible || !dragState.draggedAppointment) return null;
 
     const appointment = dragState.draggedAppointment;
     const contact = contacts.find((c: Contact) => c.id === appointment.contact_id);
+    
+    // Check for conflicts at the current hover position
+    const hasConflict = dragState.dragOverSlot && checkSlotConflict(
+      dragState.dragOverSlot.date,
+      dragState.dragOverSlot.hour,
+      dragState.dragOverSlot.minute || 0,
+      appointment
+    );
 
     return (
       <div 
-        className="fixed pointer-events-none z-50 transition-opacity duration-200"
+        className="drag-preview-enhanced"
         style={{ 
-          left: dragState.mousePosition.x - 60, 
-          top: dragState.mousePosition.y - 30,
-          transform: 'rotate(2deg)',
-          opacity: dragState.dragPreviewVisible ? 0.9 : 0
+          left: dragState.mousePosition.x - 70, 
+          top: dragState.mousePosition.y - 45
         }}
       >
-        <div className="bg-white border-2 border-blue-400 rounded-lg p-2 shadow-xl max-w-48">
-          <div className="text-xs font-medium text-blue-800 truncate">
+        <div className="preview-card">
+          <div className="preview-patient">
             {contact?.name || 'Paciente'}
           </div>
-          <div className="text-xs text-gray-600">
-            {dragState.previewTime && `Novo horário: ${dragState.previewTime}`}
+          {dragState.previewTime && (
+            <div className={`preview-time ${hasConflict ? 'text-red-600' : 'text-green-600'}`}>
+              📍 {dragState.previewTime}
+              {hasConflict && ' ⚠️'}
+            </div>
+          )}
+          <div className="preview-duration">
+            {appointment.duration_minutes || 30}min
           </div>
-          <div className="text-xs text-gray-500">
-            {appointment.duration_minutes}min
-          </div>
+          {hasConflict && (
+            <div className="text-xs text-red-600 font-medium mt-1">
+              Conflito detectado
+            </div>
+          )}
         </div>
       </div>
     );
