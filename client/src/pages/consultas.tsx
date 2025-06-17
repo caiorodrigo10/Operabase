@@ -40,6 +40,7 @@ const appointmentSchema = z.object({
   duration: z.string().min(1, "Duração é obrigatória"),
   type: z.string().min(1, "Tipo é obrigatório"),
   notes: z.string().optional(),
+  tag_id: z.number().optional(),
 });
 
 type AppointmentForm = z.infer<typeof appointmentSchema>;
@@ -447,13 +448,19 @@ export function Consultas() {
         contact_id: parseInt(data.contact_id),
         user_id: parseInt(data.user_id),
         clinic_id: 1,
+        type: data.type,
+        scheduled_date: data.scheduled_date, // Keep as string
+        scheduled_time: data.scheduled_time, // Keep as string
+        duration: parseInt(data.duration),
+        status: "agendada",
+        payment_status: "pendente",
+        notes: data.notes || null,
+        tag_id: data.tag_id || null,
+        // Legacy fields for compatibility
         doctor_name: patientName,
         specialty: data.type,
         appointment_type: data.type,
-        scheduled_date: new Date(`${data.scheduled_date}T${data.scheduled_time}`),
         duration_minutes: parseInt(data.duration),
-        status: "agendada",
-        payment_status: "pendente",
         payment_amount: 0,
         session_notes: data.notes || null
       };
