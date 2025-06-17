@@ -166,7 +166,7 @@ export function Consultas() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedProfessionals, setSelectedProfessionals] = useState<number[]>([]);
+  const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
   
   // Create a stable reference for "today" to avoid timezone issues
   const today = useMemo(() => {
@@ -547,15 +547,15 @@ export function Consultas() {
     return map;
   }, [clinicUsers]);
 
-  // Pre-select current user when clinicUsers data loads - optimized version
+  // Pre-select current user when clinicUsers data loads - single professional selection
   React.useEffect(() => {
-    if (clinicUsers.length > 0 && selectedProfessionals.length === 0 && currentUserEmail) {
+    if (clinicUsers.length > 0 && selectedProfessional === null && currentUserEmail) {
       const currentClinicUser = clinicUserByEmail.get(currentUserEmail);
       if (currentClinicUser && currentClinicUser.is_professional) {
-        setSelectedProfessionals([currentClinicUser.id]);
+        setSelectedProfessional(currentClinicUser.id);
       }
     }
-  }, [clinicUsers.length, selectedProfessionals.length, currentUserEmail, clinicUserByEmail]);
+  }, [clinicUsers.length, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
   // Memoized professional ID lookup for performance
   const professionalNameToIdMap = useMemo(() => {
@@ -1207,10 +1207,10 @@ export function Consultas() {
     
     console.log('🗓️ Calendar Debug - Getting appointments for date:', dateKey);
     console.log('📊 Raw appointments for date:', dayAppointments);
-    console.log('👥 Selected professionals:', selectedProfessionals);
+    console.log('👤 Selected professional:', selectedProfessional);
     
-    // If no professionals are selected, show all appointments
-    if (selectedProfessionals.length === 0) {
+    // If no professional is selected, show all appointments
+    if (selectedProfessional === null) {
       console.log('✅ No professional filter - showing all appointments:', dayAppointments.length);
       return dayAppointments;
     }
@@ -1222,7 +1222,7 @@ export function Consultas() {
           const clinicUser = clinicUserByEmail.get(currentUserEmail);
           
           if (clinicUser && clinicUser.is_professional) {
-            const isIncluded = selectedProfessionals.includes(clinicUser.id);
+            const isIncluded = clinicUser.id === selectedProfessional;
             console.log('📅 Google Calendar event filter:', { appointment: appointment.id, userMatch: isIncluded });
             return isIncluded;
           }
@@ -1233,7 +1233,7 @@ export function Consultas() {
       
       // For regular appointments, use doctor_name matching
       const professionalId = getProfessionalIdByName(appointment.doctor_name);
-      const isIncluded = professionalId ? selectedProfessionals.includes(professionalId) : false;
+      const isIncluded = professionalId === selectedProfessional;
       console.log('👨‍⚕️ Regular appointment filter:', { 
         appointmentId: appointment.id, 
         doctorName: appointment.doctor_name, 
@@ -1258,17 +1258,16 @@ export function Consultas() {
     
     console.log('🎯 Final filtered appointments:', filteredAppointments.length);
     return filteredAppointments;
-  }, [appointmentsByDate, selectedProfessionals, currentUserEmail, clinicUserByEmail, getProfessionalIdByName]);
+  }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail, getProfessionalIdByName]);
 
-  // Function to toggle professional selection
-  const toggleProfessional = (professionalId: number) => {
-    setSelectedProfessionals(prev => {
-      if (prev.includes(professionalId)) {
-        return prev.filter(id => id !== professionalId);
-      } else {
-        return [...prev, professionalId];
-      }
-    });
+  // Function to select professional (single selection only)
+  const selectProfessional = (professionalId: number) => {
+    // If clicking the same professional, deselect them
+    if (selectedProfessional === professionalId) {
+      setSelectedProfessional(null);
+    } else {
+      setSelectedProfessional(professionalId);
+    }
   };
 
   // Memoized showDayEvents function to reduce re-renders and improve performance
