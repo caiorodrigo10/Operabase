@@ -1,81 +1,102 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { TenantContext } from './tenant-types.js';
 
 /**
- * Tenant Context Provider - Manages clinic context per request
- * Provides thread-safe tenant isolation using AsyncLocalStorage
+ * Tenant context interface
+ */
+interface TenantContext {
+  clinicId: number;
+  userId?: string;
+  userRole?: string;
+  isProfessional?: boolean;
+}
+
+/**
+ * Global tenant context storage using AsyncLocalStorage
+ * Provides thread-safe tenant isolation across async operations
  */
 class TenantContextProvider {
   private storage = new AsyncLocalStorage<TenantContext>();
 
   /**
-   * Run callback with tenant context
+   * Set tenant context for current execution context
    */
-  run<T>(context: TenantContext, callback: () => T): T {
-    return this.storage.run(context, callback);
+  setContext(context: TenantContext): void {
+    // This should be called within a middleware that uses run()
+    const currentContext = this.storage.getStore();
+    if (currentContext) {
+      Object.assign(currentContext, context);
+    }
   }
 
   /**
-   * Get current tenant context
+   * Get current clinic ID from context
+   */
+  getClinicId(): number {
+    const context = this.storage.getStore();
+    if (!context?.clinicId) {
+      throw new Error('No clinic context available');
+    }
+    return context.clinicId;
+  }
+
+  /**
+   * Get current user ID from context
+   */
+  getUserId(): string | undefined {
+    const context = this.storage.getStore();
+    return context?.userId;
+  }
+
+  /**
+   * Get current user role from context
+   */
+  getUserRole(): string | undefined {
+    const context = this.storage.getStore();
+    return context?.userRole;
+  }
+
+  /**
+   * Check if current user is a professional
+   */
+  isProfessional(): boolean {
+    const context = this.storage.getStore();
+    return context?.isProfessional || false;
+  }
+
+  /**
+   * Get full context
    */
   getContext(): TenantContext | undefined {
     return this.storage.getStore();
   }
 
   /**
-   * Get current clinic ID
+   * Run callback with specific tenant context
    */
-  getClinicId(): number | undefined {
-    const context = this.getContext();
-    return context?.clinicId;
+  run<T>(context: TenantContext, callback: () => T): T {
+    return this.storage.run(context, callback);
   }
 
   /**
-   * Get current user ID
+   * Check if context is available
    */
-  getUserId(): string | undefined {
-    const context = this.getContext();
-    return context?.userId;
+  hasContext(): boolean {
+    return this.storage.getStore() !== undefined;
   }
 
   /**
-   * Get current user role
+   * Clear current context (for testing purposes)
    */
-  getUserRole(): string | undefined {
-    const context = this.getContext();
-    return context?.userRole;
-  }
-
-  /**
-   * Check if current context is authenticated
-   */
-  isAuthenticated(): boolean {
-    const context = this.getContext();
-    return context?.isAuthenticated ?? false;
-  }
-
-  /**
-   * Validate tenant context exists
-   */
-  validateContext(): TenantContext {
-    const context = this.getContext();
-    if (!context) {
-      throw new Error('Tenant context not found. Middleware may not be properly configured.');
+  clearContext(): void {
+    const context = this.storage.getStore();
+    if (context) {
+      Object.keys(context).forEach(key => {
+        delete (context as any)[key];
+      });
     }
-    if (!context.isAuthenticated) {
-      throw new Error('Request is not authenticated.');
-    }
-    return context;
-  }
-
-  /**
-   * Get tenant filter for database queries
-   */
-  getTenantFilter(): { clinic_id: number } {
-    const context = this.validateContext();
-    return { clinic_id: context.clinicId };
   }
 }
 
 // Singleton instance
 export const tenantContext = new TenantContextProvider();
+export type { TenantContext };

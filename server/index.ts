@@ -6,6 +6,7 @@ import { setupAuth } from "./auth";
 import { tenantIsolationMiddleware } from "./shared/tenant-isolation.middleware";
 import { cacheInterceptorMiddleware, cacheInvalidationMiddleware } from "./shared/cache-interceptor.middleware";
 import { performanceMonitor } from "./shared/performance-monitor";
+import { cacheService } from "./shared/redis-cache.service";
 import { tenantContext } from "./shared/tenant-context.provider";
 import http from "http";
 
@@ -26,7 +27,16 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
+    
+    // Track performance metrics for API calls
     if (path.startsWith("/api")) {
+      try {
+        const clinicId = tenantContext.getClinicId();
+        performanceMonitor.trackApiCall(path, duration, res.statusCode, clinicId);
+      } catch (error) {
+        // Skip performance tracking if no tenant context
+      }
+
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
@@ -58,6 +68,35 @@ app.use((req, res, next) => {
   // Setup API routes
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
+  
+  // Health and monitoring endpoints
+  app.get('/api/health', async (req, res) => {
+    try {
+      const cacheHealth = await cacheService.healthCheck();
+      const performanceHealth = performanceMonitor.isHealthy();
+      
+      res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        cache: cacheHealth,
+        performance: performanceHealth,
+        uptime: process.uptime(),
+        version: 'v2.0-with-cache'
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: 'Health check failed',
+        uptime: process.uptime()
+      });
+    }
+  });
+  
+  app.get('/api/metrics', (req, res) => {
+    const metrics = performanceMonitor.getMetrics();
+    res.json(metrics);
+  });
   
   // Create HTTP server
   const server = http.createServer(app);
