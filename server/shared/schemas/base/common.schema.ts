@@ -81,6 +81,7 @@ export const sourceSchema = z.enum([
   'site', 
   'indicacao', 
   'importacao',
+  'cadastro',
   'outros'
 ], {
   errorMap: () => ({ message: "Origem inválida" })
