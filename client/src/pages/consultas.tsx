@@ -1824,7 +1824,13 @@ export function Consultas() {
                 
                 // Apply professional filter - show all if no filter is active
                 if (selectedProfessional === null) return true;
-                return app.user_id === selectedProfessional;
+                
+                // Check if appointment user_id matches selected professional
+                // Also handle orphaned appointments (user_id 2, 3) - assign to Caio Rodrigo (4)
+                const validUserIds = [4, 5, 6]; // Valid professional IDs
+                const appointmentUserId = validUserIds.includes(app.user_id) ? app.user_id : 4; // Default to Caio Rodrigo for orphaned appointments
+                
+                return appointmentUserId === selectedProfessional;
               }).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
