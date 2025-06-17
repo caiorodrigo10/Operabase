@@ -1,5 +1,10 @@
-import { db } from "./db";
+import { createClient } from '@supabase/supabase-js';
 import type { IStorage } from "./storage";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_ANON_KEY || ''
+);
 
 /**
  * Minimal storage implementation to get the server running
@@ -9,7 +14,8 @@ export class MinimalStorage implements IStorage {
   async testConnection(): Promise<void> {
     try {
       console.log('🔍 Testing database connection...');
-      await db.execute('SELECT 1');
+      const { data, error } = await supabase.from('users').select('id').limit(1);
+      if (error) throw error;
       console.log('✅ Database connection successful');
     } catch (error) {
       console.error('❌ Database connection failed:', error);
@@ -20,8 +26,14 @@ export class MinimalStorage implements IStorage {
   // Minimal implementations to satisfy interface requirements
   async getUserByEmail(email: string): Promise<any> {
     try {
-      const result = await db.execute(`SELECT * FROM users WHERE email = $1 LIMIT 1`, [email]);
-      return result.rows?.[0] || null;
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || null;
     } catch (error) {
       console.error('Error getting user by email:', error);
       return null;
@@ -30,8 +42,14 @@ export class MinimalStorage implements IStorage {
 
   async getUserById(id: any): Promise<any> {
     try {
-      const result = await db.execute(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [id]);
-      return result.rows?.[0] || null;
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || null;
     } catch (error) {
       console.error('Error getting user by id:', error);
       return null;
@@ -45,11 +63,14 @@ export class MinimalStorage implements IStorage {
   async createUser(userData: any): Promise<any> {
     try {
       const { email, password, name, role = 'user' } = userData;
-      const result = await db.execute(
-        `INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4) RETURNING *`,
-        [email, password, name, role]
-      );
-      return result.rows?.[0];
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{ email, password, name, role }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -58,13 +79,15 @@ export class MinimalStorage implements IStorage {
 
   async updateUser(id: any, userData: any): Promise<any> {
     try {
-      const fields = Object.keys(userData).map((key, index) => `${key} = $${index + 2}`).join(', ');
-      const values = [id, ...Object.values(userData)];
-      const result = await db.execute(
-        `UPDATE users SET ${fields}, updated_at = NOW() WHERE id = $1 RETURNING *`,
-        values
-      );
-      return result.rows[0];
+      const { data, error } = await supabase
+        .from('users')
+        .update(userData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
@@ -74,13 +97,22 @@ export class MinimalStorage implements IStorage {
   // Clinic user management methods
   async getUserClinics(userId: any): Promise<any[]> {
     try {
-      const result = await db.execute(`
-        SELECT c.*, cu.role, cu.is_professional, cu.is_active as user_active
-        FROM clinics c
-        JOIN clinic_users cu ON c.id = cu.clinic_id
-        WHERE cu.user_id = $1 AND cu.is_active = true
-      `, [userId]);
-      return result.rows || [];
+      const { data, error } = await supabase
+        .from('clinic_users')
+        .select(`
+          *,
+          clinics!inner(*)
+        `)
+        .eq('user_id', userId)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      return data?.map(item => ({
+        ...item.clinics,
+        role: item.role,
+        is_professional: item.is_professional,
+        user_active: item.is_active
+      })) || [];
     } catch (error) {
       console.error('Error getting user clinics:', error);
       return [];
@@ -89,14 +121,22 @@ export class MinimalStorage implements IStorage {
 
   async getClinicUsers(clinicId: number): Promise<any[]> {
     try {
-      const result = await db.execute(`
-        SELECT cu.*, u.name, u.email, u.created_at as user_created_at
-        FROM clinic_users cu
-        JOIN users u ON cu.user_id = u.id
-        WHERE cu.clinic_id = $1
-        ORDER BY u.name
-      `, [clinicId]);
-      return result.rows || [];
+      const { data, error } = await supabase
+        .from('clinic_users')
+        .select(`
+          *,
+          users!inner(name, email, created_at)
+        `)
+        .eq('clinic_id', clinicId)
+        .order('users(name)');
+      
+      if (error) throw error;
+      return data?.map(item => ({
+        ...item,
+        name: item.users.name,
+        email: item.users.email,
+        user_created_at: item.users.created_at
+      })) || [];
     } catch (error) {
       console.error('Error getting clinic users:', error);
       return [];
@@ -288,9 +328,18 @@ export class MinimalStorage implements IStorage {
 
   async getClinic(id: number): Promise<any> {
     try {
-      const result = await db.execute(`SELECT * FROM clinics WHERE id = $1`, [id]);
-      if (result.rows && result.rows.length > 0) {
-        return result.rows[0];
+      const { data, error } = await supabase
+        .from('clinics')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error getting clinic:', error);
+      }
+      
+      if (data) {
+        return data;
       }
       
       // If clinic 1 doesn't exist, create it as default clinic
@@ -309,22 +358,35 @@ export class MinimalStorage implements IStorage {
 
   async createDefaultClinic(): Promise<any> {
     try {
-      const result = await db.execute(`
-        INSERT INTO clinics (
-          id, name, email, phone, address, city, state, 
-          operating_hours, timezone, created_at, updated_at
-        ) VALUES (
-          1, 'Clínica Exemplo', 'contato@clinica.com', '(11) 99999-9999', 
-          'Rua Exemplo, 123', 'São Paulo', 'SP',
-          '{"monday": {"start": "08:00", "end": "18:00", "enabled": true}, "tuesday": {"start": "08:00", "end": "18:00", "enabled": true}, "wednesday": {"start": "08:00", "end": "18:00", "enabled": true}, "thursday": {"start": "08:00", "end": "18:00", "enabled": true}, "friday": {"start": "08:00", "end": "18:00", "enabled": true}, "saturday": {"start": "08:00", "end": "12:00", "enabled": true}, "sunday": {"start": "08:00", "end": "12:00", "enabled": false}}',
-          'America/Sao_Paulo', NOW(), NOW()
-        ) ON CONFLICT (id) DO UPDATE SET
-          name = EXCLUDED.name,
-          updated_at = NOW()
-        RETURNING *
-      `);
+      const operatingHours = {
+        monday: { start: "08:00", end: "18:00", enabled: true },
+        tuesday: { start: "08:00", end: "18:00", enabled: true },
+        wednesday: { start: "08:00", end: "18:00", enabled: true },
+        thursday: { start: "08:00", end: "18:00", enabled: true },
+        friday: { start: "08:00", end: "18:00", enabled: true },
+        saturday: { start: "08:00", end: "12:00", enabled: true },
+        sunday: { start: "08:00", end: "12:00", enabled: false }
+      };
+
+      const { data, error } = await supabase
+        .from('clinics')
+        .upsert([{
+          id: 1,
+          name: 'Clínica Exemplo',
+          email: 'contato@clinica.com',
+          phone: '(11) 99999-9999',
+          address: 'Rua Exemplo, 123',
+          city: 'São Paulo',
+          state: 'SP',
+          operating_hours: operatingHours,
+          timezone: 'America/Sao_Paulo'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
       console.log('✅ Default clinic created successfully');
-      return result.rows?.[0];
+      return data;
     } catch (error) {
       console.error('Error creating default clinic:', error);
       throw error;
@@ -338,13 +400,17 @@ export class MinimalStorage implements IStorage {
         operating_hours, timezone
       } = clinicData;
       
-      const result = await db.execute(`
-        INSERT INTO clinics (name, email, phone, address, city, state, operating_hours, timezone, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-        RETURNING *
-      `, [name, email, phone, address, city, state, operating_hours, timezone]);
+      const { data, error } = await supabase
+        .from('clinics')
+        .insert([{
+          name, email, phone, address, city, state,
+          operating_hours, timezone
+        }])
+        .select()
+        .single();
       
-      return result.rows?.[0];
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error creating clinic:', error);
       throw error;
@@ -353,15 +419,15 @@ export class MinimalStorage implements IStorage {
 
   async updateClinic(id: number, clinicData: any): Promise<any> {
     try {
-      const fields = Object.keys(clinicData);
-      const values = Object.values(clinicData);
-      const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
+      const { data, error } = await supabase
+        .from('clinics')
+        .update(clinicData)
+        .eq('id', id)
+        .select()
+        .single();
       
-      const result = await db.execute(`
-        UPDATE clinics SET ${setClause}, updated_at = NOW() WHERE id = $1 RETURNING *
-      `, [id, ...values]);
-      
-      return result.rows?.[0];
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error updating clinic:', error);
       throw error;
@@ -371,16 +437,19 @@ export class MinimalStorage implements IStorage {
   async createUserInClinic(data: any): Promise<any> {
     try {
       const { clinic_id, user_id, role = 'usuario' } = data;
-      const result = await db.execute(`
-        INSERT INTO clinic_users (clinic_id, user_id, role, is_active, joined_at)
-        VALUES ($1, $2, $3, true, NOW())
-        ON CONFLICT (clinic_id, user_id) DO UPDATE SET
-          role = EXCLUDED.role,
-          is_active = true,
-          updated_at = NOW()
-        RETURNING *
-      `, [clinic_id, user_id, role]);
-      return result.rows?.[0];
+      const { data: result, error } = await supabase
+        .from('clinic_users')
+        .upsert([{
+          clinic_id,
+          user_id,
+          role,
+          is_active: true
+        }])
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return result;
     } catch (error) {
       console.error('Error creating user in clinic:', error);
       throw error;
