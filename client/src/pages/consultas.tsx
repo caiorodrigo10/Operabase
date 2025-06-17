@@ -279,6 +279,7 @@ export function Consultas() {
     return dayAppointments.some(apt => {
       if (apt.id === draggedAppointment.id) return false; // Don't check against itself
       
+      if (!apt.scheduled_date) return false;
       const aptDate = new Date(apt.scheduled_date);
       const aptTime = aptDate.getHours() * 60 + aptDate.getMinutes();
       const aptDuration = apt.duration_minutes || 30;
@@ -293,7 +294,7 @@ export function Consultas() {
     if (!dragState.dragPreviewVisible || !dragState.draggedAppointment) return null;
 
     const appointment = dragState.draggedAppointment;
-    const contact = contacts.find(c => c.id === appointment.contact_id);
+    const contact = contacts.find((c: Contact) => c.id === appointment.contact_id);
 
     return (
       <div 
@@ -1401,7 +1402,8 @@ export function Consultas() {
       mousePosition: { x: e.clientX, y: e.clientY },
       hoveredSlot: null,
       previewTime: null,
-      dragPreviewVisible: true
+      dragPreviewVisible: true,
+      dragOverSlot: null
     });
     
     // Legacy state for compatibility
@@ -1459,7 +1461,8 @@ export function Consultas() {
       setDragState(prev => ({
         ...prev,
         hoveredSlot: null,
-        previewTime: null
+        previewTime: null,
+        dragOverSlot: null
       }));
       setDragOverSlot(null);
     }
@@ -1476,7 +1479,8 @@ export function Consultas() {
         mousePosition: { x: 0, y: 0 },
         hoveredSlot: null,
         previewTime: null,
-        dragPreviewVisible: false
+        dragPreviewVisible: false,
+        dragOverSlot: null
       });
       setIsDragging(false);
       setDraggedAppointment(null);
@@ -1495,7 +1499,8 @@ export function Consultas() {
         mousePosition: { x: 0, y: 0 },
         hoveredSlot: null,
         previewTime: null,
-        dragPreviewVisible: false
+        dragPreviewVisible: false,
+        dragOverSlot: null
       });
       setIsDragging(false);
       setDraggedAppointment(null);
@@ -1523,7 +1528,8 @@ export function Consultas() {
         mousePosition: { x: 0, y: 0 },
         hoveredSlot: null,
         previewTime: null,
-        dragPreviewVisible: false
+        dragPreviewVisible: false,
+        dragOverSlot: null
       });
       setIsDragging(false);
       setDraggedAppointment(null);
