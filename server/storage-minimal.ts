@@ -215,26 +215,32 @@ export class MinimalStorage implements IStorage {
 
   async getAppointments(clinicId: number, filters: any = {}): Promise<any[]> {
     try {
+      console.log('🔍 Getting appointments for clinic:', clinicId);
+      
+      // First check if appointments table exists and has data
       const { data, error } = await supabase
         .from('appointments')
-        .select(`
-          *,
-          contacts(name, phone)
-        `)
+        .select('*')
         .eq('clinic_id', clinicId)
-        .order('scheduled_date', { ascending: false })
-        .order('scheduled_time', { ascending: false });
+        .limit(10);
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase error getting appointments:', error);
+        throw error;
+      }
       
-      return data?.map(appointment => ({
-        ...appointment,
-        contact_name: appointment.contacts?.name,
-        contact_phone: appointment.contacts?.phone
-      })) || [];
+      console.log('📊 Raw appointments found:', data?.length || 0);
+      
+      // Return empty array if no appointments found (this is normal)
+      if (!data || data.length === 0) {
+        console.log('ℹ️ No appointments found for clinic', clinicId);
+        return [];
+      }
+      
+      return data;
     } catch (error) {
-      console.error('Error getting appointments:', error);
-      return [];
+      console.error('💥 Error in getAppointments:', error);
+      throw error;
     }
   }
 

@@ -21,17 +21,17 @@ export class AppointmentsService {
 
   async getAppointments(clinicId: number, filters: AppointmentFilters = {}): Promise<Appointment[]> {
     try {
+      console.log('🚀 AppointmentsService.getAppointments called for clinic:', clinicId);
+      
       // Get appointments from database
       const appointments = await this.repository.findAll(clinicId, filters);
       console.log('📊 DB appointments found:', appointments.length);
       
-      // Merge with Google Calendar events if needed
-      const allAppointments = await this.mergeWithGoogleCalendarEvents(clinicId, appointments, filters);
-      
-      return allAppointments;
+      return appointments;
     } catch (error) {
-      console.error('Error fetching appointments:', error);
-      throw new Error('Failed to fetch appointments');
+      console.error('💥 Error in AppointmentsService.getAppointments:', error);
+      console.error('💥 Error stack:', error.stack);
+      throw error;
     }
   }
 
