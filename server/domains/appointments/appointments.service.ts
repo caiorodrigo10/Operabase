@@ -45,7 +45,20 @@ export class AppointmentsService {
 
   async createAppointment(data: CreateAppointmentDto): Promise<Appointment> {
     try {
-      const appointment = await this.repository.create(data);
+      // Transform data for database insertion
+      const transformedData = {
+        ...data,
+        // Convert user_id from UUID string to integer for database compatibility
+        user_id: typeof data.user_id === 'string' ? parseInt(data.user_id, 10) : data.user_id,
+        // Convert date strings to Date objects for timestamp columns
+        scheduled_date: typeof data.scheduled_date === 'string' 
+          ? new Date(`${data.scheduled_date}T${data.scheduled_time || '00:00'}:00`) 
+          : data.scheduled_date
+      } as any; // Temporary type assertion to handle the interface mismatch
+
+      console.log('🔄 Transformed data for DB:', JSON.stringify(transformedData, null, 2));
+
+      const appointment = await this.repository.create(transformedData);
 
       // Sync with Google Calendar if user has active integration
       try {
