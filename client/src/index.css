@@ -41,6 +41,45 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
+/* Drag and Drop Styles */
+.drag-over-indicator {
+  background: linear-gradient(45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
+              linear-gradient(-45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
+              linear-gradient(45deg, transparent 75%, hsl(207, 90%, 54%) 75%), 
+              linear-gradient(-45deg, transparent 75%, hsl(207, 90%, 54%) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  opacity: 0.3;
+  animation: slide 0.3s infinite linear;
+}
+
+@keyframes slide {
+  0% { background-position: 0 0, 0 4px, 4px -4px, -4px 0px; }
+  100% { background-position: 8px 0, 8px 4px, 12px -4px, 4px 0px; }
+}
+
+.dragging-element {
+  transform: rotate(3deg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.drop-zone-valid {
+  background-color: hsl(207, 90%, 96%);
+  border: 2px dashed hsl(207, 90%, 54%);
+  animation: pulse 1.5s infinite;
+}
+
+.drop-zone-invalid {
+  background-color: hsl(0, 84%, 96%);
+  border: 2px dashed hsl(0, 84%, 60%);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
 .dark {
   --background: hsl(240, 10%, 3.9%);
   --foreground: hsl(0, 0%, 98%);

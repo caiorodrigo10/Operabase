@@ -2463,7 +2463,11 @@ export function Consultas() {
                       {/* Appointments column */}
                       <div className="flex-1 bg-white">
                         <div className="p-2 text-center font-medium border-b bg-slate-50">Compromissos</div>
-                        <div className="relative">
+                        <div 
+                          className="relative"
+                          onDragOver={handleDragOver}
+                          onDrop={handleDrop}
+                        >
                           {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                             <div 
                               key={hour} 
@@ -2549,7 +2553,10 @@ export function Consultas() {
                               return (
                                 <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                   <div
-                                    className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm`}
+                                    draggable={true}
+                                    onDragStart={(e) => handleDragStart(e, appointment)}
+                                    onDragEnd={handleDragEnd}
+                                    className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm ${isDragging && draggedAppointment?.id === appointment.id ? 'opacity-50' : ''}`}
                                     style={{ 
                                       top: `${topPosition}px`,
                                       left: leftOffset,
