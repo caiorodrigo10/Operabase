@@ -1857,7 +1857,7 @@ export function Consultas() {
                     }
                     
                     // SECOND: Apply professional filter on valid appointments only
-                    if (selectedProfessional === null || selectedProfessional === 'all') return true;
+                    if (selectedProfessional === null) return true;
                     
                     // For Google Calendar events, use current user matching
                     if (app.google_calendar_event_id) {
