@@ -34,10 +34,15 @@ export class AppointmentTagsController {
         return res.status(400).json({ error: "Invalid clinic ID" });
       }
 
-      const validatedData = createAppointmentTagSchema.parse({
+      // Preprocess data to handle null/undefined values
+      const preprocessedData = {
         ...req.body,
-        clinic_id: clinicId
-      });
+        clinic_id: clinicId,
+        color: req.body.color === "" ? null : req.body.color,
+        description: req.body.description === "" ? undefined : req.body.description
+      };
+
+      const validatedData = createAppointmentTagSchema.parse(preprocessedData);
 
       const tag = await this.service.createAppointmentTag(validatedData);
       res.status(201).json(tag);
@@ -57,7 +62,14 @@ export class AppointmentTagsController {
         return res.status(400).json({ error: "Invalid tag ID" });
       }
 
-      const validatedData = updateAppointmentTagSchema.parse(req.body);
+      // Preprocess data to handle null/undefined values
+      const preprocessedData = {
+        ...req.body,
+        color: req.body.color === "" ? null : req.body.color,
+        description: req.body.description === "" ? undefined : req.body.description
+      };
+
+      const validatedData = updateAppointmentTagSchema.parse(preprocessedData);
       const tag = await this.service.updateAppointmentTag(tagId, validatedData);
       res.json(tag);
     } catch (error: any) {
