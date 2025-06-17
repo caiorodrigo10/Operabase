@@ -12,7 +12,15 @@ import { tenantContext } from "./shared/tenant-context.provider";
 import http from "http";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ 
+  reviver: (key, value) => {
+    // Prevent automatic date parsing - keep strings as strings
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value; // Keep date strings as strings
+    }
+    return value;
+  }
+}));
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
