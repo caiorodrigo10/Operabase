@@ -166,7 +166,7 @@ export function Consultas() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedProfessional, setSelectedProfessional] = useState<number | 'all' | null>(null);
+  const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
   
   // Create a stable reference for "today" to avoid timezone issues
   const today = useMemo(() => {
@@ -1209,42 +1209,46 @@ export function Consultas() {
     console.log('📊 Raw appointments for date:', dayAppointments);
     console.log('👤 Selected professional:', selectedProfessional);
     
-    // If no professional is selected or "all" is selected, show all appointments
-    if (selectedProfessional === null || selectedProfessional === 'all') {
-      console.log('✅ No professional filter or "all" selected - showing all appointments:', dayAppointments.length);
-      return dayAppointments;
+    // FIRST: Filter out appointments from users who don't belong to this clinic
+    const validUserIds = [4, 5, 6]; // Valid professional IDs in this clinic
+    const validAppointments = dayAppointments.filter((appointment: Appointment) => {
+      // Always include Google Calendar events
+      if (appointment.google_calendar_event_id) {
+        return true;
+      }
+      
+      // EXCLUDE appointments from users not in this clinic
+      const isValidUser = validUserIds.includes(appointment.user_id);
+      if (!isValidUser) {
+        console.log('🚫 Excluding orphaned appointment:', { 
+          appointmentId: appointment.id, 
+          userId: appointment.user_id,
+          reason: 'User not in clinic'
+        });
+      }
+      return isValidUser;
+    });
+    
+    // SECOND: Apply professional filter on valid appointments only
+    if (selectedProfessional === null) {
+      console.log('✅ Showing all valid appointments for clinic:', validAppointments.length);
+      return validAppointments;
     }
     
-    const filteredAppointments = dayAppointments.filter((appointment: Appointment) => {
-      // For Google Calendar events, all belong to current user
+    const filteredAppointments = validAppointments.filter((appointment: Appointment) => {
+      // For Google Calendar events, match by current user
       if (appointment.google_calendar_event_id) {
         if (currentUserEmail) {
           const clinicUser = clinicUserByEmail.get(currentUserEmail);
-          
           if (clinicUser && clinicUser.is_professional) {
-            const isIncluded = clinicUser.id === selectedProfessional;
-            console.log('📅 Google Calendar event filter:', { appointment: appointment.id, userMatch: isIncluded });
-            return isIncluded;
+            return clinicUser.id === selectedProfessional;
           }
         }
-        console.log('❌ Google Calendar event - no user match');
         return false;
       }
       
-      // For regular appointments, use STRICT filtering - only show appointments that truly belong to selected professional
-      const validUserIds = [4, 5, 6]; // Valid professional IDs
-      const hasValidUserId = validUserIds.includes(appointment.user_id);
-      const isIncluded = hasValidUserId && appointment.user_id === selectedProfessional;
-      
-      console.log('👨‍⚕️ Regular appointment filter (STRICT):', { 
-        appointmentId: appointment.id, 
-        userId: appointment.user_id,
-        hasValidUserId,
-        selectedProfessional,
-        isIncluded 
-      });
-      
-      return isIncluded;
+      // For regular appointments, filter by selected professional
+      return appointment.user_id === selectedProfessional;
     });
     
     console.log('🎯 Final filtered appointments:', filteredAppointments.length);
@@ -1252,7 +1256,7 @@ export function Consultas() {
   }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
   // Function to select professional (single selection only)
-  const selectProfessional = (professionalId: number | 'all') => {
+  const selectProfessional = (professionalId: number) => {
     // If clicking the same professional, deselect them
     if (selectedProfessional === professionalId) {
       setSelectedProfessional(null);
@@ -1728,22 +1732,6 @@ export function Consultas() {
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium text-slate-600">Profissionais:</span>
 
-                {/* "All" Button */}
-                <button
-                  onClick={() => selectProfessional('all')}
-                  title="Ver todas as consultas"
-                  className={`
-                    px-3 py-1 rounded-full text-xs font-medium
-                    transition-all duration-200 hover:scale-105
-                    ${selectedProfessional === 'all' 
-                      ? 'bg-green-500 text-white border-2 border-green-600 shadow-md' 
-                      : 'bg-slate-200 text-slate-600 border-2 border-transparent hover:bg-slate-300'
-                    }
-                  `}
-                >
-                  Todas
-                </button>
-
                 {/* Professional Filter Avatars */}
                 {clinicUsers
                   .filter((user: any) => user.is_professional === true)
@@ -1839,17 +1827,22 @@ export function Consultas() {
             /* List View */
             <div className="space-y-4">
               {appointments.filter((app: Appointment) => {
-                // Don't hide Google Calendar events in list view
-                // if (app.google_calendar_event_id) return false;
+                // FIRST: Filter out appointments from users not in this clinic
+                const validUserIds = [4, 5, 6]; // Valid professional IDs in this clinic
+                if (!app.google_calendar_event_id && !validUserIds.includes(app.user_id)) {
+                  return false; // Exclude orphaned appointments
+                }
                 
-                // Apply professional filter - show all if no filter is active or "all" is selected
-                if (selectedProfessional === null || selectedProfessional === 'all') return true;
+                // SECOND: Apply professional filter on valid appointments only
+                if (selectedProfessional === null) return true;
                 
-                // Use STRICT filtering - only show appointments that truly belong to selected professional
-                const validUserIds = [4, 5, 6]; // Valid professional IDs
-                const hasValidUserId = validUserIds.includes(app.user_id);
+                // For Google Calendar events, use current user matching
+                if (app.google_calendar_event_id) {
+                  return true; // Handle separately if needed
+                }
                 
-                return hasValidUserId && app.user_id === selectedProfessional;
+                // For regular appointments, filter by selected professional
+                return app.user_id === selectedProfessional;
               }).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
@@ -1857,17 +1850,22 @@ export function Consultas() {
               ) : (
                 appointments
                   .filter((app: Appointment) => {
-                    // Don't hide Google Calendar events in list view
-                    // if (app.google_calendar_event_id) return false;
+                    // FIRST: Filter out appointments from users not in this clinic
+                    const validUserIds = [4, 5, 6]; // Valid professional IDs in this clinic
+                    if (!app.google_calendar_event_id && !validUserIds.includes(app.user_id)) {
+                      return false; // Exclude orphaned appointments
+                    }
                     
-                    // Apply professional filter - show all if no filter is active or "all" is selected
+                    // SECOND: Apply professional filter on valid appointments only
                     if (selectedProfessional === null || selectedProfessional === 'all') return true;
                     
-                    // Use STRICT filtering - only show appointments that truly belong to selected professional
-                    const validUserIds = [4, 5, 6]; // Valid professional IDs
-                    const hasValidUserId = validUserIds.includes(app.user_id);
+                    // For Google Calendar events, use current user matching
+                    if (app.google_calendar_event_id) {
+                      return true; // Handle separately if needed
+                    }
                     
-                    return hasValidUserId && app.user_id === selectedProfessional;
+                    // For regular appointments, filter by selected professional
+                    return app.user_id === selectedProfessional;
                   })
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
