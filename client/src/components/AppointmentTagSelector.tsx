@@ -54,23 +54,13 @@ export function AppointmentTagSelector({ clinicId, selectedTagId, onTagSelect }:
   // Fetch appointment tags for the clinic
   const { data: tags = [], isLoading } = useQuery<AppointmentTag[]>({
     queryKey: [`/api/clinic/${clinicId}/appointment-tags`],
-    queryFn: async () => {
-      const response = await fetch(`/api/clinic/${clinicId}/appointment-tags`);
-      if (!response.ok) throw new Error('Failed to fetch tags');
-      return response.json();
-    },
     enabled: !!clinicId,
   });
 
   // Create new tag mutation
   const createTagMutation = useMutation<AppointmentTag, Error, CreateTagData>({
     mutationFn: async (tagData: CreateTagData) => {
-      const response = await fetch(`/api/clinic/${clinicId}/appointment-tags`, {
-        method: 'POST',
-        body: JSON.stringify(tagData),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to create tag');
+      const response = await apiRequest('POST', `/api/clinic/${clinicId}/appointment-tags`, tagData);
       return response.json();
     },
     onSuccess: (newTag: AppointmentTag) => {
