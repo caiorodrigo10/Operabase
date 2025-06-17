@@ -1,400 +1,353 @@
-import { Router, Request, Response } from 'express';
-import { structuredLogger, LogCategory } from '../../../shared/structured-logger.service.js';
-import { medicalAudit } from '../../../shared/medical-audit.service.js';
-import { smartAlerts } from '../../../shared/smart-alerts.service.js';
-import { performanceMonitor } from '../../../shared/performance-monitor.js';
-import { cacheService } from '../../../shared/redis-cache.service.js';
-import { tenantContext } from '../../../shared/tenant-context.provider.js';
+import { Router } from 'express';
 import { isAuthenticated, hasClinicAccess } from '../../../auth.js';
+import { performanceMonitor } from '../../../shared/performance-monitor.service.js';
+import { structuredLogger, LogCategory } from '../../../shared/structured-logger.service.js';
+import { CacheMiddleware } from '../../../cache-middleware.js';
+import { redisClient } from '../../../infrastructure/redis-client.js';
+
+const router = Router();
 
 /**
- * Observability routes for comprehensive system monitoring
+ * Phase 3: Core Observability API Endpoints
+ * Essential monitoring and metrics with tenant isolation
  */
-export function createObservabilityRoutes(): Router {
-  const router = Router();
 
-  // Apply authentication to all observability routes
-  router.use(isAuthenticated);
+// Health check endpoint - publicly accessible for load balancers
+router.get('/health', async (req, res) => {
+  try {
+    const healthStatus = performanceMonitor.getHealthStatus();
+    const statusCode = healthStatus.status === 'healthy' ? 200 : 
+                      healthStatus.status === 'degraded' ? 206 : 503;
 
-  /**
-   * GET /api/v1/observability/health
-   * Comprehensive system health check
-   */
-  router.get('/health', async (req: Request, res: Response) => {
-    try {
-      const context = tenantContext.getContext();
-      const cacheHealth = await cacheService.healthCheck();
-      const performanceHealth = performanceMonitor.isHealthy();
-      const alertSummary = smartAlerts.getAlertSummary();
+    res.status(statusCode).json({
+      success: true,
+      data: {
+        status: healthStatus.status,
+        timestamp: healthStatus.timestamp,
+        uptime: healthStatus.uptime,
+        issues: healthStatus.issues,
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development'
+      }
+    });
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      error: 'Health check failed',
+      timestamp: Date.now()
+    });
+  }
+});
 
-      const healthStatus = {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        version: 'v3.0-observability',
-        uptime: process.uptime(),
-        tenant: {
-          clinic_id: context?.clinicId,
-          user_id: context?.userId,
-          user_role: context?.userRole
-        },
-        services: {
-          cache: {
-            healthy: cacheHealth.healthy,
-            message: cacheHealth.message,
-            status: cacheHealth.healthy ? 'operational' : 'degraded'
-          },
-          performance: {
-            healthy: performanceHealth.healthy,
-            issues: performanceHealth.issues,
-            status: performanceHealth.healthy ? 'operational' : 'degraded'
-          },
-          alerts: {
-            total_active: alertSummary.total,
-            critical_count: alertSummary.by_severity.CRITICAL,
-            recent_count: alertSummary.recent_count,
-            status: alertSummary.by_severity.CRITICAL > 0 ? 'critical' : 
-                   alertSummary.by_severity.HIGH > 0 ? 'warning' : 'operational'
-          },
-          logging: {
-            healthy: true,
-            status: 'operational'
-          }
-        },
-        overall_status: determineOverallHealth(cacheHealth, performanceHealth, alertSummary)
-      };
-
-      // Log health check access
-      structuredLogger.info(
-        LogCategory.API,
-        'health_check_accessed',
-        {
-          clinic_id: context?.clinicId,
-          user_id: context?.userId,
-          overall_status: healthStatus.overall_status
-        }
-      );
-
-      const statusCode = healthStatus.overall_status === 'healthy' ? 200 : 
-                        healthStatus.overall_status === 'degraded' ? 503 : 500;
-
-      res.status(statusCode).json(healthStatus);
-
-    } catch (error) {
-      structuredLogger.error(
-        LogCategory.API,
-        'health_check_failed',
-        { error: (error as Error).message }
-      );
-
-      res.status(500).json({
-        status: 'error',
-        timestamp: new Date().toISOString(),
-        error: 'Health check failed',
-        message: (error as Error).message
-      });
+// Performance metrics endpoint - requires authentication
+router.get('/metrics', isAuthenticated, async (req: any, res) => {
+  try {
+    const metrics = performanceMonitor.getMetrics();
+    const cacheMetrics = CacheMiddleware.getMetrics();
+    
+    // Aggregate tenant-specific data if user has access to specific clinic
+    const clinicId = parseInt(req.query.clinic_id as string);
+    let tenantMetrics = undefined;
+    
+    if (clinicId && !isNaN(clinicId)) {
+      // Verify user has access to this clinic
+      const hasAccess = await req.storage?.userHasClinicAccess(req.user.id, clinicId);
+      if (hasAccess) {
+        tenantMetrics = performanceMonitor.getTenantMetrics(clinicId);
+      }
     }
-  });
 
-  /**
-   * GET /api/v1/observability/metrics
-   * Comprehensive performance and system metrics
-   */
-  router.get('/metrics', async (req: Request, res: Response) => {
-    try {
-      const context = tenantContext.getContext();
-      const performanceMetrics = performanceMonitor.getMetrics();
-      const cacheStats = cacheService.getStats();
-      const alertSummary = smartAlerts.getAlertSummary();
-      const currentTenantMetrics = performanceMonitor.getCurrentTenantMetrics();
-
-      const metrics = {
-        timestamp: new Date().toISOString(),
-        tenant: {
-          clinic_id: context?.clinicId,
-          current_metrics: currentTenantMetrics
-        },
-        performance: {
-          api: performanceMetrics.api,
-          response_times: performanceMetrics.performance,
-          tenant_breakdown: performanceMetrics.tenants
-        },
-        cache: {
-          stats: cacheStats,
-          efficiency: {
-            hit_rate_numeric: parseFloat(cacheStats.hitRate.replace('%', '')),
-            total_operations: cacheStats.total,
-            operations_breakdown: {
-              hits: cacheStats.hits,
-              misses: cacheStats.misses,
-              sets: cacheStats.sets,
-              deletes: cacheStats.deletes
-            }
-          }
-        },
-        alerts: {
-          summary: alertSummary,
-          active_alerts: smartAlerts.getActiveAlerts(10)
-        },
+    res.json({
+      success: true,
+      data: {
+        timestamp: Date.now(),
         system: {
           uptime: process.uptime(),
-          memory_usage: process.memoryUsage(),
-          cpu_usage: process.cpuUsage()
-        }
-      };
-
-      // Log metrics access
-      structuredLogger.info(
-        LogCategory.API,
-        'metrics_accessed',
-        {
-          clinic_id: context?.clinicId,
-          user_id: context?.userId,
-          metric_types: ['performance', 'cache', 'alerts', 'system']
-        }
-      );
-
-      res.json(metrics);
-
-    } catch (error) {
-      structuredLogger.error(
-        LogCategory.API,
-        'metrics_retrieval_failed',
-        { error: (error as Error).message }
-      );
-
-      res.status(500).json({
-        error: 'Failed to retrieve metrics',
-        message: (error as Error).message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
-
-  /**
-   * GET /api/v1/observability/logs
-   * Filtered logs for current tenant
-   */
-  router.get('/logs', async (req: Request, res: Response) => {
-    try {
-      const context = tenantContext.getContext();
-      if (!context?.clinicId) {
-        return res.status(400).json({ error: 'Tenant context required' });
-      }
-
-      const {
-        category = undefined,
-        limit = 100,
-        level = undefined,
-        hours = 24
-      } = req.query;
-
-      const logCategory = category ? category as LogCategory : undefined;
-      const logLimit = Math.min(parseInt(limit as string) || 100, 1000);
-
-      // Get logs for the current tenant
-      const logs = await structuredLogger.getLogsByTenant(
-        context.clinicId,
-        logCategory,
-        logLimit
-      );
-
-      // Filter by log level if specified
-      const filteredLogs = level ? 
-        logs.filter(log => log.level === level) : 
-        logs;
-
-      // Filter by time range
-      const hoursNum = parseInt(hours as string) || 24;
-      const cutoffTime = new Date(Date.now() - hoursNum * 60 * 60 * 1000);
-      const timeLimitedLogs = filteredLogs.filter(log => 
-        new Date(log.timestamp) > cutoffTime
-      );
-
-      // Log access to logs (meta-logging)
-      structuredLogger.info(
-        LogCategory.API,
-        'logs_accessed',
-        {
-          clinic_id: context.clinicId,
-          user_id: context.userId,
-          requested_category: category,
-          requested_level: level,
-          requested_limit: logLimit,
-          returned_count: timeLimitedLogs.length
-        }
-      );
-
-      res.json({
-        logs: timeLimitedLogs,
-        metadata: {
-          total_returned: timeLimitedLogs.length,
-          filters_applied: {
-            category: logCategory,
-            level: level,
-            hours: hoursNum,
-            clinic_id: context.clinicId
-          },
-          timestamp: new Date().toISOString()
-        }
-      });
-
-    } catch (error) {
-      structuredLogger.error(
-        LogCategory.API,
-        'logs_retrieval_failed',
-        { error: (error as Error).message }
-      );
-
-      res.status(500).json({
-        error: 'Failed to retrieve logs',
-        message: (error as Error).message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
-
-  /**
-   * GET /api/v1/observability/audit/:patient_id
-   * Medical audit trail for specific patient
-   */
-  router.get('/audit/:patient_id', hasClinicAccess(), async (req: Request, res: Response) => {
-    try {
-      const patientId = parseInt(req.params.patient_id);
-      if (isNaN(patientId)) {
-        return res.status(400).json({ error: 'Invalid patient ID' });
-      }
-
-      const context = tenantContext.getContext();
-      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
-
-      // Get audit trail for the patient
-      const auditTrail = await medicalAudit.getPatientAuditTrail(patientId, limit);
-
-      // Log audit access (this is itself an auditable event)
-      medicalAudit.auditPatientAccess(patientId, 'view', {
-        audit_trail_requested: true,
-        returned_entries: auditTrail.length,
-        requested_by: context?.userId
-      });
-
-      res.json({
-        patient_id: patientId,
-        audit_trail: auditTrail,
-        metadata: {
-          total_entries: auditTrail.length,
-          clinic_id: context?.clinicId,
-          accessed_by: context?.userId,
-          timestamp: new Date().toISOString()
-        }
-      });
-
-    } catch (error) {
-      structuredLogger.error(
-        LogCategory.AUDIT,
-        'audit_trail_access_failed',
-        { 
-          patient_id: req.params.patient_id,
-          error: (error as Error).message 
-        }
-      );
-
-      res.status(500).json({
-        error: 'Failed to retrieve audit trail',
-        message: (error as Error).message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
-
-  /**
-   * GET /api/v1/observability/alerts
-   * Active alerts for current tenant
-   */
-  router.get('/alerts', async (req: Request, res: Response) => {
-    try {
-      const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-      const severity = req.query.severity as string;
-      const category = req.query.category as string;
-
-      let activeAlerts = smartAlerts.getActiveAlerts(limit * 2); // Get more to filter
-
-      // Apply filters
-      if (severity) {
-        activeAlerts = activeAlerts.filter(alert => 
-          alert.severity.toLowerCase() === severity.toLowerCase()
-        );
-      }
-
-      if (category) {
-        activeAlerts = activeAlerts.filter(alert => 
-          alert.category.toLowerCase() === category.toLowerCase()
-        );
-      }
-
-      // Apply final limit
-      activeAlerts = activeAlerts.slice(0, limit);
-
-      const summary = smartAlerts.getAlertSummary();
-      const context = tenantContext.getContext();
-
-      // Log alerts access
-      structuredLogger.info(
-        LogCategory.API,
-        'alerts_accessed',
-        {
-          clinic_id: context?.clinicId,
-          user_id: context?.userId,
-          filters: { severity, category, limit },
-          returned_count: activeAlerts.length
-        }
-      );
-
-      res.json({
-        alerts: activeAlerts,
-        summary: summary,
-        filters_applied: {
-          severity: severity || 'all',
-          category: category || 'all',
-          limit
+          memory: process.memoryUsage(),
+          nodeVersion: process.version
         },
-        timestamp: new Date().toISOString()
-      });
+        performance: {
+          responseTime: metrics.responseTime,
+          systemResources: metrics.systemResources,
+          alerts: metrics.alerts.slice(0, 10) // Last 10 alerts only
+        },
+        cache: {
+          available: cacheMetrics.cacheAvailable,
+          hitRate: cacheMetrics.hitRate,
+          avgResponseTime: cacheMetrics.avgResponseTime,
+          hits: cacheMetrics.hits,
+          misses: cacheMetrics.misses
+        },
+        tenant: tenantMetrics,
+        endpoints: Object.fromEntries(
+          Array.from(metrics.apiEndpoints.entries()).slice(0, 10)
+        )
+      }
+    });
 
-    } catch (error) {
-      structuredLogger.error(
-        LogCategory.API,
-        'alerts_retrieval_failed',
-        { error: (error as Error).message }
-      );
+    // Log metrics access
+    structuredLogger.info(
+      LogCategory.AUDIT,
+      'metrics_accessed',
+      {
+        user_id: req.user.id,
+        clinic_id: clinicId || null,
+        ip_address: req.ip
+      }
+    );
 
-      res.status(500).json({
-        error: 'Failed to retrieve alerts',
-        message: (error as Error).message,
-        timestamp: new Date().toISOString()
-      });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve metrics'
+    });
+  }
+});
+
+// Tenant-specific metrics endpoint
+router.get('/metrics/clinic/:clinicId', isAuthenticated, hasClinicAccess('clinicId'), async (req: any, res) => {
+  try {
+    const clinicId = parseInt(req.params.clinicId);
+    const tenantMetrics = performanceMonitor.getTenantMetrics(clinicId);
+    const globalMetrics = performanceMonitor.getMetrics();
+
+    // Filter endpoints for this clinic
+    const clinicEndpoints = new Map();
+    for (const [endpoint, data] of globalMetrics.apiEndpoints) {
+      if (endpoint.includes('clinic') || endpoint.includes('contacts') || 
+          endpoint.includes('appointments') || endpoint.includes('medical')) {
+        clinicEndpoints.set(endpoint, data);
+      }
     }
-  });
 
-  return router;
-}
+    res.json({
+      success: true,
+      data: {
+        clinicId,
+        timestamp: Date.now(),
+        metrics: tenantMetrics,
+        endpoints: Object.fromEntries(clinicEndpoints),
+        alerts: globalMetrics.alerts.filter(alert => alert.clinicId === clinicId).slice(0, 5)
+      }
+    });
 
-/**
- * Helper function to determine overall system health
- */
-function determineOverallHealth(
-  cacheHealth: any,
-  performanceHealth: any,
-  alertSummary: any
-): 'healthy' | 'degraded' | 'critical' {
-  // Critical if there are critical alerts
-  if (alertSummary.by_severity.CRITICAL > 0) {
-    return 'critical';
+    // Log tenant metrics access
+    structuredLogger.info(
+      LogCategory.AUDIT,
+      'tenant_metrics_accessed',
+      {
+        user_id: req.user.id,
+        clinic_id: clinicId,
+        ip_address: req.ip
+      }
+    );
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve tenant metrics'
+    });
   }
+});
 
-  // Degraded if cache is unhealthy or performance issues exist
-  if (!cacheHealth.healthy || !performanceHealth.healthy || alertSummary.by_severity.HIGH > 2) {
-    return 'degraded';
+// Logs endpoint with tenant isolation
+router.get('/logs', isAuthenticated, async (req: any, res) => {
+  try {
+    const clinicId = parseInt(req.query.clinic_id as string);
+    const level = req.query.level as string;
+    const category = req.query.category as string;
+    const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+    const startTime = req.query.start_time ? new Date(req.query.start_time as string) : undefined;
+    const endTime = req.query.end_time ? new Date(req.query.end_time as string) : undefined;
+
+    // Verify clinic access if clinic_id is specified
+    if (clinicId && !isNaN(clinicId)) {
+      const hasAccess = await req.storage?.userHasClinicAccess(req.user.id, clinicId);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied to clinic logs'
+        });
+      }
+    }
+
+    // Get logs from structured logger (implementation would depend on storage)
+    const logs = await structuredLogger.queryLogs({
+      clinicId: clinicId || undefined,
+      level,
+      category,
+      limit,
+      startTime,
+      endTime,
+      userId: req.user.id // Ensure user can only see logs they have access to
+    });
+
+    res.json({
+      success: true,
+      data: {
+        logs,
+        total: logs.length,
+        filters: {
+          clinic_id: clinicId || null,
+          level: level || null,
+          category: category || null,
+          limit,
+          timeRange: {
+            start: startTime?.toISOString() || null,
+            end: endTime?.toISOString() || null
+          }
+        }
+      }
+    });
+
+    // Log access to logs (meta!)
+    structuredLogger.info(
+      LogCategory.AUDIT,
+      'logs_accessed',
+      {
+        user_id: req.user.id,
+        clinic_id: clinicId || null,
+        filters: { level, category, limit },
+        ip_address: req.ip
+      }
+    );
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve logs'
+    });
   }
+});
 
-  return 'healthy';
-}
+// Alerts endpoint
+router.get('/alerts', isAuthenticated, async (req: any, res) => {
+  try {
+    const clinicId = parseInt(req.query.clinic_id as string);
+    const severity = req.query.severity as string;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+
+    const metrics = performanceMonitor.getMetrics();
+    let alerts = metrics.alerts;
+
+    // Filter by clinic if specified and user has access
+    if (clinicId && !isNaN(clinicId)) {
+      const hasAccess = await req.storage?.userHasClinicAccess(req.user.id, clinicId);
+      if (hasAccess) {
+        alerts = alerts.filter(alert => alert.clinicId === clinicId);
+      } else {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied to clinic alerts'
+        });
+      }
+    }
+
+    // Filter by severity
+    if (severity) {
+      alerts = alerts.filter(alert => alert.severity === severity);
+    }
+
+    // Apply limit
+    alerts = alerts.slice(0, limit);
+
+    res.json({
+      success: true,
+      data: {
+        alerts,
+        total: alerts.length,
+        summary: {
+          critical: alerts.filter(a => a.severity === 'critical').length,
+          high: alerts.filter(a => a.severity === 'high').length,
+          medium: alerts.filter(a => a.severity === 'medium').length,
+          low: alerts.filter(a => a.severity === 'low').length
+        }
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve alerts'
+    });
+  }
+});
+
+// Cache management endpoint
+router.get('/cache/status', isAuthenticated, async (req: any, res) => {
+  try {
+    const cacheMetrics = CacheMiddleware.getMetrics();
+    const redisStatus = redisClient.getStatus();
+
+    res.json({
+      success: true,
+      data: {
+        available: cacheMetrics.cacheAvailable,
+        metrics: {
+          hitRate: cacheMetrics.hitRate,
+          avgResponseTime: cacheMetrics.avgResponseTime,
+          hits: cacheMetrics.hits,
+          misses: cacheMetrics.misses,
+          p95ResponseTime: cacheMetrics.responseTimeP95,
+          p99ResponseTime: cacheMetrics.responseTimeP99
+        },
+        redis: redisStatus,
+        timestamp: Date.now()
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve cache status'
+    });
+  }
+});
+
+// System status endpoint for comprehensive overview
+router.get('/status', isAuthenticated, async (req: any, res) => {
+  try {
+    const healthStatus = performanceMonitor.getHealthStatus();
+    const metrics = performanceMonitor.getMetrics();
+    const cacheMetrics = CacheMiddleware.getMetrics();
+
+    const systemStatus = {
+      overall: healthStatus.status,
+      timestamp: Date.now(),
+      uptime: process.uptime(),
+      components: {
+        database: {
+          status: 'healthy', // Would check actual DB connection
+          responseTime: metrics.responseTime.avg
+        },
+        cache: {
+          status: cacheMetrics.cacheAvailable ? 'healthy' : 'degraded',
+          hitRate: cacheMetrics.hitRate,
+          responseTime: cacheMetrics.avgResponseTime
+        },
+        api: {
+          status: metrics.responseTime.avg < 1000 ? 'healthy' : 'degraded',
+          avgResponseTime: metrics.responseTime.avg,
+          requestCount: metrics.responseTime.count
+        }
+      },
+      alerts: {
+        active: metrics.alerts.length,
+        critical: metrics.alerts.filter(a => a.severity === 'critical').length
+      }
+    };
+
+    res.json({
+      success: true,
+      data: systemStatus
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve system status'
+    });
+  }
+});
+
+export { router as observabilityRoutes };

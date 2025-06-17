@@ -36,15 +36,26 @@ export enum LogCategory {
 }
 
 /**
- * Structured logging service with tenant isolation and medical compliance
+ * Phase 3: Core Observability - Enhanced Structured Logging Service
+ * Optimized for production monitoring with minimal performance impact
  */
 export class StructuredLoggerService {
   private logDirectory: string;
   private currentDate: string;
   private logQueue: LogEntry[] = [];
-  private flushInterval: NodeJS.Timeout;
-  private readonly maxQueueSize = 100;
-  private readonly flushIntervalMs = 5000; // 5 seconds
+  private flushInterval: NodeJS.Timeout | undefined;
+  private readonly maxQueueSize = 200; // Increased for better batching
+  private readonly flushIntervalMs = 3000; // 3 seconds for faster processing
+  
+  // Phase 3: Performance metrics
+  private metrics = {
+    totalLogs: 0,
+    logsPerSecond: 0,
+    avgProcessingTime: 0,
+    errorCount: 0,
+    queueSize: 0,
+    lastFlushTime: Date.now()
+  };
 
   constructor() {
     this.logDirectory = process.env.LOG_DIRECTORY || './logs';
@@ -287,29 +298,81 @@ export class StructuredLoggerService {
    * Log medical data access
    */
   logMedical(action: string, patientId?: number, details: Record<string, any> = {}): void {
-    this.info(LogCategory.MEDICAL, action, {
-      ...details,
-      patient_id: patientId,
-      compliance: 'medical_data_access'
-    });
+    this.info(LogCategory.MEDICAL, action, { ...details, patient_id: patientId });
   }
 
   /**
-   * Log security events
+   * Query logs with filtering - Phase 3 implementation
    */
-  logSecurity(action: string, severity: 'LOW' | 'MEDIUM' | 'HIGH', details: Record<string, any> = {}): void {
-    const level = severity === 'HIGH' ? 'ERROR' : severity === 'MEDIUM' ? 'WARN' : 'INFO';
-    const entry = this.createLogEntry(level, LogCategory.SECURITY, action, {
-      ...details,
-      severity,
-      security_event: true
-    });
-    this.addToQueue(entry);
+  async queryLogs(filters: {
+    clinicId?: number;
+    level?: string;
+    category?: string;
+    limit?: number;
+    startTime?: Date;
+    endTime?: Date;
+    userId?: number;
+  }): Promise<LogEntry[]> {
+    const results: LogEntry[] = [];
+    const limit = Math.min(filters.limit || 100, 500);
+
+    try {
+      // For production, this would read from log files or database
+      // For now, return recent logs from memory queue
+      let filteredLogs = [...this.logQueue];
+
+      // Apply filters
+      if (filters.clinicId) {
+        filteredLogs = filteredLogs.filter(log => log.clinic_id === filters.clinicId);
+      }
+
+      if (filters.level) {
+        filteredLogs = filteredLogs.filter(log => log.level === filters.level.toUpperCase());
+      }
+
+      if (filters.category) {
+        filteredLogs = filteredLogs.filter(log => log.category === filters.category);
+      }
+
+      if (filters.startTime) {
+        filteredLogs = filteredLogs.filter(log => 
+          new Date(log.timestamp) >= filters.startTime!
+        );
+      }
+
+      if (filters.endTime) {
+        filteredLogs = filteredLogs.filter(log => 
+          new Date(log.timestamp) <= filters.endTime!
+        );
+      }
+
+      // Sort by timestamp descending and apply limit
+      filteredLogs.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      return filteredLogs.slice(0, limit);
+
+    } catch (error) {
+      console.error('Error querying logs:', error);
+      return [];
+    }
   }
 
   /**
-   * Log performance metrics
+   * Get logger performance metrics
    */
+  getMetrics() {
+    return {
+      ...this.metrics,
+      queueSize: this.logQueue.length,
+      logsPerSecond: this.metrics.totalLogs / ((Date.now() - this.metrics.lastFlushTime) / 1000)
+    };
+  }
+}
+
+// Singleton instance
+export const structuredLogger = new StructuredLoggerService();
   logPerformance(action: string, metrics: Record<string, number>, details: Record<string, any> = {}): void {
     this.info(LogCategory.PERFORMANCE, action, { ...details, metrics });
   }
