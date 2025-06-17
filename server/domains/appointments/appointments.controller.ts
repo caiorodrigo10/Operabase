@@ -6,6 +6,10 @@ import {
   updateAppointmentSchema,
   updateAppointmentStatusSchema
 } from '../../shared/schemas/index';
+import { 
+  availabilityRequestSchema,
+  timeSlotRequestSchema 
+} from './appointments.types';
 import type { IStorage } from '../../storage';
 
 export class AppointmentsController {
