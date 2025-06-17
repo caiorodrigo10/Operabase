@@ -3,6 +3,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { createApiRouter } from "./api/v1";
 import { createStorage } from "./storage-factory";
 import { setupAuth } from "./auth";
+import { tenantIsolationMiddleware } from "./shared/tenant-isolation.middleware";
 import http from "http";
 
 const app = express();
@@ -45,6 +46,9 @@ app.use((req, res, next) => {
   
   // Setup authentication
   setupAuth(app, storage);
+  
+  // Apply tenant isolation middleware to all API routes
+  app.use('/api', tenantIsolationMiddleware as any);
   
   // Setup API routes
   const apiRouter = createApiRouter(storage);
