@@ -117,17 +117,17 @@ export interface TimeSlotResponse {
 // Validation schemas
 export const createAppointmentSchema = z.object({
   contact_id: z.number(),
-  user_id: z.string(),
+  user_id: z.union([z.string(), z.number()]),
   clinic_id: z.number(),
   doctor_name: z.string(),
-  specialty: z.string(),
+  specialty: z.union([z.string(), z.null()]).optional(),
   appointment_type: z.string(),
-  scheduled_date: z.date(),
-  duration_minutes: z.number(),
-  status: z.string(),
-  payment_status: z.string(),
-  payment_amount: z.number(),
-  session_notes: z.string().optional()
+  scheduled_date: z.union([z.date(), z.string()]),
+  duration_minutes: z.number().default(60),
+  status: z.string().default('agendada'),
+  payment_status: z.string().default('pendente'),
+  payment_amount: z.union([z.number(), z.null()]).optional(),
+  session_notes: z.union([z.string(), z.null()]).optional()
 });
 
 export const updateAppointmentSchema = createAppointmentSchema.partial();

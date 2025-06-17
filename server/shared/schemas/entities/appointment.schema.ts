@@ -38,21 +38,28 @@ export const appointmentSchema = z.object({
 });
 
 // Appointment creation schema (without auto-generated fields)
-export const createAppointmentSchema = appointmentSchema.omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-  reminder_sent: true,
-}).extend({
-  // Enhanced validation for appointment creation
+export const createAppointmentSchema = z.object({
+  contact_id: z.number().int().positive(),
+  user_id: z.union([z.string().uuid(), z.number().int().positive()]),
+  clinic_id: z.number().int().positive(),
   type: z.string().min(1, "Tipo da consulta é obrigatório"),
   scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
   scheduled_time: z.string().regex(/^\d{2}:\d{2}$/, "Horário deve estar no formato HH:MM"),
   duration: z.number().int().min(15).max(480).default(60),
-  notes: z.union([z.string(), z.null()]).optional(),
-  location: z.union([z.string(), z.null()]).optional(),
+  status: z.enum(['agendada', 'confirmada', 'realizada', 'cancelada', 'reagendada']).default('agendada'),
+  notes: z.union([z.string(), z.null(), z.literal("")]).optional(),
+  location: z.union([z.string(), z.null(), z.literal("")]).optional(),
   price: z.union([z.number().min(0), z.null()]).optional(),
-  tag_id: z.number().int().positive().optional(),
+  payment_status: z.enum(['pendente', 'pago', 'cancelado']).default('pendente'),
+  tag_id: z.union([z.number().int().positive(), z.null()]).optional(),
+  google_event_id: z.union([z.string(), z.null()]).optional(),
+  // Support legacy field names for compatibility
+  doctor_name: z.string().optional(),
+  specialty: z.union([z.string(), z.null()]).optional(),
+  appointment_type: z.string().optional(),
+  duration_minutes: z.number().int().min(15).max(480).optional(),
+  payment_amount: z.union([z.number().min(0), z.null()]).optional(),
+  session_notes: z.union([z.string(), z.null(), z.literal("")]).optional(),
 });
 
 // Appointment update schema (partial)
