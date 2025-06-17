@@ -2,9 +2,9 @@
 import { Router } from 'express';
 import { AppointmentsController } from './appointments.controller';
 import { isAuthenticated } from '../../auth';
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 
-export function createAppointmentsRoutes(storage: Storage): Router {
+export function createAppointmentsRoutes(storage: IStorage): Router {
   const router = Router();
   const controller = new AppointmentsController(storage);
 
@@ -32,6 +32,9 @@ export function createAppointmentsRoutes(storage: Storage): Router {
   // Availability endpoints
   router.post('/availability/check', controller.checkAvailability.bind(controller));
   router.post('/availability/find-slots', controller.findAvailableTimeSlots.bind(controller));
+
+  // Admin endpoint to reassign orphaned appointments
+  router.post('/clinic/:clinic_id/appointments/reassign', controller.reassignAppointments.bind(controller));
 
   return router;
 }

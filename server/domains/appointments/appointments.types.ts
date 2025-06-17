@@ -54,6 +54,7 @@ export interface UpdateAppointmentDto {
   location?: string | null;
   price?: number | null;
   tag_id?: number | null;
+  doctor_name?: string | null;
 }
 
 export interface AppointmentFilters {
