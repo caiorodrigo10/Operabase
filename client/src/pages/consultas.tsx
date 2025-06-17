@@ -250,7 +250,8 @@ export function Consultas() {
     mousePosition: { x: 0, y: 0 },
     hoveredSlot: null as string | null,
     previewTime: null as string | null,
-    dragPreviewVisible: false
+    dragPreviewVisible: false,
+    dragOverSlot: null as {date: Date, hour: number, minute?: number} | null
   });
   
   // Initialize selectedTagId if not defined for backward compatibility
@@ -1440,7 +1441,12 @@ export function Consultas() {
       setDragState(prev => ({
         ...prev,
         hoveredSlot: slotKey,
-        previewTime: previewTime
+        previewTime: previewTime,
+        dragOverSlot: {
+          date: timeSlot.date,
+          hour: timeSlot.hour,
+          minute: timeSlot.minute || 0
+        }
       }));
       
       // Legacy state for compatibility
@@ -2447,7 +2453,13 @@ export function Consultas() {
                           {calendarDays.slice(0, 7).map((day, dayIndex) => (
                             <div 
                               key={`${day.toISOString()}-${hour}`} 
-                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative`}
+                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative ${
+                                dragState.dragOverSlot && 
+                                dragState.dragOverSlot.date.getTime() === day.getTime() && 
+                                dragState.dragOverSlot.hour === hour 
+                                  ? 'bg-blue-100 ring-2 ring-blue-300 ring-inset' 
+                                  : ''
+                              }`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
                               {/* 15-minute clickable slots */}
@@ -2613,7 +2625,13 @@ export function Consultas() {
                           {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                             <div 
                               key={hour} 
-                              className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
+                              className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)} ${
+                                dragState.dragOverSlot && 
+                                dragState.dragOverSlot.date.getTime() === currentDate.getTime() && 
+                                dragState.dragOverSlot.hour === hour 
+                                  ? 'bg-blue-100 ring-2 ring-blue-300 ring-inset' 
+                                  : ''
+                              }`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
                               {/* 15-minute clickable slots */}
@@ -2698,7 +2716,11 @@ export function Consultas() {
                                     draggable={true}
                                     onDragStart={(e) => handleDragStart(e, appointment)}
                                     onDragEnd={handleDragEnd}
-                                    className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm ${isDragging && draggedAppointment?.id === appointment.id ? 'opacity-50' : ''}`}
+                                    className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-all duration-300 overflow-hidden shadow-sm ${
+                                      dragState.isDragging && dragState.draggedAppointment?.id === appointment.id 
+                                        ? 'opacity-30 ring-2 ring-blue-400 ring-offset-2' 
+                                        : 'hover:shadow-lg hover:scale-105'
+                                    }`}
                                     style={{ 
                                       top: `${topPosition}px`,
                                       left: leftOffset,
@@ -3500,6 +3522,9 @@ export function Consultas() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Drag Preview */}
+      <DragPreview />
 
       {/* Drag and Drop Confirmation Dialog */}
       <Dialog open={dragConfirmDialog.open} onOpenChange={(open) => !open && cancelDragUpdate()}>
