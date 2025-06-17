@@ -63,8 +63,22 @@ export const createAppointmentSchema = z.object({
 });
 
 // Appointment update schema (partial)
-export const updateAppointmentSchema = createAppointmentSchema.partial().extend({
+export const updateAppointmentSchema = z.object({
   id: appointmentIdSchema,
+  contact_id: z.number().int().positive().optional(),
+  user_id: z.union([z.string().uuid(), z.number().int().positive()]).optional(),
+  clinic_id: z.number().int().positive().optional(),
+  type: z.string().min(1).optional(),
+  scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  scheduled_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  duration: z.number().int().min(15).max(480).optional(),
+  status: z.enum(['agendada', 'confirmada', 'realizada', 'cancelada', 'reagendada']).optional(),
+  notes: z.union([z.string(), z.null(), z.literal("")]).optional(),
+  location: z.union([z.string(), z.null(), z.literal("")]).optional(),
+  price: z.union([z.number().min(0), z.null()]).optional(),
+  payment_status: z.enum(['pendente', 'pago', 'cancelado']).optional(),
+  tag_id: z.union([z.number().int().positive(), z.null()]).optional(),
+  google_event_id: z.union([z.string(), z.null()]).optional(),
 });
 
 // Appointment status update schema

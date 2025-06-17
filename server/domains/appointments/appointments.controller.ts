@@ -111,7 +111,16 @@ export class AppointmentsController {
       }
 
       const validatedData = updateAppointmentSchema.parse(req.body);
-      const appointment = await this.service.updateAppointment(appointmentId, validatedData);
+      
+      // Transform validated data to match DTO interface
+      const updateData: UpdateAppointmentDto = {
+        ...validatedData,
+        id: appointmentId,
+        // Ensure null values are properly handled for tag_id
+        tag_id: validatedData.tag_id === null ? undefined : validatedData.tag_id
+      };
+      
+      const appointment = await this.service.updateAppointment(appointmentId, updateData);
 
       if (!appointment) {
         return res.status(404).json({ error: "Appointment not found" });

@@ -32,7 +32,7 @@ export interface CreateAppointmentDto {
   scheduled_time: string;
   duration: number;
   notes?: string | null;
-  tag_id?: number;
+  tag_id?: number | null;
   status?: string;
   payment_status?: string;
   location?: string | null;
@@ -53,7 +53,7 @@ export interface UpdateAppointmentDto {
   notes?: string | null;
   location?: string | null;
   price?: number | null;
-  tag_id?: number;
+  tag_id?: number | null;
 }
 
 export interface AppointmentFilters {
