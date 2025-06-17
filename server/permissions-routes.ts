@@ -29,20 +29,53 @@ export async function getClinicUsersForManagement(req: PermissionRequest, res: R
     
     const clinicUsers = await storage.getClinicUsers(clinicId);
     console.log(`📊 Found ${clinicUsers.length} users in clinic ${clinicId}`);
+    console.log(`📋 Raw clinic users data:`, JSON.stringify(clinicUsers, null, 2));
     
-    // Format response with necessary info for management
-    const usersData = clinicUsers.map(cu => ({
-      id: cu.user.id,
-      name: cu.user.name,
-      email: cu.user.email,
-      role: cu.role,
-      is_professional: cu.is_professional || false,
-      is_active: cu.is_active,
-      joined_at: cu.joined_at,
-      last_login: cu.user.last_login
-    }));
+    // Handle different data structures from storage implementations
+    const usersData = clinicUsers.map(cu => {
+      // Handle storage-minimal.ts structure (Supabase)
+      if (cu.name && cu.email) {
+        return {
+          id: cu.user_id,
+          name: cu.name,
+          email: cu.email,
+          role: cu.role,
+          is_professional: cu.is_professional || false,
+          is_active: cu.is_active,
+          joined_at: cu.joined_at,
+          last_login: cu.user_created_at
+        };
+      }
+      
+      // Handle postgres-storage.ts structure (PostgreSQL)
+      if (cu.user) {
+        return {
+          id: cu.user.id,
+          name: cu.user.name,
+          email: cu.user.email,
+          role: cu.role,
+          is_professional: cu.is_professional || false,
+          is_active: cu.is_active,
+          joined_at: cu.joined_at,
+          last_login: cu.user.last_login
+        };
+      }
+      
+      // Fallback for unknown structure
+      console.warn('Unknown clinic user structure:', cu);
+      return {
+        id: cu.user_id || cu.id,
+        name: cu.name || 'Unknown User',
+        email: cu.email || 'unknown@example.com',
+        role: cu.role || 'usuario',
+        is_professional: cu.is_professional || false,
+        is_active: cu.is_active !== false,
+        joined_at: cu.joined_at || new Date().toISOString(),
+        last_login: null
+      };
+    });
 
-    console.log(`📋 Formatted user data:`, usersData);
+    console.log(`📋 Formatted user data:`, JSON.stringify(usersData, null, 2));
     res.json(usersData);
   } catch (error) {
     console.error('Error getting clinic users for management:', error);

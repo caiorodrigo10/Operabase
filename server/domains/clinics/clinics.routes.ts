@@ -2,9 +2,10 @@
 import { Router } from 'express';
 import { ClinicsController } from './clinics.controller';
 import { supabaseAuth } from '../../supabase-auth';
-import type { Storage } from '../../storage';
+import { getClinicUsersForManagement } from '../../permissions-routes';
+import type { IStorage } from '../../storage';
 
-export function createClinicsRoutes(storage: Storage): Router {
+export function createClinicsRoutes(storage: IStorage): Router {
   const router = Router();
   const controller = new ClinicsController(storage);
 
@@ -20,11 +21,14 @@ export function createClinicsRoutes(storage: Storage): Router {
   // Get clinic users
   router.get('/clinic/:id/users', controller.getClinicUsers.bind(controller));
 
+  // Get clinic users for management (with detailed info)
+  router.get('/clinic/:clinicId/users/management', getClinicUsersForManagement as any);
+
   // Create new user in clinic
-  router.post('/clinic/:clinicId/users', supabaseAuth, controller.createUserInClinic.bind(controller));
+  router.post('/clinic/:clinicId/users', supabaseAuth as any, controller.createUserInClinic.bind(controller));
 
   // Delete user from clinic
-  router.delete('/clinic/:clinicId/users/:userId', supabaseAuth, controller.removeUserFromClinic.bind(controller));
+  router.delete('/clinic/:clinicId/users/:userId', supabaseAuth as any, controller.removeUserFromClinic.bind(controller));
 
   // Get clinic configuration (alias for clinic by ID)
   router.get('/clinic/:id/config', controller.getClinicById.bind(controller));
