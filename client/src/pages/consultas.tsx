@@ -168,6 +168,26 @@ export function Consultas() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
   
+  // Drag and Drop states
+  const [draggedAppointment, setDraggedAppointment] = useState<Appointment | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<{date: Date, hour: number, minute?: number} | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragConfirmDialog, setDragConfirmDialog] = useState<{
+    open: boolean;
+    appointment: Appointment | null;
+    oldDate: Date | null;
+    newDate: Date | null;
+    oldTime: string;
+    newTime: string;
+  }>({
+    open: false,
+    appointment: null,
+    oldDate: null,
+    newDate: null,
+    oldTime: '',
+    newTime: ''
+  });
+  
   // Create a stable reference for "today" to avoid timezone issues
   const today = useMemo(() => {
     const now = new Date();
@@ -1255,6 +1275,204 @@ export function Consultas() {
     return filteredAppointments;
   }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
+  // Drag and Drop Functions
+  const convertCoordinatesToTimeSlot = (clientX: number, clientY: number, calendarElement: HTMLElement) => {
+    const rect = calendarElement.getBoundingClientRect();
+    const relativeX = clientX - rect.left;
+    const relativeY = clientY - rect.top;
+    
+    // Calculate which day column (for week view)
+    const dayWidth = calendarView === 'week' ? rect.width / 7 : rect.width;
+    const dayIndex = Math.floor(relativeX / dayWidth);
+    
+    // Calculate time slot based on Y position
+    const headerHeight = 60; // Approximate header height
+    const timeSlotHeight = 60; // Each hour slot height
+    const startHour = 7; // Calendar starts at 7 AM
+    
+    const slotY = relativeY - headerHeight;
+    const hourFromTop = Math.floor(slotY / timeSlotHeight);
+    const minuteFromTop = Math.floor((slotY % timeSlotHeight) / (timeSlotHeight / 4)) * 15; // 15-minute intervals
+    
+    const targetHour = startHour + hourFromTop;
+    const targetMinute = minuteFromTop;
+    
+    // Calculate target date
+    let targetDate: Date;
+    if (calendarView === 'week') {
+      const startOfCurrentWeek = startOfWeek(currentDate, { locale: ptBR });
+      targetDate = addDays(startOfCurrentWeek, dayIndex);
+    } else {
+      targetDate = currentDate;
+    }
+    
+    return {
+      date: targetDate,
+      hour: targetHour,
+      minute: targetMinute,
+      isValid: targetHour >= 7 && targetHour <= 22 && dayIndex >= 0 && dayIndex < (calendarView === 'week' ? 7 : 1)
+    };
+  };
+
+  const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
+    setDraggedAppointment(appointment);
+    setIsDragging(true);
+    
+    // Create custom drag image
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragImage.style.opacity = '0.8';
+    dragImage.style.transform = 'rotate(2deg)';
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify(appointment));
+    
+    console.log('🎯 Drag started:', appointment.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (!isDragging || !draggedAppointment) return;
+    
+    const calendarElement = e.currentTarget as HTMLElement;
+    const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
+    
+    if (timeSlot.isValid) {
+      setDragOverSlot({
+        date: timeSlot.date,
+        hour: timeSlot.hour,
+        minute: timeSlot.minute || 0
+      });
+    } else {
+      setDragOverSlot(null);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    
+    if (!draggedAppointment || !dragOverSlot) {
+      setIsDragging(false);
+      setDraggedAppointment(null);
+      setDragOverSlot(null);
+      return;
+    }
+    
+    const calendarElement = e.currentTarget as HTMLElement;
+    const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
+    
+    if (!timeSlot.isValid) {
+      setIsDragging(false);
+      setDraggedAppointment(null);
+      setDragOverSlot(null);
+      return;
+    }
+    
+    // Parse original date and time
+    const originalDate = new Date(draggedAppointment.scheduled_date);
+    const originalTime = format(originalDate, 'HH:mm');
+    
+    // Create new date and time
+    const newDate = timeSlot.date;
+    const newTime = `${timeSlot.hour.toString().padStart(2, '0')}:${timeSlot.minute.toString().padStart(2, '0')}`;
+    
+    // Check if there's actually a change
+    const isSameDate = isSameDay(originalDate, newDate);
+    const isSameTime = originalTime === newTime;
+    
+    if (isSameDate && isSameTime) {
+      setIsDragging(false);
+      setDraggedAppointment(null);
+      setDragOverSlot(null);
+      return;
+    }
+    
+    // Show confirmation dialog
+    setDragConfirmDialog({
+      open: true,
+      appointment: draggedAppointment,
+      oldDate: originalDate,
+      newDate: newDate,
+      oldTime: originalTime,
+      newTime: newTime
+    });
+    
+    setIsDragging(false);
+    setDragOverSlot(null);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDraggedAppointment(null);
+    setDragOverSlot(null);
+  };
+
+  // Update appointment mutation for drag and drop
+  const updateAppointmentMutation = useMutation({
+    mutationFn: async ({ appointmentId, newDate, newTime }: { appointmentId: number; newDate: Date; newTime: string }) => {
+      const scheduledDate = format(newDate, 'yyyy-MM-dd');
+      const scheduledDateTime = `${scheduledDate} ${newTime}:00`;
+      
+      const response = await fetch(`/api/appointments/${appointmentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ 
+          scheduled_date: scheduledDateTime,
+          scheduled_time: newTime
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) throw new Error('Failed to update appointment');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+      toast({
+        title: "Consulta reagendada",
+        description: "A consulta foi movida com sucesso.",
+      });
+      setDragConfirmDialog({
+        open: false,
+        appointment: null,
+        oldDate: null,
+        newDate: null,
+        oldTime: '',
+        newTime: ''
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível mover a consulta. Tente novamente.",
+        variant: "destructive",
+      });
+      console.error('Error updating appointment:', error);
+    },
+  });
+
+  const confirmDragUpdate = () => {
+    if (!dragConfirmDialog.appointment || !dragConfirmDialog.newDate) return;
+    
+    updateAppointmentMutation.mutate({
+      appointmentId: dragConfirmDialog.appointment.id,
+      newDate: dragConfirmDialog.newDate,
+      newTime: dragConfirmDialog.newTime
+    });
+  };
+
+  const cancelDragUpdate = () => {
+    setDragConfirmDialog({
+      open: false,
+      appointment: null,
+      oldDate: null,
+      newDate: null,
+      oldTime: '',
+      newTime: ''
+    });
+  };
+
   // Function to select professional (single selection only)
   const selectProfessional = (professionalId: number) => {
     // If clicking the same professional, deselect them
@@ -2058,7 +2276,11 @@ export function Consultas() {
                   </div>
                   
                   {/* Calendar body with absolute positioned appointments */}
-                  <div className="relative">
+                  <div 
+                    className="relative"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  >
                     {/* Background grid without appointments */}
                     <div className="grid grid-cols-8 gap-px">
                       {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
@@ -2173,7 +2395,10 @@ export function Consultas() {
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                               <div
-                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto`}
+                                draggable={true}
+                                onDragStart={(e) => handleDragStart(e, appointment)}
+                                onDragEnd={handleDragEnd}
+                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto ${isDragging && draggedAppointment?.id === appointment.id ? 'opacity-50' : ''}`}
                                 style={{ 
                                   top: `${topPosition}px`,
                                   left: `calc(${finalLeftPosition}% + 2px)`,
@@ -3124,6 +3349,56 @@ export function Consultas() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Drag and Drop Confirmation Dialog */}
+      <Dialog open={dragConfirmDialog.open} onOpenChange={(open) => !open && cancelDragUpdate()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar reagendamento</DialogTitle>
+            <DialogDescription>
+              Deseja mover esta consulta para o novo horário?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {dragConfirmDialog.appointment && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+                <div className="font-medium">
+                  {getPatientName(dragConfirmDialog.appointment.contact_id, dragConfirmDialog.appointment)}
+                </div>
+                <div className="text-sm text-slate-600">
+                  <div>
+                    <span className="font-medium">De:</span> {' '}
+                    {dragConfirmDialog.oldDate && format(dragConfirmDialog.oldDate, "dd/MM/yyyy", { locale: ptBR })} às {dragConfirmDialog.oldTime}
+                  </div>
+                  <div>
+                    <span className="font-medium">Para:</span> {' '}
+                    {dragConfirmDialog.newDate && format(dragConfirmDialog.newDate, "dd/MM/yyyy", { locale: ptBR })} às {dragConfirmDialog.newTime}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={cancelDragUpdate}
+                  disabled={updateAppointmentMutation.isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={confirmDragUpdate}
+                  disabled={updateAppointmentMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {updateAppointmentMutation.isPending ? "Movendo..." : "Confirmar alteração"}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
