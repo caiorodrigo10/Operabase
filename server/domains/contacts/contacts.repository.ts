@@ -1,9 +1,9 @@
 
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 import type { CreateContactRequest, UpdateContactRequest } from './contacts.types';
 
 export class ContactsRepository {
-  constructor(private storage: Storage) {}
+  constructor(private storage: IStorage) {}
 
   async getContacts(clinicId: number, filters?: any) {
     return this.storage.getContacts(clinicId, filters);

@@ -1,9 +1,9 @@
 
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 import type { CalendarSyncRequest } from './calendar.types';
 
 export class CalendarRepository {
-  constructor(private storage: Storage) {}
+  constructor(private storage: IStorage) {}
 
   async getCalendarConfig(clinicId: number, userId: string) {
     return this.storage.getCalendarConfig(clinicId, userId);

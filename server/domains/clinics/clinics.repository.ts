@@ -1,9 +1,9 @@
 
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 import type { CreateClinicRequest, UpdateClinicRequest, CreateUserInClinicRequest } from './clinics.types';
 
 export class ClinicsRepository {
-  constructor(private storage: Storage) {}
+  constructor(private storage: IStorage) {}
 
   async getClinicById(clinicId: number) {
     return this.storage.getClinic(clinicId);
