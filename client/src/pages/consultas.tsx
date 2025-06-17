@@ -1509,7 +1509,9 @@ export function Consultas() {
     }
     
     // Parse original date and time
-    const originalDate = new Date(dragState.draggedAppointment.scheduled_date);
+    const scheduledDate = dragState.draggedAppointment.scheduled_date;
+    if (!scheduledDate) return;
+    const originalDate = new Date(scheduledDate);
     const originalTime = format(originalDate, 'HH:mm');
     
     // Create new date and time
