@@ -215,14 +215,23 @@ export class MinimalStorage implements IStorage {
 
   async getAppointments(clinicId: number, filters: any = {}): Promise<any[]> {
     try {
-      const result = await db.execute(`
-        SELECT a.*, c.name as contact_name, c.phone as contact_phone 
-        FROM appointments a 
-        LEFT JOIN contacts c ON a.contact_id = c.id 
-        WHERE a.clinic_id = $1 
-        ORDER BY a.scheduled_date DESC, a.scheduled_time DESC
-      `, [clinicId]);
-      return result.rows || [];
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          contacts(name, phone)
+        `)
+        .eq('clinic_id', clinicId)
+        .order('scheduled_date', { ascending: false })
+        .order('scheduled_time', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data?.map(appointment => ({
+        ...appointment,
+        contact_name: appointment.contacts?.name,
+        contact_phone: appointment.contacts?.phone
+      })) || [];
     } catch (error) {
       console.error('Error getting appointments:', error);
       return [];
@@ -231,13 +240,25 @@ export class MinimalStorage implements IStorage {
 
   async getAppointment(id: number): Promise<any> {
     try {
-      const result = await db.execute(`
-        SELECT a.*, c.name as contact_name, c.phone as contact_phone 
-        FROM appointments a 
-        LEFT JOIN contacts c ON a.contact_id = c.id 
-        WHERE a.id = $1
-      `, [id]);
-      return result.rows[0] || null;
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          contacts(name, phone)
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data) {
+        return {
+          ...data,
+          contact_name: data.contacts?.name,
+          contact_phone: data.contacts?.phone
+        };
+      }
+      return null;
     } catch (error) {
       console.error('Error getting appointment:', error);
       return null;
@@ -246,10 +267,14 @@ export class MinimalStorage implements IStorage {
 
   async getAppointmentsByContact(contactId: number): Promise<any[]> {
     try {
-      const result = await db.execute(`
-        SELECT * FROM appointments WHERE contact_id = $1 ORDER BY scheduled_date DESC
-      `, [contactId]);
-      return result.rows || [];
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('contact_id', contactId)
+        .order('scheduled_date', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Error getting appointments by contact:', error);
       return [];
@@ -258,14 +283,24 @@ export class MinimalStorage implements IStorage {
 
   async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
     try {
-      const result = await db.execute(`
-        SELECT a.*, c.name as contact_name, c.phone as contact_phone 
-        FROM appointments a 
-        LEFT JOIN contacts c ON a.contact_id = c.id 
-        WHERE a.scheduled_date BETWEEN $1 AND $2 
-        ORDER BY a.scheduled_date, a.scheduled_time
-      `, [startDate, endDate]);
-      return result.rows || [];
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          contacts(name, phone)
+        `)
+        .gte('scheduled_date', startDate.toISOString())
+        .lte('scheduled_date', endDate.toISOString())
+        .order('scheduled_date')
+        .order('scheduled_time');
+      
+      if (error) throw error;
+      
+      return data?.map(appointment => ({
+        ...appointment,
+        contact_name: appointment.contacts?.name,
+        contact_phone: appointment.contacts?.phone
+      })) || [];
     } catch (error) {
       console.error('Error getting appointments by date range:', error);
       return [];
@@ -286,13 +321,24 @@ export class MinimalStorage implements IStorage {
         notes
       } = appointmentData;
       
-      const result = await db.execute(`
-        INSERT INTO appointments (clinic_id, contact_id, user_id, scheduled_date, scheduled_time, duration, type, status, notes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *
-      `, [clinic_id, contact_id, user_id, scheduled_date, scheduled_time, duration, type, status, notes]);
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert([{
+          clinic_id,
+          contact_id,
+          user_id,
+          scheduled_date,
+          scheduled_time,
+          duration,
+          type,
+          status,
+          notes
+        }])
+        .select()
+        .single();
       
-      return result.rows[0];
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error creating appointment:', error);
       throw error;
@@ -301,15 +347,18 @@ export class MinimalStorage implements IStorage {
 
   async updateAppointment(id: number, appointmentData: any): Promise<any> {
     try {
-      const fields = Object.keys(appointmentData);
-      const values = Object.values(appointmentData);
-      const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({
+          ...appointmentData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
       
-      const result = await db.execute(`
-        UPDATE appointments SET ${setClause}, updated_at = NOW() WHERE id = $1 RETURNING *
-      `, [id, ...values]);
-      
-      return result.rows[0];
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error updating appointment:', error);
       throw error;
@@ -318,7 +367,12 @@ export class MinimalStorage implements IStorage {
 
   async deleteAppointment(id: number): Promise<boolean> {
     try {
-      const result = await db.execute(`DELETE FROM appointments WHERE id = $1`, [id]);
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error deleting appointment:', error);
