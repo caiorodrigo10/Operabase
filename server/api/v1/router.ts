@@ -12,6 +12,7 @@ import { createAiTemplatesRoutes } from '../../domains/ai-templates/ai-templates
 import { createAppointmentTagsRoutes } from '../../domains/appointment-tags/appointment-tags.routes';
 import { createUserProfileRoutes } from '../../domains/user-profile/user-profile.routes';
 import { createObservabilityRoutes } from './observability/observability.routes';
+import { createLoadTestingRoutes } from './load-testing/load-testing.routes';
 
 export function createApiRouter(storage: any): Router {
   const apiRouter = Router();
@@ -76,6 +77,10 @@ export function createApiRouter(storage: any): Router {
   // Observability domain routes
   const observabilityRoutes = createObservabilityRoutes();
   apiRouter.use('/v1/observability', observabilityRoutes);
+
+  // Load Testing domain routes
+  const loadTestingRoutes = createLoadTestingRoutes();
+  apiRouter.use('/v1/load-testing', loadTestingRoutes);
 
   return apiRouter;
 }
