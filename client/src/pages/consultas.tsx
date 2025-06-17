@@ -180,10 +180,10 @@ export function Consultas() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
   
-  // Drag and Drop states
+  // Simplified drag and drop states
+  const [isDragging, setIsDragging] = useState(false);
   const [draggedAppointment, setDraggedAppointment] = useState<Appointment | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<{date: Date, hour: number, minute?: number} | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [dragConfirmDialog, setDragConfirmDialog] = useState<{
     open: boolean;
     appointment: Appointment | null;
@@ -255,16 +255,7 @@ export function Consultas() {
   // Add missing selectedTagId state
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   
-  // Enhanced drag and drop state
-  const [dragState, setDragState] = useState({
-    isDragging: false,
-    draggedAppointment: null as Appointment | null,
-    mousePosition: { x: 0, y: 0 },
-    hoveredSlot: null as string | null,
-    previewTime: null as string | null,
-    dragPreviewVisible: false,
-    dragOverSlot: null as {date: Date, hour: number, minute?: number} | null
-  });
+
   
   // Initialize selectedTagId if not defined for backward compatibility
   useEffect(() => {
@@ -273,13 +264,7 @@ export function Consultas() {
     }
   }, []);
   
-  // Helper functions for enhanced drag and drop
-  const getDropZoneClass = (isHovered: boolean, hasConflict: boolean, isValidTime: boolean) => {
-    if (hasConflict) return 'drop-zone-invalid';
-    if (isHovered && isValidTime) return 'drop-zone-valid';
-    if (isHovered) return 'bg-yellow-100 border-2 border-yellow-300 border-dashed';
-    return '';
-  };
+
 
   const checkSlotConflict = (targetDate: Date, targetHour: number, targetMinute: number, draggedAppointment: Appointment) => {
     if (!draggedAppointment) return false;
@@ -302,50 +287,7 @@ export function Consultas() {
   };
 
   // Enhanced floating drag preview with 5-minute precision
-  const DragPreview = () => {
-    if (!dragState.dragPreviewVisible || !dragState.draggedAppointment) return null;
 
-    const appointment = dragState.draggedAppointment;
-    const contact = contacts.find((c: Contact) => c.id === appointment.contact_id);
-    
-    // Check for conflicts at the current hover position
-    const hasConflict = dragState.dragOverSlot && checkSlotConflict(
-      dragState.dragOverSlot.date,
-      dragState.dragOverSlot.hour,
-      dragState.dragOverSlot.minute || 0,
-      appointment
-    );
-
-    return (
-      <div 
-        className="drag-preview-enhanced"
-        style={{ 
-          left: dragState.mousePosition.x - 70, 
-          top: dragState.mousePosition.y - 45
-        }}
-      >
-        <div className="preview-card">
-          <div className="preview-patient">
-            {contact?.name || 'Paciente'}
-          </div>
-          {dragState.previewTime && (
-            <div className={`preview-time ${hasConflict ? 'text-red-600' : 'text-green-600'}`}>
-              📍 {dragState.previewTime}
-              {hasConflict && ' ⚠️'}
-            </div>
-          )}
-          <div className="preview-duration">
-            {appointment.duration_minutes || 30}min
-          </div>
-          {hasConflict && (
-            <div className="text-xs text-red-600 font-medium mt-1">
-              Conflito detectado
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   const { toast } = useToast();
   const availabilityCheck = useAvailabilityCheck();
@@ -1415,96 +1357,43 @@ export function Consultas() {
     };
   };
 
-  // Enhanced drag handlers with visual feedback
+  // Simplified drag start - Google Calendar style
   const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
-    // Set transparent drag image to hide default ghost
-    const dragImage = document.createElement('div');
-    dragImage.style.opacity = '0';
-    dragImage.style.position = 'absolute';
-    dragImage.style.top = '-1000px';
-    document.body.appendChild(dragImage);
-    e.dataTransfer.setDragImage(dragImage, 0, 0);
-    
-    // Update enhanced drag state
-    setDragState({
-      isDragging: true,
-      draggedAppointment: appointment,
-      mousePosition: { x: e.clientX, y: e.clientY },
-      hoveredSlot: null,
-      previewTime: null,
-      dragPreviewVisible: true,
-      dragOverSlot: null
-    });
-    
-    // Legacy state for compatibility
-    setDraggedAppointment(appointment);
     setIsDragging(true);
+    setDraggedAppointment(appointment);
     
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify(appointment));
     
-    // Cleanup drag image
-    setTimeout(() => document.body.removeChild(dragImage), 0);
+    // Add dragging class to original element for visual feedback
+    const element = e.currentTarget as HTMLElement;
+    element.style.opacity = '0.5';
     
-    console.log('🎯 Enhanced drag started:', appointment.id);
+    console.log('🎯 Drag started:', appointment.id);
   };
 
-  // Throttled drag over handler for enhanced 60fps performance
-  const throttledDragOverHandler = React.useCallback(
-    throttle((clientX: number, clientY: number, calendarElement: HTMLElement) => {
-      if (!dragState.isDragging || !dragState.draggedAppointment) return;
-      
-      const timeSlot = convertCoordinatesToTimeSlot(clientX, clientY, calendarElement);
-      
-      // Update mouse position for drag preview
-      setDragState(prev => ({
-        ...prev,
-        mousePosition: { x: clientX, y: clientY }
-      }));
-      
-      if (timeSlot.isValid) {
-        // Generate precise preview time string with 5-minute intervals
-        const previewTime = `${timeSlot.hour.toString().padStart(2, '0')}:${timeSlot.minute.toString().padStart(2, '0')}`;
-        const slotKey = `${format(timeSlot.date, 'yyyy-MM-dd')}-${previewTime}`;
-        
-        // Update enhanced drag state with hover information
-        setDragState(prev => ({
-          ...prev,
-          hoveredSlot: slotKey,
-          previewTime: previewTime,
-          dragOverSlot: {
-            date: timeSlot.date,
-            hour: timeSlot.hour,
-            minute: timeSlot.minute
-          }
-        }));
-        
-        // Legacy state for compatibility
-        setDragOverSlot({
-          date: timeSlot.date,
-          hour: timeSlot.hour,
-          minute: timeSlot.minute
-        });
-      } else {
-        setDragState(prev => ({
-          ...prev,
-          hoveredSlot: null,
-          previewTime: null,
-          dragOverSlot: null
-        }));
-        setDragOverSlot(null);
-      }
-    }, 16), // ~60fps throttling
-    [dragState.isDragging, dragState.draggedAppointment]
-  );
-
+  // Simple drag over handler without throttling
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
+    if (!isDragging || !draggedAppointment) return;
+    
     const calendarElement = e.currentTarget as HTMLElement;
-    throttledDragOverHandler(e.clientX, e.clientY, calendarElement);
+    const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
+    
+    if (timeSlot.isValid) {
+      setDragOverSlot({
+        date: timeSlot.date,
+        hour: timeSlot.hour,
+        minute: timeSlot.minute
+      });
+    } else {
+      setDragOverSlot(null);
+    }
   };
+
+
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
