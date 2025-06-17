@@ -15,7 +15,10 @@ const EXCLUDE_PATTERNS = [
   '.env',
   'cookies.txt',
   '.replit',
+  '.cache',
+  '.local',
   'package-lock.json',
+  'upload-to-github-main.js',
   // Migration and test files
   'add-advanced-calendar-columns.ts',
   'add-permissions-supabase.ts',
