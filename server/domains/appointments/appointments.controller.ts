@@ -8,7 +8,9 @@ import {
 } from '../../shared/schemas/index';
 import { 
   availabilityRequestSchema,
-  timeSlotRequestSchema 
+  timeSlotRequestSchema,
+  type CreateAppointmentDto,
+  type UpdateAppointmentDto
 } from './appointments.types';
 import type { IStorage } from '../../storage';
 
@@ -91,7 +93,15 @@ export class AppointmentsController {
       };
 
       const validatedData = createAppointmentSchema.parse(requestData);
-      const appointment = await this.service.createAppointment(validatedData);
+      
+      // Transform validated data to match DTO interface
+      const createData: CreateAppointmentDto = {
+        ...validatedData,
+        // Ensure null values are properly handled for tag_id
+        tag_id: validatedData.tag_id === null ? undefined : validatedData.tag_id
+      };
+      
+      const appointment = await this.service.createAppointment(createData);
 
       res.status(201).json(appointment);
     } catch (error: any) {
