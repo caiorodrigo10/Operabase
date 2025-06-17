@@ -1205,26 +1205,53 @@ export function Consultas() {
     const dateKey = format(date, 'yyyy-MM-dd');
     const dayAppointments = appointmentsByDate.get(dateKey) || [];
     
-    // If no professionals are selected, show all appointments
-    if (selectedProfessionals.length === 0) return dayAppointments;
+    console.log('🗓️ Calendar Debug - Getting appointments for date:', dateKey);
+    console.log('📊 Raw appointments for date:', dayAppointments);
+    console.log('👥 Selected professionals:', selectedProfessionals);
     
-    return dayAppointments.filter((appointment: Appointment) => {
+    // If no professionals are selected, show all appointments
+    if (selectedProfessionals.length === 0) {
+      console.log('✅ No professional filter - showing all appointments:', dayAppointments.length);
+      return dayAppointments;
+    }
+    
+    const filteredAppointments = dayAppointments.filter((appointment: Appointment) => {
       // For Google Calendar events, all belong to current user
       if (appointment.google_calendar_event_id) {
         if (currentUserEmail) {
           const clinicUser = clinicUserByEmail.get(currentUserEmail);
           
           if (clinicUser && clinicUser.is_professional) {
-            return selectedProfessionals.includes(clinicUser.id);
+            const isIncluded = selectedProfessionals.includes(clinicUser.id);
+            console.log('📅 Google Calendar event filter:', { appointment: appointment.id, userMatch: isIncluded });
+            return isIncluded;
           }
         }
+        console.log('❌ Google Calendar event - no user match');
         return false;
       }
       
       // For regular appointments, use doctor_name matching
       const professionalId = getProfessionalIdByName(appointment.doctor_name);
-      return professionalId ? selectedProfessionals.includes(professionalId) : false;
+      const isIncluded = professionalId ? selectedProfessionals.includes(professionalId) : false;
+      console.log('👨‍⚕️ Regular appointment filter:', { 
+        appointmentId: appointment.id, 
+        doctorName: appointment.doctor_name, 
+        professionalId, 
+        isIncluded 
+      });
+      
+      // CRITICAL FIX: If no doctor_name is set, show the appointment anyway
+      if (!appointment.doctor_name || appointment.doctor_name.trim() === '') {
+        console.log('⚠️ No doctor assigned - showing appointment anyway');
+        return true;
+      }
+      
+      return isIncluded;
     });
+    
+    console.log('🎯 Final filtered appointments:', filteredAppointments.length);
+    return filteredAppointments;
   }, [appointmentsByDate, selectedProfessionals, currentUserEmail, clinicUserByEmail, getProfessionalIdByName]);
 
   // Function to toggle professional selection
