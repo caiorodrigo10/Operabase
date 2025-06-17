@@ -2369,13 +2369,7 @@ export function Consultas() {
                           {calendarDays.slice(0, 7).map((day, dayIndex) => (
                             <div 
                               key={`${day.toISOString()}-${hour}`} 
-                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative ${
-                                dragOverSlot && 
-                                dragOverSlot.date.getTime() === day.getTime() && 
-                                dragOverSlot.hour === hour 
-                                  ? 'bg-blue-100 ring-2 ring-blue-300 ring-inset' 
-                                  : ''
-                              }`}
+                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
                               {/* 15-minute clickable slots */}
@@ -2541,13 +2535,7 @@ export function Consultas() {
                           {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                             <div 
                               key={hour} 
-                              className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)} ${
-                                dragOverSlot && 
-                                dragOverSlot.date.getTime() === currentDate.getTime() && 
-                                dragOverSlot.hour === hour 
-                                  ? 'bg-blue-100 ring-2 ring-blue-300 ring-inset' 
-                                  : ''
-                              }`}
+                              className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
                               {/* 15-minute clickable slots */}
@@ -3488,6 +3476,32 @@ export function Consultas() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Google Calendar-style Ghost Element */}
+      {ghostElement.visible && ghostElement.appointment && (
+        <div
+          className="fixed pointer-events-none z-50 transition-none"
+          style={{
+            left: `${ghostElement.x - 50}px`,
+            top: `${ghostElement.y - 25}px`,
+            transform: 'translate(-50%, -50%)'
+          }}
+        >
+          <div className="bg-blue-500 text-white p-2 rounded shadow-lg text-sm min-w-[120px] opacity-90">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-white rounded-full flex-shrink-0"></div>
+              <div className="truncate">
+                {getPatientName(ghostElement.appointment.contact_id, ghostElement.appointment)}
+              </div>
+            </div>
+            {ghostElement.targetSlot && (
+              <div className="text-xs mt-1 opacity-75">
+                {format(ghostElement.targetSlot.date, 'dd/MM')} às {ghostElement.targetSlot.hour.toString().padStart(2, '0')}:{ghostElement.targetSlot.minute.toString().padStart(2, '0')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
