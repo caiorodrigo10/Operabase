@@ -1327,7 +1327,7 @@ export function Consultas() {
   }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
   // Drag and Drop Functions
-  // Enhanced coordinate conversion with 5-minute precision
+  // Enhanced coordinate conversion with precise 5-minute snapping
   const convertCoordinatesToTimeSlot = (clientX: number, clientY: number, calendarElement: HTMLElement) => {
     const rect = calendarElement.getBoundingClientRect();
     const relativeX = clientX - rect.left;
@@ -1342,15 +1342,16 @@ export function Consultas() {
     // Calculate precise time with 5-minute intervals
     const headerHeight = 60;
     const slotY = relativeY - headerHeight;
-    const PIXELS_PER_HOUR = 60;
-    const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60;
     
-    // Convert Y position to minutes from start time (7am) with 5-minute snap
-    const totalMinutesFromStart = Math.round((slotY / PIXELS_PER_MINUTE) / 5) * 5;
+    // Use exact PIXELS_PER_HOUR from calendar layout
+    const totalMinutesFromStart = Math.max(0, (slotY / PIXELS_PER_MINUTE));
+    
+    // Snap to 5-minute intervals
+    const snappedMinutes = Math.round(totalMinutesFromStart / 5) * 5;
     
     const startHour = 7;
-    const targetHour = startHour + Math.floor(totalMinutesFromStart / 60);
-    const targetMinute = totalMinutesFromStart % 60;
+    const targetHour = startHour + Math.floor(snappedMinutes / 60);
+    const targetMinute = snappedMinutes % 60;
     
     // Calculate target date
     let targetDate: Date;
@@ -1361,11 +1362,15 @@ export function Consultas() {
       targetDate = currentDate;
     }
     
+    // Check for conflicts at target slot
+    const hasConflict = checkSlotConflict(targetDate, targetHour, targetMinute, draggedAppointment!);
+    
     return {
       date: targetDate,
       hour: targetHour,
       minute: targetMinute,
-      isValid: targetHour >= 7 && targetHour <= 22 && targetMinute >= 0 && targetMinute < 60 && dayIndex >= 0 && dayIndex < (calendarView === 'week' ? 7 : 1)
+      isValid: targetHour >= 7 && targetHour <= 22 && targetMinute >= 0 && targetMinute < 60 && dayIndex >= 0 && dayIndex < (calendarView === 'week' ? 7 : 1),
+      hasConflict
     };
   };
 
@@ -1374,26 +1379,18 @@ export function Consultas() {
     setIsDragging(true);
     setDraggedAppointment(appointment);
     
-    // Create custom drag image to replace favicon
-    const dragImage = document.createElement('div');
-    dragImage.style.cssText = `
-      position: absolute;
-      top: -1000px;
-      left: -1000px;
-      width: 1px;
-      height: 1px;
-      background: transparent;
-      pointer-events: none;
-    `;
-    document.body.appendChild(dragImage);
+    // Create completely transparent drag image to eliminate favicon
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.globalAlpha = 0;
+      ctx.fillRect(0, 0, 1, 1);
+    }
     
-    // Set custom drag image (eliminates favicon cursor)
-    e.dataTransfer.setDragImage(dragImage, 0, 0);
-    
-    // Clean up drag image after a moment
-    setTimeout(() => {
-      document.body.removeChild(dragImage);
-    }, 0);
+    // Set the transparent canvas as drag image
+    e.dataTransfer.setDragImage(canvas, 0, 0);
     
     // Create ghost element that follows mouse
     setGhostElement({
@@ -1407,15 +1404,14 @@ export function Consultas() {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify(appointment));
     
-    // Hide default browser drag image
-    const emptyImg = new Image();
-    e.dataTransfer.setDragImage(emptyImg, 0, 0);
+    // Add custom cursor class to body for directional arrows
+    document.body.classList.add('drag-active');
     
     console.log('🎯 Ghost drag started:', appointment.id);
   };
 
-  // Google Calendar-style drag over with ghost element positioning
-  const handleDragOver = (e: React.DragEvent) => {
+  // Throttled drag over for better performance
+  const handleDragOver = throttle((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
@@ -1435,7 +1431,7 @@ export function Consultas() {
         minute: timeSlot.minute
       } : null
     }));
-  };
+  }, 16); // 60fps throttling
 
 
 
@@ -1490,6 +1486,9 @@ export function Consultas() {
     setIsDragging(false);
     setDraggedAppointment(null);
     setGhostElement(prev => ({ ...prev, visible: false }));
+    
+    // Remove custom cursor class
+    document.body.classList.remove('drag-active');
     
     console.log('🎯 Ghost drag ended');
   };
@@ -3498,28 +3497,34 @@ export function Consultas() {
         </DialogContent>
       </Dialog>
 
-      {/* Google Calendar-style Ghost Element */}
+      {/* Enhanced Google Calendar-style Ghost Element with 5-minute precision */}
       {ghostElement.visible && ghostElement.appointment && (
         <div
-          className="fixed pointer-events-none z-50 transition-none"
+          className="fixed pointer-events-none z-50 ghost-element"
           style={{
-            left: `${ghostElement.x - 50}px`,
-            top: `${ghostElement.y - 25}px`,
+            left: `${ghostElement.x - 60}px`,
+            top: `${ghostElement.y - 30}px`,
             transform: 'translate(-50%, -50%)'
           }}
         >
-          <div className="bg-blue-500 text-white p-2 rounded shadow-lg text-sm min-w-[120px] opacity-90">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-white rounded-full flex-shrink-0"></div>
-              <div className="truncate">
-                {getPatientName(ghostElement.appointment.contact_id, ghostElement.appointment)}
-              </div>
+          <div className={`preview-card ${ghostElement.targetSlot ? 'bg-blue-500 border-blue-600' : 'bg-red-500 border-red-600'} text-white`}>
+            <div className="preview-patient">
+              {getPatientName(ghostElement.appointment.contact_id, ghostElement.appointment)}
             </div>
-            {ghostElement.targetSlot && (
-              <div className="text-xs mt-1 opacity-75">
+            {ghostElement.targetSlot ? (
+              <div className="preview-time">
+                <Clock className="w-3 h-3" />
                 {format(ghostElement.targetSlot.date, 'dd/MM')} às {ghostElement.targetSlot.hour.toString().padStart(2, '0')}:{ghostElement.targetSlot.minute.toString().padStart(2, '0')}
               </div>
+            ) : (
+              <div className="preview-time text-red-100">
+                <AlertTriangle className="w-3 h-3" />
+                Posição inválida
+              </div>
             )}
+            <div className="preview-duration">
+              {getAppointmentDuration(ghostElement.appointment)} min
+            </div>
           </div>
         </div>
       )}

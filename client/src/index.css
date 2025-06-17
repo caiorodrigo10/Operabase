@@ -41,7 +41,7 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
-/* Google Calendar-style Drag and Drop */
+/* Google Calendar-style Drag and Drop with Custom Cursor */
 .drag-over-indicator {
   background: linear-gradient(45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
               linear-gradient(-45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
@@ -61,13 +61,15 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Custom drag cursor with directional arrows */
-.calendar-container {
-  cursor: grab;
+/* Custom drag cursor with directional arrows - applied to body during drag */
+body.drag-active, 
+body.drag-active * {
+  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxwYXRoIGQ9Im0xMiA4LTQgNGg4bC00LTR6Ii8+CjxwYXRoIGQ9Im0xMiAxNiA0LTRIOGw0IDR6Ii8+CjxwYXRoIGQ9Im04IDEyIDQtNHY4bC00LTR6Ii8+CjxwYXRoIGQ9Im0xNiAxMi00IDR2LThsNCA0eiIvPgo8L2c+Cjwvc3ZnPgo=') 12 12, move !important;
 }
 
-.calendar-container.dragging {
-  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTcgMTRMMTIgOUwxNyAxNCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNNyAxMEwxMiAxNUwxNyAxMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K') 12 12, move !important;
+/* Default calendar container cursor */
+.calendar-container {
+  cursor: grab;
 }
 
 [draggable="true"]:active {
