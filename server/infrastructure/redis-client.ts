@@ -145,6 +145,13 @@ class RedisClient {
   }
 
   /**
+   * Get Redis client for pipeline operations
+   */
+  getClient(): Redis | null {
+    return this.client;
+  }
+
+  /**
    * Close Redis connection
    */
   async close() {
