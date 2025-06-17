@@ -1231,11 +1231,14 @@ export function Consultas() {
         return false;
       }
       
-      // For regular appointments, use user_id directly instead of doctor_name matching
-      const isIncluded = appointment.user_id === selectedProfessional;
+      // For regular appointments, handle orphaned appointments (user_id 2, 3) - assign to Caio Rodrigo (4)
+      const validUserIds = [4, 5, 6]; // Valid professional IDs
+      const appointmentUserId = validUserIds.includes(appointment.user_id) ? appointment.user_id : 4; // Default to Caio Rodrigo for orphaned appointments
+      const isIncluded = appointmentUserId === selectedProfessional;
       console.log('👨‍⚕️ Regular appointment filter:', { 
         appointmentId: appointment.id, 
         userId: appointment.user_id,
+        mappedUserId: appointmentUserId,
         selectedProfessional,
         isIncluded 
       });
@@ -1843,7 +1846,13 @@ export function Consultas() {
                     
                     // Apply professional filter - show all if no filter is active
                     if (selectedProfessional === null) return true;
-                    return app.user_id === selectedProfessional;
+                    
+                    // Check if appointment user_id matches selected professional
+                    // Also handle orphaned appointments (user_id 2, 3) - assign to Caio Rodrigo (4)
+                    const validUserIds = [4, 5, 6]; // Valid professional IDs
+                    const appointmentUserId = validUserIds.includes(app.user_id) ? app.user_id : 4; // Default to Caio Rodrigo for orphaned appointments
+                    
+                    return appointmentUserId === selectedProfessional;
                   })
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
