@@ -41,23 +41,40 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
-/* Drag and Drop Styles */
+/* Google Calendar-style Drag and Drop */
 .drag-over-indicator {
   background: linear-gradient(45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
               linear-gradient(-45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
               linear-gradient(45deg, transparent 75%, hsl(207, 90%, 54%) 75%), 
               linear-gradient(-45deg, transparent 75%, hsl(207, 90%, 54%) 75%);
   background-size: 8px 8px;
-  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
-  opacity: 0.3;
-  animation: slide 0.3s infinite linear;
 }
 
-@keyframes slide {
-  0% { background-position: 0 0, 0 4px, 4px -4px, -4px 0px; }
-  100% { background-position: 8px 0, 8px 4px, 12px -4px, 4px 0px; }
+/* Draggable appointment cards with Google Calendar feel */
+[draggable="true"] {
+  cursor: grab;
+  transition: all 0.2s ease-in-out;
 }
 
+[draggable="true"]:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Ghost element styling */
+.ghost-element {
+  pointer-events: none;
+  user-select: none;
+  transform-origin: center;
+  will-change: transform;
+  z-index: 9999;
+}
+
+/* Drag animation effects */
 .dragging-element {
   transform: rotate(3deg);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
