@@ -6,14 +6,14 @@ export const createContactSchema = z.object({
   clinic_id: z.number(),
   name: z.string().min(1),
   phone: z.string().min(1),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().email().optional().or(z.literal("")).or(z.null()),
   status: z.string().default('novo'),
   source: z.string().default('cadastro'),
-  gender: z.string().optional(),
-  profession: z.string().optional(),
-  address: z.string().optional(),
-  notes: z.string().optional(),
-  emergency_contact: z.string().optional(),
+  gender: z.string().optional().or(z.null()),
+  profession: z.string().optional().or(z.null()),
+  address: z.string().optional().or(z.null()),
+  notes: z.string().optional().or(z.null()),
+  emergency_contact: z.string().optional().or(z.null()),
 });
 
 export const updateContactSchema = createContactSchema.partial();

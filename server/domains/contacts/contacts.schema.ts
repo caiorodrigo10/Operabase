@@ -62,6 +62,15 @@ export const insertContactSchema = createInsertSchema(contacts).omit({
   id: true,
   first_contact: true,
   last_interaction: true,
+}).extend({
+  // Make optional fields nullable to handle null values from frontend
+  profession: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  emergency_contact: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
+  medical_history: z.string().nullable().optional(),
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({

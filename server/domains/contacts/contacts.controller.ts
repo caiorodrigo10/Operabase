@@ -68,7 +68,18 @@ export class ContactsController {
       console.log('🚀 POST /api/contacts - Starting contact creation');
       console.log('📥 Raw request body:', req.body);
 
-      const validatedData = createContactSchema.parse(req.body);
+      // Preprocess data to convert null values to undefined for optional fields
+      const preprocessedData = {
+        ...req.body,
+        profession: req.body.profession === null ? undefined : req.body.profession,
+        address: req.body.address === null ? undefined : req.body.address,
+        notes: req.body.notes === null ? undefined : req.body.notes,
+        emergency_contact: req.body.emergency_contact === null ? undefined : req.body.emergency_contact,
+        gender: req.body.gender === null ? undefined : req.body.gender,
+        email: req.body.email === null || req.body.email === "" ? undefined : req.body.email,
+      };
+
+      const validatedData = createContactSchema.parse(preprocessedData);
       console.log('✅ Data validation successful:', validatedData);
 
       const contact = await this.service.createContact(validatedData);
