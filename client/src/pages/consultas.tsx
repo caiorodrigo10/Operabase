@@ -1231,34 +1231,21 @@ export function Consultas() {
         return false;
       }
       
-      // For regular appointments, use doctor_name matching
-      const professionalId = getProfessionalIdByName(appointment.doctor_name);
-      const isIncluded = professionalId === selectedProfessional;
+      // For regular appointments, use user_id directly instead of doctor_name matching
+      const isIncluded = appointment.user_id === selectedProfessional;
       console.log('👨‍⚕️ Regular appointment filter:', { 
         appointmentId: appointment.id, 
-        doctorName: appointment.doctor_name, 
-        professionalId, 
+        userId: appointment.user_id,
+        selectedProfessional,
         isIncluded 
       });
-      
-      // CRITICAL FIX: If no doctor_name is set, show the appointment anyway
-      if (!appointment.doctor_name || appointment.doctor_name.trim() === '') {
-        console.log('⚠️ No doctor assigned - showing appointment anyway');
-        return true;
-      }
-      
-      // ADDITIONAL FIX: If doctor_name exists but no professional match, still show appointment
-      if (!professionalId) {
-        console.log('⚠️ Doctor name exists but no professional match - showing appointment anyway');
-        return true;
-      }
       
       return isIncluded;
     });
     
     console.log('🎯 Final filtered appointments:', filteredAppointments.length);
     return filteredAppointments;
-  }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail, getProfessionalIdByName]);
+  }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
   // Function to select professional (single selection only)
   const selectProfessional = (professionalId: number) => {
@@ -1837,8 +1824,7 @@ export function Consultas() {
                 
                 // Apply professional filter - show all if no filter is active
                 if (selectedProfessional === null) return true;
-                const professionalId = getProfessionalIdByName(app.doctor_name);
-                return professionalId === selectedProfessional || !professionalId; // Show appointment if professional matches or not found
+                return app.user_id === selectedProfessional;
               }).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
@@ -1851,8 +1837,7 @@ export function Consultas() {
                     
                     // Apply professional filter - show all if no filter is active
                     if (selectedProfessional === null) return true;
-                    const professionalId = getProfessionalIdByName(app.doctor_name);
-                    return professionalId === selectedProfessional || !professionalId; // Show appointment if professional matches or not found
+                    return app.user_id === selectedProfessional;
                   })
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
