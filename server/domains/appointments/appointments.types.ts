@@ -31,27 +31,29 @@ export interface CreateAppointmentDto {
   scheduled_date: string;
   scheduled_time: string;
   duration: number;
-  notes?: string;
+  notes?: string | null;
   tag_id?: number;
   status?: string;
   payment_status?: string;
-  location?: string;
-  price?: number;
+  location?: string | null;
+  price?: number | null;
 }
 
 export interface UpdateAppointmentDto {
+  id: number;
   contact_id?: number;
-  user_id?: string;
+  user_id?: string | number;
   clinic_id?: number;
-  doctor_name?: string;
-  specialty?: string;
-  appointment_type?: string;
-  scheduled_date?: Date;
-  duration_minutes?: number;
+  type?: string;
+  scheduled_date?: string;
+  scheduled_time?: string;
+  duration?: number;
   status?: string;
   payment_status?: string;
-  payment_amount?: number;
-  session_notes?: string;
+  notes?: string | null;
+  location?: string | null;
+  price?: number | null;
+  tag_id?: number;
 }
 
 export interface AppointmentFilters {
