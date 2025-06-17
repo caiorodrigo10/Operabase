@@ -5,6 +5,7 @@ import { createStorage } from "./storage-factory";
 import { setupAuth } from "./auth";
 import { tenantIsolationMiddleware } from "./shared/tenant-isolation.middleware";
 import { cacheInterceptorMiddleware, cacheInvalidationMiddleware } from "./shared/cache-interceptor.middleware";
+import { observabilityMiddleware, medicalComplianceMiddleware, errorTrackingMiddleware, correlationMiddleware } from "./shared/observability-middleware";
 import { performanceMonitor } from "./shared/performance-monitor";
 import { cacheService } from "./shared/redis-cache.service";
 import { tenantContext } from "./shared/tenant-context.provider";
@@ -60,7 +61,10 @@ app.use((req, res, next) => {
   // Setup authentication
   setupAuth(app, storage);
   
-  // Apply cache and tenant middleware chain to all API routes
+  // Apply comprehensive middleware chain to all API routes
+  app.use('/api', correlationMiddleware);
+  app.use('/api', observabilityMiddleware);
+  app.use('/api', medicalComplianceMiddleware);
   app.use('/api', cacheInterceptorMiddleware as any);
   app.use('/api', tenantIsolationMiddleware as any);
   app.use('/api', cacheInvalidationMiddleware as any);
