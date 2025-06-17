@@ -49,7 +49,7 @@ export class ProxyMigrationFactory {
         
         // Use new implementation for configured operations
         if (config.operations.includes(propName) && prop in newInstance) {
-          return this.wrapMethod(domain, propName, newInstance[prop as keyof T]);
+          return ProxyMigrationFactory.wrapMethod(domain, propName, newInstance[prop as keyof T]);
         }
         
         // Fallback to legacy implementation

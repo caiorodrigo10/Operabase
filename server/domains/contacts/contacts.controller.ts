@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { ContactsService } from './contacts.service';
 import { ContactsRepository } from './contacts.repository';
+import { ContactsRepositoryNew } from './contacts.repository.new';
 import { createContactSchema, updateContactSchema, updateContactStatusSchema } from '../../shared/schemas/index';
 import { CacheMiddleware } from '../../cache-middleware.js';
+import { ProxyMigrationFactory } from '../../shared/migration/proxy-factory';
+import { createSuccessResponse, createErrorResponse } from '../../shared/utils/response.utils';
 
 export class ContactsController {
   private service: ContactsService;
