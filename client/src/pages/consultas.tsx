@@ -1793,12 +1793,13 @@ export function Consultas() {
             /* List View */
             <div className="space-y-4">
               {appointments.filter((app: Appointment) => {
-                if (app.google_calendar_event_id) return false;
+                // Don't hide Google Calendar events in list view
+                // if (app.google_calendar_event_id) return false;
                 
-                // Apply professional filter
+                // Apply professional filter - show all if no filter is active
                 if (selectedProfessionals.length === 0) return true;
                 const professionalId = getProfessionalIdByName(app.doctor_name);
-                return professionalId ? selectedProfessionals.includes(professionalId) : false;
+                return professionalId ? selectedProfessionals.includes(professionalId) : true; // Show appointment if professional not found
               }).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
@@ -1806,12 +1807,13 @@ export function Consultas() {
               ) : (
                 appointments
                   .filter((app: Appointment) => {
-                    if (app.google_calendar_event_id) return false;
+                    // Don't hide Google Calendar events in list view
+                    // if (app.google_calendar_event_id) return false;
                     
-                    // Apply professional filter
+                    // Apply professional filter - show all if no filter is active
                     if (selectedProfessionals.length === 0) return true;
                     const professionalId = getProfessionalIdByName(app.doctor_name);
-                    return professionalId ? selectedProfessionals.includes(professionalId) : false;
+                    return professionalId ? selectedProfessionals.includes(professionalId) : true; // Show appointment if professional not found
                   })
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
