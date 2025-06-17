@@ -1423,53 +1423,61 @@ export function Consultas() {
     console.log('🎯 Enhanced drag started:', appointment.id);
   };
 
+  // Throttled drag over handler for enhanced 60fps performance
+  const throttledDragOverHandler = React.useCallback(
+    throttle((clientX: number, clientY: number, calendarElement: HTMLElement) => {
+      if (!dragState.isDragging || !dragState.draggedAppointment) return;
+      
+      const timeSlot = convertCoordinatesToTimeSlot(clientX, clientY, calendarElement);
+      
+      // Update mouse position for drag preview
+      setDragState(prev => ({
+        ...prev,
+        mousePosition: { x: clientX, y: clientY }
+      }));
+      
+      if (timeSlot.isValid) {
+        // Generate precise preview time string with 5-minute intervals
+        const previewTime = `${timeSlot.hour.toString().padStart(2, '0')}:${timeSlot.minute.toString().padStart(2, '0')}`;
+        const slotKey = `${format(timeSlot.date, 'yyyy-MM-dd')}-${previewTime}`;
+        
+        // Update enhanced drag state with hover information
+        setDragState(prev => ({
+          ...prev,
+          hoveredSlot: slotKey,
+          previewTime: previewTime,
+          dragOverSlot: {
+            date: timeSlot.date,
+            hour: timeSlot.hour,
+            minute: timeSlot.minute
+          }
+        }));
+        
+        // Legacy state for compatibility
+        setDragOverSlot({
+          date: timeSlot.date,
+          hour: timeSlot.hour,
+          minute: timeSlot.minute
+        });
+      } else {
+        setDragState(prev => ({
+          ...prev,
+          hoveredSlot: null,
+          previewTime: null,
+          dragOverSlot: null
+        }));
+        setDragOverSlot(null);
+      }
+    }, 16), // ~60fps throttling
+    [dragState.isDragging, dragState.draggedAppointment]
+  );
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    if (!dragState.isDragging || !dragState.draggedAppointment) return;
-    
     const calendarElement = e.currentTarget as HTMLElement;
-    const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
-    
-    // Update mouse position for drag preview
-    setDragState(prev => ({
-      ...prev,
-      mousePosition: { x: e.clientX, y: e.clientY }
-    }));
-    
-    if (timeSlot.isValid) {
-      // Generate preview time string
-      const previewTime = `${timeSlot.hour.toString().padStart(2, '0')}:${(timeSlot.minute || 0).toString().padStart(2, '0')}`;
-      const slotKey = `${format(timeSlot.date, 'yyyy-MM-dd')}-${previewTime}`;
-      
-      // Update enhanced drag state with hover information
-      setDragState(prev => ({
-        ...prev,
-        hoveredSlot: slotKey,
-        previewTime: previewTime,
-        dragOverSlot: {
-          date: timeSlot.date,
-          hour: timeSlot.hour,
-          minute: timeSlot.minute || 0
-        }
-      }));
-      
-      // Legacy state for compatibility
-      setDragOverSlot({
-        date: timeSlot.date,
-        hour: timeSlot.hour,
-        minute: timeSlot.minute || 0
-      });
-    } else {
-      setDragState(prev => ({
-        ...prev,
-        hoveredSlot: null,
-        previewTime: null,
-        dragOverSlot: null
-      }));
-      setDragOverSlot(null);
-    }
+    throttledDragOverHandler(e.clientX, e.clientY, calendarElement);
   };
 
   const handleDrop = async (e: React.DragEvent) => {
