@@ -40,6 +40,9 @@ import { EventTooltip } from "@/components/EventTooltip";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
 import { FindTimeSlots } from "@/components/FindTimeSlots";
 import { AppointmentTagSelector } from "@/components/AppointmentTagSelector";
+import { DragProvider } from "@/components/DragProvider";
+import { DraggableAppointment } from "@/components/DraggableAppointment";
+import { DroppableTimeSlot } from "@/components/DroppableTimeSlot";
 import type { Appointment } from "../../../server/domains/appointments/appointments.schema";
 import type { Contact } from "../../../server/domains/contacts/contacts.schema";
 
@@ -1589,8 +1592,28 @@ export function Consultas() {
 
   const calendarDays = getCalendarDays();
 
+  // Handle appointment move with @dnd-kit
+  const handleAppointmentMove = (appointmentId: number, newDate: Date, newTime: string) => {
+    const appointment = appointments.find(a => a.id === appointmentId);
+    if (!appointment) return;
+
+    const newDateTime = new Date(newDate);
+    const [hours, minutes] = newTime.split(':').map(Number);
+    newDateTime.setHours(hours, minutes, 0, 0);
+
+    setDragConfirmDialog({
+      open: true,
+      appointment,
+      oldDate: new Date(appointment.scheduled_date),
+      newDate: newDateTime,
+      oldTime: format(new Date(appointment.scheduled_date), 'HH:mm'),
+      newTime: newTime
+    });
+  };
+
   return (
-    <div className="p-4 lg:p-6">
+    <DragProvider onAppointmentMove={handleAppointmentMove}>
+      <div className="p-4 lg:p-6">
       {/* Header Section */}
       <div className="mb-6 flex justify-between items-start">
         <div>
@@ -2478,11 +2501,8 @@ export function Consultas() {
                           
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
-                              <div
-                                draggable={true}
-                                onDragStart={(e) => handleDragStart(e, appointment)}
-                                onDragEnd={handleDragEnd}
-                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto appointment-card ${isDragging && draggedAppointment?.id === appointment.id ? 'dragging opacity-50' : ''}`}
+                              <DraggableAppointment
+                                appointment={appointment}
                                 style={{ 
                                   top: `${topPosition}px`,
                                   left: `calc(${finalLeftPosition}% + 2px)`,
@@ -2490,18 +2510,23 @@ export function Consultas() {
                                   height: `${height}px`,
                                   zIndex: 10 + layout.group
                                 }}
-                                onClick={() => handleAppointmentClick(appointment)}
+                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto appointment-card`}
                               >
-                                <div className="flex items-start gap-1.5 h-full">
-                                  <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
-                                  <div className="flex-1 overflow-hidden">
-                                    <div className="text-xs truncate">{patientName}</div>
-                                    <div className="text-xs opacity-80 mt-1">
-                                      {duration}min
+                                <div 
+                                  className="h-full"
+                                  onClick={() => handleAppointmentClick(appointment)}
+                                >
+                                  <div className="flex items-start gap-1.5 h-full">
+                                    <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
+                                    <div className="flex-1 overflow-hidden">
+                                      <div className="text-xs truncate">{patientName}</div>
+                                      <div className="text-xs opacity-80 mt-1">
+                                        {duration}min
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
+                              </DraggableAppointment>
                             </EventTooltip>
                           );
                         });
@@ -3529,5 +3554,6 @@ export function Consultas() {
         </div>
       )}
     </div>
+    </DragProvider>
   );
 }

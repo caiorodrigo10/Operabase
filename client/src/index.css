@@ -216,6 +216,78 @@ body.drag-active * {
   }
 }
 
+/* Professional @dnd-kit drag and drop styles */
+.appointment-card {
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  cursor: grab;
+}
+
+.appointment-card:active {
+  cursor: grabbing;
+}
+
+.dragging-appointment {
+  opacity: 0.5;
+  transform: scale(1.02);
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Time slot drop zones */
+.time-slot {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.drop-zone-active {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-left: 3px solid #3b82f6;
+}
+
+.drop-zone-target {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid #3b82f6;
+}
+
+/* Snap indicator for 5-minute precision */
+.snap-indicator {
+  animation: pulse 1s infinite;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 1px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Custom cursor during drag */
+.dnd-dragging {
+  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTcgMTRMMTIgOUwxNyAxNCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNNyAxMEwxMiAxNUwxNyAxMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K') 12 12, move !important;
+}
+
+/* Drag overlay consistency */
+.dnd-overlay {
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Visual feedback improvements */
+.appointment-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth transitions for better UX */
+.calendar-grid {
+  position: relative;
+}
+
+.calendar-grid .appointment-card {
+  position: absolute;
+  will-change: transform, opacity;
+}
+
 /* Phone input customization - Hide country code, show only flag */
 .phone-input-container {
   padding: 0 !important;
