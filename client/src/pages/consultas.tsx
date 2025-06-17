@@ -1741,7 +1741,7 @@ export function Consultas() {
                 {clinicUsers
                   .filter((user: any) => user.is_professional === true)
                   .map((professional: any) => {
-                    const isSelected = selectedProfessionals.includes(professional.id);
+                    const isSelected = selectedProfessional === professional.id;
                     const initials = professional.name
                       .split(' ')
                       .map((n: string) => n[0])
@@ -1752,7 +1752,7 @@ export function Consultas() {
                     return (
                       <button
                         key={professional.id}
-                        onClick={() => toggleProfessional(professional.id)}
+                        onClick={() => selectProfessional(professional.id)}
                         title={professional.name}
                         className={`
                           w-9 h-9 rounded-full flex items-center justify-center text-xs font-medium
@@ -1836,9 +1836,9 @@ export function Consultas() {
                 // if (app.google_calendar_event_id) return false;
                 
                 // Apply professional filter - show all if no filter is active
-                if (selectedProfessionals.length === 0) return true;
+                if (selectedProfessional === null) return true;
                 const professionalId = getProfessionalIdByName(app.doctor_name);
-                return professionalId ? selectedProfessionals.includes(professionalId) : true; // Show appointment if professional not found
+                return professionalId === selectedProfessional || !professionalId; // Show appointment if professional matches or not found
               }).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   Nenhuma consulta encontrada
@@ -1850,9 +1850,9 @@ export function Consultas() {
                     // if (app.google_calendar_event_id) return false;
                     
                     // Apply professional filter - show all if no filter is active
-                    if (selectedProfessionals.length === 0) return true;
+                    if (selectedProfessional === null) return true;
                     const professionalId = getProfessionalIdByName(app.doctor_name);
-                    return professionalId ? selectedProfessionals.includes(professionalId) : true; // Show appointment if professional not found
+                    return professionalId === selectedProfessional || !professionalId; // Show appointment if professional matches or not found
                   })
                   .sort((a: Appointment, b: Appointment) => {
                     return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
