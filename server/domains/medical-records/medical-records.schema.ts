@@ -31,6 +31,12 @@ export const medical_records = pgTable("medical_records", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [
+  // Critical multi-tenant composite indexes for medical records performance
+  index("idx_medical_records_clinic_updated").on(table.clinic_id, table.updated_at),
+  index("idx_medical_records_contact_clinic").on(table.contact_id, table.clinic_id),
+  index("idx_medical_records_clinic_type").on(table.clinic_id, table.record_type),
+  index("idx_medical_records_clinic_active").on(table.clinic_id, table.is_active),
+  // Existing single-column indexes
   index("idx_medical_records_appointment").on(table.appointment_id),
   index("idx_medical_records_contact").on(table.contact_id),
   index("idx_medical_records_clinic").on(table.clinic_id),

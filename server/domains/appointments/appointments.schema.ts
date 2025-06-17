@@ -22,6 +22,13 @@ export const appointments = pgTable("appointments", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [
+  // Critical multi-tenant composite indexes for high performance
+  index("idx_appointments_clinic_date").on(table.clinic_id, table.scheduled_date),
+  index("idx_appointments_clinic_status").on(table.clinic_id, table.status),
+  index("idx_appointments_clinic_user").on(table.clinic_id, table.user_id),
+  index("idx_appointments_contact_clinic").on(table.contact_id, table.clinic_id),
+  index("idx_appointments_clinic_updated").on(table.clinic_id, table.updated_at),
+  // Existing single-column indexes
   index("idx_appointments_user").on(table.user_id),
   index("idx_appointments_contact").on(table.contact_id),
   index("idx_appointments_clinic").on(table.clinic_id),

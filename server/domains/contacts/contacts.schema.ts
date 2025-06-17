@@ -1,5 +1,5 @@
 
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -23,7 +23,14 @@ export const contacts = pgTable("contacts", {
   notes: text("notes"),
   first_contact: timestamp("first_contact").defaultNow(),
   last_interaction: timestamp("last_interaction").defaultNow(),
-});
+}, (table) => [
+  // Critical multi-tenant indexes for performance
+  index("idx_contacts_clinic_status").on(table.clinic_id, table.status),
+  index("idx_contacts_clinic_updated").on(table.clinic_id, table.last_interaction),
+  index("idx_contacts_clinic_name").on(table.clinic_id, table.name),
+  index("idx_contacts_phone_clinic").on(table.phone, table.clinic_id),
+  index("idx_contacts_clinic_priority").on(table.clinic_id, table.priority),
+]);
 
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
@@ -32,7 +39,12 @@ export const conversations = pgTable("conversations", {
   status: text("status").notNull(),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  // Critical indexes for conversation performance
+  index("idx_conversations_clinic_updated").on(table.clinic_id, table.updated_at),
+  index("idx_conversations_contact_clinic").on(table.contact_id, table.clinic_id),
+  index("idx_conversations_clinic_status").on(table.clinic_id, table.status),
+]);
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
@@ -41,7 +53,10 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   ai_action: text("ai_action"), // agendou_consulta, enviou_followup, etc
   timestamp: timestamp("timestamp").defaultNow(),
-});
+}, (table) => [
+  // Critical index for message loading performance
+  index("idx_messages_conversation_timestamp").on(table.conversation_id, table.timestamp),
+]);
 
 export const insertContactSchema = createInsertSchema(contacts).omit({
   id: true,
