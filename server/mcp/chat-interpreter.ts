@@ -78,95 +78,8 @@ export class ChatInterpreter {
       // Adicionar mensagem ao histórico
       contextManager.addMessage(sessionId, message);
 
-      // Interceptar perguntas sobre data atual
-      const dateQuestions = ['que dia', 'qual dia', 'hoje', 'data de hoje', 'dia é hoje', 'dia hoje'];
-      if (dateQuestions.some(q => message.toLowerCase().includes(q))) {
-        const now = new Date();
-        const saoPauloOffset = -3 * 60; // UTC-3 em minutos
-        const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
-        
-        const weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
-        const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-        const todayWeekday = weekdays[saoPauloTime.getDay()];
-        
-        return {
-          success: true,
-          data: {
-            action: 'chat_response',
-            message: `Hoje é ${saoPauloTime.getDate()} de ${months[saoPauloTime.getMonth()]} de ${saoPauloTime.getFullYear()}, ${todayWeekday}-feira.`,
-            sessionId
-          }
-        };
-      }
-
-      // Obter contexto existente
+      // Obter contexto existente para incluir no prompt
       let context = contextManager.getContext(sessionId);
-      
-      // Extrair informações da mensagem atual
-      const extractedInfo = contextManager.extractAppointmentInfo(message, context?.pendingAppointment);
-      
-      // Atualizar contexto com novas informações
-      context = contextManager.updateContext(sessionId, {
-        pendingAppointment: extractedInfo,
-        lastAction: 'processing'
-      });
-
-      // Verificar se temos informações suficientes para criar agendamento
-      const missingFields = contextManager.validateAppointment(extractedInfo);
-      
-      if (missingFields.length === 0) {
-        // Temos todas as informações - criar agendamento
-        contextManager.addMessage(sessionId, 'Agendamento criado', 'create');
-        
-        return {
-          success: true,
-          data: {
-            action: 'create',
-            ...extractedInfo,
-            sessionId
-          }
-        };
-      }
-
-      // Se faltam informações, criar resposta contextual inteligente
-      if (missingFields.length > 0) {
-        const collectedInfo = [];
-        if (extractedInfo.contact_name) collectedInfo.push(`✅ Nome: ${extractedInfo.contact_name}`);
-        if (extractedInfo.date) collectedInfo.push(`✅ Data: ${extractedInfo.date}`);
-        if (extractedInfo.time) collectedInfo.push(`✅ Horário: ${extractedInfo.time}`);
-
-        const missing = missingFields.map(field => {
-          switch(field) {
-            case 'nome do paciente': return '🔄 Nome do paciente';
-            case 'data': return '🔄 Data da consulta';
-            case 'horário': return '🔄 Horário';
-            default: return `🔄 ${field}`;
-          }
-        });
-
-        let responseMessage = '';
-        if (collectedInfo.length > 0) {
-          responseMessage += `📝 Informações coletadas:\n${collectedInfo.join('\n')}\n\n`;
-        }
-
-        if (missingFields.length === 1) {
-          responseMessage += `Preciso apenas de mais uma informação: ${missingFields[0]}.`;
-        } else {
-          responseMessage += `Ainda preciso de: ${missingFields.join(', ')}.`;
-        }
-
-        contextManager.addMessage(sessionId, responseMessage, 'clarification');
-        
-        return {
-          success: true,
-          data: {
-            action: 'clarification',
-            message: responseMessage,
-            sessionId,
-            context: extractedInfo
-          }
-        };
-      }
       
       const systemPrompt = this.buildSystemPrompt();
       
@@ -203,9 +116,17 @@ export class ChatInterpreter {
       // Validar com Zod
       const validatedAction = ActionSchema.parse(parsedAction);
 
+      // Atualizar contexto se necessário
+      if (sessionId && (validatedAction.action === 'create' || validatedAction.action === 'clarification')) {
+        contextManager.updateContext(sessionId, {
+          lastAction: validatedAction.action,
+          pendingAppointment: validatedAction.action === 'create' ? validatedAction : undefined
+        });
+      }
+
       return {
         success: true,
-        data: validatedAction
+        data: { ...validatedAction, sessionId }
       };
 
     } catch (error) {
