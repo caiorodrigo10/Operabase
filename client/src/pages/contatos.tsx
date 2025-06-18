@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { Search, UserPlus, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,28 +11,32 @@ import { PatientForm } from "@/components/PatientForm";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  User, 
-  Phone, 
-  MessageCircle, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  Save,
-  Plus,
-  UserPlus,
-  FileText
-} from "lucide-react";
-import type { Contact, InsertContact } from "../../../server/domains/contacts/contacts.schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Status labels for contacts (no longer displaying as badges)
+interface Contact {
+  id: number;
+  clinic_id: number;
+  name: string;
+  phone: string;
+  email?: string;
+  status: string;
+  last_interaction?: string;
+  created_at: string;
+  profile_picture?: string;
+}
+
 const statusLabels = {
   novo: "Novo",
   em_conversa: "Em conversa",
-  agendado: "Agendado",
+  agendado: "Agendado", 
   realizado: "Realizado",
   pos_atendimento: "Pós-atendimento",
-  ativo: "Ativo",
   inativo: "Inativo",
   arquivado: "Arquivado",
 };
@@ -42,10 +47,10 @@ export function Contatos() {
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [, setLocation] = useLocation();
   
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Fetch contacts from API
+  // Fetch contacts
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ['/api/contacts', { clinic_id: 1 }],
     queryFn: async () => {
@@ -95,148 +100,142 @@ export function Contatos() {
   };
 
   const handleContactClick = (contact: Contact) => {
-    setLocation(`/contatos/${contact.id}`);
+    setLocation(`/contato/${contact.id}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-4 lg:p-6">
-        <Card className="animate-pulse">
-          <CardContent className="p-6">
-            <div className="h-96 bg-slate-200 rounded"></div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-4 lg:p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <Card>
-        <CardHeader className="border-b border-slate-200">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <CardHeader className="border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-xl font-semibold text-slate-800">Contatos</h2>
-              <p className="text-slate-600">Gerencie todos os contatos da clínica</p>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Contatos
+              </CardTitle>
+              <p className="text-gray-600 mt-1">
+                Gerencie todos os contatos e pacientes da clínica
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                onClick={() => setIsAddContactOpen(true)}
-                className="bg-medical-blue hover:bg-blue-700 flex items-center gap-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                Adicionar Contato
-              </Button>
+            <Button 
+              className="bg-medical-blue hover:bg-blue-700 text-white"
+              onClick={() => setIsAddContactOpen(true)}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Novo paciente
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-6">
+          {/* Search and Filter Controls */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Buscar por nome ou telefone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Todos os status" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="agendado">Agendou</SelectItem>
                   <SelectItem value="novo">Novo</SelectItem>
+                  <SelectItem value="em_conversa">Em conversa</SelectItem>
+                  <SelectItem value="agendado">Agendado</SelectItem>
+                  <SelectItem value="realizado">Realizado</SelectItem>
                   <SelectItem value="pos_atendimento">Pós-atendimento</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                placeholder="Buscar contato..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="md:w-64"
-              />
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContacts?.map((contact: Contact) => {
-              if (!contact) return null;
-              
-              return (
-                <div
-                  key={contact.id}
-                  className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-medical-blue"
-                  onClick={() => handleContactClick(contact)}
-                >
-                  <div className="flex items-start mb-3">
-                    <div className="flex items-center gap-3">
+
+          {/* Contacts List */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg animate-pulse">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredContacts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">Nenhum contato encontrado</p>
+              <p className="text-gray-400 mt-2">
+                {searchTerm || statusFilter !== "all" 
+                  ? "Tente ajustar os filtros de busca" 
+                  : "Comece adicionando um novo paciente"
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredContacts?.map((contact: Contact) => {
+                const lastInteraction = contact.last_interaction 
+                  ? new Date(contact.last_interaction)
+                  : new Date(contact.created_at);
+
+                return (
+                  <div
+                    key={contact.id}
+                    onClick={() => handleContactClick(contact)}
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center space-x-4">
                       <ContactAvatar 
                         name={contact.name}
                         profilePicture={contact.profile_picture}
                         size="md"
                       />
                       <div>
-                        <h3 className="font-semibold text-slate-900 truncate">{contact.name}</h3>
-                        <div className="flex items-center gap-1 text-sm text-slate-600">
-                          <Phone className="w-3 h-3" />
-                          {contact.phone}
-                        </div>
+                        <h3 className="font-semibold text-gray-900">{contact.name}</h3>
+                        <p className="text-sm text-gray-600">{contact.phone}</p>
+                        {contact.email && (
+                          <p className="text-sm text-gray-500">{contact.email}</p>
+                        )}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-slate-600">
-                    {contact.profession && (
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {contact.profession}
-                      </div>
-                    )}
                     
-                    {contact.address && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        <span className="truncate">{contact.address}</span>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          contact.status === 'novo' ? 'bg-blue-100 text-blue-800' :
+                          contact.status === 'em_conversa' ? 'bg-yellow-100 text-yellow-800' :
+                          contact.status === 'agendado' ? 'bg-purple-100 text-purple-800' :
+                          contact.status === 'realizado' ? 'bg-green-100 text-green-800' :
+                          contact.status === 'pos_atendimento' ? 'bg-teal-100 text-teal-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {statusLabels[contact.status as keyof typeof statusLabels] || contact.status}
+                        </span>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatDistanceToNow(lastInteraction, { 
+                            addSuffix: true,
+                            locale: ptBR 
+                          })}
+                        </p>
                       </div>
-                    )}
-
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {contact.first_contact 
-                        ? formatDistanceToNow(new Date(contact.first_contact), { addSuffix: true, locale: ptBR })
-                        : 'Data não informada'
-                      }
                     </div>
                   </div>
-
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                      <MessageCircle className="w-3 h-3" />
-                      {contact.source || 'WhatsApp'}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">
-                        Ver detalhes →
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {filteredContacts.length === 0 && (
-            <div className="text-center py-12">
-              <User className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-600 mb-2">Nenhum contato encontrado</h3>
-              <p className="text-slate-500 mb-4">
-                {searchTerm || statusFilter !== "all" 
-                  ? "Tente ajustar os filtros de busca" 
-                  : "Comece adicionando o primeiro contato"}
-              </p>
-              <Button 
-                onClick={() => setIsAddContactOpen(true)}
-                className="bg-medical-blue hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Primeiro Contato
-              </Button>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Add Contact Modal - Complete Patient Creation Form with Tabs */}
+      {/* Add Contact Modal */}
       <Dialog open={isAddContactOpen} onOpenChange={setIsAddContactOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -247,370 +246,6 @@ export function Contatos() {
             onSubmit={handleSubmitPatient}
             isSubmitting={createContactMutation.isPending}
           />
-
-                {/* Tab 1: Basic Information */}
-                <TabsContent value="basic" className="space-y-4 mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>* Nome completo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Digite o nome completo" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="gender"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Gênero</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="masculino">Masculino</SelectItem>
-                              <SelectItem value="feminino">Feminino</SelectItem>
-                              <SelectItem value="outro">Outro</SelectItem>
-                              <SelectItem value="nao_informado">Não informado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>* Celular</FormLabel>
-                          <FormControl>
-                            <Input placeholder="(11) 99999-9999" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="age"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Idade</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="Idade" 
-                              {...field} 
-                              value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="profession"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Profissão</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Digite a profissão" {...field} value={field.value || ""} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="source"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Como conheceu a clínica</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || "whatsapp"}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                              <SelectItem value="site">Site</SelectItem>
-                              <SelectItem value="indicacao">Indicação</SelectItem>
-                              <SelectItem value="outros">Outros</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Adicionar observações</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Adicione observações sobre o paciente"
-                            className="resize-none"
-                            rows={3}
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Contato de emergência</h4>
-                    <FormField
-                      control={form.control}
-                      name="emergency_contact"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome e telefone de emergência</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Nome: (11) 99999-9999" 
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </TabsContent>
-
-                {/* Tab 2: Additional Information */}
-                <TabsContent value="additional" className="space-y-4 mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="email@exemplo.com" 
-                              type="email" 
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Endereço completo</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Rua, número, bairro, cidade" 
-                              {...field}
-                              value={field.value || ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Prioridade</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || "normal"}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="baixa">Baixa</SelectItem>
-                              <SelectItem value="normal">Normal</SelectItem>
-                              <SelectItem value="alta">Alta</SelectItem>
-                              <SelectItem value="urgente">Urgente</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status inicial</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || "novo"}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="novo">Novo</SelectItem>
-                              <SelectItem value="em_conversa">Em conversa</SelectItem>
-                              <SelectItem value="agendado">Agendado</SelectItem>
-                              <SelectItem value="realizado">Realizado</SelectItem>
-                              <SelectItem value="pos_atendimento">Pós-atendimento</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="medical_history"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Histórico médico</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Histórico médico do paciente"
-                            className="resize-none"
-                            rows={3}
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-
-                {/* Tab 3: Medical Information */}
-                <TabsContent value="insurance" className="space-y-4 mt-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Medicamentos atuais</h4>
-                    <FormField
-                      control={form.control}
-                      name="current_medications"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Lista de medicamentos</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Liste os medicamentos separados por vírgula"
-                              className="resize-none"
-                              rows={3}
-                              {...field}
-                              value={Array.isArray(field.value) ? field.value.join(", ") : ""}
-                              onChange={(e) => {
-                                const medications = e.target.value.split(",").map(med => med.trim()).filter(Boolean);
-                                field.onChange(medications);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Alergias</h4>
-                    <FormField
-                      control={form.control}
-                      name="allergies"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Lista de alergias</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Liste as alergias separadas por vírgula"
-                              className="resize-none"
-                              rows={3}
-                              {...field}
-                              value={Array.isArray(field.value) ? field.value.join(", ") : ""}
-                              onChange={(e) => {
-                                const allergies = e.target.value.split(",").map(allergy => allergy.trim()).filter(Boolean);
-                                field.onChange(allergies);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddContactOpen(false);
-                    form.reset();
-                    setPatientFormTab("basic");
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-medical-blue hover:bg-blue-700"
-                  disabled={createContactMutation.isPending}
-                >
-                  {createContactMutation.isPending ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Cadastrando...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Cadastrar paciente
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
         </DialogContent>
       </Dialog>
     </div>
