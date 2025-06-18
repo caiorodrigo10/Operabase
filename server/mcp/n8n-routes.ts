@@ -384,10 +384,10 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
     
     // Log do resultado da interpretação
     mcpLogsService.addLog({
-      type: 'chat_interpretation',
+      type: 'openai',
       level: result.success ? 'info' : 'error',
       message: `Interpretação OpenAI: ${result.success ? 'sucesso' : 'falha'}`,
-      metadata: { 
+      data: { 
         sessionId,
         success: result.success,
         action: result.data?.action,
@@ -402,10 +402,10 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
       
       // Log da resposta da Marina
       mcpLogsService.addLog({
-        type: 'chat_response',
+        type: 'mcp',
         level: 'info',
         message: `Marina respondeu: "${naturalResponse.substring(0, 100)}..."`,
-        metadata: { 
+        data: { 
           sessionId,
           action: result.data?.action,
           responseLength: naturalResponse.length,
@@ -424,10 +424,10 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
     } else {
       // Log do erro
       mcpLogsService.addLog({
-        type: 'chat_error',
+        type: 'error',
         level: 'warn',
         message: `Marina não conseguiu processar: "${message}"`,
-        metadata: { 
+        data: { 
           sessionId,
           error: result.error,
           responseTime: Date.now() - startTime

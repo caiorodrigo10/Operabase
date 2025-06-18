@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, MessageCircle, Clock, User, Calendar } from 'lucide-react';
-import { useMCPChat } from '../hooks/useMCPChat';
+import { Send, Phone, Video, MoreVertical, Smile, MessageCircle, User, Calendar, Trash2, Clock } from 'lucide-react';
 import { LogsPanel } from '../components/LogsPanel';
 
 interface Message {
@@ -9,6 +8,7 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   type?: 'success' | 'error' | 'info';
+  isTyping?: boolean;
 }
 
 export default function ChatDeTeste() {
@@ -46,11 +46,21 @@ export default function ChatDeTeste() {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-
     const messageText = inputText;
+    setInputText('');
     setIsLoading(true);
     setError(null);
+
+    // Adiciona indicador de digitação da Marina
+    const typingMessage: Message = {
+      id: 'typing',
+      text: 'Marina está digitando...',
+      isUser: false,
+      timestamp: new Date(),
+      isTyping: true
+    };
+    
+    setMessages(prev => [...prev, typingMessage]);
 
     try {
       const response = await fetch('/api/mcp/chat', {
@@ -66,22 +76,28 @@ export default function ChatDeTeste() {
 
       const data = await response.json();
       
+      // Remove indicador de digitação
+      setMessages(prev => prev.filter(msg => msg.id !== 'typing'));
+      
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.success ? (data.data?.response || 'Comando processado!') : (data.error || 'Erro ao processar'),
+        text: data.success ? (data.data?.response || 'Oi! Aqui é a Marina da clínica. Como posso ajudar você hoje?') : 'Ops, não consegui entender direito. Pode repetir de outra forma? 😊',
         isUser: false,
         timestamp: new Date(),
-        type: data.success ? 'success' : 'error'
+        type: data.success ? 'success' : 'info'
       };
 
       setMessages(prev => [...prev, botMessage]);
     } catch (err) {
+      // Remove indicador de digitação
+      setMessages(prev => prev.filter(msg => msg.id !== 'typing'));
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
+        text: 'Desculpa, tive um probleminha aqui. Pode tentar novamente? 🙏',
         isUser: false,
         timestamp: new Date(),
-        type: 'error'
+        type: 'info'
       };
 
       setMessages(prev => [...prev, errorMessage]);
