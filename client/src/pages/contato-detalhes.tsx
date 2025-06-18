@@ -26,7 +26,12 @@ import {
   Stethoscope,
   Heart,
   Pill,
-  AlertTriangle
+  AlertTriangle,
+  Plus,
+  Search,
+  Eye,
+  EyeOff,
+  Info
 } from "lucide-react";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import { useToast } from "@/hooks/use-toast";
@@ -213,22 +218,25 @@ export function ContatoDetalhes() {
                    { label: "Ativo", color: "bg-green-100 text-green-800" };
 
   return (
-    <div className="p-4 lg:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => setLocation("/contatos")}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">{contact.name}</h1>
-            <p className="text-slate-600">Detalhes do paciente</p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Modern Header - Codental Style */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Avatar className="w-20 h-20">
+              <AvatarImage src="" alt={contact.name} />
+              <AvatarFallback className="text-xl font-medium bg-blue-100 text-blue-700">
+                {contact.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">{contact.name}</h1>
+              <p className="text-slate-600 flex items-center gap-1">
+                <Phone className="w-4 h-4" />
+                {contact.phone}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge className={statusInfo.color}>
-            {statusInfo.label}
-          </Badge>
           <Button
             variant={isEditing ? "default" : "outline"}
             onClick={() => {
@@ -239,6 +247,7 @@ export function ContatoDetalhes() {
               }
             }}
             disabled={updateContactMutation.isPending}
+            className="px-6"
           >
             {isEditing ? <Save className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
             {isEditing ? "Salvar" : "Editar"}
@@ -246,84 +255,306 @@ export function ContatoDetalhes() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Card */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader className="text-center pb-2">
-              <div className="relative inline-block">
-                <Avatar className="w-24 h-24 mx-auto">
-                  <AvatarImage src="" alt={contact.name} />
-                  <AvatarFallback className="text-2xl">
-                    {contact.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"
-                >
-                  <Camera className="w-4 h-4" />
-                </Button>
-              </div>
-              <CardTitle className="mt-4">{contact.name}</CardTitle>
-              <p className="text-slate-600">{contact.profession}</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-slate-500" />
-                <span>{contact.phone}</span>
-              </div>
-              {contact.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-slate-500" />
-                  <span>{contact.email}</span>
-                </div>
-              )}
-              {contact.address && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm">{contact.address}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-slate-500" />
-                <span>{contact.age} anos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <span className="text-sm">
-                  Desde {format(new Date(contact.first_contact!), "dd/MM/yyyy", { locale: ptBR })}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Horizontal Tabs - Codental Style */}
+      <Tabs defaultValue="visao-geral" className="w-full">
+        <TabsList className="border-b border-slate-200 w-full bg-transparent h-auto p-0 rounded-none justify-start">
+          <TabsTrigger 
+            value="visao-geral" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger 
+            value="anamneses" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Anamneses
+          </TabsTrigger>
+          <TabsTrigger 
+            value="prontuario" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Evoluções
+          </TabsTrigger>
+          <TabsTrigger 
+            value="consultas" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Consultas
+          </TabsTrigger>
+          <TabsTrigger 
+            value="mara" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Mara IA
+          </TabsTrigger>
+          <TabsTrigger 
+            value="pipeline" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Pipeline
+          </TabsTrigger>
+          <TabsTrigger 
+            value="documentos" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Documentos
+          </TabsTrigger>
+          <TabsTrigger 
+            value="arquivos" 
+            className="border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent rounded-none px-6 py-3"
+          >
+            Arquivos
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Main Content */}
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="prontuario" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="prontuario">Prontuário</TabsTrigger>
-              <TabsTrigger value="consultas">Consultas</TabsTrigger>
-              <TabsTrigger value="mara">Mara IA</TabsTrigger>
-              <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="prontuario" className="space-y-4">
-              <ProntuarioMedico 
-                contactId={contact.id} 
-                appointments={appointments}
-              />
-            </TabsContent>
-
-            <TabsContent value="consultas" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Stethoscope className="w-5 h-5" />
-                    Histórico de Consultas
+        {/* Visão Geral Tab - Three Column Layout */}
+        <TabsContent value="visao-geral" className="mt-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+            
+            {/* Left Column - Patient Info */}
+            <div className="lg:col-span-3 space-y-4">
+              <Card className="border border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600" />
+                    Informações Básicas
                   </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Nome</label>
+                        <Input
+                          value={editData.name}
+                          onChange={(e) => setEditData({...editData, name: e.target.value})}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Telefone</label>
+                        <Input
+                          value={editData.phone}
+                          onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Email</label>
+                        <Input
+                          value={editData.email || ""}
+                          onChange={(e) => setEditData({...editData, email: e.target.value})}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm">{contact.phone}</span>
+                      </div>
+                      {contact.email && (
+                        <div className="flex items-center gap-3">
+                          <Mail className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm">{contact.email}</span>
+                        </div>
+                      )}
+                      {contact.address && (
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm">{contact.address}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm">{contact.age} anos</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-green-600" />
+                    Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge className={`${statusInfo.color} text-sm px-3 py-1`}>
+                    {statusInfo.label}
+                  </Badge>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Center Column - Main Content */}
+            <div className="lg:col-span-6 space-y-4">
+              <Card className="border border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-orange-600" />
+                    Últimas Consultas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {appointmentsLoading ? (
+                    <div className="space-y-2">
+                      <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4"></div>
+                    </div>
+                  ) : appointments && appointments.length > 0 ? (
+                    <div className="space-y-3">
+                      {appointments.slice(0, 3).map((appointment: any) => (
+                        <div key={appointment.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-sm">{appointment.doctor_name || 'Não informado'}</p>
+                            <p className="text-xs text-slate-600">{appointment.specialty || 'Especialidade não informada'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {appointment.scheduled_date ? 
+                                format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR }) :
+                                'Data não informada'
+                              }
+                            </p>
+                            <Badge className="text-xs">
+                              {appointment.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" className="w-full mt-2">
+                        Ver todas as consultas
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-sm">Nenhuma consulta encontrada</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Stethoscope className="w-5 h-5 text-red-600" />
+                    Resumo Médico
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Observações Gerais</label>
+                      <p className="text-sm text-slate-600 mt-1">
+                        {contact.notes || "Nenhuma observação registrada"}
+                      </p>
+                    </div>
+                    {contact.profession && (
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Profissão</label>
+                        <p className="text-sm text-slate-600 mt-1">{contact.profession}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Quick Actions */}
+            <div className="lg:col-span-3 space-y-4">
+              <Card className="border border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-blue-600" />
+                    Ações Rápidas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button className="w-full" size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nova Consulta
+                  </Button>
+                  <Button variant="outline" className="w-full" size="sm">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Enviar WhatsApp
+                  </Button>
+                  <Button variant="outline" className="w-full" size="sm">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Gerar Relatório
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Info className="w-5 h-5 text-purple-600" />
+                    Informações Extras
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-sm">
+                    <span className="font-medium text-slate-700">Criado em:</span>
+                    <p className="text-slate-600">
+                      {contact.created_at ? 
+                        format(new Date(contact.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) :
+                        'Data não disponível'
+                      }
+                    </p>
+                  </div>
+                  {contact.updated_at && (
+                    <div className="text-sm">
+                      <span className="font-medium text-slate-700">Última atualização:</span>
+                      <p className="text-slate-600">
+                        {format(new Date(contact.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Anamneses Tab */}
+        <TabsContent value="anamneses" className="mt-0">
+          <div className="p-6">
+            <Card className="border border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  Anamneses do Paciente
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-500">Funcionalidade de anamneses será implementada em breve.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Prontuário Tab */}
+        <TabsContent value="prontuario" className="mt-0">
+          <div className="p-6">
+            <ProntuarioMedico 
+              contactId={contact.id} 
+              appointments={appointments}
+            />
+          </div>
+        </TabsContent>
+
+        {/* Consultas Tab */}
+        <TabsContent value="consultas" className="mt-0">
+          <div className="p-6">
+            <Card className="border border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-green-600" />
+                  Histórico de Consultas
+                </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {appointments.length > 0 ? (
@@ -365,127 +596,121 @@ export function ContatoDetalhes() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
+            </div>
+          </div>
+        </TabsContent>
 
-            <TabsContent value="mara" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5" />
-                    Conversa com Mara IA
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-
-
-                  {/* Área de conversa */}
-                  <div className="h-96 border rounded-lg p-4 overflow-y-auto bg-slate-50 space-y-4">
-                    {maraConversation.map((message, index) => (
-                      <div key={index} className={`${message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}>
-                        <div className={`max-w-[85%] ${
-                          message.role === 'user' 
-                            ? 'bg-medical-blue text-white' 
-                            : 'bg-white border border-slate-200'
-                        } rounded-lg p-3 shadow-sm`}>
-                          {/* Avatar da Mara */}
-                          {message.role === 'assistant' && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                M
-                              </div>
-                              <span className="text-xs font-medium text-slate-600">Mara AI</span>
-                              {message.confidence && (
-                                <span className="text-xs text-slate-500">
-                                  • {Math.round(message.confidence * 100)}% confiança
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          
-                          <p className={`text-sm ${message.role === 'user' ? 'text-white' : 'text-slate-800'}`}>
-                            {message.content}
-                          </p>
-                          
-                          {/* Recomendações */}
-                          {message.recommendations && message.recommendations.length > 0 && (
-                            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
-                              <p className="text-xs font-medium text-green-800 mb-1 flex items-center gap-1">
-                                <Heart className="w-3 h-3" />
-                                Recomendações:
-                              </p>
-                              <ul className="text-xs text-green-700 space-y-1">
-                                {message.recommendations.map((rec, i) => (
-                                  <li key={i} className="flex items-start gap-1">
-                                    <span className="text-green-500 mt-0.5">•</span>
-                                    {rec}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {/* Pontos de atenção */}
-                          {message.attention_points && message.attention_points.length > 0 && (
-                            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                              <p className="text-xs font-medium text-yellow-800 mb-1 flex items-center gap-1">
-                                <AlertTriangle className="w-3 h-3" />
-                                Pontos de atenção:
-                              </p>
-                              <ul className="text-xs text-yellow-700 space-y-1">
-                                {message.attention_points.map((point, i) => (
-                                  <li key={i} className="flex items-start gap-1">
-                                    <span className="text-yellow-500 mt-0.5">•</span>
-                                    {point}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {/* Fontes */}
-                          {message.sources && message.sources.length > 0 && (
-                            <div className="mt-2 pt-2 border-t border-slate-200">
-                              <p className="text-xs text-slate-500">
-                                <FileText className="w-3 h-3 inline mr-1" />
-                                Fontes: {message.sources.join(", ")}
-                              </p>
-                            </div>
-                          )}
-                          
-                          <p className={`text-xs mt-2 ${
-                            message.role === 'user' ? 'text-blue-100' : 'text-slate-400'
-                          }`}>
-                            {format(message.timestamp, "HH:mm")}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Indicador de carregamento */}
-                    {isMaraLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
-                          <div className="flex items-center gap-2">
+        {/* Mara IA Tab */}
+        <TabsContent value="mara" className="mt-0">
+          <div className="p-6">
+            <Card className="border border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-purple-600" />
+                  Conversa com Mara IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Chat Area */}
+                <div className="h-96 border rounded-lg p-4 overflow-y-auto bg-slate-50 space-y-4">
+                  {maraConversation.map((message, index) => (
+                    <div key={index} className={`${message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}>
+                      <div className={`max-w-[85%] ${
+                        message.role === 'user' 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-white border border-slate-200'
+                      } rounded-lg p-3 shadow-sm`}>
+                        {message.role === 'assistant' && (
+                          <div className="flex items-center gap-2 mb-2">
                             <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                               M
                             </div>
-                            <span className="text-xs font-medium text-slate-600">Mara AI está pensando...</span>
+                            <span className="text-xs font-medium text-slate-600">Mara AI</span>
                           </div>
-                          <div className="flex items-center space-x-1 mt-2">
-                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                          </div>
-                        </div>
+                        )}
+                        <p className={`text-sm ${message.role === 'user' ? 'text-white' : 'text-slate-800'}`}>
+                          {message.content}
+                        </p>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ))}
+                </div>
 
-                  {/* Área de input */}
-                  <div className="space-y-2">
-                    {maraError && (
-                      <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                        {maraError}
+                {/* Message Input */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Digite sua pergunta sobre o paciente..."
+                    value={maraMessage}
+                    onChange={(e) => setMaraMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && sendMaraMessage()}
+                    disabled={isMaraLoading}
+                  />
+                  <Button 
+                    onClick={sendMaraMessage}
+                    disabled={isMaraLoading || !maraMessage.trim()}
+                  >
+                    {isMaraLoading ? 'Enviando...' : 'Enviar'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Pipeline Tab */}
+        <TabsContent value="pipeline" className="mt-0">
+          <div className="p-6">
+            <Card className="border border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-orange-600" />
+                  Pipeline de Vendas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ContactPipelineHistory contactId={contact.id} />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Documentos Tab */}
+        <TabsContent value="documentos" className="mt-0">
+          <div className="p-6">
+            <Card className="border border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                  Documentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-500">Funcionalidade de documentos será implementada em breve.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Arquivos Tab */}
+        <TabsContent value="arquivos" className="mt-0">
+          <div className="p-6">
+            <Card className="border border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-pink-600" />
+                  Arquivos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-500">Funcionalidade de arquivos será implementada em breve.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
                       </div>
                     )}
                     <div className="flex gap-2">
