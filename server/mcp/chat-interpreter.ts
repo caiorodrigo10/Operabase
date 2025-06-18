@@ -127,6 +127,23 @@ export class ChatInterpreter {
   }
 
   private buildSystemPrompt(): string {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    const todayWeekday = weekdays[today.getDay()];
+    const tomorrowWeekday = weekdays[tomorrow.getDay()];
+    
+    // Calcular próximos dias da semana
+    const getNextWeekday = (targetDay: number) => {
+      const result = new Date(today);
+      const daysUntil = (targetDay - today.getDay() + 7) % 7;
+      if (daysUntil === 0) result.setDate(result.getDate() + 7); // Se é hoje, pegar próxima semana
+      else result.setDate(result.getDate() + daysUntil);
+      return result.toISOString().split('T')[0];
+    };
+
     return `Você é um assistente de agendamento médico amigável e conversacional. Responda de forma natural às mensagens do usuário, mas sempre retorne um JSON com a ação apropriada.
 
 Para mensagens gerais (cumprimentos, perguntas gerais), use o formato "chat_response" para responder conversacionalmente.
@@ -135,9 +152,17 @@ Para solicitações específicas de agendamento, use os formatos de ação aprop
 CONTEXTO:
 - clinic_id sempre será 1
 - user_id sempre será 4 (usuário de teste)
-- Data atual: ${new Date().toISOString().split('T')[0]}
-- Amanhã: ${new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0]}
-- Use cálculo correto de datas baseado na data atual
+- Data atual: ${today.toISOString().split('T')[0]} (${todayWeekday}-feira)
+- Amanhã: ${tomorrow.toISOString().split('T')[0]} (${tomorrowWeekday}-feira)
+
+CÁLCULO INTELIGENTE DE DATAS:
+- Segunda: ${getNextWeekday(1)}
+- Terça: ${getNextWeekday(2)}
+- Quarta: ${getNextWeekday(3)}
+- Quinta: ${getNextWeekday(4)}
+- Sexta: ${getNextWeekday(5)}
+- Sábado: ${getNextWeekday(6)}
+- Domingo: ${getNextWeekday(0)}
 
 FORMATOS DE AÇÃO VÁLIDOS:
 
@@ -213,25 +238,19 @@ REGRAS IMPORTANTES:
 - Interprete linguagem natural: "manhã" = 09:00, "tarde" = 14:00, "noite" = 19:00
 - Para reagendamento sem ID específico, solicite clarificação
 
-CÁLCULO DE DATAS CORRETO:
-- Hoje: 2025-06-18 (terça-feira)
-- Amanhã: 2025-06-19 (quarta-feira)
-- Quinta-feira: 2025-06-19 (amanhã)
-- Sexta-feira: 2025-06-20
-
 EXEMPLOS:
 
 Usuário: "Agendar consulta para Maria Silva amanhã às 10h"
-Resposta: {"action":"create","contact_name":"Maria Silva","date":"2025-06-19","time":"10:00","duration":60}
+Resposta: {"action":"create","contact_name":"Maria Silva","date":"${tomorrow.toISOString().split('T')[0]}","time":"10:00","duration":60}
 
 Usuário: "Quais consultas temos hoje?"
-Resposta: {"action":"list","date":"2025-06-18"}
+Resposta: {"action":"list","date":"${today.toISOString().split('T')[0]}"}
 
 Usuário: "Você tem horário para quinta?"
-Resposta: {"action":"availability","date":"2025-06-19","user_id":4,"duration":60,"working_hours_start":"08:00","working_hours_end":"18:00"}
+Resposta: {"action":"availability","date":"${getNextWeekday(4)}","user_id":4,"duration":60,"working_hours_start":"08:00","working_hours_end":"18:00"}
 
 Usuário: "Reagendar a consulta 15 para sexta às 16h"
-Resposta: {"action":"reschedule","appointment_id":15,"new_date":"2025-06-20","new_time":"16:00"}
+Resposta: {"action":"reschedule","appointment_id":15,"new_date":"${getNextWeekday(5)}","new_time":"16:00"}
 
 RETORNE APENAS O JSON, SEM EXPLICAÇÕES ADICIONAIS.`;
   }
