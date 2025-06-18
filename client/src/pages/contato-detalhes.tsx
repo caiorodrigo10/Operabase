@@ -224,7 +224,7 @@ export function ContatoDetalhes() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pt-16">
       {/* Header with Patient Info */}
       <div className="bg-white border-b border-slate-200">
         <div className="container mx-auto px-6">
@@ -351,7 +351,7 @@ export function ContatoDetalhes() {
       </div>
 
       {/* Content */}
-<div className={`container mx-auto px-6 py-6 ${isTabsSticky ? 'pt-20' : ''}`}>
+<div className={`container mx-auto px-6 py-6 ${isTabsSticky ? 'pt-16' : ''}`}>
         <div className="space-y-6">
           {/* Overview Tab */}
           {activeTab === 'visao-geral' && (
@@ -728,7 +728,7 @@ export function ContatoDetalhes() {
 
       {/* Sticky Tabs Overlay */}
       {isTabsSticky && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-sm transition-all duration-200">
+        <div className="fixed top-16 left-0 right-0 z-30 bg-white border-b border-slate-200 shadow-sm transition-all duration-200">
           <div className="container mx-auto px-6">
             <div className="flex space-x-8 overflow-x-auto">
               <button

@@ -117,7 +117,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
 
   return (
     <TooltipProvider>
-      <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 px-4 lg:px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Logo and Left Navigation */}
           <div className="flex items-center space-x-8">
