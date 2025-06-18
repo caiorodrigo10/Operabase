@@ -157,14 +157,18 @@ export function ContatoDetalhes() {
     const handleScroll = () => {
       if (tabsRef.current) {
         const tabsRect = tabsRef.current.getBoundingClientRect();
-        const shouldBeSticky = tabsRect.top <= 0;
+        const shouldBeSticky = tabsRect.top <= 80; // Add offset for header
+        console.log('Scroll debug:', { top: tabsRect.top, shouldBeSticky, isTabsSticky });
         setIsTabsSticky(shouldBeSticky);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Also trigger on initial load
+    handleScroll();
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isTabsSticky]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
