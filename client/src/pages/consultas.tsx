@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 
-// Throttle utility for drag performance optimization
-function throttle<T extends (...args: any[]) => any>(func: T, limit: number): T {
-  let inThrottle: boolean;
-  return ((...args: any[]) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  }) as T;
-}
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -249,27 +239,7 @@ export function Consultas() {
   
 
 
-  const checkSlotConflict = (targetDate: Date, targetHour: number, targetMinute: number, draggedAppointment: Appointment) => {
-    if (!draggedAppointment) return false;
-    
-    const dayAppointments = getAppointmentsForDate(targetDate);
-    const targetTime = targetHour * 60 + targetMinute; // Convert to minutes
-    const appointmentDuration = draggedAppointment.duration_minutes || 30;
-    
-    return dayAppointments.some(apt => {
-      if (apt.id === draggedAppointment.id) return false; // Don't check against itself
-      
-      if (!apt.scheduled_date) return false;
-      const aptDate = new Date(apt.scheduled_date);
-      const aptTime = aptDate.getHours() * 60 + aptDate.getMinutes();
-      const aptDuration = apt.duration_minutes || 30;
-      
-      // Check for time overlap
-      return (targetTime < aptTime + aptDuration) && (targetTime + appointmentDuration > aptTime);
-    });
-  };
 
-  // Enhanced floating drag preview with 5-minute precision
 
 
   const { toast } = useToast();
@@ -2103,9 +2073,7 @@ export function Consultas() {
                   
                   {/* Calendar body with absolute positioned appointments */}
                   <div 
-                    className={`relative calendar-container ${isDragging ? 'dragging' : ''}`}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
+                    className="relative calendar-container"
                   >
                     {/* Background grid without appointments */}
                     <div className="grid grid-cols-8 gap-px">
@@ -2288,8 +2256,6 @@ export function Consultas() {
                         <div className="p-2 text-center font-medium border-b bg-slate-50">Compromissos</div>
                         <div 
                           className="relative"
-                          onDragOver={handleDragOver}
-                          onDrop={handleDrop}
                         >
                           {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                             <div 
@@ -3179,87 +3145,7 @@ export function Consultas() {
         </DialogContent>
       </Dialog>
 
-      {/* Drag and Drop Confirmation Dialog */}
-      <Dialog open={dragConfirmDialog.open} onOpenChange={(open) => !open && cancelDragUpdate()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirmar reagendamento</DialogTitle>
-            <DialogDescription>
-              Deseja mover esta consulta para o novo horário?
-            </DialogDescription>
-          </DialogHeader>
-          
-          {dragConfirmDialog.appointment && (
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-50 rounded-lg space-y-2">
-                <div className="font-medium">
-                  {getPatientName(dragConfirmDialog.appointment.contact_id, dragConfirmDialog.appointment)}
-                </div>
-                <div className="text-sm text-slate-600">
-                  <div>
-                    <span className="font-medium">De:</span> {' '}
-                    {dragConfirmDialog.oldDate && format(dragConfirmDialog.oldDate, "dd/MM/yyyy", { locale: ptBR })} às {dragConfirmDialog.oldTime}
-                  </div>
-                  <div>
-                    <span className="font-medium">Para:</span> {' '}
-                    {dragConfirmDialog.newDate && format(dragConfirmDialog.newDate, "dd/MM/yyyy", { locale: ptBR })} às {dragConfirmDialog.newTime}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={cancelDragUpdate}
-                  disabled={updateAppointmentMutation.isPending}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={confirmDragUpdate}
-                  disabled={updateAppointmentMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {updateAppointmentMutation.isPending ? "Movendo..." : "Confirmar alteração"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
-      {/* Enhanced Google Calendar-style Ghost Element with 5-minute precision */}
-      {ghostElement.visible && ghostElement.appointment && (
-        <div
-          className="fixed pointer-events-none z-50 ghost-element"
-          style={{
-            left: `${ghostElement.x - 60}px`,
-            top: `${ghostElement.y - 30}px`,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          <div className={`preview-card ${ghostElement.targetSlot ? 'bg-blue-500 border-blue-600' : 'bg-red-500 border-red-600'} text-white`}>
-            <div className="preview-patient">
-              {getPatientName(ghostElement.appointment.contact_id, ghostElement.appointment)}
-            </div>
-            {ghostElement.targetSlot ? (
-              <div className="preview-time">
-                <Clock className="w-3 h-3" />
-                {format(ghostElement.targetSlot.date, 'dd/MM')} às {ghostElement.targetSlot.hour.toString().padStart(2, '0')}:{ghostElement.targetSlot.minute.toString().padStart(2, '0')}
-              </div>
-            ) : (
-              <div className="preview-time text-red-100">
-                <AlertTriangle className="w-3 h-3" />
-                Posição inválida
-              </div>
-            )}
-            <div className="preview-duration">
-              {getAppointmentDuration(ghostElement.appointment)} min
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
