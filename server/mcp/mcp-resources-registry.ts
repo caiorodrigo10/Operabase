@@ -163,11 +163,7 @@ export class MCPResourcesRegistry {
 
     const appointmentsList = await db.select()
       .from(appointments)
-      .where(and(
-        eq(appointments.clinic_id, clinicId),
-        eq(appointments.scheduled_date, today)
-      ))
-      .orderBy(appointments.scheduled_date);
+      .where(eq(appointments.clinic_id, clinicId));
 
     return {
       resource: 'appointments_today',

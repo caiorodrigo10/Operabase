@@ -69,6 +69,8 @@ router.post('/tools/call', async (req: Request, res: Response) => {
           scheduled_date: args.scheduled_date,
           scheduled_time: args.scheduled_time,
           duration_minutes: args.duration_minutes,
+          status: 'agendada',
+          payment_status: 'pendente',
           doctor_name: args.doctor_name,
           specialty: args.specialty,
           appointment_type: args.appointment_type
@@ -76,20 +78,17 @@ router.post('/tools/call', async (req: Request, res: Response) => {
         break;
 
       case 'list_appointments':
-        result = await appointmentAgent.listAppointments({
-          clinic_id: args.clinic_id,
-          user_id: args.user_id,
-          contact_id: args.contact_id,
+        result = await appointmentAgent.listAppointments(args.clinic_id, {
+          userId: args.user_id,
+          contactId: args.contact_id,
           status: args.status,
-          date_from: args.date_from,
-          date_to: args.date_to,
-          limit: args.limit || 50,
-          offset: args.offset || 0
+          startDate: args.date_from,
+          endDate: args.date_to
         });
         break;
 
       case 'check_availability':
-        result = await appointmentAgent.checkAvailability({
+        result = await appointmentAgent.getAvailableSlots({
           clinic_id: args.clinic_id,
           user_id: args.user_id,
           date: args.date,
@@ -100,21 +99,22 @@ router.post('/tools/call', async (req: Request, res: Response) => {
         break;
 
       case 'reschedule_appointment':
-        result = await appointmentAgent.rescheduleAppointment({
-          appointment_id: args.appointment_id,
-          clinic_id: args.clinic_id,
-          scheduled_date: args.scheduled_date,
-          scheduled_time: args.scheduled_time,
-          duration_minutes: args.duration_minutes
-        });
+        result = await appointmentAgent.rescheduleAppointment(
+          args.appointment_id,
+          args.clinic_id,
+          args.scheduled_date,
+          args.scheduled_time,
+          args.duration_minutes
+        );
         break;
 
       case 'cancel_appointment':
-        result = await appointmentAgent.cancelAppointment({
+        const cancelStatus = args.cancelled_by === 'paciente' ? 'cancelada_paciente' : 'cancelada_dentista';
+        result = await appointmentAgent.updateStatus({
           appointment_id: args.appointment_id,
           clinic_id: args.clinic_id,
-          cancelled_by: args.cancelled_by,
-          reason: args.reason
+          status: cancelStatus,
+          session_notes: args.reason
         });
         break;
 
@@ -128,12 +128,13 @@ router.post('/tools/call', async (req: Request, res: Response) => {
         break;
 
       case 'get_next_available_slots':
-        result = await appointmentAgent.getNextAvailableSlots({
+        result = await appointmentAgent.getAvailableSlots({
           clinic_id: args.clinic_id,
           user_id: args.user_id,
+          date: new Date().toISOString().split('T')[0],
           duration_minutes: args.duration_minutes,
-          days_ahead: args.days_ahead || 7,
-          max_slots: args.max_slots || 10
+          working_hours_start: '08:00',
+          working_hours_end: '18:00'
         });
         break;
 

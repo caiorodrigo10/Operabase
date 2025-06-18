@@ -84,6 +84,10 @@ app.use((req, res, next) => {
   const mcpRoutes = await import('./mcp/n8n-routes');
   app.use('/api/mcp', mcpRoutes.default);
   
+  // Add official MCP protocol routes
+  const mcpProtocolRoutes = await import('./mcp/mcp-routes');
+  app.use('/api/mcp', mcpProtocolRoutes.default);
+  
   // Add Phase 3 observability endpoints
   const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
   app.use('/api/observability', observabilityRoutes);
