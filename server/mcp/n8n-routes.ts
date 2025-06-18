@@ -3,6 +3,13 @@ import { appointmentAgent, VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } 
 import { chatInterpreter } from './chat-interpreter';
 import { z } from 'zod';
 import { mcpLogsService } from './logs.service';
+import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
+import { appointments } from '../domains/appointments/appointments.schema';
+import { contacts } from '../domains/contacts/contacts.schema';
+import { users } from '../domains/auth/auth.schema';
+import { appointment_tags } from '../../shared/schema';
+import { clinic_users } from '../domains/clinics/clinics.schema';
+import { db } from '../../db/db';
 
 const router = Router();
 
@@ -102,10 +109,10 @@ const ListAppointmentsRequestSchema = z.object({
 router.post('/appointments/create', validateRequest(CreateAppointmentRequestSchema), async (req: Request, res: Response) => {
   try {
     const result = await appointmentAgent.createAppointment(req.body);
-    
+
     const statusCode = result.success ? 201 : 400;
     res.status(statusCode).json(result);
-    
+
   } catch (error) {
     console.error('MCP Create Appointment Error:', error);
     res.status(500).json({
@@ -126,10 +133,10 @@ router.post('/appointments/create', validateRequest(CreateAppointmentRequestSche
 router.put('/appointments/status', validateRequest(UpdateStatusRequestSchema), async (req: Request, res: Response) => {
   try {
     const result = await appointmentAgent.updateStatus(req.body);
-    
+
     const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);
-    
+
   } catch (error) {
     console.error('MCP Update Status Error:', error);
     res.status(500).json({
@@ -150,10 +157,10 @@ router.put('/appointments/status', validateRequest(UpdateStatusRequestSchema), a
 router.put('/appointments/reschedule', validateRequest(RescheduleRequestSchema), async (req: Request, res: Response) => {
   try {
     const result = await appointmentAgent.rescheduleAppointment(req.body);
-    
+
     const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);
-    
+
   } catch (error) {
     console.error('MCP Reschedule Error:', error);
     res.status(500).json({
@@ -174,17 +181,17 @@ router.put('/appointments/reschedule', validateRequest(RescheduleRequestSchema),
 router.put('/appointments/cancel', validateRequest(CancelRequestSchema), async (req: Request, res: Response) => {
   try {
     const { appointment_id, clinic_id, cancelled_by, reason } = req.body;
-    
+
     const result = await appointmentAgent.cancelAppointment(
       appointment_id, 
       clinic_id, 
       cancelled_by, 
       reason
     );
-    
+
     const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);
-    
+
   } catch (error) {
     console.error('MCP Cancel Appointment Error:', error);
     res.status(500).json({
@@ -205,10 +212,10 @@ router.put('/appointments/cancel', validateRequest(CancelRequestSchema), async (
 router.post('/appointments/availability', validateRequest(AvailabilityRequestSchema), async (req: Request, res: Response) => {
   try {
     const result = await appointmentAgent.getAvailableSlots(req.body);
-    
+
     const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);
-    
+
   } catch (error) {
     console.error('MCP Availability Error:', error);
     res.status(500).json({
@@ -229,7 +236,7 @@ router.post('/appointments/availability', validateRequest(AvailabilityRequestSch
 router.post('/appointments/list', validateRequest(ListAppointmentsRequestSchema), async (req: Request, res: Response) => {
   try {
     const { clinic_id, user_id, contact_id, status, date_from, date_to, limit, offset } = req.body;
-    
+
     const result = await appointmentAgent.listAppointments(clinic_id, {
       userId: user_id,
       contactId: contact_id,
@@ -240,10 +247,10 @@ router.post('/appointments/list', validateRequest(ListAppointmentsRequestSchema)
       limit: limit,
       offset: offset
     });
-    
+
     const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);
-    
+
   } catch (error) {
     console.error('MCP List Appointments Error:', error);
     res.status(500).json({
@@ -265,7 +272,7 @@ router.get('/appointments/:id', async (req: Request, res: Response) => {
   try {
     const appointmentId = parseInt(req.params.id);
     const clinicId = parseInt(req.query.clinic_id as string);
-    
+
     if (!appointmentId || !clinicId) {
       return res.status(400).json({
         success: false,
@@ -276,12 +283,12 @@ router.get('/appointments/:id', async (req: Request, res: Response) => {
         next_available_slots: null
       });
     }
-    
+
     const result = await appointmentAgent.listAppointments(clinicId, {});
-    
+
     if (result.success && result.data) {
       const appointment = result.data.find((apt: any) => apt.id === appointmentId);
-      
+
       if (appointment) {
         return res.status(200).json({
           success: true,
@@ -293,7 +300,7 @@ router.get('/appointments/:id', async (req: Request, res: Response) => {
         });
       }
     }
-    
+
     res.status(404).json({
       success: false,
       data: null,
@@ -302,7 +309,7 @@ router.get('/appointments/:id', async (req: Request, res: Response) => {
       conflicts: null,
       next_available_slots: null
     });
-    
+
   } catch (error) {
     console.error('MCP Get Appointment Error:', error);
     res.status(500).json({
@@ -362,10 +369,10 @@ const ChatMessageSchema = z.object({
 // Endpoint simplificado para chat WhatsApp natural
 router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, res: Response) => {
   const startTime = Date.now();
-  
+
   try {
     const { message, sessionId } = req.body;
-    
+
     // Log da requisição do chat
     mcpLogsService.addLog({
       type: 'mcp',
@@ -377,11 +384,11 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
         endpoint: '/api/mcp/chat'
       }
     });
-    
+
     console.log('🗨️ Marina Chat Request:', { message, sessionId });
-    
+
     const result = await chatInterpreter.interpretMessage(message, sessionId);
-    
+
     // Log do resultado da interpretação
     mcpLogsService.addLog({
       type: 'openai',
@@ -394,7 +401,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
         responseTime: Date.now() - startTime
       }
     });
-    
+
     if (result.success && result.data) {
       const action = result.data.action;
       let naturalResponse = '';
@@ -408,10 +415,50 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
 
         case 'create':
           try {
-            // Executar criação de agendamento via MCP
+            console.log('🔄 Creating appointment via MCP:', result.data);
+
+            // Validar dados obrigatórios
+            if (!result.data.contact_name || !result.data.date || !result.data.time) {
+              throw new Error('Dados obrigatórios faltando: contact_name, date, time');
+            }
+
+            // 🔍 Procurar ou criar contato automaticamente
+            let contact_id: number;
+
+            try {
+              // Tentar encontrar contato existente pelo nome
+              const existingContacts = await db.select()
+                .from(contacts)
+                .where(and(
+                  eq(contacts.clinic_id, result.data.clinic_id || 1),
+                  sql`LOWER(${contacts.name}) = LOWER(${result.data.contact_name})`
+                ))
+                .limit(1);
+
+              if (existingContacts.length > 0) {
+                contact_id = existingContacts[0].id;
+                console.log('👤 Contato encontrado:', { id: contact_id, name: result.data.contact_name });
+              } else {
+                // Criar novo contato automaticamente
+                const newContact = await db.insert(contacts).values({
+                  clinic_id: result.data.clinic_id || 1,
+                  name: result.data.contact_name,
+                  status: 'lead',
+                  source: 'mcp_chat',
+                  created_at: new Date(),
+                  updated_at: new Date()
+                }).returning();
+
+                contact_id = newContact[0].id;
+                console.log('✅ Novo contato criado via MCP:', { id: contact_id, name: result.data.contact_name });
+              }
+            } catch (contactError) {
+              console.error('❌ Erro ao gerenciar contato:', contactError);
+              throw new Error('Não foi possível criar/encontrar o contato');
+            }
+
             mcpResult = await appointmentAgent.createAppointment({
-              contact_id: 0, // Será criado automaticamente se não existir
-              contact_name: result.data.contact_name,
+              contact_id: contact_id,
               clinic_id: result.data.clinic_id || 1,
               user_id: result.data.user_id || 4,
               scheduled_date: result.data.date,
@@ -427,7 +474,13 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
             if (mcpResult.success) {
               naturalResponse = `✅ Perfeito! Agendei a consulta para ${result.data.contact_name} no dia ${result.data.date} às ${result.data.time}. O agendamento #${mcpResult.appointment_id} foi criado com sucesso!`;
             } else {
-              naturalResponse = `❌ Ops! Não consegui agendar: ${mcpResult.error}. Que tal tentarmos outro horário?`;
+              const friendlyError = mcpResult.error?.includes('conflict') 
+                ? 'Este horário já está ocupado.' 
+                : mcpResult.error?.includes('Contact') 
+                  ? 'Erro ao processar os dados do paciente.'
+                  : 'Erro interno do sistema.';
+
+              naturalResponse = `❌ Não consegui agendar: ${friendlyError} Pode tentar outro horário ou verificar os dados?`;
             }
           } catch (error) {
             console.error('❌ Erro ao criar agendamento:', error);
@@ -479,7 +532,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
 
             if (mcpResult.success && mcpResult.data) {
               const availableSlots = Array.isArray(mcpResult.data) ? mcpResult.data : [];
-              
+
               if (availableSlots.length === 0) {
                 naturalResponse = `❌ Não há horários disponíveis para ${result.data.date}. Que tal tentarmos outro dia?`;
               } else {
@@ -488,7 +541,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
                   .map(slot => slot.time)
                   .slice(0, 5)
                   .join(', ');
-                  
+
                 if (slots) {
                   naturalResponse = `✅ Horários disponíveis para ${result.data.date}:\n\n${slots}\n\nQual horário você prefere?`;
                 } else {
@@ -526,7 +579,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
           }
         });
       }
-      
+
       // Log da resposta da Marina
       mcpLogsService.addLog({
         type: 'mcp',
@@ -552,7 +605,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
     } else {
       // Fallback para erro
       const fallbackResponse = 'Olá! Sou a Marina, sua assistente de agendamento. Como posso ajudar você hoje?';
-      
+
       res.json({
         success: true,
         data: {
@@ -563,10 +616,10 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
         error: null
       });
     }
-    
+
   } catch (error) {
     console.error('💥 Chat Error:', error);
-    
+
     // Log do erro
     mcpLogsService.addLog({
       type: 'mcp',
