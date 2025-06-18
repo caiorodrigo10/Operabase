@@ -73,15 +73,15 @@ export const insertContactSchema = createInsertSchema(contacts, {
   medical_history: z.string().nullable().optional(),
 });
 
-export const insertConversationSchema = createInsertSchema(conversations).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
+export const insertConversationSchema = createInsertSchema(conversations, {
+  id: undefined,
+  created_at: undefined,
+  updated_at: undefined,
 });
 
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  timestamp: true,
+export const insertMessageSchema = createInsertSchema(messages, {
+  id: undefined,
+  timestamp: undefined,
 });
 
 export type Contact = typeof contacts.$inferSelect;

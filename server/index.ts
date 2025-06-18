@@ -80,6 +80,10 @@ app.use((req, res, next) => {
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
   
+  // Add MCP routes for n8n integration
+  const mcpRoutes = await import('./mcp/n8n-routes');
+  app.use('/api/mcp', mcpRoutes.default);
+  
   // Add Phase 3 observability endpoints
   const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
   app.use('/api/observability', observabilityRoutes);
