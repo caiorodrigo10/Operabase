@@ -2,7 +2,25 @@
 
 ## Authentication
 
-All API endpoints require authentication except for the login and registration endpoints. Authentication is handled via session cookies.
+The TaskMed API supports two authentication methods:
+
+### 1. Session-Based Authentication (Web Application)
+For web interface access, authentication is handled via session cookies.
+
+### 2. API Key Authentication (N8N/Automation)
+For external integrations and automation tools, authentication uses API Keys with Bearer tokens.
+
+**Format:**
+```http
+Authorization: Bearer tk_clinic_{CLINIC_ID}_{32_HEX_CHARS}
+```
+
+**Example:**
+```http
+Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c
+```
+
+For detailed API Key documentation, see [MCP-API-KEYS-DOCUMENTATION.md](./MCP-API-KEYS-DOCUMENTATION.md).
 
 ### Authentication Endpoints
 

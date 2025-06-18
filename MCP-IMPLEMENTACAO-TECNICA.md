@@ -33,15 +33,37 @@ server/
 ├── mcp/
 │   ├── appointment-agent-simple.ts  # Agente principal MCP
 │   └── n8n-routes.ts               # Rotas para integração n8n
-├── domains/
-│   ├── appointments/
-│   │   └── appointments.schema.ts  # Schema de consultas
-│   ├── contacts/
-│   │   └── contacts.schema.ts      # Schema de contatos
-│   └── auth/
-│       └── auth.schema.ts          # Schema de usuários
+├── middleware/
+│   └── api-key-auth.middleware.ts  # Middleware de autenticação API Keys
+├── services/
+│   └── api-key.service.ts          # Serviço de gerenciamento API Keys
+├── routes/
+│   └── api-keys.routes.ts          # Rotas de gerenciamento API Keys
 └── db.ts                          # Configuração do banco
 ```
+
+## Sistema de Autenticação API Keys
+
+### Configuração
+
+O sistema suporta dois tipos de autenticação:
+
+1. **Sessão Web** - Para interface do usuário
+2. **API Keys** - Para integrações N8N e automação
+
+### Formato API Key
+
+```
+tk_clinic_{CLINIC_ID}_{32_HEX_CHARS}
+```
+
+### Middleware de Autenticação
+
+O middleware `api-key-auth.middleware.ts` automaticamente:
+- Valida formato da API Key
+- Extrai clinic_id da chave
+- Verifica permissões
+- Injeta contexto da clínica na requisição
 
 ## Schema do Banco de Dados
 

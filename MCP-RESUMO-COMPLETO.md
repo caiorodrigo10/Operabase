@@ -19,13 +19,24 @@ O Sistema MCP (Model Context Protocol) para agendamento de consultas médicas ag
 - ✅ Verificação automática de conflitos de horários
 - ✅ Isolamento multi-tenant por clínica
 
-### 2. API REST para n8n
+### 2. Sistema de Autenticação API Keys
+**Arquivos:** `server/middleware/api-key-auth.middleware.ts`, `server/services/api-key.service.ts`, `server/routes/api-keys.routes.ts`
+
+- ✅ **Autenticação por API Keys** com formato `tk_clinic_{ID}_{HASH}`
+- ✅ **Isolamento Multi-Tenant** automático por clínica
+- ✅ **Controle de Permissões** granular (read, write, admin)
+- ✅ **Interface de Gerenciamento** completa em `/api-keys`
+- ✅ **Monitoramento e Auditoria** com logs estruturados
+- ✅ **Integração N8N** pronta para produção
+
+### 3. API REST para n8n
 **Arquivo:** `server/mcp/n8n-routes.ts`
 
 - ✅ 8 endpoints REST totalmente funcionais
-- ✅ Middleware de autenticação e validação
+- ✅ Middleware de autenticação API Key integrado
 - ✅ Respostas padronizadas com estrutura MCPResponse
 - ✅ Rate limiting e logs de auditoria
+- ✅ **NOVO**: Proteção completa por API Keys
 
 ### 3. **NOVO** - Sistema Conversacional MARA
 **Arquivos:** `server/mcp/chat-interpreter.ts`, `server/mcp/conversation-context.ts`, `client/src/hooks/useMCPChat.ts`
