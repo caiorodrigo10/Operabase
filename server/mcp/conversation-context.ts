@@ -127,13 +127,14 @@ class ConversationContextManager {
     ];
 
     for (const pattern of timePatterns) {
-      let match;
-      while ((match = pattern.exec(message)) !== null) {
+      const match = message.match(pattern);
+      if (match) {
         const hour = parseInt(match[1]);
         const minute = match[2] ? parseInt(match[2]) : 0;
         
         if (hour >= 6 && hour <= 22) { // Horário comercial razoável
           appointment.time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          break;
         }
       }
     }
@@ -163,11 +164,17 @@ class ConversationContextManager {
   // Cleanup de contextos expirados
   cleanup(): void {
     const now = Date.now();
-    for (const [sessionId, context] of this.contexts.entries()) {
+    const entriesToDelete: string[] = [];
+    
+    this.contexts.forEach((context, sessionId) => {
       if (now - context.updatedAt > this.CONTEXT_TTL) {
-        this.contexts.delete(sessionId);
+        entriesToDelete.push(sessionId);
       }
-    }
+    });
+    
+    entriesToDelete.forEach(sessionId => {
+      this.contexts.delete(sessionId);
+    });
   }
 }
 

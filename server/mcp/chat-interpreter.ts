@@ -68,8 +68,16 @@ export class ChatInterpreter {
     });
   }
 
-  async interpretMessage(message: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  async interpretMessage(message: string, sessionId?: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
+      // Gerar sessionId se não fornecido
+      if (!sessionId) {
+        sessionId = contextManager.generateSessionId();
+      }
+
+      // Adicionar mensagem ao histórico
+      contextManager.addMessage(sessionId, message);
+
       // Interceptar perguntas sobre data atual
       const dateQuestions = ['que dia', 'qual dia', 'hoje', 'data de hoje', 'dia é hoje', 'dia hoje'];
       if (dateQuestions.some(q => message.toLowerCase().includes(q))) {
@@ -85,7 +93,77 @@ export class ChatInterpreter {
           success: true,
           data: {
             action: 'chat_response',
-            message: `Hoje é ${saoPauloTime.getDate()} de ${months[saoPauloTime.getMonth()]} de ${saoPauloTime.getFullYear()}, ${todayWeekday}-feira.`
+            message: `Hoje é ${saoPauloTime.getDate()} de ${months[saoPauloTime.getMonth()]} de ${saoPauloTime.getFullYear()}, ${todayWeekday}-feira.`,
+            sessionId
+          }
+        };
+      }
+
+      // Obter contexto existente
+      let context = contextManager.getContext(sessionId);
+      
+      // Extrair informações da mensagem atual
+      const extractedInfo = contextManager.extractAppointmentInfo(message, context?.pendingAppointment);
+      
+      // Atualizar contexto com novas informações
+      context = contextManager.updateContext(sessionId, {
+        pendingAppointment: extractedInfo,
+        lastAction: 'processing'
+      });
+
+      // Verificar se temos informações suficientes para criar agendamento
+      const missingFields = contextManager.validateAppointment(extractedInfo);
+      
+      if (missingFields.length === 0) {
+        // Temos todas as informações - criar agendamento
+        contextManager.addMessage(sessionId, 'Agendamento criado', 'create');
+        
+        return {
+          success: true,
+          data: {
+            action: 'create',
+            ...extractedInfo,
+            sessionId
+          }
+        };
+      }
+
+      // Se faltam informações, criar resposta contextual inteligente
+      if (missingFields.length > 0) {
+        const collectedInfo = [];
+        if (extractedInfo.contact_name) collectedInfo.push(`✅ Nome: ${extractedInfo.contact_name}`);
+        if (extractedInfo.date) collectedInfo.push(`✅ Data: ${extractedInfo.date}`);
+        if (extractedInfo.time) collectedInfo.push(`✅ Horário: ${extractedInfo.time}`);
+
+        const missing = missingFields.map(field => {
+          switch(field) {
+            case 'nome do paciente': return '🔄 Nome do paciente';
+            case 'data': return '🔄 Data da consulta';
+            case 'horário': return '🔄 Horário';
+            default: return `🔄 ${field}`;
+          }
+        });
+
+        let responseMessage = '';
+        if (collectedInfo.length > 0) {
+          responseMessage += `📝 Informações coletadas:\n${collectedInfo.join('\n')}\n\n`;
+        }
+
+        if (missingFields.length === 1) {
+          responseMessage += `Preciso apenas de mais uma informação: ${missingFields[0]}.`;
+        } else {
+          responseMessage += `Ainda preciso de: ${missingFields.join(', ')}.`;
+        }
+
+        contextManager.addMessage(sessionId, responseMessage, 'clarification');
+        
+        return {
+          success: true,
+          data: {
+            action: 'clarification',
+            message: responseMessage,
+            sessionId,
+            context: extractedInfo
           }
         };
       }
