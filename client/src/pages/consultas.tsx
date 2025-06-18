@@ -441,8 +441,7 @@ export function Consultas() {
 
   // Get patient name from contact ID
   const getPatientName = (contactId: number, appointment?: Appointment) => {
-    const contactsArray = contacts as Contact[];
-    const contact = contactsArray.find((c: Contact) => c.id === contactId);
+    const contact = contacts.find((c: Contact) => c.id === contactId);
     return contact?.name || appointment?.doctor_name || "Paciente não encontrado";
   };
 
@@ -549,8 +548,7 @@ export function Consultas() {
 
   // Get patient info
   const getPatientInfo = (contactId: number) => {
-    const contactsArray = contacts as Contact[];
-    return contactsArray.find((c: Contact) => c.id === contactId);
+    return contacts.find((c: any) => c.id === contactId);
   };
 
   // Get event color based on status
@@ -593,11 +591,10 @@ export function Consultas() {
 
   // Get appointments for a specific date
   const getAppointmentsForDate = (date: Date) => {
-    const appointmentsArray = appointments as Appointment[];
     const dateStr = format(date, 'yyyy-MM-dd');
     
     // Filter appointments for the specific date
-    const dayAppointments = appointmentsArray.filter((appointment: Appointment) => {
+    const dayAppointments = appointments.filter((appointment: Appointment) => {
       if (!appointment.scheduled_date) return false;
       const appointmentDate = format(new Date(appointment.scheduled_date), 'yyyy-MM-dd');
       return appointmentDate === dateStr;
@@ -753,7 +750,7 @@ export function Consultas() {
       </div>
 
       {/* Professional Filter */}
-      {(professionals as any[]).length > 0 && (
+      {professionals.length > 0 && (
         <div className="flex items-center gap-2">
           <Label htmlFor="professional-filter" className="text-sm font-medium">
             Profissional:
@@ -767,7 +764,7 @@ export function Consultas() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os profissionais</SelectItem>
-              {(professionals as any[]).map((professional: any) => (
+              {professionals.map((professional: any) => (
                 <SelectItem key={professional.id} value={professional.id.toString()}>
                   {professional.name}
                 </SelectItem>
@@ -780,7 +777,7 @@ export function Consultas() {
       {/* Main Content */}
       {viewMode === "list" ? (
         <div className="space-y-4">
-          {(appointments as Appointment[]).filter((app: Appointment) => {
+          {appointments.filter((app: Appointment) => {
             const today = new Date();
             const appointmentDate = new Date(app.scheduled_date || '');
             return appointmentDate >= today;
@@ -1009,7 +1006,7 @@ export function Consultas() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {(contacts as Contact[]).map((contact: Contact) => (
+                          {contacts.map((contact: Contact) => (
                             <SelectItem key={contact.id} value={contact.id.toString()}>
                               {contact.name}
                             </SelectItem>
