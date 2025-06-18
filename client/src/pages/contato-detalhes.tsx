@@ -427,24 +427,26 @@ export function ContatoDetalhes() {
                 {/* Additional Services */}
                 <Card className="border border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-base font-medium">Consulta no Serasa</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="w-24 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
-                          <div className="text-blue-600 text-2xl font-bold">$</div>
-                        </div>
-                        <p className="text-sm text-slate-600 mb-2">
-                          Consulte o score e pendências que constam no CPF do seu paciente.
-                        </p>
-                        <Button variant="link" className="text-blue-600 p-0 h-auto">
-                          Comprar créditos
-                        </Button>
-                      </div>
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      Consulta no Serasa
                       <Button variant="outline" size="sm">
                         Consultar
                       </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <div className="text-blue-600 text-2xl font-bold">$</div>
+                        </div>
+                        <p className="text-sm text-slate-500 mb-2">
+                          Consulte o score e pendências que constam no CPF do seu paciente
+                        </p>
+                        <Button variant="link" className="text-blue-600 p-0 h-auto text-sm">
+                          Comprar créditos
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
