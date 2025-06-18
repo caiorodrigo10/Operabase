@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { appointmentAgent, VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } from './appointment-agent-simple';
+import { chatInterpreter } from './chat-interpreter';
 import { z } from 'zod';
 
 const router = Router();
@@ -352,6 +353,51 @@ router.get('/health', (req: Request, res: Response) => {
     conflicts: null,
     next_available_slots: null
   });
+});
+
+// 9. Chat Interpreter - NEW endpoint for OpenAI interpretation
+const ChatMessageSchema = z.object({
+  message: z.string().min(1)
+});
+
+router.post('/chat/interpret', validateRequest(ChatMessageSchema), async (req: Request, res: Response) => {
+  try {
+    const { message } = req.body;
+    
+    console.log('Chat interpret request:', { message });
+    
+    const result = await chatInterpreter.interpretMessage(message);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        data: result.data,
+        error: null,
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        data: null,
+        error: result.error,
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    }
+  } catch (error) {
+    console.error('Chat interpret error:', error);
+    res.status(500).json({
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : 'Internal server error',
+      appointment_id: null,
+      conflicts: null,
+      next_available_slots: null
+    });
+  }
 });
 
 export default router;

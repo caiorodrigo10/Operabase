@@ -22,6 +22,7 @@ import { ContatoDetalhes } from "./pages/contato-detalhes";
 import { Perfil } from "./pages/perfil";
 import { RecuperarSenha } from "./pages/recuperar-senha";
 import { ResetPassword } from "./pages/reset-password";
+import ChatDeTeste from "./pages/chat-de-teste";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -75,6 +76,7 @@ function Router() {
         <Route path="/configuracoes" component={Configuracoes} />
         <Route path="/livia-config" component={LiviaConfig} />
         <Route path="/perfil" component={Perfil} />
+        <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
