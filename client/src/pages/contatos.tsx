@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { ContactAvatar } from "@/components/ContactAvatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
@@ -179,10 +179,7 @@ export function Contatos() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredContacts?.map((contact: Contact) => {
-              if (!contact || !contact.status) return null;
-              
-              const status = statusLabels[contact.status as keyof typeof statusLabels] || 
-                           { label: "Ativo", color: "bg-green-100 text-green-800" };
+              if (!contact) return null;
               
               return (
                 <div
@@ -190,11 +187,13 @@ export function Contatos() {
                   className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-medical-blue"
                   onClick={() => handleContactClick(contact)}
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-medical-blue to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {contact.name.charAt(0).toUpperCase()}
-                      </div>
+                      <ContactAvatar 
+                        name={contact.name}
+                        profilePicture={contact.profile_picture}
+                        size="md"
+                      />
                       <div>
                         <h3 className="font-semibold text-slate-900 truncate">{contact.name}</h3>
                         <div className="flex items-center gap-1 text-sm text-slate-600">
@@ -203,9 +202,6 @@ export function Contatos() {
                         </div>
                       </div>
                     </div>
-                    <Badge className={status.color}>
-                      {status.label}
-                    </Badge>
                   </div>
 
                   <div className="space-y-2 text-sm text-slate-600">

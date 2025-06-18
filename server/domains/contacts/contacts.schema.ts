@@ -17,6 +17,7 @@ export const contacts = pgTable("contacts", {
   medical_history: text("medical_history"),
   current_medications: text("current_medications").array(),
   allergies: text("allergies").array(),
+  profile_picture: text("profile_picture"), // URL da foto do perfil
   status: text("status").notNull(), // novo, em_conversa, agendado, realizado, pos_atendimento
   priority: text("priority").default("normal"), // baixa, normal, alta, urgente
   source: text("source").default("whatsapp"), // whatsapp, site, indicacao, outros
@@ -67,6 +68,7 @@ export const insertContactSchema = createInsertSchema(contacts).extend({
   email: z.string().nullable().optional(),
   gender: z.string().nullable().optional(),
   medical_history: z.string().nullable().optional(),
+  profile_picture: z.string().nullable().optional(),
 });
 
 export const insertConversationSchema = createInsertSchema(conversations);
