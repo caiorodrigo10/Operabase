@@ -404,19 +404,19 @@ export class AppointmentMCPAgent {
     try {
       const status = cancelledBy === 'paciente' ? 'cancelada_paciente' : 'cancelada_dentista';
       
-      const result = await pool.query(`
-        UPDATE appointments 
-        SET status = $1, cancellation_reason = $2, updated_at = NOW()
-        WHERE id = $3 AND clinic_id = $4
-        RETURNING *
-      `, [
-        status,
-        reason,
-        appointmentId,
-        clinicId
-      ]);
+      const result = await db.update(appointments)
+        .set({
+          status: status,
+          cancellation_reason: reason,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(appointments.id, appointmentId),
+          eq(appointments.clinic_id, clinicId)
+        ))
+        .returning();
       
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         return {
           success: false,
           data: null,
@@ -429,19 +429,19 @@ export class AppointmentMCPAgent {
       
       return {
         success: true,
-        data: result.rows[0],
+        data: result[0],
         error: null,
-        appointment_id: result.rows[0].id,
+        appointment_id: result[0].id,
         conflicts: null,
         next_available_slots: null
       };
       
     } catch (error) {
-      console.error('Error cancelling appointment:', error);
+      console.error('cancelAppointment Error:', error);
       return {
         success: false,
         data: null,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Internal error',
         appointment_id: null,
         conflicts: null,
         next_available_slots: null
@@ -457,17 +457,21 @@ export class AppointmentMCPAgent {
       const validated = AvailabilitySchema.parse(params);
       
       // Get existing appointments for the day
-      const existingAppointments = await pool.query(`
-        SELECT scheduled_date, duration_minutes 
-        FROM appointments 
-        WHERE clinic_id = $1 AND user_id = $2 
-        AND DATE(scheduled_date) = $3 
-        AND status = 'agendada'
-      `, [
-        validated.clinic_id,
-        validated.user_id,
-        validated.date
-      ]);
+      const startOfSelectedDay = new Date(`${validated.date}T00:00:00`);
+      const endOfSelectedDay = new Date(`${validated.date}T23:59:59`);
+      
+      const existingAppointments = await db.select({
+        scheduled_date: appointments.scheduled_date,
+        duration_minutes: appointments.duration_minutes
+      })
+      .from(appointments)
+      .where(and(
+        eq(appointments.clinic_id, validated.clinic_id),
+        eq(appointments.user_id, validated.user_id),
+        gte(appointments.scheduled_date, startOfSelectedDay),
+        lte(appointments.scheduled_date, endOfSelectedDay),
+        eq(appointments.status, 'agendada')
+      ));
       
       // Generate time slots based on working hours
       const slots = [];
@@ -482,7 +486,7 @@ export class AppointmentMCPAgent {
         const slotEnd = addMinutes(slotStart, validated.duration_minutes);
         
         // Check if this slot conflicts with existing appointments
-        const hasConflict = existingAppointments.rows.some((apt: any) => {
+        const hasConflict = existingAppointments.some((apt: any) => {
           if (!apt.scheduled_date) return false;
           const aptStart = new Date(apt.scheduled_date);
           const aptEnd = addMinutes(aptStart, apt.duration_minutes || 60);
@@ -593,11 +597,68 @@ export class AppointmentMCPAgent {
         paramIndex++;
       }
       
-      const result = await pool.query(query, params);
+      // Build base query with conditions
+      const conditions = [eq(appointments.clinic_id, clinicId)];
+      
+      if (filters.startDate) {
+        conditions.push(gte(appointments.scheduled_date, new Date(`${filters.startDate}T00:00:00`)));
+      }
+      
+      if (filters.endDate) {
+        conditions.push(lte(appointments.scheduled_date, new Date(`${filters.endDate}T23:59:59`)));
+      }
+      
+      if (filters.userId) {
+        conditions.push(eq(appointments.user_id, filters.userId));
+      }
+      
+      if (filters.status) {
+        conditions.push(eq(appointments.status, filters.status));
+      }
+      
+      if (filters.contactId) {
+        conditions.push(eq(appointments.contact_id, filters.contactId));
+      }
+      
+      // Execute query with proper Drizzle syntax
+      let dbQuery = db.select({
+        id: appointments.id,
+        contact_id: appointments.contact_id,
+        clinic_id: appointments.clinic_id,
+        user_id: appointments.user_id,
+        scheduled_date: appointments.scheduled_date,
+        duration_minutes: appointments.duration_minutes,
+        status: appointments.status,
+        doctor_name: appointments.doctor_name,
+        specialty: appointments.specialty,
+        appointment_type: appointments.appointment_type,
+        session_notes: appointments.session_notes,
+        payment_status: appointments.payment_status,
+        payment_amount: appointments.payment_amount,
+        tag_id: appointments.tag_id,
+        created_at: appointments.created_at,
+        updated_at: appointments.updated_at,
+        contact_name: contacts.name,
+        contact_phone: contacts.phone
+      })
+      .from(appointments)
+      .leftJoin(contacts, eq(appointments.contact_id, contacts.id))
+      .where(and(...conditions))
+      .orderBy(appointments.scheduled_date);
+      
+      if (pagination.limit) {
+        dbQuery = dbQuery.limit(pagination.limit);
+      }
+      
+      if (pagination.offset) {
+        dbQuery = dbQuery.offset(pagination.offset);
+      }
+      
+      const result = await dbQuery;
       
       return {
         success: true,
-        data: result.rows,
+        data: result,
         error: null,
         appointment_id: null,
         conflicts: null,
