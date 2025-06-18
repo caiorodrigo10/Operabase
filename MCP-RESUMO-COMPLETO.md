@@ -63,67 +63,122 @@ O Sistema MCP (Model Context Protocol) para agendamento de consultas médicas ag
 
 ## Endpoints da API MCP
 
-### 1. Chat Conversacional (NOVO)
+### 🚀 PROTOCOLO MCP OFICIAL IMPLEMENTADO
+
+#### 1. Inicialização MCP
+```
+GET /api/mcp/initialize
+```
+**Resposta:**
+```json
+{
+  "protocolVersion": "2024-11-05",
+  "capabilities": {
+    "tools": {"listChanged": false},
+    "resources": {"subscribe": false, "listChanged": false},
+    "prompts": {"listChanged": false},
+    "logging": {}
+  },
+  "serverInfo": {
+    "name": "TaskMed MCP Server",
+    "version": "1.0.0"
+  }
+}
+```
+
+#### 2. Tools (Ferramentas) - Protocolo Oficial
+```
+GET /api/mcp/tools/list
+```
+**Resposta:**
+```json
+{
+  "tools": [
+    {
+      "name": "create_appointment",
+      "description": "Cria uma nova consulta médica",
+      "inputSchema": {
+        "type": "object",
+        "properties": {...},
+        "required": ["contact_id", "clinic_id", ...]
+      }
+    }
+  ]
+}
+```
+
+```
+POST /api/mcp/tools/call
+{
+  "name": "create_appointment",
+  "arguments": {
+    "contact_id": 1,
+    "clinic_id": 1,
+    "user_id": 4,
+    "scheduled_date": "2025-06-20",
+    "scheduled_time": "10:00",
+    "duration_minutes": 60
+  }
+}
+```
+
+#### 3. Resources (Dados) - Protocolo Oficial
+```
+GET /api/mcp/resources/list
+```
+**Resposta:**
+```json
+{
+  "resources": [
+    {
+      "uri": "clinic://contacts",
+      "name": "Contatos da Clínica",
+      "description": "Lista de pacientes",
+      "mimeType": "application/json"
+    }
+  ]
+}
+```
+
+```
+POST /api/mcp/resources/read
+{
+  "uri": "clinic://contacts",
+  "clinic_id": 1
+}
+```
+
+#### 4. Prompts (Templates) - Protocolo Oficial
+```
+GET /api/mcp/prompts/list
+```
+```
+POST /api/mcp/prompts/get
+{
+  "name": "appointment_creation_prompt",
+  "arguments": {"user_message": "Agendar consulta"}
+}
+```
+
+### 🔧 API REST Original (n8n)
+
+#### 5. Chat Conversacional MARA
 ```
 POST /api/mcp/chat
-Content-Type: application/json
-
 {
   "message": "Agendar Maria Silva amanhã às 10h",
   "sessionId": "opcional_para_contexto"
 }
 ```
 
-**Resposta:**
-```json
-{
-  "success": true,
-  "data": {
-    "action": "create",
-    "contact_name": "Maria Silva",
-    "date": "2025-06-19",
-    "time": "10:00",
-    "clinic_id": 1,
-    "user_id": 4,
-    "sessionId": "session_123"
-  }
-}
-```
-
-### 2. Health Check
-```
-GET /api/mcp/health
-```
-
-### 3. Criar Consulta
-```
-POST /api/mcp/appointments
-```
-
-### 4. Listar Consultas
-```
-GET /api/mcp/appointments/:clinicId
-```
-
-### 5. Atualizar Consulta
-```
-PUT /api/mcp/appointments/:appointmentId
-```
-
-### 6. Cancelar Consulta
-```
-DELETE /api/mcp/appointments/:appointmentId
-```
-
-### 7. Verificar Disponibilidade
-```
-GET /api/mcp/availability/:clinicId
-```
-
-### 8. Obter Próximos Horários
-```
-GET /api/mcp/next-slots/:clinicId
-```
+#### 6-13. Endpoints REST Tradicionais
+- `POST /api/mcp/appointments` - Criar consulta
+- `GET /api/mcp/appointments/:clinicId` - Listar consultas
+- `PUT /api/mcp/appointments/:appointmentId` - Atualizar consulta
+- `DELETE /api/mcp/appointments/:appointmentId` - Cancelar consulta
+- `GET /api/mcp/availability/:clinicId` - Verificar disponibilidade
+- `GET /api/mcp/next-slots/:clinicId` - Próximos horários
+- `GET /api/mcp/health` - Health check
 
 ## Validações de Segurança Implementadas
 
