@@ -11,7 +11,8 @@ export const ConversationContextSchema = z.object({
     doctor_name: z.string().optional(),
     specialty: z.string().optional(),
     appointment_type: z.string().optional(),
-    incomplete_fields: z.array(z.string()).optional()
+    incomplete_fields: z.array(z.string()).optional(),
+    _checkAvailability: z.boolean().optional()
   }).optional(),
   lastAction: z.string().optional(),
   conversationHistory: z.array(z.object({

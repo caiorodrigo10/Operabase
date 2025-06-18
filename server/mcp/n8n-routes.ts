@@ -443,6 +443,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
                 const newContact = await db.insert(contacts).values({
                   clinic_id: result.data.clinic_id || 1,
                   name: result.data.contact_name,
+                  phone: '(00) 00000-0000', // Telefone padrão para contatos criados via chat
                   status: 'lead',
                   source: 'mcp_chat',
                   created_at: new Date(),
