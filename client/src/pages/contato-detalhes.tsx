@@ -227,10 +227,6 @@ export function ContatoDetalhes() {
                 <Edit className="w-4 h-4 mr-2" />
                 Editar
               </Button>
-              <Button size="sm" className="bg-medical-blue hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Nova Consulta
-              </Button>
             </div>
           </div>
         </div>
