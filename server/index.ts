@@ -80,6 +80,15 @@ app.use((req, res, next) => {
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
   
+  // Add MCP logging middleware for all MCP routes
+  const { mcpLoggingMiddleware, chatInterpreterLoggingMiddleware, errorLoggingMiddleware: mcpErrorMiddleware } = await import('./mcp/logs.middleware');
+  app.use('/api/mcp', mcpLoggingMiddleware);
+  app.use('/api/mcp', chatInterpreterLoggingMiddleware);
+  
+  // Add MCP logs routes
+  const mcpLogsRoutes = await import('./mcp/logs.routes');
+  app.use('/api/mcp', mcpLogsRoutes.default);
+  
   // Add MCP routes for n8n integration
   const mcpRoutes = await import('./mcp/n8n-routes');
   app.use('/api/mcp', mcpRoutes.default);
@@ -87,6 +96,9 @@ app.use((req, res, next) => {
   // Add official MCP protocol routes
   const mcpProtocolRoutes = await import('./mcp/mcp-routes');
   app.use('/api/mcp', mcpProtocolRoutes.default);
+  
+  // Add MCP error handling
+  app.use('/api/mcp', mcpErrorMiddleware);
   
   // Add Phase 3 observability endpoints
   const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
