@@ -95,23 +95,24 @@ class ConversationContextManager {
 
     // Extrair nome do paciente (padrões mais específicos)
     const namePatterns = [
-      /nome\s+(?:é|do paciente|da pessoa)?\s*(?:é\s+)?([a-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
-      /paciente\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
-      /(?:agendar|marcar).*?(?:para|pro)\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
-      /^([a-záàâãäçéèêëíìîïóòôõöúùûü]+\s+[a-záàâãäçéèêëíìîïóòôõöúùûü]+)/i // Nome completo no início
+      /nome\s+é\s+(.+?)$/i,  // Captura tudo após "nome é"
+      /nome\s+do\s+paciente\s+é\s+(.+)/i,
+      /paciente\s+([A-Za-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
+      /(?:agendar|marcar).*?(?:para|pro)\s+([A-Za-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
+      /^([A-Za-záàâãäçéèêëíìîïóòôõöúùûü]+\s+[A-Za-záàâãäçéèêëíìîïóòôõöúùûü]+)/i
     ];
 
-    // Só extrair nomes se não contém palavras-chave de agendamento
-    if (!lowerMsg.includes('marcar') && !lowerMsg.includes('agendar') && !lowerMsg.includes('para as')) {
-      for (const pattern of namePatterns) {
-        const match = message.match(pattern);
-        if (match && match[1]) {
-          const name = match[1].trim();
-          const excludedWords = ['consulta', 'teste', 'agendamento', 'marcar', 'agendar', 'amanhã', 'hoje', 'horário'];
-          if (name.length > 2 && !excludedWords.some(word => name.toLowerCase().includes(word))) {
-            appointment.contact_name = name;
-            break;
-          }
+    // Extrair nomes sempre, mas com padrões específicos
+    for (const pattern of namePatterns) {
+      const match = message.match(pattern);
+      if (match && match[1]) {
+        const name = match[1].trim();
+        // Remover palavras irrelevantes do final
+        const cleanName = name.replace(/\s+(consulta|agendamento|marcação).*$/i, '');
+        const excludedWords = ['marcar', 'agendar', 'amanhã', 'hoje', 'horário', 'para as'];
+        if (cleanName.length > 2 && !excludedWords.some(word => cleanName.toLowerCase().includes(word))) {
+          appointment.contact_name = cleanName;
+          break;
         }
       }
     }
