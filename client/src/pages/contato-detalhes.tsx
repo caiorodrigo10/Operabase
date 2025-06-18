@@ -609,10 +609,18 @@ export function ContatoDetalhes() {
                       <p className="text-slate-500 mb-4">
                         Comece criando a primeira evolução para este paciente
                       </p>
-                      <Button className="bg-medical-blue hover:bg-blue-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Criar primeira evolução
-                      </Button>
+                      <MedicalEditorDialog
+                        contactId={contactId!.toString()}
+                        contactName={contact?.name || 'Paciente'}
+                        onSave={(content, template) => {
+                          console.log('Salvando primeira evolução do tab:', { content, template });
+                        }}
+                      >
+                        <Button className="bg-medical-blue hover:bg-blue-700">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Criar primeira evolução
+                        </Button>
+                      </MedicalEditorDialog>
                     </div>
                   ) : (
                     <div className="space-y-6">
