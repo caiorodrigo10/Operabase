@@ -36,7 +36,6 @@ const appointmentFormSchema = z.object({
 type AppointmentFormData = z.infer<typeof appointmentFormSchema>;
 
 const statusOptions = [
-  { value: 'pendente', label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'agendada', label: 'Agendado', color: 'bg-blue-100 text-blue-800' },
   { value: 'confirmada', label: 'Confirmado', color: 'bg-green-100 text-green-800' },
   { value: 'realizada', label: 'Realizado', color: 'bg-purple-100 text-purple-800' },
