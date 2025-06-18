@@ -351,7 +351,7 @@ export function ContatoDetalhes() {
       </div>
 
       {/* Content */}
-      <div className={`container mx-auto px-6 py-6 ${isTabsSticky ? 'pt-16' : ''}`}>
+<div className={`container mx-auto px-6 py-6 ${isTabsSticky ? 'pt-20' : ''}`}>
         <div className="space-y-6">
           {/* Overview Tab */}
           {activeTab === 'visao-geral' && (
@@ -728,7 +728,7 @@ export function ContatoDetalhes() {
 
       {/* Sticky Tabs Overlay */}
       {isTabsSticky && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-200">
+        <div className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-sm transition-all duration-200">
           <div className="container mx-auto px-6">
             <div className="flex space-x-8 overflow-x-auto">
               <button
