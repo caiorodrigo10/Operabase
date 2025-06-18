@@ -10,8 +10,12 @@ import { users } from '../domains/auth/auth.schema';
 import { appointment_tags } from '../../shared/schema';
 import { clinic_users } from '../domains/clinics/clinics.schema';
 import { db } from '../db';
+import { apiKeyAuth, requireWritePermission, ApiKeyRequest } from '../middleware/api-key-auth.middleware';
 
 const router = Router();
+
+// Apply API Key authentication to all MCP routes
+router.use(apiKeyAuth);
 
 // Request validation middleware
 const validateRequest = (schema: z.ZodSchema) => {
@@ -106,49 +110,69 @@ const ListAppointmentsRequestSchema = z.object({
  * POST /api/mcp/appointments/create
  * Create a new appointment with full validation
  */
-router.post('/appointments/create', validateRequest(CreateAppointmentRequestSchema), async (req: Request, res: Response) => {
-  try {
-    const result = await appointmentAgent.createAppointment(req.body);
+router.post('/appointments/create', 
+  requireWritePermission,
+  validateRequest(CreateAppointmentRequestSchema), 
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      // Override clinic_id with the one from API Key for security
+      const requestData = {
+        ...req.body,
+        clinic_id: req.clinicId, // Use clinic_id from API Key authentication
+      };
 
-    const statusCode = result.success ? 201 : 400;
-    res.status(statusCode).json(result);
+      const result = await appointmentAgent.createAppointment(requestData);
 
-  } catch (error) {
-    console.error('MCP Create Appointment Error:', error);
-    res.status(500).json({
-      success: false,
-      data: null,
-      error: 'Internal server error',
-      appointment_id: null,
-      conflicts: null,
-      next_available_slots: null
-    });
+      const statusCode = result.success ? 201 : 400;
+      res.status(statusCode).json(result);
+
+    } catch (error) {
+      console.error('MCP Create Appointment Error:', error);
+      res.status(500).json({
+        success: false,
+        data: null,
+        error: 'Internal server error',
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    }
   }
-});
+);
 
 /**
  * PUT /api/mcp/appointments/status
  * Update appointment status
  */
-router.put('/appointments/status', validateRequest(UpdateStatusRequestSchema), async (req: Request, res: Response) => {
-  try {
-    const result = await appointmentAgent.updateStatus(req.body);
+router.put('/appointments/status', 
+  requireWritePermission,
+  validateRequest(UpdateStatusRequestSchema), 
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      // Override clinic_id with the one from API Key for security
+      const requestData = {
+        ...req.body,
+        clinic_id: req.clinicId,
+      };
 
-    const statusCode = result.success ? 200 : 400;
-    res.status(statusCode).json(result);
+      const result = await appointmentAgent.updateStatus(requestData);
 
-  } catch (error) {
-    console.error('MCP Update Status Error:', error);
-    res.status(500).json({
-      success: false,
-      data: null,
-      error: 'Internal server error',
-      appointment_id: null,
-      conflicts: null,
-      next_available_slots: null
-    });
+      const statusCode = result.success ? 200 : 400;
+      res.status(statusCode).json(result);
+
+    } catch (error) {
+      console.error('MCP Update Status Error:', error);
+      res.status(500).json({
+        success: false,
+        data: null,
+        error: 'Internal server error',
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    }
   }
-});
+);
 
 /**
  * PUT /api/mcp/appointments/reschedule
