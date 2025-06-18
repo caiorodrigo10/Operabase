@@ -380,6 +380,60 @@ router.post('/appointments/availability', validateRequest(AvailabilityRequestSch
 });
 
 /**
+ * GET /api/mcp/appointments
+ * List appointments with query parameter filters
+ */
+router.get('/appointments', requireReadPermission, async (req: ApiKeyRequest, res: Response) => {
+  try {
+    // Extract query parameters
+    const userId = req.query.user_id ? parseInt(req.query.user_id as string) : undefined;
+    const contactId = req.query.contact_id ? parseInt(req.query.contact_id as string) : undefined;
+    const status = req.query.status as string;
+    const dateFrom = req.query.date_from as string;
+    const dateTo = req.query.date_to as string;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+
+    // Ensure clinic_id is available from API Key
+    if (!req.clinicId) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        error: 'Clinic ID not available from API Key',
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    }
+
+    const result = await appointmentAgent.listAppointments(req.clinicId, {
+      userId: userId,
+      contactId: contactId,
+      status: status,
+      startDate: dateFrom,
+      endDate: dateTo
+    }, {
+      limit: limit,
+      offset: offset
+    });
+
+    const statusCode = result.success ? 200 : 400;
+    res.status(statusCode).json(result);
+
+  } catch (error) {
+    console.error('MCP List Appointments GET Error:', error);
+    res.status(500).json({
+      success: false,
+      data: null,
+      error: 'Internal server error',
+      appointment_id: null,
+      conflicts: null,
+      next_available_slots: null
+    });
+  }
+});
+
+/**
  * POST /api/mcp/appointments/list
  * List appointments with filters
  */
