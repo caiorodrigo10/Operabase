@@ -41,7 +41,104 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
+/* Google Calendar-style Drag and Drop with Custom Cursor */
+.drag-over-indicator {
+  background: linear-gradient(45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
+              linear-gradient(-45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 
+              linear-gradient(45deg, transparent 75%, hsl(207, 90%, 54%) 75%), 
+              linear-gradient(-45deg, transparent 75%, hsl(207, 90%, 54%) 75%);
+  background-size: 8px 8px;
+}
 
+/* Draggable appointment cards with Google Calendar feel */
+[draggable="true"] {
+  cursor: grab;
+  transition: all 0.2s ease-in-out;
+}
+
+[draggable="true"]:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom drag cursor with directional arrows - applied to body during drag */
+body.drag-active, 
+body.drag-active * {
+  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxwYXRoIGQ9Im0xMiA4LTQgNGg4bC00LTR6Ii8+CjxwYXRoIGQ9Im0xMiAxNiA0LTRIOGw0IDR6Ii8+CjxwYXRoIGQ9Im04IDEyIDQtNHY4bC00LTR6Ii8+CjxwYXRoIGQ9Im0xNiAxMi00IDR2LThsNCA0eiIvPgo8L2c+Cjwvc3ZnPgo=') 12 12, move !important;
+}
+
+/* Default calendar container cursor */
+.calendar-container {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Ghost element styling */
+.ghost-element {
+  pointer-events: none;
+  user-select: none;
+  transform-origin: center;
+  will-change: transform;
+  z-index: 9999;
+  opacity: 0.8;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Snap visual feedback */
+.snap-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: hsl(207, 90%, 54%);
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+  z-index: 1000;
+  animation: snapPulse 0.3s ease-in-out;
+}
+
+@keyframes snapPulse {
+  0% { opacity: 0; transform: scaleY(0.5); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+/* Drop zone highlighting */
+.calendar-container.dragging .time-slot:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px dashed hsl(207, 90%, 54%);
+}
+
+/* Enhanced appointment card during drag */
+.appointment-card.dragging {
+  opacity: 0.6;
+  transform: scale(0.95);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Drag animation effects */
+.dragging-element {
+  transform: rotate(3deg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.drop-zone-valid {
+  background-color: hsl(207, 90%, 96%);
+  border: 2px dashed hsl(207, 90%, 54%);
+  animation: pulse 1.5s infinite;
+}
+
+.drop-zone-invalid {
+  background-color: hsl(0, 84%, 96%);
+  border: 2px dashed hsl(0, 84%, 60%);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
 
 .dark {
   --background: hsl(240, 10%, 3.9%);
