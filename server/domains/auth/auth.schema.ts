@@ -29,26 +29,26 @@ export const password_reset_tokens = pgTable("password_reset_tokens", {
   index("idx_password_reset_tokens_token").on(table.token),
 ]);
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
+export const insertUserSchema = createInsertSchema(users, {
+  id: undefined,
+  created_at: undefined,
+  updated_at: undefined,
 });
 
-export const insertPasswordResetTokenSchema = createInsertSchema(password_reset_tokens).omit({
-  id: true,
-  created_at: true,
+export const insertPasswordResetTokenSchema = createInsertSchema(password_reset_tokens, {
+  id: undefined,
+  created_at: undefined,
 });
 
 // User profile update schema
-export const updateUserProfileSchema = createInsertSchema(users).omit({
-  id: true,
-  password: true,
-  role: true,
-  is_active: true,
-  last_login: true,
-  created_at: true,
-  updated_at: true,
+export const updateUserProfileSchema = createInsertSchema(users, {
+  id: undefined,
+  password: undefined,
+  role: undefined,
+  is_active: undefined,
+  last_login: undefined,
+  created_at: undefined,
+  updated_at: undefined,
 }).extend({
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6).optional(),

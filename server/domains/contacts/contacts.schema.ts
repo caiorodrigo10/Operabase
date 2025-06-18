@@ -58,10 +58,10 @@ export const messages = pgTable("messages", {
   index("idx_messages_conversation_timestamp").on(table.conversation_id, table.timestamp),
 ]);
 
-export const insertContactSchema = createInsertSchema(contacts).omit({
-  id: true,
-  first_contact: true,
-  last_interaction: true,
+export const insertContactSchema = createInsertSchema(contacts, {
+  id: undefined,
+  first_contact: undefined,
+  last_interaction: undefined,
 }).extend({
   // Make optional fields nullable to handle null values from frontend
   profession: z.string().nullable().optional(),
