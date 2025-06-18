@@ -357,16 +357,17 @@ router.get('/health', (req: Request, res: Response) => {
 
 // 9. Chat Interpreter - NEW endpoint for OpenAI interpretation
 const ChatMessageSchema = z.object({
-  message: z.string().min(1)
+  message: z.string().min(1),
+  sessionId: z.string().optional()
 });
 
 router.post('/chat/interpret', validateRequest(ChatMessageSchema), async (req: Request, res: Response) => {
   try {
-    const { message } = req.body;
+    const { message, sessionId } = req.body;
     
-    console.log('Chat interpret request:', { message });
+    console.log('Chat interpret request:', { message, sessionId });
     
-    const result = await chatInterpreter.interpretMessage(message);
+    const result = await chatInterpreter.interpretMessage(message, sessionId);
     
     if (result.success) {
       res.json({

@@ -14,6 +14,7 @@ interface MCPAction {
 export function useMCPChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const sendMessage = async (message: string): Promise<MCPChatResponse> => {
     setIsLoading(true);
@@ -26,7 +27,7 @@ export function useMCPChat() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, sessionId }),
       });
 
       if (!interpretResponse.ok) {
@@ -43,6 +44,11 @@ export function useMCPChat() {
       }
 
       const action: MCPAction = interpretation.data;
+
+      // Capturar sessionId se fornecido
+      if (action.sessionId && !sessionId) {
+        setSessionId(action.sessionId);
+      }
 
       // Executar a ação interpretada
       return await executeAction(action);
