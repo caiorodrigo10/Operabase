@@ -63,6 +63,12 @@ export function useMCPChat() {
   const executeAction = async (action: MCPAction): Promise<MCPChatResponse> => {
     try {
       switch (action.action) {
+        case 'chat_response':
+          return {
+            success: true,
+            message: action.message,
+            data: null
+          };
         case 'create':
           return await createAppointment(action);
         case 'list':
@@ -73,6 +79,12 @@ export function useMCPChat() {
           return await cancelAppointment(action);
         case 'availability':
           return await checkAvailability(action);
+        case 'clarification':
+          return {
+            success: true,
+            message: action.message,
+            data: null
+          };
         default:
           return {
             success: false,

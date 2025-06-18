@@ -4,6 +4,10 @@ import { z } from 'zod';
 // Schema para validar as ações interpretadas
 const ActionSchema = z.union([
   z.object({
+    action: z.literal('chat_response'),
+    message: z.string()
+  }),
+  z.object({
     action: z.literal('create'),
     contact_name: z.string(),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -123,7 +127,10 @@ export class ChatInterpreter {
   }
 
   private buildSystemPrompt(): string {
-    return `Você é um assistente de agendamento médico especializado. Analise as mensagens do usuário e retorne APENAS um JSON com a ação a ser executada.
+    return `Você é um assistente de agendamento médico amigável e conversacional. Responda de forma natural às mensagens do usuário, mas sempre retorne um JSON com a ação apropriada.
+
+Para mensagens gerais (cumprimentos, perguntas gerais), use o formato "chat_response" para responder conversacionalmente.
+Para solicitações específicas de agendamento, use os formatos de ação apropriados.
 
 CONTEXTO:
 - clinic_id sempre será 1
@@ -131,6 +138,12 @@ CONTEXTO:
 - Data atual: ${new Date().toISOString().split('T')[0]}
 
 FORMATOS DE AÇÃO VÁLIDOS:
+
+0. RESPOSTA CONVERSACIONAL (para cumprimentos, perguntas gerais):
+{
+  "action": "chat_response",
+  "message": "Olá! Tudo bem sim, obrigado! Sou seu assistente de agendamento médico. Como posso ajudar você hoje? Posso agendar, reagendar, cancelar consultas ou verificar a agenda."
+}
 
 1. CRIAR CONSULTA:
 {
