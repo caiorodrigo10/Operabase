@@ -31,7 +31,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContactAvatar } from "@/components/ContactAvatar";
-import EvolucaoEditor from "@/components/ProntuarioEditor";
+import EvolucaoEditor from "@/components/EvolucaoEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import ProntuarioMedico from "@/components/ProntuarioMedico";
 
@@ -607,66 +607,7 @@ export function ContatoDetalhes() {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      {/* Timeline */}
-                      <div className="relative">
-                        {appointments.map((appointment, index) => (
-                          <div key={appointment.id} className="relative flex items-start space-x-4 pb-6">
-                            {/* Timeline line */}
-                            {index !== appointments.length - 1 && (
-                              <div className="absolute left-4 top-8 w-0.5 h-full bg-slate-200"></div>
-                            )}
-                            
-                            {/* Timeline dot */}
-                            <div className="relative flex-shrink-0">
-                              <div className="w-8 h-8 bg-medical-blue rounded-full flex items-center justify-center">
-                                <Edit className="w-4 h-4 text-white" />
-                              </div>
-                            </div>
-                            
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <Card className="border border-slate-200 hover:border-slate-300 transition-colors">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                      <h4 className="font-medium text-slate-900">
-                                        Evolução - {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
-                                      </h4>
-                                      {getStatusBadge(appointment.status)}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm text-slate-500">
-                                        {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
-                                      </span>
-                                      <Button variant="ghost" size="sm">
-                                        <Edit className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    {appointment.doctor_name && (
-                                      <p className="text-sm text-slate-600">
-                                        <span className="font-medium">Profissional:</span> {appointment.doctor_name}
-                                      </p>
-                                    )}
-                                    {appointment.specialty && (
-                                      <p className="text-sm text-slate-600">
-                                        <span className="font-medium">Especialidade:</span> {appointment.specialty}
-                                      </p>
-                                    )}
-                                    {appointment.notes && (
-                                      <div className="mt-3 p-3 bg-slate-50 rounded-lg">
-                                        <p className="text-sm text-slate-700">{appointment.notes}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <ProntuarioMedico contactId={contactId!} appointments={appointments} />
                     </div>
                   )}
                 </CardContent>
@@ -791,7 +732,7 @@ export function ContatoDetalhes() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <EvolucaoEditor
-              contactId={contactId!}
+              contactId={contactId!.toString()}
               contactName={contact?.name || 'Paciente'}
               appointments={appointments}
               onClose={() => setShowEvolucaoEditor(false)}
