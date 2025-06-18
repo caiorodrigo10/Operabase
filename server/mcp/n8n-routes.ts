@@ -261,6 +261,33 @@ router.put('/appointments/cancel', validateRequest(CancelRequestSchema), async (
 });
 
 /**
+ * GET /api/mcp/appointments/availability (deprecated - redirect to POST)
+ * Deprecated endpoint that provides usage instructions
+ */
+router.get('/appointments/availability', (req: Request, res: Response) => {
+  res.status(400).json({
+    success: false,
+    data: null,
+    error: 'This endpoint requires POST method with user_id in request body. GET method is deprecated.',
+    appointment_id: null,
+    conflicts: null,
+    next_available_slots: null,
+    usage: {
+      method: 'POST',
+      url: '/api/mcp/appointments/availability',
+      required_fields: ['user_id', 'date'],
+      optional_fields: ['duration_minutes', 'working_hours_start', 'working_hours_end'],
+      example: {
+        user_id: 4,
+        date: '2025-06-25',
+        duration_minutes: 60
+      },
+      curl_example: 'curl -X POST "http://localhost:5000/api/mcp/appointments/availability" -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_API_KEY" -d \'{"user_id": 4, "date": "2025-06-25", "duration_minutes": 60}\''
+    }
+  });
+});
+
+/**
  * POST /api/mcp/appointments/availability
  * Get available time slots for a specific professional
  */
@@ -329,23 +356,22 @@ router.post('/appointments/list', validateRequest(ListAppointmentsRequestSchema)
  * GET /api/mcp/appointments/:id
  * Get specific appointment details
  */
-router.get('/appointments/:id', async (req: Request, res: Response) => {
+router.get('/appointments/:id', requireReadPermission, async (req: ApiKeyRequest, res: Response) => {
   try {
     const appointmentId = parseInt(req.params.id);
-    const clinicId = parseInt(req.query.clinic_id as string);
 
-    if (!appointmentId || !clinicId) {
+    if (!appointmentId) {
       return res.status(400).json({
         success: false,
         data: null,
-        error: 'appointment_id and clinic_id are required',
+        error: 'appointment_id is required',
         appointment_id: null,
         conflicts: null,
         next_available_slots: null
       });
     }
 
-    const result = await appointmentAgent.listAppointments(clinicId, {});
+    const result = await appointmentAgent.listAppointments(req.clinicId, {});
 
     if (result.success && result.data) {
       const appointment = result.data.find((apt: any) => apt.id === appointmentId);
