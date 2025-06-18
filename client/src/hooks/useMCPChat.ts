@@ -194,12 +194,22 @@ export function useMCPChat() {
 
       let message = `📅 Consultas encontradas:\n\n`;
       
-      result.data.forEach((appointment: any) => {
+      result.data.forEach((row: any) => {
+        // A estrutura dos dados é { appointments: {...}, contacts: {...} }
+        const appointment = row.appointments || row;
+        const contact = row.contacts || {};
+        
+        if (!appointment.scheduled_date) {
+          return; // Skip if no date
+        }
+        
         const date = new Date(appointment.scheduled_date);
         const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const dateStr = date.toLocaleDateString('pt-BR');
         
-        message += `• ${timeStr} - ${appointment.contact_name || 'Nome não informado'}`;
+        const contactName = contact.name || appointment.contact_name || 'Nome não informado';
+        
+        message += `• ${timeStr} - ${contactName}`;
         if (appointment.doctor_name) {
           message += ` (Dr. ${appointment.doctor_name})`;
         }
