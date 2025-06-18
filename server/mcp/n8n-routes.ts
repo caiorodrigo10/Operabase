@@ -1,7 +1,17 @@
 import { Router, Request, Response } from 'express';
 import { appointmentAgent } from './appointment-agent-simple';
-import { VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } from './appointment-agent';
 import { chatInterpreter } from './chat-interpreter';
+
+// Updated status values aligned with platform UI (5 statuses only)
+const VALID_APPOINTMENT_STATUSES = [
+  'agendada',    // Agendado
+  'confirmada',  // Confirmado  
+  'realizada',   // Realizado
+  'faltou',      // Faltou
+  'cancelada'    // Cancelado
+] as const;
+
+const VALID_PAYMENT_STATUSES = ['pendente', 'pago', 'cancelado'] as const;
 import { z } from 'zod';
 import { mcpLogsService } from './logs.service';
 import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
