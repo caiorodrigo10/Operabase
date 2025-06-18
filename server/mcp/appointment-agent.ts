@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { eq, and, gte, lte, between } from 'drizzle-orm';
 import { db } from '../db';
-import { appointments } from '../domains/appointments/appointments.schema';
-import { contacts } from '../domains/contacts/contacts.schema';
-import { users } from '../domains/auth/auth.schema';
-import { clinics } from '../domains/clinics/clinics.schema';
-import { appointment_tags } from '../../shared/schema';
 import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 
 // Valid appointment statuses as defined in the database schema
@@ -382,8 +377,7 @@ export class AppointmentMCPAgent {
       const [cancelledAppointment] = await db.update(appointments)
         .set({
           status: status,
-          cancellation_reason: reason || null,
-          updated_at: new Date()
+          cancellation_reason: reason || null
         })
         .where(and(
           eq(appointments.id, appointmentId),

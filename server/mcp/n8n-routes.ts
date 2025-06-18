@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { appointmentAgent, VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } from './appointment-agent';
+import { appointmentAgent, VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } from './appointment-agent-simple';
 import { z } from 'zod';
 
 const router = Router();
