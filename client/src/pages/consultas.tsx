@@ -40,9 +40,7 @@ import { EventTooltip } from "@/components/EventTooltip";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
 import { FindTimeSlots } from "@/components/FindTimeSlots";
 import { AppointmentTagSelector } from "@/components/AppointmentTagSelector";
-import { DragProvider } from "@/components/DragProvider";
-import { DraggableAppointment } from "@/components/DraggableAppointment";
-import { DroppableTimeSlot } from "@/components/DroppableTimeSlot";
+
 import type { Appointment } from "../../../server/domains/appointments/appointments.schema";
 import type { Contact } from "../../../server/domains/contacts/contacts.schema";
 
@@ -183,37 +181,7 @@ export function Consultas() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
   
-  // Google Calendar-style drag and drop states
-  const [isDragging, setIsDragging] = useState(false);
-  const [draggedAppointment, setDraggedAppointment] = useState<Appointment | null>(null);
-  const [ghostElement, setGhostElement] = useState<{
-    visible: boolean;
-    x: number;
-    y: number;
-    appointment: Appointment | null;
-    targetSlot: {date: Date, hour: number, minute: number} | null;
-  }>({
-    visible: false,
-    x: 0,
-    y: 0,
-    appointment: null,
-    targetSlot: null
-  });
-  const [dragConfirmDialog, setDragConfirmDialog] = useState<{
-    open: boolean;
-    appointment: Appointment | null;
-    oldDate: Date | null;
-    newDate: Date | null;
-    oldTime: string;
-    newTime: string;
-  }>({
-    open: false,
-    appointment: null,
-    oldDate: null,
-    newDate: null,
-    oldTime: '',
-    newTime: ''
-  });
+
   
   // Create a stable reference for "today" to avoid timezone issues
   const today = useMemo(() => {
@@ -1329,237 +1297,6 @@ export function Consultas() {
     return filteredAppointments;
   }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
-  // Drag and Drop Functions
-  // Enhanced coordinate conversion with precise 5-minute snapping
-  const convertCoordinatesToTimeSlot = (clientX: number, clientY: number, calendarElement: HTMLElement) => {
-    const rect = calendarElement.getBoundingClientRect();
-    const relativeX = clientX - rect.left;
-    const relativeY = clientY - rect.top;
-    
-    // Calculate day column with time column adjustment for week view
-    const dayWidth = calendarView === 'week' ? rect.width / 8 : rect.width; // 8 = time column + 7 days
-    const timeColumnWidth = calendarView === 'week' ? rect.width / 8 : 0;
-    const adjustedX = relativeX - timeColumnWidth;
-    const dayIndex = Math.floor(adjustedX / (dayWidth - timeColumnWidth / 7));
-    
-    // Calculate precise time with 5-minute intervals
-    const headerHeight = 60;
-    const slotY = relativeY - headerHeight;
-    
-    // Use exact PIXELS_PER_HOUR from calendar layout
-    const totalMinutesFromStart = Math.max(0, (slotY / PIXELS_PER_MINUTE));
-    
-    // Snap to 5-minute intervals
-    const snappedMinutes = Math.round(totalMinutesFromStart / 5) * 5;
-    
-    const startHour = 7;
-    const targetHour = startHour + Math.floor(snappedMinutes / 60);
-    const targetMinute = snappedMinutes % 60;
-    
-    // Calculate target date
-    let targetDate: Date;
-    if (calendarView === 'week') {
-      const startOfCurrentWeek = startOfWeek(currentDate, { locale: ptBR });
-      targetDate = addDays(startOfCurrentWeek, dayIndex);
-    } else {
-      targetDate = currentDate;
-    }
-    
-    // Check for conflicts at target slot
-    const hasConflict = checkSlotConflict(targetDate, targetHour, targetMinute, draggedAppointment!);
-    
-    return {
-      date: targetDate,
-      hour: targetHour,
-      minute: targetMinute,
-      isValid: targetHour >= 7 && targetHour <= 22 && targetMinute >= 0 && targetMinute < 60 && dayIndex >= 0 && dayIndex < (calendarView === 'week' ? 7 : 1),
-      hasConflict
-    };
-  };
-
-  // Google Calendar-style drag start with ghost element
-  const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
-    setIsDragging(true);
-    setDraggedAppointment(appointment);
-    
-    // Create completely transparent drag image to eliminate favicon
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.globalAlpha = 0;
-      ctx.fillRect(0, 0, 1, 1);
-    }
-    
-    // Set the transparent canvas as drag image
-    e.dataTransfer.setDragImage(canvas, 0, 0);
-    
-    // Create ghost element that follows mouse
-    setGhostElement({
-      visible: true,
-      x: e.clientX,
-      y: e.clientY,
-      appointment: appointment,
-      targetSlot: null
-    });
-    
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify(appointment));
-    
-    // Add custom cursor class to body for directional arrows
-    document.body.classList.add('drag-active');
-    
-    console.log('🎯 Ghost drag started:', appointment.id);
-  };
-
-  // Throttled drag over for better performance
-  const handleDragOver = throttle((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    if (!isDragging || !draggedAppointment) return;
-    
-    // Update ghost element position to follow mouse
-    const calendarElement = e.currentTarget as HTMLElement;
-    const timeSlot = convertCoordinatesToTimeSlot(e.clientX, e.clientY, calendarElement);
-    
-    setGhostElement(prev => ({
-      ...prev,
-      x: e.clientX,
-      y: e.clientY,
-      targetSlot: timeSlot.isValid ? {
-        date: timeSlot.date,
-        hour: timeSlot.hour,
-        minute: timeSlot.minute
-      } : null
-    }));
-  }, 16); // 60fps throttling
-
-
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    
-    if (!draggedAppointment || !ghostElement.targetSlot) {
-      setIsDragging(false);
-      setDraggedAppointment(null);
-      setGhostElement(prev => ({ ...prev, visible: false }));
-      return;
-    }
-    
-    const targetSlot = ghostElement.targetSlot;
-    
-    // Parse original date and time
-    const scheduledDate = draggedAppointment.scheduled_date;
-    if (!scheduledDate) return;
-    const originalDate = new Date(scheduledDate);
-    const originalTime = format(originalDate, 'HH:mm');
-    
-    // Create new date and time
-    const newDate = targetSlot.date;
-    const newTime = `${targetSlot.hour.toString().padStart(2, '0')}:${targetSlot.minute.toString().padStart(2, '0')}`;
-    
-    // Check if there's actually a change
-    const isSameDate = isSameDay(originalDate, newDate);
-    const isSameTime = originalTime === newTime;
-    
-    if (isSameDate && isSameTime) {
-      setIsDragging(false);
-      setDraggedAppointment(null);
-      setGhostElement(prev => ({ ...prev, visible: false }));
-      return;
-    }
-    
-    // Show confirmation dialog
-    setDragConfirmDialog({
-      open: true,
-      appointment: draggedAppointment,
-      oldDate: originalDate,
-      newDate: newDate,
-      oldTime: originalTime,
-      newTime: newTime
-    });
-    
-    setIsDragging(false);
-    setGhostElement(prev => ({ ...prev, visible: false }));
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    setDraggedAppointment(null);
-    setGhostElement(prev => ({ ...prev, visible: false }));
-    
-    // Remove custom cursor class
-    document.body.classList.remove('drag-active');
-    
-    console.log('🎯 Ghost drag ended');
-  };
-
-  // Update appointment mutation for drag and drop
-  const updateAppointmentMutation = useMutation({
-    mutationFn: async ({ appointmentId, newDate, newTime }: { appointmentId: number; newDate: Date; newTime: string }) => {
-      const scheduledDate = format(newDate, 'yyyy-MM-dd');
-      const scheduledDateTime = `${scheduledDate} ${newTime}:00`;
-      
-      const response = await fetch(`/api/appointments/${appointmentId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ 
-          scheduled_date: scheduledDateTime,
-          scheduled_time: newTime
-        }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) throw new Error('Failed to update appointment');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
-      toast({
-        title: "Consulta reagendada",
-        description: "A consulta foi movida com sucesso.",
-      });
-      setDragConfirmDialog({
-        open: false,
-        appointment: null,
-        oldDate: null,
-        newDate: null,
-        oldTime: '',
-        newTime: ''
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro",
-        description: "Não foi possível mover a consulta. Tente novamente.",
-        variant: "destructive",
-      });
-      console.error('Error updating appointment:', error);
-    },
-  });
-
-  const confirmDragUpdate = () => {
-    if (!dragConfirmDialog.appointment || !dragConfirmDialog.newDate) return;
-    
-    updateAppointmentMutation.mutate({
-      appointmentId: dragConfirmDialog.appointment.id,
-      newDate: dragConfirmDialog.newDate,
-      newTime: dragConfirmDialog.newTime
-    });
-  };
-
-  const cancelDragUpdate = () => {
-    setDragConfirmDialog({
-      open: false,
-      appointment: null,
-      oldDate: null,
-      newDate: null,
-      oldTime: '',
-      newTime: ''
-    });
-  };
-
   // Function to select professional (single selection only)
   const selectProfessional = (professionalId: number) => {
     // If clicking the same professional, deselect them
@@ -1592,28 +1329,10 @@ export function Consultas() {
 
   const calendarDays = getCalendarDays();
 
-  // Handle appointment move with @dnd-kit
-  const handleAppointmentMove = (appointmentId: number, newDate: Date, newTime: string) => {
-    const appointment = appointments.find((a: Appointment) => a.id === appointmentId);
-    if (!appointment) return;
 
-    const newDateTime = new Date(newDate);
-    const [hours, minutes] = newTime.split(':').map(Number);
-    newDateTime.setHours(hours, minutes, 0, 0);
-
-    setDragConfirmDialog({
-      open: true,
-      appointment,
-      oldDate: new Date(appointment.scheduled_date),
-      newDate: newDateTime,
-      oldTime: format(new Date(appointment.scheduled_date), 'HH:mm'),
-      newTime: newTime
-    });
-  };
 
   return (
-    <DragProvider onAppointmentMove={handleAppointmentMove}>
-      <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6">
       {/* Header Section */}
       <div className="mb-6 flex justify-between items-start">
         <div>
@@ -2501,8 +2220,7 @@ export function Consultas() {
                           
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
-                              <DraggableAppointment
-                                appointment={appointment as any}
+                              <div
                                 style={{ 
                                   top: `${topPosition}px`,
                                   left: `calc(${finalLeftPosition}% + 2px)`,
@@ -2510,23 +2228,19 @@ export function Consultas() {
                                   height: `${height}px`,
                                   zIndex: 10 + layout.group
                                 }}
-                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto appointment-card`}
+                                className={`absolute text-sm p-2 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-colors overflow-hidden shadow-sm pointer-events-auto appointment-card`}
+                                onClick={() => handleAppointmentClick(appointment)}
                               >
-                                <div 
-                                  className="h-full"
-                                  onClick={() => handleAppointmentClick(appointment)}
-                                >
-                                  <div className="flex items-start gap-1.5 h-full">
-                                    <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
-                                    <div className="flex-1 overflow-hidden">
-                                      <div className="text-xs truncate">{patientName}</div>
-                                      <div className="text-xs opacity-80 mt-1">
-                                        {duration}min
-                                      </div>
+                                <div className="flex items-start gap-1.5 h-full">
+                                  <div className={`w-2 h-2 ${colors.dot} rounded-full flex-shrink-0 mt-1`}></div>
+                                  <div className="flex-1 overflow-hidden">
+                                    <div className="text-xs truncate">{patientName}</div>
+                                    <div className="text-xs opacity-80 mt-1">
+                                      {duration}min
                                     </div>
                                   </div>
                                 </div>
-                              </DraggableAppointment>
+                              </div>
                             </EventTooltip>
                           );
                         });
@@ -2662,14 +2376,7 @@ export function Consultas() {
                               return (
                                 <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                                   <div
-                                    draggable={true}
-                                    onDragStart={(e) => handleDragStart(e, appointment)}
-                                    onDragEnd={handleDragEnd}
-                                    className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-move ${colors.border} border hover:opacity-90 transition-all duration-300 overflow-hidden shadow-sm ${
-                                      isDragging && draggedAppointment?.id === appointment.id 
-                                        ? 'opacity-50' 
-                                        : 'hover:shadow-lg hover:scale-105'
-                                    }`}
+                                    className={`absolute text-sm p-3 ${colors.bg} ${colors.text} rounded cursor-pointer ${colors.border} border hover:opacity-90 transition-all duration-300 overflow-hidden shadow-sm hover:shadow-lg hover:scale-105`}
                                     style={{ 
                                       top: `${topPosition}px`,
                                       left: leftOffset,
@@ -3554,6 +3261,5 @@ export function Consultas() {
         </div>
       )}
     </div>
-    </DragProvider>
   );
 }
