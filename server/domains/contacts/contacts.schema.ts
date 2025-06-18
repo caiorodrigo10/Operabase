@@ -58,11 +58,7 @@ export const messages = pgTable("messages", {
   index("idx_messages_conversation_timestamp").on(table.conversation_id, table.timestamp),
 ]);
 
-export const insertContactSchema = createInsertSchema(contacts, {
-  id: undefined,
-  first_contact: undefined,
-  last_interaction: undefined,
-}).extend({
+export const insertContactSchema = createInsertSchema(contacts).extend({
   // Make optional fields nullable to handle null values from frontend
   profession: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
@@ -73,15 +69,15 @@ export const insertContactSchema = createInsertSchema(contacts, {
   medical_history: z.string().nullable().optional(),
 });
 
-export const insertConversationSchema = createInsertSchema(conversations, {
-  id: undefined,
-  created_at: undefined,
-  updated_at: undefined,
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 });
 
-export const insertMessageSchema = createInsertSchema(messages, {
-  id: undefined,
-  timestamp: undefined,
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  timestamp: true,
 });
 
 export type Contact = typeof contacts.$inferSelect;

@@ -112,47 +112,47 @@ export const pipeline_activities = pgTable("pipeline_activities", {
 });
 
 // Schema validations for forms
-export const insertAppointmentTagSchema = createInsertSchema(appointment_tags, {
-  id: undefined,
-  created_at: undefined,
-  updated_at: undefined,
+export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 }).extend({
   name: z.string().min(1, "Nome é obrigatório"),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve estar no formato hexadecimal"),
 });
 
-export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics, {
-  id: undefined,
-  created_at: undefined,
+export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics).omit({
+  id: true,
+  created_at: true,
 });
 
-export const insertAiTemplateSchema = createInsertSchema(ai_templates, {
-  id: undefined,
-  created_at: undefined,
-  updated_at: undefined,
+export const insertAiTemplateSchema = createInsertSchema(ai_templates).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 });
 
-export const insertPipelineStageSchema = createInsertSchema(pipeline_stages, {
-  id: undefined,
-  created_at: undefined,
-  updated_at: undefined,
+export const insertPipelineStageSchema = createInsertSchema(pipeline_stages).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 });
 
-export const insertPipelineOpportunitySchema = createInsertSchema(pipeline_opportunities, {
-  id: undefined,
-  created_at: undefined,
-  updated_at: undefined,
+export const insertPipelineOpportunitySchema = createInsertSchema(pipeline_opportunities).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 });
 
-export const insertPipelineHistorySchema = createInsertSchema(pipeline_history, {
-  id: undefined,
-  created_at: undefined,
+export const insertPipelineHistorySchema = createInsertSchema(pipeline_history).omit({
+  id: true,
+  created_at: true,
 });
 
-export const insertPipelineActivitySchema = createInsertSchema(pipeline_activities, {
-  id: undefined,
-  created_at: undefined,
-  updated_at: undefined,
+export const insertPipelineActivitySchema = createInsertSchema(pipeline_activities).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 });
 
 // Type definitions

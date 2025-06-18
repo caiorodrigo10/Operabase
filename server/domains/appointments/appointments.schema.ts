@@ -35,11 +35,7 @@ export const appointments = pgTable("appointments", {
   index("idx_appointments_clinic").on(table.clinic_id),
 ]);
 
-export const insertAppointmentSchema = createInsertSchema(appointments).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const insertAppointmentSchema = createInsertSchema(appointments);
 
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
