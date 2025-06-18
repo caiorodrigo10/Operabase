@@ -1,9 +1,9 @@
-import { OpenAI } from 'openai';
+import OpenAI from 'openai';
 import { z } from 'zod';
 import { contextManager } from './conversation-context';
 
-// Schema para validar as ações interpretadas
-const ActionSchema = z.union([
+// Schema de validação para as ações do MCP
+const ActionSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('chat_response'),
     message: z.string()
@@ -11,47 +11,48 @@ const ActionSchema = z.union([
   z.object({
     action: z.literal('create'),
     contact_name: z.string(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    time: z.string().regex(/^\d{2}:\d{2}$/),
-    duration: z.number().optional().default(60),
+    date: z.string(),
+    time: z.string(),
+    duration: z.number().default(60),
     doctor_name: z.string().optional(),
     specialty: z.string().optional(),
-    appointment_type: z.string().optional()
+    appointment_type: z.string().default('consulta'),
+    clinic_id: z.number().default(1),
+    user_id: z.number().default(4)
   }),
   z.object({
     action: z.literal('list'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    status: z.string().optional(),
-    user_id: z.number().optional()
+    date: z.string().optional(),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
+    clinic_id: z.number().default(1),
+    user_id: z.number().default(4)
+  }),
+  z.object({
+    action: z.literal('availability'),
+    date: z.string(),
+    duration: z.number().default(60),
+    clinic_id: z.number().default(1)
   }),
   z.object({
     action: z.literal('reschedule'),
     appointment_id: z.number(),
-    new_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    new_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-    duration: z.number().optional()
+    new_date: z.string(),
+    new_time: z.string(),
+    clinic_id: z.number().default(1),
+    user_id: z.number().default(4)
   }),
   z.object({
     action: z.literal('cancel'),
     appointment_id: z.number(),
-    cancelled_by: z.enum(['paciente', 'dentista']).optional().default('dentista'),
-    reason: z.string().optional()
-  }),
-  z.object({
-    action: z.literal('availability'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    user_id: z.number().optional().default(4),
-    duration: z.number().optional().default(60),
-    working_hours_start: z.string().regex(/^\d{2}:\d{2}$/).optional().default('08:00'),
-    working_hours_end: z.string().regex(/^\d{2}:\d{2}$/).optional().default('18:00')
+    reason: z.string().optional(),
+    clinic_id: z.number().default(1),
+    user_id: z.number().default(4)
   }),
   z.object({
     action: z.literal('clarification'),
-    message: z.string()
+    message: z.string(),
+    context: z.any().optional()
   })
 ]);
 
@@ -59,10 +60,6 @@ export class ChatInterpreter {
   private openai: OpenAI;
 
   constructor() {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY não configurado');
-    }
-
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -83,14 +80,29 @@ export class ChatInterpreter {
       
       const systemPrompt = this.buildSystemPrompt();
       
+      // Incluir contexto na conversa se existir
+      const messages: Array<{role: 'system' | 'user' | 'assistant', content: string}> = [
+        { role: 'system', content: systemPrompt }
+      ];
+
+      // Adicionar histórico de conversa se existir
+      if (context?.conversationHistory && context.conversationHistory.length > 0) {
+        const recentHistory = context.conversationHistory.slice(-3); // Últimas 3 mensagens
+        recentHistory.forEach(item => {
+          messages.push({ role: 'user', content: item.message });
+          if (item.action) {
+            messages.push({ role: 'assistant', content: `{"action": "${item.action}"}` });
+          }
+        });
+      }
+
+      messages.push({ role: 'user', content: message });
+
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-4',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.1,
-        max_tokens: 500
+        messages,
+        temperature: 0.2,
+        max_tokens: 800
       });
 
       const responseContent = completion.choices[0]?.message?.content;
@@ -147,175 +159,111 @@ export class ChatInterpreter {
   }
 
   private buildSystemPrompt(): string {
-    // Usar timezone de São Paulo (UTC-3)
     const now = new Date();
-    const saoPauloOffset = -3 * 60; // UTC-3 em minutos
+    const saoPauloOffset = -3 * 60;
     const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
     
-    // Usar diretamente os valores de São Paulo
     const today = saoPauloTime;
     const tomorrow = new Date(saoPauloTime);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
     const weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
     const todayWeekday = weekdays[today.getDay()];
     const tomorrowWeekday = weekdays[tomorrow.getDay()];
-    
-    // Calcular próximos dias da semana
-    const getNextWeekday = (targetDay: number) => {
-      const result = new Date(today);
-      const daysUntil = (targetDay - today.getDay() + 7) % 7;
-      if (daysUntil === 0) result.setDate(result.getDate() + 7); // Se é hoje, pegar próxima semana
-      else result.setDate(result.getDate() + daysUntil);
-      return result.toISOString().split('T')[0];
-    };
 
-    return `Você é um assistente de agendamento médico amigável e conversacional. Responda de forma natural às mensagens do usuário, mas sempre retorne um JSON com a ação apropriada.
+    return `# MARA - Assistente Médica Inteligente
 
-Para mensagens gerais (cumprimentos, perguntas gerais), use o formato "chat_response" para responder conversacionalmente.
-Para solicitações específicas de agendamento, use os formatos de ação apropriados.
+Você é MARA, uma assistente de agendamento médico com AUTONOMIA TOTAL para decidir como ajudar melhor o usuário.
 
-CONTEXTO:
-- clinic_id sempre será 1
-- user_id sempre será 4 (usuário de teste)
-- Data atual: ${today.toISOString().split('T')[0]} (${todayWeekday}-feira)
-- Amanhã: ${tomorrow.toISOString().split('T')[0]} (${tomorrowWeekday}-feira)
+## CONTEXTO OPERACIONAL
+- Data atual: ${today.getDate()} de ${months[today.getMonth()]} de ${today.getFullYear()} (${todayWeekday}-feira)
+- Amanhã: ${tomorrow.getDate()} de ${months[tomorrow.getMonth()]} de ${tomorrow.getFullYear()} (${tomorrowWeekday}-feira)
+- Timezone: São Paulo (UTC-3)
+- Clínica ID: 1 (fixo)
+- Usuário padrão: 4
 
-CÁLCULO INTELIGENTE DE DATAS:
-- Segunda: ${getNextWeekday(1)}
-- Terça: ${getNextWeekday(2)}
-- Quarta: ${getNextWeekday(3)}
-- Quinta: ${getNextWeekday(4)}
-- Sexta: ${getNextWeekday(5)}
-- Sábado: ${getNextWeekday(6)}
-- Domingo: ${getNextWeekday(0)}
+## SUAS FUNÇÕES DISPONÍVEIS
 
-FORMATOS DE AÇÃO VÁLIDOS:
+### 1. CHAT_RESPONSE - Conversação Geral
+Para cumprimentos, perguntas, explicações
+{"action": "chat_response", "message": "Sua resposta natural aqui"}
 
-0. RESPOSTA CONVERSACIONAL (para cumprimentos, perguntas gerais):
-{
-  "action": "chat_response",
-  "message": "Olá! Tudo bem sim, obrigado! Sou seu assistente de agendamento médico. Como posso ajudar você hoje? Posso agendar, reagendar, cancelar consultas ou verificar a agenda."
-}
-
-PARA PERGUNTAS SOBRE DATA ATUAL use EXATAMENTE esta resposta:
-{
-  "action": "chat_response", 
-  "message": "Hoje é ${today.getDate()} de ${['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][today.getMonth()]} de ${today.getFullYear()}, ${todayWeekday}-feira."
-}
-
-1. CRIAR CONSULTA:
+### 2. CREATE - Criar Agendamento
+Para novos agendamentos
 {
   "action": "create",
   "contact_name": "Nome do Paciente",
-  "date": "2025-06-25",
+  "date": "2025-06-18",
   "time": "14:00",
   "duration": 60,
-  "doctor_name": "Dr. Silva",
-  "specialty": "ortodontia",
+  "doctor_name": "Dr. João (opcional)",
+  "specialty": "Cardiologia (opcional)",
   "appointment_type": "consulta"
 }
 
-2. LISTAR CONSULTAS:
+### 3. LIST - Listar Consultas
+Para ver agenda
 {
   "action": "list",
-  "date": "2025-06-25"
-}
-OU para período:
-{
-  "action": "list",
-  "start_date": "2025-06-25",
-  "end_date": "2025-06-30"
+  "date": "2025-06-18 (opcional)",
+  "start_date": "2025-06-18 (opcional)",
+  "end_date": "2025-06-20 (opcional)"
 }
 
-3. REAGENDAR:
+### 4. AVAILABILITY - Verificar Disponibilidade
+Para checar horários livres
+{
+  "action": "availability",
+  "date": "2025-06-18",
+  "duration": 60
+}
+
+### 5. RESCHEDULE - Reagendar
+Para mudar consultas existentes
 {
   "action": "reschedule",
   "appointment_id": 123,
-  "new_date": "2025-06-26",
-  "new_time": "15:30"
+  "new_date": "2025-06-19",
+  "new_time": "15:00"
 }
 
-4. CANCELAR:
+### 6. CANCEL - Cancelar
+Para cancelar consultas
 {
   "action": "cancel",
   "appointment_id": 123,
-  "cancelled_by": "dentista",
-  "reason": "Motivo do cancelamento"
+  "reason": "Paciente solicitou"
 }
 
-5. VERIFICAR DISPONIBILIDADE (apenas para horários livres):
-{
-  "action": "availability",
-  "date": "2025-06-25",
-  "duration": 60,
-  "working_hours_start": "08:00",
-  "working_hours_end": "18:00"
-}
+## INTELIGÊNCIA CONTEXTUAL
 
-IMPORTANTE: Use "list" para mostrar consultas existentes. Use "availability" apenas para horários disponíveis.
+### INTERPRETAÇÃO AUTOMÁTICA:
+- "8h", "8:00", "às 8" → "08:00"
+- "manhã" → sugerir horários 08:00-12:00
+- "tarde" → sugerir horários 13:00-18:00
+- "hoje", "agora" → usar data atual
+- "amanhã" → usar data de amanhã
+- "segunda", "terça" → calcular próxima data
 
-6. SOLICITAR CLARIFICAÇÃO:
-{
-  "action": "clarification",
-  "message": "Preciso de mais informações. Qual o nome do paciente?"
-}
+### AUTONOMIA TOTAL:
+Você decide qual função usar baseado no contexto!
 
-REGRAS IMPORTANTES:
-- Sempre use formato de data YYYY-MM-DD
-- Sempre use formato de hora HH:MM
-- Para "hoje", use ${new Date().toISOString().split('T')[0]}
-- Para "amanhã", use ${new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0]}
-- Se informações essenciais estiverem faltando, use action "clarification"
-- Interprete linguagem natural: "manhã" = 09:00, "tarde" = 14:00, "noite" = 19:00
-- Para reagendamento sem ID específico, solicite clarificação
+Exemplos de sua autonomia:
+- "Preciso remarcar" → Sua decisão: Liste consultas primeiro, depois pergunte qual
+- "Tem vaga amanhã?" → Sua decisão: Mostre disponibilidade automaticamente
+- "João Silva às 10h" → Sua decisão: Crie agendamento se tiver data, ou pergunte quando
+- "Cancelar consulta" → Sua decisão: Liste consultas para escolher qual cancelar
 
-EXEMPLOS:
+### COMUNICAÇÃO:
+- Seja natural e conversacional
+- Use linguagem brasileira informal mas profissional
+- Antecipe necessidades do usuário
+- Explique suas ações quando relevante
+- Sempre responda em JSON válido
 
-Usuário: "Agendar consulta para Maria Silva amanhã às 10h"
-Resposta: {"action":"create","contact_name":"Maria Silva","date":"${tomorrow.toISOString().split('T')[0]}","time":"10:00","duration":60}
-
-Usuário: "Quais consultas temos hoje?"
-Resposta: {"action":"list","date":"${today.toISOString().split('T')[0]}"}
-
-Usuário: "Você tem horário para quinta?"
-Resposta: {"action":"availability","date":"${getNextWeekday(4)}","user_id":4,"duration":60,"working_hours_start":"08:00","working_hours_end":"18:00"}
-
-Usuário: "Reagendar a consulta 15 para sexta às 16h"
-Resposta: {"action":"reschedule","appointment_id":15,"new_date":"${getNextWeekday(5)}","new_time":"16:00"}
-
-RETORNE APENAS O JSON, SEM EXPLICAÇÕES ADICIONAIS.`;
-  }
-
-  // Método auxiliar para normalizar datas relativas
-  private normalizeDateExpression(dateStr: string): string {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    switch (dateStr.toLowerCase()) {
-      case 'hoje':
-        return today.toISOString().split('T')[0];
-      case 'amanhã':
-      case 'amanha':
-        return tomorrow.toISOString().split('T')[0];
-      default:
-        return dateStr;
-    }
-  }
-
-  // Método auxiliar para normalizar expressões de horário
-  private normalizeTimeExpression(timeStr: string): string {
-    const timeMap: { [key: string]: string } = {
-      'manhã': '09:00',
-      'manha': '09:00',
-      'tarde': '14:00',
-      'noite': '19:00',
-      'meio-dia': '12:00',
-      'meio dia': '12:00'
-    };
-
-    return timeMap[timeStr.toLowerCase()] || timeStr;
+### REGRA FUNDAMENTAL:
+Use seu julgamento para escolher a melhor ação. Você tem liberdade total para decidir como ajudar!`;
   }
 }
 

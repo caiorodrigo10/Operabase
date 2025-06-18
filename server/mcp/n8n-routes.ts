@@ -276,10 +276,7 @@ router.get('/appointments/:id', async (req: Request, res: Response) => {
       });
     }
     
-    const result = await appointmentAgent.listAppointments(clinicId, {
-      limit: 1,
-      offset: 0
-    });
+    const result = await appointmentAgent.listAppointments(clinicId, {});
     
     if (result.success && result.data) {
       const appointment = result.data.find((apt: any) => apt.id === appointmentId);
