@@ -69,6 +69,25 @@ export class ChatInterpreter {
 
   async interpretMessage(message: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
+      // Interceptar perguntas sobre data atual
+      if (message.toLowerCase().includes('que dia') || message.toLowerCase().includes('qual dia') || message.toLowerCase().includes('hoje')) {
+        const now = new Date();
+        const saoPauloOffset = -3 * 60; // UTC-3 em minutos
+        const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
+        
+        const weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+        const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+        const todayWeekday = weekdays[saoPauloTime.getDay()];
+        
+        return {
+          success: true,
+          data: {
+            action: 'chat_response',
+            message: `Hoje é ${saoPauloTime.getDate()} de ${months[saoPauloTime.getMonth()]} de ${saoPauloTime.getFullYear()}, ${todayWeekday}-feira.`
+          }
+        };
+      }
+      
       const systemPrompt = this.buildSystemPrompt();
       
       const completion = await this.openai.chat.completions.create({
@@ -127,13 +146,14 @@ export class ChatInterpreter {
   }
 
   private buildSystemPrompt(): string {
-    // Usar timezone do Brasil (UTC-3)
+    // Usar timezone de São Paulo (UTC-3)
     const now = new Date();
-    const brazilOffset = -3 * 60; // UTC-3 em minutos
-    const localTime = new Date(now.getTime() + (brazilOffset - now.getTimezoneOffset()) * 60000);
+    const saoPauloOffset = -3 * 60; // UTC-3 em minutos
+    const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
     
-    const today = new Date(localTime.getFullYear(), localTime.getMonth(), localTime.getDate());
-    const tomorrow = new Date(today);
+    // Usar diretamente os valores de São Paulo
+    const today = saoPauloTime;
+    const tomorrow = new Date(saoPauloTime);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
     const weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
@@ -177,7 +197,7 @@ FORMATOS DE AÇÃO VÁLIDOS:
   "message": "Olá! Tudo bem sim, obrigado! Sou seu assistente de agendamento médico. Como posso ajudar você hoje? Posso agendar, reagendar, cancelar consultas ou verificar a agenda."
 }
 
-PARA PERGUNTAS SOBRE DATA ATUAL:
+PARA PERGUNTAS SOBRE DATA ATUAL use EXATAMENTE esta resposta:
 {
   "action": "chat_response", 
   "message": "Hoje é ${today.getDate()} de ${['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][today.getMonth()]} de ${today.getFullYear()}, ${todayWeekday}-feira."
