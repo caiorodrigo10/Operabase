@@ -98,15 +98,26 @@ export class ChatInterpreter {
         { role: 'system', content: systemPrompt }
       ];
 
-      // Adicionar histórico de conversa se existir
+      // Adicionar histórico de conversa se existir com mais contexto
       if (context?.conversationHistory && context.conversationHistory.length > 0) {
-        const recentHistory = context.conversationHistory.slice(-4); // Últimas 4 mensagens para mais contexto
-        recentHistory.forEach(item => {
-          messages.push({ role: 'user', content: item.message });
-          if (item.action) {
-            messages.push({ role: 'assistant', content: `Ação executada: ${item.action}` });
+        const recentHistory = context.conversationHistory.slice(-6); // Últimas 6 mensagens para mais contexto
+        
+        // Construir conversa alternada user/assistant
+        for (let i = 0; i < recentHistory.length - 1; i++) { // Não incluir a mensagem atual
+          const historyItem = recentHistory[i];
+          messages.push({ role: 'user', content: historyItem.message });
+          
+          // Simular resposta do assistente baseada na ação
+          let assistantResponse = "Entendi sua mensagem.";
+          if (historyItem.action === 'availability') {
+            assistantResponse = "Verifiquei os horários disponíveis para você.";
+          } else if (historyItem.action === 'create') {
+            assistantResponse = "Processo de agendamento iniciado.";
+          } else if (historyItem.action === 'clarification') {
+            assistantResponse = "Preciso de mais informações para continuar.";
           }
-        });
+          messages.push({ role: 'assistant', content: assistantResponse });
+        }
       }
 
       // Incluir contexto de agendamento pendente se existir
@@ -116,14 +127,19 @@ export class ChatInterpreter {
         const missingFields = contextManager.validateAppointment(pending);
 
         if (missingFields.length === 0) {
-          contextualMessage += `\n\nCONTEXTO COMPLETO: Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time} - EXECUTAR AGENDAMENTO AGORA!`;
+          contextualMessage += `\n\n🔥 AÇÃO OBRIGATÓRIA: TODOS OS DADOS ESTÃO COMPLETOS! Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time}. EXECUTE O AGENDAMENTO IMEDIATAMENTE COM ACTION 'create'!`;
         } else {
           const hasData = Object.entries(pending)
             .filter(([key, value]) => value && key !== 'incomplete_fields')
             .map(([key, value]) => `${key}: ${value}`)
             .join(', ');
-          contextualMessage += `\n\nIMPORTANTE: DADOS JÁ COLETADOS [${hasData}]. FALTAM APENAS: ${missingFields.join(', ')}. NÃO PERGUNTE NOVAMENTE OS DADOS QUE JÁ TEMOS!`;
+          contextualMessage += `\n\n⚠️ MEMÓRIA ATIVA: JÁ TEMOS [${hasData}]. FALTAM APENAS: ${missingFields.join(', ')}. NÃO REPITA PERGUNTAS SOBRE DADOS QUE JÁ POSSUÍMOS! Use os dados existentes e peça apenas o que está faltando.`;
         }
+      }
+
+      // Adicionar contexto de conversa recente
+      if (context?.conversationHistory && context.conversationHistory.length > 1) {
+        contextualMessage += `\n\n💭 CONTINUAÇÃO DA CONVERSA: Esta não é a primeira mensagem. Mantenha contexto e continuidade natural da conversa anterior.`;
       }
 
       messages.push({ role: 'user', content: contextualMessage });
@@ -271,12 +287,15 @@ export class ChatInterpreter {
     const todayWeekday = weekdays[today.getDay()];
     const tomorrowWeekday = weekdays[tomorrow.getDay()];
 
-    return `# MARA - Assistente Médico MCP Ultra-Robusto
+    return `# MARINA - Assistente Médico com Memória Perfeita
 
-Você é MARA, assistente médico conversacional integrado via Model Context Protocol (MCP) para agendamento médico. Sua função é interpretar linguagem natural e executar ações estruturadas com máxima confiabilidade.
+Você é MARINA, assistente médico conversacional da clínica. Sua principal característica é NUNCA ESQUECER informações mencionadas na conversa.
+
+## REGRA FUNDAMENTAL DE MEMÓRIA
+SEMPRE mantenha e use TODAS as informações já fornecidas pelo usuário na conversa atual. Se o usuário já disse o nome, data ou horário, NUNCA peça novamente. Use os dados que já tem.
 
 ## OBJETIVO PRINCIPAL
-Garantir 100% de sucesso na interpretação e execução de comandos, mesmo com dados incompletos ou ambíguos. NUNCA retornar erro genérico ao usuário.
+Manter continuidade perfeita na conversa e completar agendamentos usando TODAS as informações já coletadas.
 
 ## CONTEXTO OPERACIONAL FIXO
 - Clínica ID: 1 (sempre)
@@ -348,13 +367,23 @@ NUNCA retornar erro genérico. SEMPRE uma dessas respostas:
 ## EXEMPLOS DE RESPOSTA OBRIGATÓRIA
 
 **Usuário:** "oi"
-**Resposta:** {"action": "chat_response", "message": "Olá! Sou a MARA, sua assistente de agendamento médico. Posso ajudar você a agendar consultas, verificar horários disponíveis, ou consultar agendamentos existentes. Como posso ajudar?"}
+**Resposta:** {"action": "chat_response", "message": "Oi! 😊 Aqui é a Marina da clínica! Seja bem-vindo(a)! Como posso te ajudar hoje? Posso marcar consultas, tirar dúvidas ou qualquer coisa que precisar!"}
 
-**Usuário:** "quero agendar"
-**Resposta:** {"action": "clarification", "message": "Perfeito! Para agendar uma consulta, preciso saber: nome do paciente, data preferida e horário. Você pode me passar essas informações?"}
+**Usuário:** "tem horário amanhã?"
+**Resposta:** {"action": "availability", "date": "${tomorrow.toISOString().split('T')[0]}", "duration": 60, "clinic_id": 1}
 
-**Usuário:** "Maria amanhã 10h"
-**Resposta:** {"action": "create", "contact_name": "Maria", "date": "${tomorrow.toISOString().split('T')[0]}", "time": "10:00", "clinic_id": 1, "user_id": 4}
+**Cenário de MEMÓRIA CORRETA:**
+**Usuário:** "as 11:30"
+**Contexto:** Já perguntou sobre horários para amanhã
+**Resposta:** {"action": "clarification", "message": "Entendi que você quer agendar para as 11:30 amanhã. Para completar o agendamento, preciso saber o nome do paciente."}
+
+**Usuário:** "Caio Junior"
+**Contexto:** Já tem horário (11:30) e data (amanhã)
+**Resposta:** {"action": "create", "contact_name": "Caio Junior", "date": "${tomorrow.toISOString().split('T')[0]}", "time": "11:30", "clinic_id": 1, "user_id": 4}
+
+**NUNCA FAÇA ISSO:**
+**Usuário:** "Caio Junior"
+**Resposta ERRADA:** {"action": "clarification", "message": "Olá, Caio Junior! Para prosseguir com o agendamento, preciso saber a data e o horário..."}
 
 ## REGRAS CRÍTICAS
 - NUNCA retorne erro sem explicação específica
