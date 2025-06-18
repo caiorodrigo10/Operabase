@@ -179,7 +179,7 @@ Mensagem do usuário: "${userMessage}"
 Responda APENAS com JSON no formato:
 {
   "action": "create_appointment",
-  "contact_name": "nome_extraído",
+  "contact_id": 33,
   "scheduled_date": "YYYY-MM-DD",
   "scheduled_time": "HH:MM",
   "duration_minutes": 60,

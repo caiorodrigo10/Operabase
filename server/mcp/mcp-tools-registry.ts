@@ -11,9 +11,9 @@ export class MCPToolsRegistry {
       inputSchema: {
         type: 'object',
         properties: {
-          contact_name: {
-            type: 'string',
-            description: 'Nome completo do paciente'
+          contact_id: {
+            type: 'number',
+            description: 'ID do contato/paciente existente'
           },
           clinic_id: {
             type: 'number',
@@ -52,7 +52,7 @@ export class MCPToolsRegistry {
             description: 'Tipo de consulta (opcional)'
           }
         },
-        required: ['contact_name', 'clinic_id', 'user_id', 'scheduled_date', 'scheduled_time', 'duration_minutes']
+        required: ['contact_id', 'clinic_id', 'user_id', 'scheduled_date', 'scheduled_time', 'duration_minutes']
       }
     },
     {

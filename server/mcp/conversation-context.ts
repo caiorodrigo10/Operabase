@@ -217,7 +217,7 @@ class ConversationContextManager {
   validateAppointment(appointment: any): string[] {
     const missing = [];
     
-    if (!appointment.contact_name) missing.push('nome do paciente');
+    if (!appointment.contact_id) missing.push('ID do paciente');
     if (!appointment.date) missing.push('data');
     if (!appointment.time) missing.push('horário');
     
