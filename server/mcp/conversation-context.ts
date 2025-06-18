@@ -93,19 +93,25 @@ class ConversationContextManager {
     const appointment = existing || {};
     const lowerMsg = message.toLowerCase();
 
-    // Extrair nome do paciente
+    // Extrair nome do paciente (padrões mais específicos)
     const namePatterns = [
-      /nome\s+(?:é|do paciente|da pessoa)?\s*(?:é\s+)?([a-záàâãäçéèêëíìîïóòôõöúùûü\s]+)/i,
-      /paciente\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]+)/i,
-      /para\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]+)/i
+      /nome\s+(?:é|do paciente|da pessoa)?\s*(?:é\s+)?([a-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
+      /paciente\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
+      /(?:agendar|marcar).*?(?:para|pro)\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
+      /^([a-záàâãäçéèêëíìîïóòôõöúùûü]+\s+[a-záàâãäçéèêëíìîïóòôõöúùûü]+)/i // Nome completo no início
     ];
 
-    for (const pattern of namePatterns) {
-      const match = message.match(pattern);
-      if (match && match[1]) {
-        const name = match[1].trim();
-        if (name.length > 1 && !['consulta', 'teste', 'agendamento'].includes(name.toLowerCase())) {
-          appointment.contact_name = name;
+    // Só extrair nomes se não contém palavras-chave de agendamento
+    if (!lowerMsg.includes('marcar') && !lowerMsg.includes('agendar') && !lowerMsg.includes('para as')) {
+      for (const pattern of namePatterns) {
+        const match = message.match(pattern);
+        if (match && match[1]) {
+          const name = match[1].trim();
+          const excludedWords = ['consulta', 'teste', 'agendamento', 'marcar', 'agendar', 'amanhã', 'hoje', 'horário'];
+          if (name.length > 2 && !excludedWords.some(word => name.toLowerCase().includes(word))) {
+            appointment.contact_name = name;
+            break;
+          }
         }
       }
     }
@@ -122,8 +128,11 @@ class ConversationContextManager {
 
     // Extrair horário
     const timePatterns = [
-      /(?:às\s+)?(\d{1,2})[h:]?(?:(\d{2})?(?:h|:)?)?/g,
-      /(\d{1,2}):(\d{2})/g
+      /(?:às\s+)?(\d{1,2})h(?:(\d{2}))?/i,
+      /(?:às\s+)?(\d{1,2}):(\d{2})/i,
+      /(?:às\s+)?(\d{1,2})\s*(?:horas?|h)/i,
+      /marcar.*?(?:às\s+)?(\d{1,2})h/i,
+      /para.*?(?:às\s+)?(\d{1,2})h/i
     ];
 
     for (const pattern of timePatterns) {
