@@ -534,87 +534,171 @@ curl -X POST "https://your-domain.replit.app/api/mcp/appointments/create" \
   -H "Content-Type: application/json" \
   -d '{
     "contact_id": 15,
-  "user_id": 4,
-  "scheduled_date": "2025-06-25",
-  "scheduled_time": "14:00",
-  "duration_minutes": 60,
-  "doctor_name": "Dr. Silva",
-  "specialty": "consulta",
-  "appointment_type": "consulta",
-  "payment_amount": 15000
-}
-```
-
-**Resposta de Sucesso (201):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 26,
-    "contact_id": 15,
     "user_id": 4,
-    "scheduled_date": "2025-06-25T14:00:00Z",
-    "duration_minutes": 60,
-    "status": "agendada"
-  },
-  "appointment_id": 26,
-  "error": null,
-  "conflicts": null,
-  "next_available_slots": null
-}
+    "scheduled_date": "2025-06-25",
+    "scheduled_time": "14:00",
+    "duration_minutes": 60
+  }'
 ```
 
-**Resposta de Conflito (400):**
+### Atualizar status de uma consulta:
+```bash
+curl -X PUT "https://your-domain.replit.app/api/mcp/appointments?id=12" \
+  -H "Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "realizada",
+    "session_notes": "Consulta finalizada com sucesso"
+  }'
+```
+
+### Reagendar uma consulta:
+```bash
+curl -X PUT "https://your-domain.replit.app/api/mcp/appointments?id=12" \
+  -H "Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scheduled_date": "2025-06-26",
+    "scheduled_time": "15:30",
+    "duration_minutes": 45
+  }'
+```
+
+### Listar consultas de um dia específico:
+```bash
+curl -X GET "https://your-domain.replit.app/api/mcp/appointments?date=2025-06-25" \
+  -H "Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c"
+```
+
+### Criar um contato:
+```bash
+curl -X POST "https://your-domain.replit.app/api/mcp/contacts/create" \
+  -H "Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "phone": "+5511999999999"
+  }'
+```
+
+### Verificar disponibilidade:
+```bash
+curl -X POST "https://your-domain.replit.app/api/mcp/appointments/availability" \
+  -H "Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 4,
+    "date": "2025-06-25",
+    "duration_minutes": 60
+  }'
+```
+
+## Integração com N8N
+
+Esta API foi projetada para integração perfeita com N8N workflows. Principais características para automação:
+
+### 1. **Webhooks Compatíveis**: Todos os endpoints retornam JSON estruturado
+### 2. **Validação Robusta**: Parâmetros são validados antes do processamento
+### 3. **Respostas Consistentes**: Formato padronizado para facilitar parsing
+### 4. **Isolamento por Clínica**: Cada API Key acessa apenas dados da própria clínica
+### 5. **Operações Unificadas**: Endpoint PUT único para todas as atualizações de consulta
+
+### Fluxo Típico de Integração:
+1. **Criar Contato** (`POST /contacts/create`)
+2. **Verificar Disponibilidade** (`POST /appointments/availability`)
+3. **Criar Consulta** (`POST /appointments/create`)
+4. **Atualizar Status** (`PUT /appointments?id=X`)
+5. **Análise com IA** (`POST /chat`)
+
+### Configuração no N8N:
+
+#### Nó HTTP Request - Configuração Base:
+- **Authentication**: None (usar header personalizado)
+- **Headers**: 
+  ```
+  Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c
+  Content-Type: application/json
+  ```
+
+#### Exemplo de Workflow N8N:
 ```json
 {
-  "success": false,
-  "data": null,
-  "error": "Time slot conflict detected",
-  "appointment_id": null,
-  "conflicts": [
+  "name": "Agendamento Automático",
+  "nodes": [
     {
-      "id": 17,
-      "scheduled_date": "2025-06-25T14:30:00Z",
-      "doctor_name": "Dr. Silva",
-      "duration_minutes": 60
-    }
-  ],
-  "next_available_slots": [
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "novo-agendamento"
+      }
+    },
     {
-      "date": "2025-06-25",
-      "time": "15:30",
-      "user_id": 4,
-      "user_name": "Dr. Silva"
+      "name": "Criar Contato",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://your-domain.replit.app/api/mcp/contacts/create",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c"
+        },
+        "body": {
+          "name": "={{ $json.nome }}",
+          "email": "={{ $json.email }}",
+          "phone": "={{ $json.telefone }}"
+        }
+      }
+    },
+    {
+      "name": "Verificar Disponibilidade",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://your-domain.replit.app/api/mcp/appointments/availability",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c"
+        },
+        "body": {
+          "user_id": "={{ $json.profissional_id }}",
+          "date": "={{ $json.data }}",
+          "duration_minutes": 60
+        }
+      }
+    },
+    {
+      "name": "Criar Consulta",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://your-domain.replit.app/api/mcp/appointments/create",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c"
+        },
+        "body": {
+          "contact_id": "={{ $('Criar Contato').first().json.data.id }}",
+          "user_id": "={{ $json.profissional_id }}",
+          "scheduled_date": "={{ $json.data }}",
+          "scheduled_time": "={{ $json.horario }}",
+          "duration_minutes": 60
+        }
+      }
     }
   ]
 }
 ```
 
-### 7. Atualizar Consulta (Endpoint Unificado)
+### Tratamento de Erros:
+- Use o campo `success` para verificar se a operação foi bem-sucedida
+- Campo `error` contém mensagem detalhada em caso de falha
+- Códigos HTTP seguem padrões REST para facilitar tratamento
 
-```http
-PUT /api/mcp/appointments/{id}
-Content-Type: application/json
+### Dicas para N8N:
+1. **Sempre validar `success: true`** antes de processar dados
+2. **Usar `$('Nó Anterior').first().json.data.id`** para referenciar IDs criados
+3. **Implementar retry logic** para requests que podem falhar temporariamente
+4. **Logs detalhados** estão disponíveis nos headers de resposta
 
-{
-  "status": "confirmada",
-  "session_notes": "Consulta realizada com sucesso"
-}
-```
-
-**Campos disponíveis para atualização:**
-- `scheduled_date` (string): Data no formato YYYY-MM-DD
-- `scheduled_time` (string): Horário no formato HH:MM 
-- `duration_minutes` (number): Duração em minutos
-- `status` (string): Status da consulta
-- `doctor_name` (string): Nome do médico
-- `specialty` (string): Especialidade
-- `appointment_type` (string): Tipo de consulta
-- `session_notes` (string): Notas da sessão
-- `payment_status` (string): Status do pagamento
-- `payment_amount` (number): Valor do pagamento
-- `cancellation_reason` (string): Motivo do cancelamento
-- `tag_id` (number): ID da tag
+Essa estrutura permite automações completas de agendamento, acompanhamento e análise de pacientes através do N8N, mantendo total isolamento entre clínicas e segurança através das API Keys.
 
 **Exemplo - Reagendamento:**
 ```json
