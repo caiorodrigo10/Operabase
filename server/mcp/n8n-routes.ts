@@ -475,19 +475,32 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
               working_hours_end: '18:00'
             });
 
-            if (mcpResult.success && mcpResult.next_available_slots) {
-              if (mcpResult.next_available_slots.length === 0) {
-                naturalResponse = '❌ Não há horários disponíveis para essa data. Que tal tentarmos outro dia?';
+            console.log('🔍 Availability MCP Result:', JSON.stringify(mcpResult, null, 2));
+
+            if (mcpResult.success && mcpResult.data) {
+              const availableSlots = Array.isArray(mcpResult.data) ? mcpResult.data : [];
+              
+              if (availableSlots.length === 0) {
+                naturalResponse = `❌ Não há horários disponíveis para ${result.data.date}. Que tal tentarmos outro dia?`;
               } else {
-                const slots = mcpResult.next_available_slots.slice(0, 5).join(', ');
-                naturalResponse = `✅ Horários disponíveis para ${result.data.date}: ${slots}`;
+                const slots = availableSlots
+                  .filter(slot => slot.available)
+                  .map(slot => slot.time)
+                  .slice(0, 5)
+                  .join(', ');
+                  
+                if (slots) {
+                  naturalResponse = `✅ Horários disponíveis para ${result.data.date}:\n\n${slots}\n\nQual horário você prefere?`;
+                } else {
+                  naturalResponse = `❌ Todos os horários estão ocupados para ${result.data.date}. Que tal tentarmos outro dia?`;
+                }
               }
             } else {
-              naturalResponse = '❌ Não consegui verificar a disponibilidade no momento.';
+              naturalResponse = `❌ Não consegui verificar a disponibilidade para ${result.data.date}. Erro: ${mcpResult.error || 'Desconhecido'}`;
             }
           } catch (error) {
             console.error('❌ Erro ao verificar disponibilidade:', error);
-            naturalResponse = '❌ Tive um problema ao verificar os horários.';
+            naturalResponse = `❌ Tive um problema ao verificar os horários para ${result.data.date}. Pode tentar novamente?`;
           }
           break;
 

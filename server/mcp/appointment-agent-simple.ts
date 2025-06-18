@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { eq, and, gte, lte, between } from 'drizzle-orm';
 import { db } from '../db';
+import { appointments, contacts, users, appointment_tags } from '../../shared/schema';
 import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
 import { appointments } from '../domains/appointments/appointments.schema';
@@ -74,7 +76,7 @@ export interface MCPResponse {
 }
 
 export class AppointmentMCPAgent {
-  
+
   /**
    * Validate contact exists and belongs to clinic
    */
@@ -86,10 +88,10 @@ export class AppointmentMCPAgent {
         eq(contacts.clinic_id, clinicId)
       ))
       .limit(1);
-    
+
     return contact.length > 0;
   }
-  
+
   /**
    * Validate user exists, is active, and belongs to clinic
    */
@@ -104,10 +106,10 @@ export class AppointmentMCPAgent {
         eq(users.is_active, true)
       ))
       .limit(1);
-    
+
     return userInClinic.length > 0;
   }
-  
+
   /**
    * Validate appointment tag exists and belongs to clinic
    */
@@ -119,17 +121,17 @@ export class AppointmentMCPAgent {
         eq(appointment_tags.clinic_id, clinicId)
       ))
       .limit(1);
-    
+
     return tag.length > 0;
   }
-  
+
   /**
    * Create a new appointment with full validation
    */
   async createAppointment(params: z.infer<typeof CreateAppointmentSchema>): Promise<MCPResponse> {
     try {
       const validated = CreateAppointmentSchema.parse(params);
-      
+
       // Validate contact exists and belongs to clinic
       const contactValid = await this.validateContact(validated.contact_id, validated.clinic_id);
       if (!contactValid) {
@@ -142,7 +144,7 @@ export class AppointmentMCPAgent {
           next_available_slots: null
         };
       }
-      
+
       // Validate user exists, is active, and belongs to clinic
       const userValid = await this.validateUser(validated.user_id, validated.clinic_id);
       if (!userValid) {
@@ -155,7 +157,7 @@ export class AppointmentMCPAgent {
           next_available_slots: null
         };
       }
-      
+
       // Validate tag if provided
       if (validated.tag_id) {
         const tagValid = await this.validateTag(validated.tag_id, validated.clinic_id);
@@ -170,10 +172,10 @@ export class AppointmentMCPAgent {
           };
         }
       }
-      
+
       // Create scheduled datetime
       const scheduledDateTime = new Date(`${validated.scheduled_date}T${validated.scheduled_time}:00`);
-      
+
       // Check for conflicts
       const conflicts = await this.checkConflicts(
         validated.user_id,
@@ -181,7 +183,7 @@ export class AppointmentMCPAgent {
         validated.duration_minutes,
         validated.clinic_id
       );
-      
+
       if (conflicts.length > 0) {
         return {
           success: false,
@@ -192,7 +194,7 @@ export class AppointmentMCPAgent {
           next_available_slots: null
         };
       }
-      
+
       // Create appointment using Drizzle ORM
       const newAppointment = await db.insert(appointments).values({
         contact_id: validated.contact_id,
@@ -211,7 +213,7 @@ export class AppointmentMCPAgent {
         created_at: new Date(),
         updated_at: new Date()
       }).returning();
-      
+
       return {
         success: true,
         data: newAppointment[0],
@@ -220,7 +222,7 @@ export class AppointmentMCPAgent {
         conflicts: null,
         next_available_slots: null
       };
-      
+
     } catch (error) {
       console.error('createAppointment Error:', error);
       return {
@@ -233,7 +235,7 @@ export class AppointmentMCPAgent {
       };
     }
   }
-  
+
   /**
    * Check for scheduling conflicts
    */
@@ -245,7 +247,7 @@ export class AppointmentMCPAgent {
     excludeAppointmentId?: number
   ): Promise<any[]> {
     const endTime = addMinutes(scheduledDate, durationMinutes);
-    
+
     let query = db.select()
       .from(appointments)
       .where(and(
@@ -255,24 +257,24 @@ export class AppointmentMCPAgent {
         sql`${appointments.scheduled_date} < ${endTime}`,
         sql`${appointments.scheduled_date} + INTERVAL '1 minute' * ${appointments.duration_minutes} > ${scheduledDate}`
       ));
-    
+
     const results = await query;
-    
+
     // Exclude current appointment if rescheduling
     if (excludeAppointmentId) {
       return results.filter(apt => apt.id !== excludeAppointmentId);
     }
-    
+
     return results;
   }
-  
+
   /**
    * Update appointment status with validation
    */
   async updateStatus(params: z.infer<typeof UpdateStatusSchema>): Promise<MCPResponse> {
     try {
       const validated = UpdateStatusSchema.parse(params);
-      
+
       const result = await db.update(appointments)
         .set({
           status: validated.status,
@@ -284,7 +286,7 @@ export class AppointmentMCPAgent {
           eq(appointments.clinic_id, validated.clinic_id)
         ))
         .returning();
-      
+
       if (result.length === 0) {
         return {
           success: false,
@@ -295,7 +297,7 @@ export class AppointmentMCPAgent {
           next_available_slots: null
         };
       }
-      
+
       return {
         success: true,
         data: result[0],
@@ -304,7 +306,7 @@ export class AppointmentMCPAgent {
         conflicts: null,
         next_available_slots: null
       };
-      
+
     } catch (error) {
       console.error('updateStatus Error:', error);
       return {
@@ -317,16 +319,16 @@ export class AppointmentMCPAgent {
       };
     }
   }
-  
+
   /**
    * Reschedule appointment with conflict validation
    */
   async rescheduleAppointment(params: z.infer<typeof RescheduleSchema>): Promise<MCPResponse> {
     try {
       const validated = RescheduleSchema.parse(params);
-      
+
       const scheduledDateTime = new Date(`${validated.scheduled_date}T${validated.scheduled_time}:00`);
-      
+
       // Check for conflicts excluding current appointment
       const conflicts = await this.checkConflicts(
         0, // Will get user_id from existing appointment
@@ -335,7 +337,7 @@ export class AppointmentMCPAgent {
         validated.clinic_id,
         validated.appointment_id
       );
-      
+
       if (conflicts.length > 0) {
         return {
           success: false,
@@ -346,16 +348,16 @@ export class AppointmentMCPAgent {
           next_available_slots: null
         };
       }
-      
+
       const updateData: any = {
         scheduled_date: scheduledDateTime,
         updated_at: new Date()
       };
-      
+
       if (validated.duration_minutes) {
         updateData.duration_minutes = validated.duration_minutes;
       }
-      
+
       const result = await db.update(appointments)
         .set(updateData)
         .where(and(
@@ -363,7 +365,7 @@ export class AppointmentMCPAgent {
           eq(appointments.clinic_id, validated.clinic_id)
         ))
         .returning();
-      
+
       if (result.length === 0) {
         return {
           success: false,
@@ -374,7 +376,7 @@ export class AppointmentMCPAgent {
           next_available_slots: null
         };
       }
-      
+
       return {
         success: true,
         data: result[0],
@@ -383,7 +385,7 @@ export class AppointmentMCPAgent {
         conflicts: null,
         next_available_slots: null
       };
-      
+
     } catch (error) {
       console.error('rescheduleAppointment Error:', error);
       return {
@@ -396,14 +398,14 @@ export class AppointmentMCPAgent {
       };
     }
   }
-  
+
   /**
    * Cancel appointment with reason
    */
   async cancelAppointment(appointmentId: number, clinicId: number, cancelledBy: 'paciente' | 'dentista', reason?: string): Promise<MCPResponse> {
     try {
       const status = cancelledBy === 'paciente' ? 'cancelada_paciente' : 'cancelada_dentista';
-      
+
       const result = await db.update(appointments)
         .set({
           status: status,
@@ -415,7 +417,7 @@ export class AppointmentMCPAgent {
           eq(appointments.clinic_id, clinicId)
         ))
         .returning();
-      
+
       if (result.length === 0) {
         return {
           success: false,
@@ -426,7 +428,7 @@ export class AppointmentMCPAgent {
           next_available_slots: null
         };
       }
-      
+
       return {
         success: true,
         data: result[0],
@@ -435,7 +437,7 @@ export class AppointmentMCPAgent {
         conflicts: null,
         next_available_slots: null
       };
-      
+
     } catch (error) {
       console.error('cancelAppointment Error:', error);
       return {
@@ -448,75 +450,77 @@ export class AppointmentMCPAgent {
       };
     }
   }
-  
+
   /**
    * Get available time slots for a specific date and user
    */
   async getAvailableSlots(params: z.infer<typeof AvailabilitySchema>): Promise<MCPResponse> {
     try {
       const validated = AvailabilitySchema.parse(params);
-      
+
+      console.log('🔍 Getting availability for:', validated);
+
       // Get existing appointments for the day
-      const startOfSelectedDay = new Date(`${validated.date}T00:00:00`);
-      const endOfSelectedDay = new Date(`${validated.date}T23:59:59`);
-      
-      const existingAppointments = await db.select({
-        scheduled_date: appointments.scheduled_date,
-        duration_minutes: appointments.duration_minutes
-      })
-      .from(appointments)
-      .where(and(
-        eq(appointments.clinic_id, validated.clinic_id),
-        eq(appointments.user_id, validated.user_id),
-        gte(appointments.scheduled_date, startOfSelectedDay),
-        lte(appointments.scheduled_date, endOfSelectedDay),
-        eq(appointments.status, 'agendada')
-      ));
-      
+      const startOfTargetDay = startOfDay(new Date(`${validated.date}T00:00:00`));
+      const endOfTargetDay = endOfDay(new Date(`${validated.date}T23:59:59`));
+
+      const existingAppointments = await db.select()
+        .from(appointments)
+        .where(and(
+          eq(appointments.clinic_id, validated.clinic_id),
+          eq(appointments.user_id, validated.user_id),
+          gte(appointments.scheduled_date, startOfTargetDay),
+          lte(appointments.scheduled_date, endOfTargetDay),
+          eq(appointments.status, 'agendada')
+        ));
+
+      console.log('📅 Existing appointments:', existingAppointments.length);
+
       // Generate time slots based on working hours
       const slots = [];
       const workStart = parse(validated.working_hours_start, 'HH:mm', new Date());
       const workEnd = parse(validated.working_hours_end, 'HH:mm', new Date());
-      
+
       let currentTime = workStart;
-      
+
       while (isBefore(addMinutes(currentTime, validated.duration_minutes), workEnd)) {
         const timeString = format(currentTime, 'HH:mm');
         const slotStart = new Date(`${validated.date}T${timeString}:00`);
         const slotEnd = addMinutes(slotStart, validated.duration_minutes);
-        
+
         // Check if this slot conflicts with existing appointments
-        const hasConflict = existingAppointments.some((apt: any) => {
+        const hasConflict = existingAppointments.some(apt => {
           if (!apt.scheduled_date) return false;
           const aptStart = new Date(apt.scheduled_date);
           const aptEnd = addMinutes(aptStart, apt.duration_minutes || 60);
-          
+
           return (slotStart < aptEnd && slotEnd > aptStart);
         });
-        
-        if (!hasConflict) {
-          slots.push({
-            time: timeString,
-            duration_minutes: validated.duration_minutes,
-            available: true
-          });
-        }
-        
-        // Move to next 15-minute interval
-        currentTime = addMinutes(currentTime, 15);
+
+        slots.push({
+          time: timeString,
+          duration_minutes: validated.duration_minutes,
+          available: !hasConflict,
+          conflicted: hasConflict
+        });
+
+        // Move to next 30-minute interval for better readability
+        currentTime = addMinutes(currentTime, 30);
       }
-      
+
+      console.log('⏰ Generated slots:', slots.length, 'available:', slots.filter(s => s.available).length);
+
       return {
         success: true,
         data: slots,
         error: null,
         appointment_id: null,
         conflicts: null,
-        next_available_slots: null
+        next_available_slots: slots.filter(s => s.available).map(s => s.time)
       };
-      
+
     } catch (error) {
-      console.error('Error getting available slots:', error);
+      console.error('❌ Error getting available slots:', error);
       return {
         success: false,
         data: null,
@@ -527,7 +531,7 @@ export class AppointmentMCPAgent {
       };
     }
   }
-  
+
   /**
    * List appointments with filtering and pagination
    */
@@ -545,34 +549,34 @@ export class AppointmentMCPAgent {
     try {
       // Build base query with conditions
       const conditions = [eq(appointments.clinic_id, clinicId)];
-      
+
       if (filters.startDate) {
         conditions.push(gte(appointments.scheduled_date, new Date(`${filters.startDate}T00:00:00`)));
       }
-      
+
       if (filters.endDate) {
         conditions.push(lte(appointments.scheduled_date, new Date(`${filters.endDate}T23:59:59`)));
       }
-      
+
       if (filters.userId) {
         conditions.push(eq(appointments.user_id, filters.userId));
       }
-      
+
       if (filters.status) {
         conditions.push(eq(appointments.status, filters.status));
       }
-      
+
       if (filters.contactId) {
         conditions.push(eq(appointments.contact_id, filters.contactId));
       }
-      
+
       // Execute query with basic Drizzle syntax
       const result = await db.select()
         .from(appointments)
         .leftJoin(contacts, eq(appointments.contact_id, contacts.id))
         .where(and(...conditions))
         .orderBy(appointments.scheduled_date);
-      
+
       return {
         success: true,
         data: result,
@@ -581,7 +585,7 @@ export class AppointmentMCPAgent {
         conflicts: null,
         next_available_slots: null
       };
-      
+
     } catch (error) {
       console.error('Error listing appointments:', error);
       return {
