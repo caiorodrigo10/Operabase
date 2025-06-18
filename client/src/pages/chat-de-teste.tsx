@@ -23,7 +23,8 @@ export default function ChatDeTeste() {
   ]);
   
   const [inputText, setInputText] = useState('');
-  const { sendMessage, isLoading, error } = useMCPChat();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -47,15 +48,30 @@ export default function ChatDeTeste() {
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
 
+    const messageText = inputText;
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const response = await sendMessage(inputText);
+      const response = await fetch('/api/mcp/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: messageText,
+          sessionId: `session_${Date.now()}`
+        }),
+      });
+
+      const data = await response.json();
       
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: response.message,
+        text: data.success ? (data.data?.response || 'Comando processado!') : (data.error || 'Erro ao processar'),
         isUser: false,
         timestamp: new Date(),
-        type: response.success ? 'success' : 'error'
+        type: data.success ? 'success' : 'error'
       };
 
       setMessages(prev => [...prev, botMessage]);
@@ -69,6 +85,9 @@ export default function ChatDeTeste() {
       };
 
       setMessages(prev => [...prev, errorMessage]);
+      setError('Erro de conexão');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -159,96 +178,87 @@ export default function ChatDeTeste() {
         </div>
       </div>
 
-      {/* Chat Container */}
-      <div className="bg-white rounded-lg shadow-sm border flex flex-col h-96">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
-            >
+      {/* Main Content - Split Layout */}
+      <div className="flex-1 flex flex-col gap-4">
+        {/* Chat Section (60% height) */}
+        <div className="flex-1 max-h-[60vh] bg-white dark:bg-gray-900 rounded-lg shadow-sm border flex flex-col">
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${getMessageBgColor(message.isUser, message.type)}`}
+                key={message.id}
+                className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
               >
-                <div className="flex items-start space-x-2">
-                  {!message.isUser && message.type && (
-                    <span className="text-sm">
-                      {getMessageIcon(message.type)}
-                    </span>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm whitespace-pre-wrap">
-                      {message.text}
-                    </p>
-                    <p className={`text-xs mt-1 ${message.isUser ? 'text-blue-100' : 'text-gray-500'}`}>
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${getMessageBgColor(message.isUser, message.type)}`}
+                >
+                  <div className="flex items-start space-x-2">
+                    {!message.isUser && message.type && (
+                      <span className="text-sm">
+                        {getMessageIcon(message.type)}
+                      </span>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-sm whitespace-pre-wrap">
+                        {message.text}
+                      </p>
+                      <p className={`text-xs mt-1 ${message.isUser ? 'text-blue-100' : 'text-gray-500'}`}>
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 px-4 py-2 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 animate-spin text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    Processando sua mensagem...
-                  </span>
+            ))}
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 px-4 py-2 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 animate-spin text-gray-500" />
+                    <span className="text-sm text-gray-600">
+                      Processando sua mensagem...
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        <div className="border-t p-4">
-          {error && (
-            <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
-              {error}
-            </div>
-          )}
-          
-          <div className="flex space-x-3">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Digite sua mensagem sobre agendamentos... (Ex: 'Agendar consulta para João no dia 25/06 às 14h')"
-              className="flex-1 resize-none border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={2}
-              disabled={isLoading}
-            />
+            )}
             
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputText.trim() || isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-            >
-              <Send className="h-4 w-4" />
-            </button>
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t p-4">
+            {error && (
+              <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex space-x-3">
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Digite sua mensagem sobre agendamentos... (Ex: 'Agendar consulta para João no dia 25/06 às 14h')"
+                className="flex-1 resize-none border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={2}
+                disabled={isLoading}
+              />
+              
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputText.trim() || isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Examples */}
-      <div className="mt-6 bg-gray-50 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">
-          Exemplos de comandos:
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-          <div>• "Agendar consulta para Maria Silva no dia 26/06 às 10h"</div>
-          <div>• "Quais consultas temos para amanhã?"</div>
-          <div>• "Reagendar a consulta do João para 15h30"</div>
-          <div>• "Cancelar a consulta das 14h"</div>
-          <div>• "Verificar disponibilidade para sexta-feira"</div>
-          <div>• "Listar todas as consultas de hoje"</div>
-        </div>
+        {/* Logs Section (40% height) */}
+        <LogsPanel className="min-h-[40vh]" />
       </div>
     </div>
   );
