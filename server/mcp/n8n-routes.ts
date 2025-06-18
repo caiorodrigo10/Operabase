@@ -17,10 +17,15 @@ const router = Router();
 // Apply API Key authentication to all MCP routes
 router.use(apiKeyAuth);
 
-// Request validation middleware
+// Request validation middleware that works with API Key context
 const validateRequest = (schema: z.ZodSchema) => {
-  return (req: Request, res: Response, next: any) => {
+  return (req: ApiKeyRequest, res: Response, next: any) => {
     try {
+      // Inject clinic_id from API Key if not provided
+      if (req.clinicId && !req.body.clinic_id) {
+        req.body.clinic_id = req.clinicId;
+      }
+      
       req.body = schema.parse(req.body);
       next();
     } catch (error) {
