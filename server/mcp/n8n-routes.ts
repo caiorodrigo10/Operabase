@@ -111,6 +111,22 @@ const ListAppointmentsRequestSchema = z.object({
   offset: z.number().int().min(0).optional().default(0)
 });
 
+const CreateContactRequestSchema = z.object({
+  clinic_id: z.number().int().positive(),
+  name: z.string().min(2).max(100),
+  phone: z.string().min(10).max(20),
+  email: z.string().email().optional(),
+  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  address: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(50).optional(),
+  postal_code: z.string().max(20).optional(),
+  emergency_contact: z.string().max(100).optional(),
+  emergency_phone: z.string().max(20).optional(),
+  notes: z.string().max(500).optional(),
+  tags: z.array(z.string()).optional().default([])
+});
+
 /**
  * POST /api/mcp/appointments/create
  * Create a new appointment with full validation
@@ -394,6 +410,66 @@ const ChatMessageSchema = z.object({
   message: z.string().min(1),
   sessionId: z.string().optional()
 });
+
+/**
+ * POST /api/mcp/contacts/create
+ * Create a new contact/patient
+ */
+router.post('/contacts/create', 
+  requireWritePermission,
+  validateRequest(CreateContactRequestSchema), 
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const contactData = req.body;
+      
+      // Create contact
+      const newContact = await db.insert(contacts).values({
+        clinic_id: contactData.clinic_id,
+        name: contactData.name,
+        phone: contactData.phone,
+        email: contactData.email || null,
+        date_of_birth: contactData.date_of_birth ? new Date(contactData.date_of_birth) : null,
+        address: contactData.address || null,
+        city: contactData.city || null,
+        state: contactData.state || null,
+        postal_code: contactData.postal_code || null,
+        emergency_contact: contactData.emergency_contact || null,
+        emergency_phone: contactData.emergency_phone || null,
+        notes: contactData.notes || null,
+        tags: contactData.tags || [],
+        status: 'ativo',
+        created_at: new Date(),
+        updated_at: new Date()
+      }).returning();
+
+      const contact = newContact[0];
+
+      res.status(201).json({
+        success: true,
+        data: {
+          id: contact.id,
+          name: contact.name,
+          phone: contact.phone,
+          email: contact.email,
+          clinic_id: contact.clinic_id,
+          status: contact.status,
+          created_at: contact.created_at
+        },
+        contact_id: contact.id,
+        error: null
+      });
+
+    } catch (error) {
+      console.error('❌ Error creating contact:', error);
+      res.status(500).json({
+        success: false,
+        data: null,
+        error: 'Erro interno ao criar contato',
+        contact_id: null
+      });
+    }
+  }
+);
 
 // Endpoint simplificado para chat WhatsApp natural
 router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, res: Response) => {
