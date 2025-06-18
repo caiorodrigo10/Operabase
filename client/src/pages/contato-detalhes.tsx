@@ -157,15 +157,14 @@ export function ContatoDetalhes() {
     const handleScroll = () => {
       if (tabsRef.current) {
         const tabsRect = tabsRef.current.getBoundingClientRect();
-        const shouldBeSticky = tabsRect.top <= 80; // Add offset for header
-        console.log('Scroll debug:', { top: tabsRect.top, shouldBeSticky, isTabsSticky });
-        setIsTabsSticky(shouldBeSticky);
+        const shouldBeSticky = tabsRect.top <= 0;
+        
+        if (shouldBeSticky !== isTabsSticky) {
+          setIsTabsSticky(shouldBeSticky);
+        }
       }
     };
 
-    // Also trigger on initial load
-    handleScroll();
-    
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isTabsSticky]);
@@ -322,7 +321,7 @@ export function ContatoDetalhes() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-6 py-6">
+      <div className={`container mx-auto px-6 py-6 ${isTabsSticky ? 'pt-20' : ''}`}>
         <div className="space-y-6">
           {/* Overview Tab */}
           {activeTab === 'visao-geral' && (
@@ -725,9 +724,9 @@ export function ContatoDetalhes() {
 
       {/* Sticky Tabs Overlay */}
       {isTabsSticky && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-200">
           <div className="container mx-auto px-6">
-            <div className="grid w-full grid-cols-5 py-2">
+            <div className="grid w-full grid-cols-5 py-3">
               <button
                 className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'visao-geral'
