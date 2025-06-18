@@ -102,6 +102,22 @@ const CancelRequestSchema = z.object({
   reason: z.string().optional()
 });
 
+const UpdateAppointmentSchema = z.object({
+  // Campos opcionais para atualização flexível
+  scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+  duration_minutes: z.number().int().min(15).max(480).optional(),
+  status: z.enum(VALID_APPOINTMENT_STATUSES).optional(),
+  doctor_name: z.string().nullable().optional(),
+  specialty: z.string().nullable().optional(),
+  appointment_type: z.string().nullable().optional(),
+  session_notes: z.string().nullable().optional(),
+  payment_status: z.enum(VALID_PAYMENT_STATUSES).optional(),
+  payment_amount: z.number().int().nullable().optional(),
+  cancellation_reason: z.string().nullable().optional(),
+  tag_id: z.number().int().nullable().optional()
+});
+
 const AvailabilityRequestSchema = z.object({
   user_id: z.number().int().positive(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -172,8 +188,137 @@ router.post('/appointments/create',
 );
 
 /**
+ * PUT /api/mcp/appointments/{id}
+ * Update appointment - unified endpoint for all fields
+ */
+router.put('/appointments/:id', 
+  requireWritePermission,
+  validateRequest(UpdateAppointmentSchema), 
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      
+      if (!appointmentId || isNaN(appointmentId)) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: 'Valid appointment ID is required in URL path',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      // Ensure clinic_id is available from API Key
+      if (!req.clinicId) {
+        return res.status(401).json({
+          success: false,
+          data: null,
+          error: 'Clinic ID not available from API Key',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      // Validate that at least one field is being updated
+      const updateFields = Object.keys(req.body);
+      if (updateFields.length === 0) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: 'At least one field must be provided for update',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      // Handle date/time combination for rescheduling
+      let scheduledDate = null;
+      if (req.body.scheduled_date && req.body.scheduled_time) {
+        scheduledDate = new Date(`${req.body.scheduled_date}T${req.body.scheduled_time}:00`);
+      } else if (req.body.scheduled_date || req.body.scheduled_time) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: 'Both scheduled_date and scheduled_time must be provided together for rescheduling',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      // Build update object
+      const updateData: any = {};
+      
+      if (scheduledDate) {
+        updateData.scheduled_date = scheduledDate;
+      }
+      if (req.body.duration_minutes) updateData.duration_minutes = req.body.duration_minutes;
+      if (req.body.status) updateData.status = req.body.status;
+      if (req.body.doctor_name !== undefined) updateData.doctor_name = req.body.doctor_name;
+      if (req.body.specialty !== undefined) updateData.specialty = req.body.specialty;
+      if (req.body.appointment_type !== undefined) updateData.appointment_type = req.body.appointment_type;
+      if (req.body.session_notes !== undefined) updateData.session_notes = req.body.session_notes;
+      if (req.body.payment_status) updateData.payment_status = req.body.payment_status;
+      if (req.body.payment_amount !== undefined) updateData.payment_amount = req.body.payment_amount;
+      if (req.body.cancellation_reason !== undefined) updateData.cancellation_reason = req.body.cancellation_reason;
+      if (req.body.tag_id !== undefined) updateData.tag_id = req.body.tag_id;
+
+      // Update the appointment
+      const result = await db.update(appointments)
+        .set({
+          ...updateData,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(appointments.id, appointmentId),
+          eq(appointments.clinic_id, req.clinicId)
+        ))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          success: false,
+          data: null,
+          error: 'Appointment not found or does not belong to this clinic',
+          appointment_id: appointmentId,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          id: appointmentId,
+          updated_fields: Object.keys(updateData),
+          appointment: result[0]
+        },
+        error: null,
+        appointment_id: appointmentId,
+        conflicts: null,
+        next_available_slots: null
+      });
+
+    } catch (error) {
+      console.error('MCP Update Appointment Error:', error);
+      res.status(500).json({
+        success: false,
+        data: null,
+        error: 'Internal server error',
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    }
+  }
+);
+
+/**
  * PUT /api/mcp/appointments/status
- * Update appointment status
+ * Update appointment status (DEPRECATED - use PUT /appointments/{id} instead)
  */
 router.put('/appointments/status', 
   requireWritePermission,
