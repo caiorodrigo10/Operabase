@@ -270,201 +270,226 @@ export function ContatoDetalhes() {
 
           {/* Overview Tab */}
           <TabsContent value="visao-geral" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Contact Info */}
-              <div className="lg:col-span-1 space-y-6">
-                {/* Basic Information Card */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Patient Information */}
+              <div className="space-y-6">
+                {/* Patient Info Section */}
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 mb-4">Informações</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-sm font-medium text-slate-700">Código do paciente</span>
+                      <p className="text-slate-600">{contact.id}</p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-sm font-medium text-slate-700">Preferência de lembretes</span>
+                      <p className="text-slate-600">{contact.source || 'WhatsApp'}</p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-sm font-medium text-slate-700">Celular</span>
+                      <p className="text-slate-600">{contact.phone || 'Não informado'}</p>
+                    </div>
+                    
+                    {contact.gender && (
+                      <div>
+                        <span className="text-sm font-medium text-slate-700">Gênero</span>
+                        <p className="text-slate-600">{contact.gender}</p>
+                      </div>
+                    )}
+                    
+                    {contact.profession && (
+                      <div>
+                        <span className="text-sm font-medium text-slate-700">Convênio</span>
+                        <p className="text-slate-600">{contact.profession}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Health Information */}
+                {(contact.medical_history || contact.allergies || contact.medications) && (
+                  <Card className="border border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-base font-medium">Informações de Saúde</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {contact.medical_history && (
+                        <div>
+                          <span className="text-sm font-medium text-slate-700">Histórico Médico</span>
+                          <p className="text-sm text-slate-600 mt-1">{contact.medical_history}</p>
+                        </div>
+                      )}
+                      {contact.allergies && (
+                        <div>
+                          <span className="text-sm font-medium text-slate-700">Alergias</span>
+                          <p className="text-sm text-slate-600 mt-1">{contact.allergies}</p>
+                        </div>
+                      )}
+                      {contact.medications && (
+                        <div>
+                          <span className="text-sm font-medium text-slate-700">Medicações</span>
+                          <p className="text-sm text-slate-600 mt-1">{contact.medications}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Additional Services */}
                 <Card className="border border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <User className="w-5 h-5 text-blue-600" />
-                      Informações Básicas
-                    </CardTitle>
+                    <CardTitle className="text-base font-medium">Consulta no Serasa</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-sm">
-                        <Phone className="w-4 h-4 text-slate-500" />
-                        <span className="font-medium text-slate-700">Telefone:</span>
-                        <span className="text-slate-600">{contact.phone || 'Não informado'}</span>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="w-24 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
+                          <div className="text-blue-600 text-2xl font-bold">$</div>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-2">
+                          Consulte o score e pendências que constam no CPF do seu paciente.
+                        </p>
+                        <Button variant="link" className="text-blue-600 p-0 h-auto">
+                          Comprar créditos
+                        </Button>
                       </div>
-                      {contact.email && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <Mail className="w-4 h-4 text-slate-500" />
-                          <span className="font-medium text-slate-700">Email:</span>
-                          <span className="text-slate-600">{contact.email}</span>
-                        </div>
-                      )}
-                      {contact.address && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <MapPin className="w-4 h-4 text-slate-500" />
-                          <span className="font-medium text-slate-700">Endereço:</span>
-                          <span className="text-slate-600">{contact.address}</span>
-                        </div>
-                      )}
-                      {contact.age && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <Calendar className="w-4 h-4 text-slate-500" />
-                          <span className="font-medium text-slate-700">Idade:</span>
-                          <span className="text-slate-600">{contact.age} anos</span>
-                        </div>
-                      )}
-                      {contact.gender && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <Users className="w-4 h-4 text-slate-500" />
-                          <span className="font-medium text-slate-700">Gênero:</span>
-                          <span className="text-slate-600">{contact.gender}</span>
-                        </div>
-                      )}
-                      {contact.profession && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <Briefcase className="w-4 h-4 text-slate-500" />
-                          <span className="font-medium text-slate-700">Profissão:</span>
-                          <span className="text-slate-600">{contact.profession}</span>
-                        </div>
-                      )}
+                      <Button variant="outline" size="sm">
+                        Consultar
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Health Information Card */}
+                {/* Satisfaction Survey */}
                 <Card className="border border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Heart className="w-5 h-5 text-red-600" />
-                      Informações de Saúde
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {contact.medical_history && (
-                      <div className="text-sm">
-                        <span className="font-medium text-slate-700">Histórico Médico:</span>
-                        <p className="text-slate-600 mt-1">{contact.medical_history}</p>
-                      </div>
-                    )}
-                    {contact.allergies && (
-                      <div className="text-sm">
-                        <span className="font-medium text-slate-700">Alergias:</span>
-                        <p className="text-slate-600 mt-1">{contact.allergies}</p>
-                      </div>
-                    )}
-                    {contact.medications && (
-                      <div className="text-sm">
-                        <span className="font-medium text-slate-700">Medicações:</span>
-                        <p className="text-slate-600 mt-1">{contact.medications}</p>
-                      </div>
-                    )}
-                    {!contact.medical_history && !contact.allergies && !contact.medications && (
-                      <p className="text-slate-500 italic">Nenhuma informação de saúde registrada</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Center Column - Appointments */}
-              <div className="lg:col-span-1 space-y-6">
-                <Card className="border border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-green-600" />
-                      Últimas Consultas
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      Pesquisa de satisfação
+                      <Button variant="outline" size="sm">
+                        Ativar
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {appointments?.length === 0 ? (
-                      <div className="space-y-2">
-                        <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
-                        <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4"></div>
-                      </div>
-                    ) : appointments?.length === 0 ? (
-                      <p className="text-slate-500">Nenhuma consulta encontrada</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {appointments.slice(0, 5).map((appointment) => (
-                          <div key={appointment.id} className="flex items-start justify-between p-3 border border-slate-100 rounded-lg">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                {getStatusBadge(appointment.status)}
-                                <span className="text-xs text-slate-500">
-                                  {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                </span>
-                              </div>
-                              {appointment.doctor_name && (
-                                <p className="text-sm font-medium text-slate-700">{appointment.doctor_name}</p>
-                              )}
-                              {appointment.specialty && (
-                                <p className="text-xs text-slate-500">{appointment.specialty}</p>
-                              )}
-                              {appointment.notes && (
-                                <p className="text-xs text-slate-600 mt-1">{appointment.notes}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        {appointments.length > 5 && (
-                          <Button variant="outline" size="sm" className="w-full">
-                            Ver todas as consultas ({appointments.length})
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Additional Info */}
-              <div className="lg:col-span-1 space-y-6">
-                <Card className="border border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Info className="w-5 h-5 text-blue-600" />
-                      Informações Gerais
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-sm">
-                      <span className="font-medium text-slate-700">Criado em:</span>
-                      <p className="text-slate-600">
-                        {contact.first_contact ? 
-                          format(new Date(contact.first_contact), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) :
-                          'Data não disponível'
-                        }
-                      </p>
-                    </div>
-                    {contact.last_interaction && (
-                      <div className="text-sm">
-                        <span className="font-medium text-slate-700">Última interação:</span>
-                        <p className="text-slate-600">
-                          {format(new Date(contact.last_interaction), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <div className="text-yellow-600 text-2xl">💡</div>
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          Configure a pesquisa de satisfação para este paciente
                         </p>
                       </div>
-                    )}
-                    {contact.source && (
-                      <div className="text-sm">
-                        <span className="font-medium text-slate-700">Origem:</span>
-                        <p className="text-slate-600">{contact.source}</p>
-                      </div>
-                    )}
-                    {contact.observations && (
-                      <div className="text-sm">
-                        <span className="font-medium text-slate-700">Observações:</span>
-                        <p className="text-slate-600">{contact.observations}</p>
-                      </div>
-                    )}
+                    </div>
                   </CardContent>
                 </Card>
+              </div>
 
-                <Card className="border border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-orange-600" />
-                      Pipeline de Vendas
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ContactPipelineHistory contactId={contact.id} contactName={contact.name} />
-                  </CardContent>
-                </Card>
+              {/* Right Column - Appointments and Messages */}
+              <div className="space-y-6">
+                {/* Latest Appointments */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-slate-900">Últimas Evoluções</h2>
+                    <Button variant="outline" size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar
+                    </Button>
+                  </div>
+                  
+                  {appointments?.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="text-slate-400">🔍</div>
+                      </div>
+                      <p className="text-slate-500 mb-2">
+                        Você ainda não registrou evoluções para este paciente.
+                      </p>
+                      <p className="text-slate-400 text-sm">Vamos começar?</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {appointments.slice(0, 5).map((appointment) => (
+                        <div key={appointment.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-slate-900">
+                                {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                              <span className="text-sm text-slate-500">
+                                {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
+                              </span>
+                              <span className="text-sm text-slate-600">{appointment.doctor_name}</span>
+                              {getStatusBadge(appointment.status)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Info className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Appointment History */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-slate-900">Histórico de consultas</h2>
+                    <Button variant="outline" size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {appointments.slice(0, 2).map((appointment) => (
+                      <div key={appointment.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-slate-900">
+                            {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                          <span className="text-sm text-slate-500">
+                            {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
+                          </span>
+                          <span className="text-sm text-slate-600">{appointment.doctor_name}</span>
+                          {getStatusBadge(appointment.status)}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Info className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Messages Section */}
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 mb-4">Mensagens</h2>
+                  <div className="text-center py-12 border border-slate-200 rounded-lg">
+                    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageCircle className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <p className="text-slate-500 mb-2">
+                      Nenhuma mensagem foi trocada com esse paciente ainda
+                    </p>
+                    <p className="text-slate-400 text-sm mb-4">
+                      Só é possível enviar mensagens a pacientes que entraram em contato nas últimas 24 horas
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
