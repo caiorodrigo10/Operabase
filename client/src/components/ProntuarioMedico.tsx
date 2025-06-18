@@ -69,15 +69,9 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
   const [showEditor, setShowEditor] = useState(false);
 
   // Buscar prontuários do contato
-  const { data: medicalRecords = [], isLoading, refetch } = useQuery({
+  const { data: medicalRecords = [], isLoading, refetch } = useQuery<MedicalRecord[]>({
     queryKey: [`/api/contacts/${contactId}/medical-records`],
     enabled: !!contactId,
-    onSuccess: (data) => {
-      console.log('📋 Medical records loaded:', data);
-    },
-    onError: (error) => {
-      console.error('❌ Error loading medical records:', error);
-    }
   });
 
   console.log('🔍 ProntuarioMedico render:', {
@@ -106,32 +100,32 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
       {/* Header com botão de criar */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Prontuários Médicos</h2>
-          <p className="text-sm text-gray-600">Histórico de registros médicos do paciente</p>
+          <h2 className="text-xl font-semibold">Evoluções do Paciente</h2>
+          <p className="text-sm text-gray-600">Histórico de evoluções médicas do paciente</p>
         </div>
-        <Button onClick={() => setShowEditor(true)} className="flex items-center gap-2">
+        <Button onClick={() => setShowEditor(true)} className="flex items-center gap-2 bg-medical-blue hover:bg-blue-700">
           <Plus className="w-4 h-4" />
-          Novo Prontuário
+          Nova Evolução
         </Button>
       </div>
 
-      {/* Timeline de Prontuários */}
+      {/* Timeline de Evoluções */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
-            Timeline de Prontuários
+            Timeline de Evoluções
           </CardTitle>
           <CardDescription>
-            Histórico completo dos registros médicos do paciente
+            Histórico completo das evoluções médicas do paciente
           </CardDescription>
         </CardHeader>
         <CardContent>
           {medicalRecords.length === 0 ? (
             <div className="text-center py-8">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">Nenhum prontuário registrado ainda</p>
-              <p className="text-sm text-gray-400">Clique em "Novo Prontuário" para criar o primeiro registro</p>
+              <p className="text-gray-500 mb-2">Nenhuma evolução registrada ainda</p>
+              <p className="text-sm text-gray-400">Clique em "Nova Evolução" para criar o primeiro registro</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -223,7 +217,7 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
       {/* Editor Modal */}
       {showEditor && (
         <ProntuarioEditor
-          contactId={contactId}
+          contactId={contactId.toString()}
           contactName={contactName}
           appointments={appointments}
           onClose={() => setShowEditor(false)}

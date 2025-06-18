@@ -569,49 +569,7 @@ export function ContatoDetalhes() {
           {/* Evoluções Tab */}
           <TabsContent value="evolucoes" className="mt-0">
             <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Edit className="w-5 h-5 text-blue-600" />
-                      Timeline de Evoluções do Paciente
-                    </CardTitle>
-                    <Button 
-                      className="bg-medical-blue hover:bg-blue-700"
-                      onClick={() => setShowEvolucaoEditor(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nova Evolução
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {appointments?.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Edit className="w-12 h-12 text-slate-400" />
-                      </div>
-                      <h3 className="text-lg font-medium text-slate-900 mb-2">
-                        Nenhuma evolução registrada
-                      </h3>
-                      <p className="text-slate-500 mb-4">
-                        Comece criando a primeira evolução para este paciente
-                      </p>
-                      <Button 
-                        className="bg-medical-blue hover:bg-blue-700"
-                        onClick={() => setShowEvolucaoEditor(true)}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Criar primeira evolução
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <ProntuarioMedico contactId={contactId!} appointments={appointments} />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <ProntuarioMedico contactId={contactId!} appointments={appointments} />
             </div>
           </TabsContent>
 

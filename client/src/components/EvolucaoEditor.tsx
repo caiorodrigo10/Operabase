@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 interface ProntuarioEditorProps {
-  contactId: number;
+  contactId: string;
   contactName: string;
   appointments: any[];
   onClose: () => void;
