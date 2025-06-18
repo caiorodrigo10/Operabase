@@ -263,21 +263,21 @@ router.put('/appointments/status',
 );
 
 /**
- * PUT /api/mcp/appointments/{id}
- * Update appointment - unified endpoint for all fields
+ * PUT /api/mcp/appointments
+ * Update appointment - unified endpoint for all fields (ID via query parameter)
  */
-router.put('/appointments/:id', 
+router.put('/appointments', 
   requireWritePermission,
   validateRequest(UpdateAppointmentSchema), 
   async (req: ApiKeyRequest, res: Response) => {
     try {
-      const appointmentId = parseInt(req.params.id);
+      const appointmentId = parseInt(req.query.id as string);
       
       if (!appointmentId || isNaN(appointmentId)) {
         return res.status(400).json({
           success: false,
           data: null,
-          error: 'Valid appointment ID is required in URL path',
+          error: 'Valid appointment ID is required as query parameter (?id=123)',
           appointment_id: null,
           conflicts: null,
           next_available_slots: null
