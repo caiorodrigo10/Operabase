@@ -5,20 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ContactAvatar } from "@/components/ContactAvatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { insertContactSchema } from "../../../server/domains/contacts/contacts.schema";
+import { PatientForm } from "@/components/PatientForm";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -52,7 +40,6 @@ export function Contatos() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
-  const [patientFormTab, setPatientFormTab] = useState("basic");
   const [, setLocation] = useLocation();
   
   const { toast } = useToast();
@@ -68,33 +55,9 @@ export function Contatos() {
     }
   });
 
-  // Form for adding new contact - using available schema fields
-  const form = useForm({
-    resolver: zodResolver(insertContactSchema),
-    defaultValues: {
-      clinic_id: 1,
-      name: "",
-      phone: "",
-      email: "",
-      profession: "",
-      status: "novo",
-      gender: "",
-      age: undefined,
-      address: "",
-      emergency_contact: "",
-      medical_history: "",
-      current_medications: [],
-      allergies: [],
-      notes: "",
-      priority: "normal",
-      source: "whatsapp",
-      profile_picture: "",
-    }
-  });
-
   // Mutation for creating contact
   const createContactMutation = useMutation({
-    mutationFn: async (contactData: InsertContact) => {
+    mutationFn: async (contactData: any) => {
       const response = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,7 +69,6 @@ export function Contatos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
       setIsAddContactOpen(false);
-      form.reset();
       toast({
         title: "Contato adicionado",
         description: "O novo contato foi criado com sucesso."
@@ -128,7 +90,7 @@ export function Contatos() {
     return matchesSearch && matchesStatus;
   });
 
-  const onSubmitContact = (data: InsertContact) => {
+  const handleSubmitPatient = (data: any) => {
     createContactMutation.mutate(data);
   };
 
@@ -281,14 +243,10 @@ export function Contatos() {
             <DialogTitle>Cadastrar novo paciente</DialogTitle>
           </DialogHeader>
           
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitContact)} className="space-y-6">
-              <Tabs value={patientFormTab} onValueChange={setPatientFormTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="basic">Informações básicas</TabsTrigger>
-                  <TabsTrigger value="additional">Informações complementares</TabsTrigger>
-                  <TabsTrigger value="insurance">Informações médicas</TabsTrigger>
-                </TabsList>
+          <PatientForm 
+            onSubmit={handleSubmitPatient}
+            isSubmitting={createContactMutation.isPending}
+          />
 
                 {/* Tab 1: Basic Information */}
                 <TabsContent value="basic" className="space-y-4 mt-6">
