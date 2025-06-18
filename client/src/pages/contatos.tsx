@@ -287,7 +287,7 @@ export function Contatos() {
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="basic">Informações básicas</TabsTrigger>
                   <TabsTrigger value="additional">Informações complementares</TabsTrigger>
-                  <TabsTrigger value="insurance">Convênio</TabsTrigger>
+                  <TabsTrigger value="insurance">Informações médicas</TabsTrigger>
                 </TabsList>
 
                 {/* Tab 1: Basic Information */}
