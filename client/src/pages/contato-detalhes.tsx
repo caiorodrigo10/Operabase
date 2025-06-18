@@ -394,6 +394,55 @@ export function ContatoDetalhes() {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Additional Services */}
+                <Card className="border border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium">Consulta no Serasa</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="w-24 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
+                          <div className="text-blue-600 text-2xl font-bold">$</div>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-2">
+                          Consulte o score e pendências que constam no CPF do seu paciente.
+                        </p>
+                        <Button variant="link" className="text-blue-600 p-0 h-auto">
+                          Comprar créditos
+                        </Button>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Consultar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Satisfaction Survey */}
+                <Card className="border border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      Pesquisa de satisfação
+                      <Button variant="outline" size="sm">
+                        Ativar
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <div className="text-yellow-600 text-2xl">💡</div>
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          Configure a pesquisa de satisfação para este paciente
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Right Column - Appointments and Messages (wider) */}
@@ -479,520 +528,13 @@ export function ContatoDetalhes() {
                             )}
                           </div>
                         ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* Evoluções Tab */}
-          {activeTab === 'evolucoes' && (
-            <div className="p-6">
-              <ProntuarioMedico contactId={contactId!} appointments={appointments} />
-            </div>
-          )}
-
-          {/* Mara IA Tab */}
-          {activeTab === 'mara' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5 text-purple-600" />
-                    Conversa com Mara IA
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Chat Area */}
-                  <div className="h-96 border rounded-lg p-4 overflow-y-auto bg-slate-50 space-y-4">
-                    {maraConversation.map((message, index) => (
-                      <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.role === 'user' 
-                            ? 'bg-medical-blue text-white' 
-                            : 'bg-white border border-slate-200 text-slate-800'
-                        }`}>
-                          <p className="text-sm">{message.content}</p>
-                          <p className="text-xs mt-1 opacity-70">
-                            {format(message.timestamp, "HH:mm", { locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    {isMaraLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-white border border-slate-200 text-slate-800 max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                            </div>
-                            <span className="text-xs text-slate-500">Mara está pensando...</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Input Area */}
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Input
-                        value={maraMessage}
-                        onChange={(e) => setMaraMessage(e.target.value)}
-                        placeholder="Pergunte algo sobre o paciente..."
-                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMaraMessage()}
-                        disabled={isMaraLoading}
-                        className="flex-1"
-                      />
-                      <Button 
-                        onClick={sendMaraMessage}
-                        disabled={isMaraLoading || !maraMessage.trim()}
-                        className="bg-medical-blue hover:bg-blue-700"
-                      >
-                        {isMaraLoading ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          "Enviar"
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Files Tab */}
-          {activeTab === 'arquivos' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-slate-600" />
-                    Arquivos e Documentos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-500">Funcionalidade de arquivos será implementada em breve.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Pipeline Tab */}
-          {activeTab === 'pipeline' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-orange-600" />
-                    Histórico do Pipeline
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ContactPipelineHistory contactId={contact.id} contactName={contact.name} />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sticky Tabs Overlay */}
-      {isTabsSticky && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-          <div className="container mx-auto px-6">
-            <div className="grid w-full grid-cols-5 py-2">
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'visao-geral'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('visao-geral')}
-              >
-                <User className="w-4 h-4 mr-2" />
-                Visão Geral
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'evolucoes'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('evolucoes')}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Evoluções
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'mara'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('mara')}
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Mara IA
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'arquivos'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('arquivos')}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Arquivos
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'pipeline'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('pipeline')}
-              >
-                <Activity className="w-4 h-4 mr-2" />
-                Pipeline
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-          {/* Files Tab */}
-          {activeTab === 'arquivos' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-slate-600" />
-                    Arquivos e Documentos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-500">Funcionalidade de arquivos será implementada em breve.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Pipeline Tab */}
-          {activeTab === 'pipeline' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-orange-600" />
-                    Histórico do Pipeline
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ContactPipelineHistory contactId={contact.id} contactName={contact.name} />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sticky Tabs Overlay */}
-      {isTabsSticky && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-          <div className="container mx-auto px-6">
-            <div className="grid w-full grid-cols-5 py-2">
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'visao-geral'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('visao-geral')}
-              >
-                <User className="w-4 h-4 mr-2" />
-                Visão Geral
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'evolucoes'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('evolucoes')}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Evoluções
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'mara'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('mara')}
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Mara IA
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'arquivos'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('arquivos')}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Arquivos
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'pipeline'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('pipeline')}
-              >
-                <Activity className="w-4 h-4 mr-2" />
-                Pipeline
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Editor de Evolução */}
-      {showEvolucaoEditor && (
-        <EvolucaoEditor
-          contactId={contactId!.toString()}
-          contactName={contact?.name || 'Paciente'}
-          appointments={appointments}
-          onClose={() => setShowEvolucaoEditor(false)}
-        />
-      )}
-    </div>
-  );
-}
-                <Card className="bg-white border border-slate-200">
-                  <CardContent className="p-6">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-4">Informações</h2>
-                    <div className="space-y-4">
-                      <div>
-                        <span className="text-sm font-medium text-slate-700">Código do paciente</span>
-                        <p className="text-slate-600">{contact.id}</p>
-                      </div>
-                      
-                      <div>
-                        <span className="text-sm font-medium text-slate-700">Preferência de lembretes</span>
-                        <p className="text-slate-600">{contact.source || 'WhatsApp'}</p>
-                      </div>
-                      
-                      <div>
-                        <span className="text-sm font-medium text-slate-700">Celular</span>
-                        <p className="text-slate-600">{contact.phone || 'Não informado'}</p>
-                      </div>
-                      
-                      {contact.gender && (
-                        <div>
-                          <span className="text-sm font-medium text-slate-700">Gênero</span>
-                          <p className="text-slate-600">{contact.gender}</p>
-                        </div>
-                      )}
-                      
-                      {contact.profession && (
-                        <div>
-                          <span className="text-sm font-medium text-slate-700">Convênio</span>
-                          <p className="text-slate-600">{contact.profession}</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Health Information */}
-                {(contact.medical_history || contact.allergies || contact.medications) && (
-                  <Card className="border border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="text-base font-medium">Informações de Saúde</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {contact.medical_history && (
-                        <div>
-                          <span className="text-sm font-medium text-slate-700">Histórico Médico</span>
-                          <p className="text-sm text-slate-600 mt-1">{contact.medical_history}</p>
-                        </div>
-                      )}
-                      {contact.allergies && (
-                        <div>
-                          <span className="text-sm font-medium text-slate-700">Alergias</span>
-                          <p className="text-sm text-slate-600 mt-1">{contact.allergies}</p>
-                        </div>
-                      )}
-                      {contact.medications && (
-                        <div>
-                          <span className="text-sm font-medium text-slate-700">Medicações</span>
-                          <p className="text-sm text-slate-600 mt-1">{contact.medications}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Additional Services */}
-                <Card className="border border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-base font-medium">Consulta no Serasa</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="w-24 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
-                          <div className="text-blue-600 text-2xl font-bold">$</div>
-                        </div>
-                        <p className="text-sm text-slate-600 mb-2">
-                          Consulte o score e pendências que constam no CPF do seu paciente.
-                        </p>
-                        <Button variant="link" className="text-blue-600 p-0 h-auto">
-                          Comprar créditos
-                        </Button>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Consultar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Satisfaction Survey */}
-                <Card className="border border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      Pesquisa de satisfação
-                      <Button variant="outline" size="sm">
-                        Ativar
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-center py-8">
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <div className="text-yellow-600 text-2xl">💡</div>
-                        </div>
-                        <p className="text-sm text-slate-500">
-                          Configure a pesquisa de satisfação para este paciente
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Appointments and Messages (wider) */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Latest Evolutions */}
-                <Card className="bg-white border border-slate-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-slate-900">Últimas Evoluções</h2>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            const tabs = document.querySelector('[data-state="active"]')?.parentElement;
-                            const evolucoesTrigger = tabs?.querySelector('[value="evolucoes"]') as HTMLElement;
-                            evolucoesTrigger?.click();
-                          }}
-                        >
-                          Ver todas
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setShowEvolucaoEditor(true)}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Nova Evolução
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {appointments?.length === 0 ? (
-                      <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Edit className="w-8 h-8 text-blue-500" />
-                        </div>
-                        <p className="text-slate-500 mb-2">
-                          Nenhuma evolução registrada ainda
-                        </p>
-                        <p className="text-slate-400 text-sm mb-3">
-                          Registre a primeira evolução deste paciente
-                        </p>
-                        <Button 
-                          size="sm" 
-                          className="bg-medical-blue hover:bg-blue-700"
-                          onClick={() => setShowEvolucaoEditor(true)}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Criar primeira evolução
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {appointments.slice(0, 3).map((appointment) => (
-                          <div key={appointment.id} className="p-3 border border-slate-100 rounded-lg hover:bg-slate-50 cursor-pointer">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-medical-blue rounded-full"></div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-slate-900">
-                                      {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
-                                    </span>
-                                    <span className="text-xs text-slate-500">
-                                      {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
-                                    </span>
-                                  </div>
-                                  {appointment.doctor_name && (
-                                    <p className="text-xs text-slate-600 mt-1">{appointment.doctor_name}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            {appointment.notes && (
-                              <div className="mt-2 ml-5">
-                                <p className="text-xs text-slate-600 line-clamp-2">
-                                  {appointment.notes.length > 80 ? 
-                                    appointment.notes.substring(0, 80) + '...' : 
-                                    appointment.notes
-                                  }
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
                         {appointments.length > 3 && (
                           <div className="text-center pt-2">
                             <Button 
                               variant="link" 
                               size="sm"
                               className="text-medical-blue"
-                              onClick={() => {
-                                const tabs = document.querySelector('[data-state="active"]')?.parentElement;
-                                const evolucoesTrigger = tabs?.querySelector('[value="evolucoes"]') as HTMLElement;
-                                evolucoesTrigger?.click();
-                              }}
+                              onClick={() => handleTabChange('evolucoes')}
                             >
                               Ver todas as {appointments.length} evoluções
                             </Button>
@@ -1143,10 +685,10 @@ export function ContatoDetalhes() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          )}
 
           {/* Files Tab */}
-          <TabsContent value="arquivos" className="mt-0">
+          {activeTab === 'arquivos' && (
             <div className="p-6">
               <Card className="border border-slate-200">
                 <CardHeader>
@@ -1160,10 +702,10 @@ export function ContatoDetalhes() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          )}
 
           {/* Pipeline Tab */}
-          <TabsContent value="pipeline" className="mt-0">
+          {activeTab === 'pipeline' && (
             <div className="p-6">
               <Card className="border border-slate-200">
                 <CardHeader>
@@ -1177,20 +719,20 @@ export function ContatoDetalhes() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
 
       {/* Sticky Tabs Overlay */}
       {isTabsSticky && (
-        <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-          <div className="container mx-auto px-6 py-3">
-            <div className="grid w-full grid-cols-5 bg-white border border-slate-200 rounded-lg p-1">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+          <div className="container mx-auto px-6">
+            <div className="grid w-full grid-cols-5 py-2">
               <button
-                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'visao-geral'
-                    ? 'bg-medical-blue text-white'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'border-medical-blue text-medical-blue bg-blue-50'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('visao-geral')}
               >
@@ -1198,10 +740,10 @@ export function ContatoDetalhes() {
                 Visão Geral
               </button>
               <button
-                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'evolucoes'
-                    ? 'bg-medical-blue text-white'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'border-medical-blue text-medical-blue bg-blue-50'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('evolucoes')}
               >
@@ -1209,10 +751,10 @@ export function ContatoDetalhes() {
                 Evoluções
               </button>
               <button
-                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'mara'
-                    ? 'bg-medical-blue text-white'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'border-medical-blue text-medical-blue bg-blue-50'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('mara')}
               >
@@ -1220,10 +762,10 @@ export function ContatoDetalhes() {
                 Mara IA
               </button>
               <button
-                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'arquivos'
-                    ? 'bg-medical-blue text-white'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'border-medical-blue text-medical-blue bg-blue-50'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('arquivos')}
               >
@@ -1231,10 +773,10 @@ export function ContatoDetalhes() {
                 Arquivos
               </button>
               <button
-                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'pipeline'
-                    ? 'bg-medical-blue text-white'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'border-medical-blue text-medical-blue bg-blue-50'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('pipeline')}
               >
@@ -1248,16 +790,12 @@ export function ContatoDetalhes() {
 
       {/* Editor de Evolução */}
       {showEvolucaoEditor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-            <EvolucaoEditor
-              contactId={contactId!.toString()}
-              contactName={contact?.name || 'Paciente'}
-              appointments={appointments}
-              onClose={() => setShowEvolucaoEditor(false)}
-            />
-          </div>
-        </div>
+        <EvolucaoEditor
+          contactId={contactId!.toString()}
+          contactName={contact?.name || 'Paciente'}
+          appointments={appointments}
+          onClose={() => setShowEvolucaoEditor(false)}
+        />
       )}
     </div>
   );
