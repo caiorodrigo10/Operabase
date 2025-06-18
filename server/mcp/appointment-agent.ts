@@ -3,16 +3,13 @@ import { eq, and, gte, lte, between } from 'drizzle-orm';
 import { db } from '../db';
 import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 
-// Valid appointment statuses as defined in the database schema
+// Valid appointment statuses as defined in the platform
 export const VALID_APPOINTMENT_STATUSES = [
-  'agendada', 
-  'confirmada', 
-  'paciente_aguardando', 
-  'paciente_em_atendimento', 
-  'finalizada', 
-  'faltou', 
-  'cancelada_paciente', 
-  'cancelada_dentista'
+  'agendada',    // Pendente
+  'confirmada',  // Confirmado
+  'realizada',   // Realizado
+  'faltou',      // Faltou
+  'cancelada'    // Cancelado
 ] as const;
 
 export const VALID_PAYMENT_STATUSES = ['pendente', 'pago', 'cancelado'] as const;

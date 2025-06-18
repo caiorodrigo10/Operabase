@@ -109,11 +109,10 @@ router.post('/tools/call', async (req: Request, res: Response) => {
         break;
 
       case 'cancel_appointment':
-        const cancelStatus = args.cancelled_by === 'paciente' ? 'cancelada_paciente' : 'cancelada_dentista';
         result = await appointmentAgent.updateStatus({
           appointment_id: args.appointment_id,
           clinic_id: args.clinic_id,
-          status: cancelStatus,
+          status: 'cancelada',
           session_notes: args.reason
         });
         break;

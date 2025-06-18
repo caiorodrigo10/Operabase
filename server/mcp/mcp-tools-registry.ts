@@ -85,7 +85,7 @@ export class MCPToolsRegistry {
           },
           status: {
             type: 'string',
-            enum: ['agendada', 'confirmada', 'paciente_aguardando', 'paciente_em_atendimento', 'finalizada', 'faltou', 'cancelada_paciente', 'cancelada_dentista'],
+            enum: ['agendada', 'confirmada', 'realizada', 'faltou', 'cancelada'],
             description: 'Status da consulta (opcional)'
           },
           limit: {

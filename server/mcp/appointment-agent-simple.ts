@@ -10,16 +10,13 @@ import { users } from '../domains/auth/auth.schema';
 import { appointment_tags } from '../../shared/schema';
 import { clinic_users } from '../domains/clinics/clinics.schema';
 
-// Valid appointment statuses as defined in the database schema
+// Valid appointment statuses as defined in the platform
 export const VALID_APPOINTMENT_STATUSES = [
-  'agendada', 
-  'confirmada', 
-  'paciente_aguardando', 
-  'paciente_em_atendimento', 
-  'finalizada', 
-  'faltou', 
-  'cancelada_paciente', 
-  'cancelada_dentista'
+  'agendada',    // Pendente
+  'confirmada',  // Confirmado
+  'realizada',   // Realizado
+  'faltou',      // Faltou
+  'cancelada'    // Cancelado
 ] as const;
 
 export const VALID_PAYMENT_STATUSES = ['pendente', 'pago', 'cancelado'] as const;

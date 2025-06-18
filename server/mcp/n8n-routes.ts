@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { appointmentAgent, VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } from './appointment-agent-simple';
+import { appointmentAgent } from './appointment-agent-simple';
+import { VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } from './appointment-agent';
 import { chatInterpreter } from './chat-interpreter';
 import { z } from 'zod';
 import { mcpLogsService } from './logs.service';
