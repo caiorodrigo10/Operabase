@@ -73,12 +73,27 @@ Use "availability" apenas para horários disponíveis.
 # Resultado: ✅ Sem mais "Invalid Date"
 ```
 
+### 5. Problema: Timezone Incorreto (UTC vs São Paulo)
+**Causa:** Sistema usando UTC em vez do fuso horário local
+**Solução:** Interceptação de perguntas sobre data + cálculo dinâmico de timezone
+
+```typescript
+// Interceptar perguntas sobre data
+const dateQuestions = ['que dia', 'qual dia', 'hoje', 'data de hoje'];
+if (dateQuestions.some(q => message.toLowerCase().includes(q))) {
+  const now = new Date();
+  const saoPauloOffset = -3 * 60; // UTC-3 em minutos
+  const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
+  // Retorna data correta
+}
+```
+
 ## Estado Atual
 
 ✅ **Datas calculadas corretamente**
-- Hoje: 2025-06-18 (quarta-feira)
-- Amanhã: 2025-06-19 (quinta-feira)
-- Quinta: 2025-06-19 (reconhecido como amanhã)
+- Hoje: 2025-06-17 (terça-feira) - Timezone São Paulo
+- Amanhã: 2025-06-18 (quarta-feira)
+- Sistema respeita UTC-3 automaticamente
 
 ✅ **Disponibilidade funcional**
 - API retorna 31+ horários para quinta-feira

@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
 import { z } from 'zod';
+import { contextManager } from './conversation-context';
 
 // Schema para validar as ações interpretadas
 const ActionSchema = z.union([
@@ -70,7 +71,8 @@ export class ChatInterpreter {
   async interpretMessage(message: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Interceptar perguntas sobre data atual
-      if (message.toLowerCase().includes('que dia') || message.toLowerCase().includes('qual dia') || message.toLowerCase().includes('hoje')) {
+      const dateQuestions = ['que dia', 'qual dia', 'hoje', 'data de hoje', 'dia é hoje', 'dia hoje'];
+      if (dateQuestions.some(q => message.toLowerCase().includes(q))) {
         const now = new Date();
         const saoPauloOffset = -3 * 60; // UTC-3 em minutos
         const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);

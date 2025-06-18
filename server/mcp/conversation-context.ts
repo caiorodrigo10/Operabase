@@ -1,0 +1,179 @@
+import { z } from 'zod';
+
+// Schema para armazenar contexto da conversa
+export const ConversationContextSchema = z.object({
+  sessionId: z.string(),
+  pendingAppointment: z.object({
+    contact_name: z.string().optional(),
+    date: z.string().optional(),
+    time: z.string().optional(),
+    duration: z.number().optional(),
+    doctor_name: z.string().optional(),
+    specialty: z.string().optional(),
+    appointment_type: z.string().optional(),
+    incomplete_fields: z.array(z.string()).optional()
+  }).optional(),
+  lastAction: z.string().optional(),
+  conversationHistory: z.array(z.object({
+    message: z.string(),
+    timestamp: z.number(),
+    action: z.string().optional()
+  })).optional(),
+  createdAt: z.number(),
+  updatedAt: z.number()
+});
+
+export type ConversationContext = z.infer<typeof ConversationContextSchema>;
+
+// Gerenciador de contexto em memória (pode ser expandido para Redis/DB)
+class ConversationContextManager {
+  private contexts: Map<string, ConversationContext> = new Map();
+  private readonly CONTEXT_TTL = 30 * 60 * 1000; // 30 minutos
+
+  generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  getContext(sessionId: string): ConversationContext | null {
+    const context = this.contexts.get(sessionId);
+    if (!context) return null;
+
+    // Verificar se expirou
+    if (Date.now() - context.updatedAt > this.CONTEXT_TTL) {
+      this.contexts.delete(sessionId);
+      return null;
+    }
+
+    return context;
+  }
+
+  updateContext(sessionId: string, updates: Partial<ConversationContext>): ConversationContext {
+    const existing = this.getContext(sessionId) || {
+      sessionId,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    const updated = {
+      ...existing,
+      ...updates,
+      updatedAt: Date.now()
+    };
+
+    this.contexts.set(sessionId, updated);
+    return updated;
+  }
+
+  addMessage(sessionId: string, message: string, action?: string): void {
+    const context = this.getContext(sessionId) || {
+      sessionId,
+      conversationHistory: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    const history = context.conversationHistory || [];
+    history.push({
+      message,
+      timestamp: Date.now(),
+      action
+    });
+
+    // Manter apenas últimas 10 mensagens
+    if (history.length > 10) {
+      history.splice(0, history.length - 10);
+    }
+
+    this.updateContext(sessionId, {
+      conversationHistory: history
+    });
+  }
+
+  extractAppointmentInfo(message: string, existing?: any): any {
+    const appointment = existing || {};
+    const lowerMsg = message.toLowerCase();
+
+    // Extrair nome do paciente
+    const namePatterns = [
+      /nome\s+(?:é|do paciente|da pessoa)?\s*(?:é\s+)?([a-záàâãäçéèêëíìîïóòôõöúùûü\s]+)/i,
+      /paciente\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]+)/i,
+      /para\s+([a-záàâãäçéèêëíìîïóòôõöúùûü\s]+)/i
+    ];
+
+    for (const pattern of namePatterns) {
+      const match = message.match(pattern);
+      if (match && match[1]) {
+        const name = match[1].trim();
+        if (name.length > 1 && !['consulta', 'teste', 'agendamento'].includes(name.toLowerCase())) {
+          appointment.contact_name = name;
+        }
+      }
+    }
+
+    // Extrair data
+    if (lowerMsg.includes('amanhã') || lowerMsg.includes('amanha')) {
+      const now = new Date();
+      const saoPauloOffset = -3 * 60;
+      const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
+      const tomorrow = new Date(saoPauloTime);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      appointment.date = tomorrow.toISOString().split('T')[0];
+    }
+
+    // Extrair horário
+    const timePatterns = [
+      /(?:às\s+)?(\d{1,2})[h:]?(?:(\d{2})?(?:h|:)?)?/g,
+      /(\d{1,2}):(\d{2})/g
+    ];
+
+    for (const pattern of timePatterns) {
+      let match;
+      while ((match = pattern.exec(message)) !== null) {
+        const hour = parseInt(match[1]);
+        const minute = match[2] ? parseInt(match[2]) : 0;
+        
+        if (hour >= 6 && hour <= 22) { // Horário comercial razoável
+          appointment.time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        }
+      }
+    }
+
+    // Extrair tipo de consulta
+    if (lowerMsg.includes('consulta') && !appointment.appointment_type) {
+      appointment.appointment_type = 'consulta';
+    }
+
+    return appointment;
+  }
+
+  validateAppointment(appointment: any): string[] {
+    const missing = [];
+    
+    if (!appointment.contact_name) missing.push('nome do paciente');
+    if (!appointment.date) missing.push('data');
+    if (!appointment.time) missing.push('horário');
+    
+    return missing;
+  }
+
+  clearContext(sessionId: string): void {
+    this.contexts.delete(sessionId);
+  }
+
+  // Cleanup de contextos expirados
+  cleanup(): void {
+    const now = Date.now();
+    for (const [sessionId, context] of this.contexts.entries()) {
+      if (now - context.updatedAt > this.CONTEXT_TTL) {
+        this.contexts.delete(sessionId);
+      }
+    }
+  }
+}
+
+export const contextManager = new ConversationContextManager();
+
+// Executar cleanup a cada 5 minutos
+setInterval(() => {
+  contextManager.cleanup();
+}, 5 * 60 * 1000);
