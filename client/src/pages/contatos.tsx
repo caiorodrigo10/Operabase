@@ -40,6 +40,9 @@ const statusLabels = {
   agendado: { label: "Agendado", color: "bg-green-100 text-green-800" },
   realizado: { label: "Realizado", color: "bg-purple-100 text-purple-800" },
   pos_atendimento: { label: "Pós-atendimento", color: "bg-emerald-100 text-emerald-800" },
+  ativo: { label: "Ativo", color: "bg-green-100 text-green-800" },
+  inativo: { label: "Inativo", color: "bg-slate-100 text-slate-800" },
+  arquivado: { label: "Arquivado", color: "bg-gray-100 text-gray-800" },
 };
 
 export function Contatos() {
@@ -175,8 +178,11 @@ export function Contatos() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContacts.map((contact: Contact) => {
-              const status = statusLabels[contact.status as keyof typeof statusLabels];
+            {filteredContacts?.map((contact: Contact) => {
+              if (!contact || !contact.status) return null;
+              
+              const status = statusLabels[contact.status as keyof typeof statusLabels] || 
+                           { label: "Ativo", color: "bg-green-100 text-green-800" };
               
               return (
                 <div
