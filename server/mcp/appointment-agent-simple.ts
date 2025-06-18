@@ -1,6 +1,12 @@
 import { z } from 'zod';
-import { pool } from '../db';
+import { db } from '../db';
 import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
+import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
+import { appointments } from '../domains/appointments/appointments.schema';
+import { contacts } from '../domains/contacts/contacts.schema';
+import { users } from '../domains/auth/auth.schema';
+import { appointment_tags } from '../../shared/schema';
+import { clinic_users } from '../domains/clinics/clinics.schema';
 
 // Valid appointment statuses as defined in the database schema
 export const VALID_APPOINTMENT_STATUSES = [
@@ -70,59 +76,194 @@ export interface MCPResponse {
 export class AppointmentMCPAgent {
   
   /**
+   * Validate contact exists and belongs to clinic
+   */
+  private async validateContact(contactId: number, clinicId: number): Promise<boolean> {
+    const contact = await db.select()
+      .from(contacts)
+      .where(and(
+        eq(contacts.id, contactId),
+        eq(contacts.clinic_id, clinicId)
+      ))
+      .limit(1);
+    
+    return contact.length > 0;
+  }
+  
+  /**
+   * Validate user exists, is active, and belongs to clinic
+   */
+  private async validateUser(userId: number, clinicId: number): Promise<boolean> {
+    const userInClinic = await db.select()
+      .from(clinic_users)
+      .innerJoin(users, eq(clinic_users.user_id, users.id))
+      .where(and(
+        sql`${clinic_users.user_id}::integer = ${userId}`,
+        eq(clinic_users.clinic_id, clinicId),
+        eq(clinic_users.is_active, true),
+        eq(users.is_active, true)
+      ))
+      .limit(1);
+    
+    return userInClinic.length > 0;
+  }
+  
+  /**
+   * Validate appointment tag exists and belongs to clinic
+   */
+  private async validateTag(tagId: number, clinicId: number): Promise<boolean> {
+    const tag = await db.select()
+      .from(appointment_tags)
+      .where(and(
+        eq(appointment_tags.id, tagId),
+        eq(appointment_tags.clinic_id, clinicId)
+      ))
+      .limit(1);
+    
+    return tag.length > 0;
+  }
+  
+  /**
    * Create a new appointment with full validation
    */
   async createAppointment(params: z.infer<typeof CreateAppointmentSchema>): Promise<MCPResponse> {
     try {
       const validated = CreateAppointmentSchema.parse(params);
       
-      // Create the appointment using raw SQL to avoid schema compilation issues
-      const scheduledDateTime = `${validated.scheduled_date} ${validated.scheduled_time}:00`;
+      // Validate contact exists and belongs to clinic
+      const contactValid = await this.validateContact(validated.contact_id, validated.clinic_id);
+      if (!contactValid) {
+        return {
+          success: false,
+          data: null,
+          error: 'Contact not found or does not belong to this clinic',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        };
+      }
       
-      const result = await pool.query(`
-        INSERT INTO appointments (
-          contact_id, clinic_id, user_id, scheduled_date, duration_minutes, 
-          status, doctor_name, specialty, appointment_type, session_notes,
-          payment_status, payment_amount, tag_id, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
-        ) RETURNING *
-      `, [
-        validated.contact_id,
-        validated.clinic_id,
+      // Validate user exists, is active, and belongs to clinic
+      const userValid = await this.validateUser(validated.user_id, validated.clinic_id);
+      if (!userValid) {
+        return {
+          success: false,
+          data: null,
+          error: 'User not found, inactive, or does not belong to this clinic',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        };
+      }
+      
+      // Validate tag if provided
+      if (validated.tag_id) {
+        const tagValid = await this.validateTag(validated.tag_id, validated.clinic_id);
+        if (!tagValid) {
+          return {
+            success: false,
+            data: null,
+            error: 'Appointment tag not found or does not belong to this clinic',
+            appointment_id: null,
+            conflicts: null,
+            next_available_slots: null
+          };
+        }
+      }
+      
+      // Create scheduled datetime
+      const scheduledDateTime = new Date(`${validated.scheduled_date}T${validated.scheduled_time}:00`);
+      
+      // Check for conflicts
+      const conflicts = await this.checkConflicts(
         validated.user_id,
         scheduledDateTime,
         validated.duration_minutes,
-        validated.status,
-        validated.doctor_name,
-        validated.specialty,
-        validated.appointment_type,
-        validated.session_notes,
-        validated.payment_status,
-        validated.payment_amount,
-        validated.tag_id
-      ]);
+        validated.clinic_id
+      );
+      
+      if (conflicts.length > 0) {
+        return {
+          success: false,
+          data: null,
+          error: 'Time slot conflict detected',
+          appointment_id: null,
+          conflicts: conflicts,
+          next_available_slots: null
+        };
+      }
+      
+      // Create appointment using Drizzle ORM
+      const newAppointment = await db.insert(appointments).values({
+        contact_id: validated.contact_id,
+        clinic_id: validated.clinic_id,
+        user_id: validated.user_id,
+        scheduled_date: scheduledDateTime,
+        duration_minutes: validated.duration_minutes,
+        status: validated.status,
+        doctor_name: validated.doctor_name,
+        specialty: validated.specialty,
+        appointment_type: validated.appointment_type,
+        session_notes: validated.session_notes,
+        payment_status: validated.payment_status,
+        payment_amount: validated.payment_amount,
+        tag_id: validated.tag_id,
+        created_at: new Date(),
+        updated_at: new Date()
+      }).returning();
       
       return {
         success: true,
-        data: result.rows[0],
+        data: newAppointment[0],
         error: null,
-        appointment_id: result.rows[0].id,
+        appointment_id: newAppointment[0].id,
         conflicts: null,
         next_available_slots: null
       };
       
     } catch (error) {
-      console.error('Error creating appointment:', error);
+      console.error('createAppointment Error:', error);
       return {
         success: false,
         data: null,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Internal error',
         appointment_id: null,
         conflicts: null,
         next_available_slots: null
       };
     }
+  }
+  
+  /**
+   * Check for scheduling conflicts
+   */
+  private async checkConflicts(
+    userId: number,
+    scheduledDate: Date,
+    durationMinutes: number,
+    clinicId: number,
+    excludeAppointmentId?: number
+  ): Promise<any[]> {
+    const endTime = addMinutes(scheduledDate, durationMinutes);
+    
+    let query = db.select()
+      .from(appointments)
+      .where(and(
+        eq(appointments.user_id, userId),
+        eq(appointments.clinic_id, clinicId),
+        eq(appointments.status, 'agendada'),
+        sql`${appointments.scheduled_date} < ${endTime}`,
+        sql`${appointments.scheduled_date} + INTERVAL '1 minute' * ${appointments.duration_minutes} > ${scheduledDate}`
+      ));
+    
+    const results = await query;
+    
+    // Exclude current appointment if rescheduling
+    if (excludeAppointmentId) {
+      return results.filter(apt => apt.id !== excludeAppointmentId);
+    }
+    
+    return results;
   }
   
   /**
@@ -132,19 +273,19 @@ export class AppointmentMCPAgent {
     try {
       const validated = UpdateStatusSchema.parse(params);
       
-      const result = await pool.query(`
-        UPDATE appointments 
-        SET status = $1, session_notes = $2, updated_at = NOW()
-        WHERE id = $3 AND clinic_id = $4
-        RETURNING *
-      `, [
-        validated.status,
-        validated.session_notes,
-        validated.appointment_id,
-        validated.clinic_id
-      ]);
+      const result = await db.update(appointments)
+        .set({
+          status: validated.status,
+          session_notes: validated.session_notes,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(appointments.id, validated.appointment_id),
+          eq(appointments.clinic_id, validated.clinic_id)
+        ))
+        .returning();
       
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         return {
           success: false,
           data: null,
@@ -157,19 +298,19 @@ export class AppointmentMCPAgent {
       
       return {
         success: true,
-        data: result.rows[0],
+        data: result[0],
         error: null,
-        appointment_id: result.rows[0].id,
+        appointment_id: result[0].id,
         conflicts: null,
         next_available_slots: null
       };
       
     } catch (error) {
-      console.error('Error updating appointment status:', error);
+      console.error('updateStatus Error:', error);
       return {
         success: false,
         data: null,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Internal error',
         appointment_id: null,
         conflicts: null,
         next_available_slots: null
@@ -184,21 +325,46 @@ export class AppointmentMCPAgent {
     try {
       const validated = RescheduleSchema.parse(params);
       
-      const scheduledDateTime = `${validated.scheduled_date} ${validated.scheduled_time}:00`;
+      const scheduledDateTime = new Date(`${validated.scheduled_date}T${validated.scheduled_time}:00`);
       
-      const result = await pool.query(`
-        UPDATE appointments 
-        SET scheduled_date = $1, duration_minutes = COALESCE($2, duration_minutes), updated_at = NOW()
-        WHERE id = $3 AND clinic_id = $4
-        RETURNING *
-      `, [
+      // Check for conflicts excluding current appointment
+      const conflicts = await this.checkConflicts(
+        0, // Will get user_id from existing appointment
         scheduledDateTime,
-        validated.duration_minutes,
-        validated.appointment_id,
-        validated.clinic_id
-      ]);
+        validated.duration_minutes || 60,
+        validated.clinic_id,
+        validated.appointment_id
+      );
       
-      if (result.rows.length === 0) {
+      if (conflicts.length > 0) {
+        return {
+          success: false,
+          data: null,
+          error: 'Time slot conflict detected',
+          appointment_id: null,
+          conflicts: conflicts,
+          next_available_slots: null
+        };
+      }
+      
+      const updateData: any = {
+        scheduled_date: scheduledDateTime,
+        updated_at: new Date()
+      };
+      
+      if (validated.duration_minutes) {
+        updateData.duration_minutes = validated.duration_minutes;
+      }
+      
+      const result = await db.update(appointments)
+        .set(updateData)
+        .where(and(
+          eq(appointments.id, validated.appointment_id),
+          eq(appointments.clinic_id, validated.clinic_id)
+        ))
+        .returning();
+      
+      if (result.length === 0) {
         return {
           success: false,
           data: null,
@@ -211,19 +377,19 @@ export class AppointmentMCPAgent {
       
       return {
         success: true,
-        data: result.rows[0],
+        data: result[0],
         error: null,
-        appointment_id: result.rows[0].id,
+        appointment_id: result[0].id,
         conflicts: null,
         next_available_slots: null
       };
       
     } catch (error) {
-      console.error('Error rescheduling appointment:', error);
+      console.error('rescheduleAppointment Error:', error);
       return {
         success: false,
         data: null,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Internal error',
         appointment_id: null,
         conflicts: null,
         next_available_slots: null
