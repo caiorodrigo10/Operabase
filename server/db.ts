@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import * as schema from "@shared/schema";
+import * as schema from "../shared/schema";
 
 // Force Supabase connection - override DATABASE_URL
 let connectionString = process.env.SUPABASE_POOLER_URL || process.env.SUPABASE_CONNECTION_STRING || process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;

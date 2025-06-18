@@ -3,8 +3,8 @@ import { eq, and, gte, lte, between } from 'drizzle-orm';
 import { db } from '../db';
 import { appointments } from '../domains/appointments/appointments.schema';
 import { contacts } from '../domains/contacts/contacts.schema';
-import { users } from '../domains/users/users.schema';
-import { clinicUsers } from '../domains/clinic-users/clinic-users.schema';
+import { users } from '../domains/auth/auth.schema';
+import { clinics } from '../domains/clinics/clinics.schema';
 import { appointment_tags } from '../../shared/schema';
 import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 
@@ -103,21 +103,20 @@ export class AppointmentMCPAgent {
         };
       }
       
-      // Verify user has permission in clinic
-      const clinicUser = await db.select()
-        .from(clinicUsers)
+      // Verify user exists
+      const user = await db.select()
+        .from(users)
         .where(and(
-          eq(clinicUsers.user_id, validated.user_id.toString()),
-          eq(clinicUsers.clinic_id, validated.clinic_id),
-          eq(clinicUsers.is_active, true)
+          eq(users.id, validated.user_id.toString()),
+          eq(users.is_active, true)
         ))
         .limit(1);
         
-      if (clinicUser.length === 0) {
+      if (user.length === 0) {
         return {
           success: false,
           data: null,
-          error: 'User does not have permission in this clinic',
+          error: 'User not found or inactive',
           appointment_id: null,
           conflicts: null,
           next_available_slots: null
@@ -127,10 +126,10 @@ export class AppointmentMCPAgent {
       // Verify tag exists if provided
       if (validated.tag_id) {
         const tag = await db.select()
-          .from(appointmentTags)
+          .from(appointment_tags)
           .where(and(
-            eq(appointmentTags.id, validated.tag_id),
-            eq(appointmentTags.clinic_id, validated.clinic_id)
+            eq(appointment_tags.id, validated.tag_id),
+            eq(appointment_tags.clinic_id, validated.clinic_id)
           ))
           .limit(1);
           
