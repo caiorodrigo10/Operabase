@@ -3,10 +3,11 @@ import { appointmentAgent } from './appointment-agent-simple';
 import { chatInterpreter } from './chat-interpreter';
 import { z } from 'zod';
 import { db } from '../db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
+import { mcpLogsService } from './logs.service';
 
-// Import the appointments table from schema
-import { appointments } from '../../shared/schema';
+// Import tables from shared schema
+import { appointment_tags } from '../../shared/schema';
 
 // Updated status values aligned with platform UI (5 statuses only)
 const VALID_APPOINTMENT_STATUSES = [
@@ -18,14 +19,6 @@ const VALID_APPOINTMENT_STATUSES = [
 ] as const;
 
 const VALID_PAYMENT_STATUSES = ['pendente', 'pago', 'cancelado'] as const;
-import { mcpLogsService } from './logs.service';
-import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
-import { appointments } from '../domains/appointments/appointments.schema';
-import { contacts } from '../domains/contacts/contacts.schema';
-import { users } from '../domains/auth/auth.schema';
-import { appointment_tags } from '../../shared/schema';
-import { clinic_users } from '../domains/clinics/clinics.schema';
-import { db } from '../db';
 import { apiKeyAuth, requireWritePermission, requireReadPermission, ApiKeyRequest } from '../middleware/api-key-auth.middleware';
 
 const router = Router();
