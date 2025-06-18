@@ -126,11 +126,14 @@ export class ChatInterpreter {
         const pending = context.pendingAppointment;
         const missingFields = contextManager.validateAppointment(pending);
 
-        if (missingFields.length === 0) {
+        // Verificar se é uma solicitação de disponibilidade
+        if (pending._checkAvailability && pending.date) {
+          contextualMessage += `\n\n🔍 DISPONIBILIDADE SOLICITADA: O usuário quer ver horários disponíveis para ${pending.date}. USE ACTION 'availability' com esta data!`;
+        } else if (missingFields.length === 0) {
           contextualMessage += `\n\n🔥 AÇÃO OBRIGATÓRIA: TODOS OS DADOS ESTÃO COMPLETOS! Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time}. EXECUTE O AGENDAMENTO IMEDIATAMENTE COM ACTION 'create'!`;
         } else {
           const hasData = Object.entries(pending)
-            .filter(([key, value]) => value && key !== 'incomplete_fields')
+            .filter(([key, value]) => value && key !== 'incomplete_fields' && key !== '_checkAvailability')
             .map(([key, value]) => `${key}: ${value}`)
             .join(', ');
           contextualMessage += `\n\n⚠️ MEMÓRIA ATIVA: JÁ TEMOS [${hasData}]. FALTAM APENAS: ${missingFields.join(', ')}. NÃO REPITA PERGUNTAS SOBRE DADOS QUE JÁ POSSUÍMOS! Use os dados existentes e peça apenas o que está faltando.`;

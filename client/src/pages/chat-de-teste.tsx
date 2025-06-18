@@ -11,6 +11,7 @@ interface Message {
 }
 
 export default function ChatDeTeste() {
+  const [sessionId] = useState(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -68,7 +69,7 @@ export default function ChatDeTeste() {
         },
         body: JSON.stringify({
           message: messageText,
-          sessionId: `session_${Date.now()}`
+          sessionId: sessionId
         }),
       });
 

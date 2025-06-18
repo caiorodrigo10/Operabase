@@ -96,6 +96,26 @@ class ConversationContextManager {
     console.log('🔍 Extracting from:', message);
     console.log('📋 Existing data:', existing);
 
+    // Detectar intenção de verificar disponibilidade
+    const availabilityPatterns = [
+      /quais? horários? tem/i,
+      /que horários? (?:tem|está|estão) disponível/i,
+      /horários? livre/i,
+      /disponibilidade/i,
+      /ver os? horários?/i
+    ];
+
+    for (const pattern of availabilityPatterns) {
+      if (pattern.test(message)) {
+        // Se já temos uma data no contexto, marcar para buscar disponibilidade
+        if (appointment.date) {
+          appointment._checkAvailability = true;
+          console.log('🔍 Availability check requested with existing date:', appointment.date);
+        }
+        break;
+      }
+    }
+
     // Extrair nome do paciente (padrões mais específicos)
     if (!appointment.contact_name) { // ✅ Só extrair se ainda não temos
       const namePatterns = [
