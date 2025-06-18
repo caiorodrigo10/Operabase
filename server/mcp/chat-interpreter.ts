@@ -127,7 +127,12 @@ export class ChatInterpreter {
   }
 
   private buildSystemPrompt(): string {
-    const today = new Date();
+    // Usar timezone do Brasil (UTC-3)
+    const now = new Date();
+    const brazilOffset = -3 * 60; // UTC-3 em minutos
+    const localTime = new Date(now.getTime() + (brazilOffset - now.getTimezoneOffset()) * 60000);
+    
+    const today = new Date(localTime.getFullYear(), localTime.getMonth(), localTime.getDate());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
@@ -170,6 +175,12 @@ FORMATOS DE AÇÃO VÁLIDOS:
 {
   "action": "chat_response",
   "message": "Olá! Tudo bem sim, obrigado! Sou seu assistente de agendamento médico. Como posso ajudar você hoje? Posso agendar, reagendar, cancelar consultas ou verificar a agenda."
+}
+
+PARA PERGUNTAS SOBRE DATA ATUAL:
+{
+  "action": "chat_response", 
+  "message": "Hoje é ${today.getDate()} de ${['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][today.getMonth()]} de ${today.getFullYear()}, ${todayWeekday}-feira."
 }
 
 1. CRIAR CONSULTA:
