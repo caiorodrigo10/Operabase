@@ -9,7 +9,7 @@ import { contacts } from '../domains/contacts/contacts.schema';
 import { users } from '../domains/auth/auth.schema';
 import { appointment_tags } from '../../shared/schema';
 import { clinic_users } from '../domains/clinics/clinics.schema';
-import { db } from '../../db/db';
+import { db } from '../db';
 
 const router = Router();
 
