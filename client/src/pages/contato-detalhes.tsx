@@ -44,6 +44,10 @@ const statusLabels = {
   agendado: { label: "Agendado", color: "bg-green-100 text-green-800" },
   pos_atendimento: { label: "Pós Atendimento", color: "bg-purple-100 text-purple-800" },
   perdido: { label: "Perdido", color: "bg-red-100 text-red-800" },
+  ativo: { label: "Ativo", color: "bg-green-100 text-green-800" },
+  inativo: { label: "Inativo", color: "bg-slate-100 text-slate-800" },
+  arquivado: { label: "Arquivado", color: "bg-gray-100 text-gray-800" },
+  realizado: { label: "Realizado", color: "bg-purple-100 text-purple-800" },
 };
 
 export function ContatoDetalhes() {
@@ -205,7 +209,8 @@ export function ContatoDetalhes() {
     );
   }
 
-  const statusInfo = statusLabels[contact.status as keyof typeof statusLabels];
+  const statusInfo = statusLabels[contact.status as keyof typeof statusLabels] || 
+                   { label: "Ativo", color: "bg-green-100 text-green-800" };
 
   return (
     <div className="p-4 lg:p-6">
