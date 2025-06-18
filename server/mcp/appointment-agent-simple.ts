@@ -79,7 +79,7 @@ export class AppointmentMCPAgent {
       // Create the appointment using raw SQL to avoid schema compilation issues
       const scheduledDateTime = `${validated.scheduled_date} ${validated.scheduled_time}:00`;
       
-      const result = await db.execute(`
+      const result = await pool.query(`
         INSERT INTO appointments (
           contact_id, clinic_id, user_id, scheduled_date, duration_minutes, 
           status, doctor_name, specialty, appointment_type, session_notes,
@@ -87,7 +87,7 @@ export class AppointmentMCPAgent {
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
         ) RETURNING *
-      `).bind([
+      `, [
         validated.contact_id,
         validated.clinic_id,
         validated.user_id,
@@ -132,7 +132,7 @@ export class AppointmentMCPAgent {
     try {
       const validated = UpdateStatusSchema.parse(params);
       
-      const result = await db.execute(`
+      const result = await pool.query(`
         UPDATE appointments 
         SET status = $1, session_notes = $2, updated_at = NOW()
         WHERE id = $3 AND clinic_id = $4
@@ -186,7 +186,7 @@ export class AppointmentMCPAgent {
       
       const scheduledDateTime = `${validated.scheduled_date} ${validated.scheduled_time}:00`;
       
-      const result = await db.execute(`
+      const result = await pool.query(`
         UPDATE appointments 
         SET scheduled_date = $1, duration_minutes = COALESCE($2, duration_minutes), updated_at = NOW()
         WHERE id = $3 AND clinic_id = $4
@@ -238,7 +238,7 @@ export class AppointmentMCPAgent {
     try {
       const status = cancelledBy === 'paciente' ? 'cancelada_paciente' : 'cancelada_dentista';
       
-      const result = await db.execute(`
+      const result = await pool.query(`
         UPDATE appointments 
         SET status = $1, cancellation_reason = $2, updated_at = NOW()
         WHERE id = $3 AND clinic_id = $4
@@ -291,7 +291,7 @@ export class AppointmentMCPAgent {
       const validated = AvailabilitySchema.parse(params);
       
       // Get existing appointments for the day
-      const existingAppointments = await db.execute(`
+      const existingAppointments = await pool.query(`
         SELECT scheduled_date, duration_minutes 
         FROM appointments 
         WHERE clinic_id = $1 AND user_id = $2 
@@ -427,7 +427,7 @@ export class AppointmentMCPAgent {
         paramIndex++;
       }
       
-      const result = await db.execute(query, params);
+      const result = await pool.query(query, params);
       
       return {
         success: true,

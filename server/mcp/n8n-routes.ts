@@ -232,8 +232,9 @@ router.post('/appointments/list', validateRequest(ListAppointmentsRequestSchema)
       userId: user_id,
       contactId: contact_id,
       status: status,
-      dateFrom: date_from,
-      dateTo: date_to,
+      startDate: date_from,
+      endDate: date_to
+    }, {
       limit: limit,
       offset: offset
     });
