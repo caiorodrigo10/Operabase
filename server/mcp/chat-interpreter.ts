@@ -185,7 +185,7 @@ OU para período:
   "reason": "Motivo do cancelamento"
 }
 
-5. VERIFICAR DISPONIBILIDADE:
+5. VERIFICAR DISPONIBILIDADE (apenas para horários livres):
 {
   "action": "availability",
   "date": "2025-06-25",
@@ -193,6 +193,8 @@ OU para período:
   "working_hours_start": "08:00",
   "working_hours_end": "18:00"
 }
+
+IMPORTANTE: Use "list" para mostrar consultas existentes. Use "availability" apenas para horários disponíveis.
 
 6. SOLICITAR CLARIFICAÇÃO:
 {
