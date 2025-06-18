@@ -219,10 +219,10 @@ export function PatientForm({
                 name="emergency_contact"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome e telefone de emergência</FormLabel>
+                    <FormLabel>Contato de emergência</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Nome: (11) 99999-9999" 
+                        placeholder="Nome e telefone para emergências" 
                         {...field}
                         value={field.value || ""}
                       />
