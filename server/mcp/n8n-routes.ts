@@ -21,7 +21,7 @@ import { users } from '../domains/auth/auth.schema';
 import { appointment_tags } from '../../shared/schema';
 import { clinic_users } from '../domains/clinics/clinics.schema';
 import { db } from '../db';
-import { apiKeyAuth, requireWritePermission, ApiKeyRequest } from '../middleware/api-key-auth.middleware';
+import { apiKeyAuth, requireWritePermission, requireReadPermission, ApiKeyRequest } from '../middleware/api-key-auth.middleware';
 
 const router = Router();
 
@@ -261,30 +261,74 @@ router.put('/appointments/cancel', validateRequest(CancelRequestSchema), async (
 });
 
 /**
- * GET /api/mcp/appointments/availability (deprecated - redirect to POST)
- * Deprecated endpoint that provides usage instructions
+ * GET /api/mcp/appointments/availability
+ * Get available time slots for a specific professional using query parameters
  */
-router.get('/appointments/availability', (req: Request, res: Response) => {
-  res.status(400).json({
-    success: false,
-    data: null,
-    error: 'This endpoint requires POST method with user_id in request body. GET method is deprecated.',
-    appointment_id: null,
-    conflicts: null,
-    next_available_slots: null,
-    usage: {
-      method: 'POST',
-      url: '/api/mcp/appointments/availability',
-      required_fields: ['user_id', 'date'],
-      optional_fields: ['duration_minutes', 'working_hours_start', 'working_hours_end'],
-      example: {
-        user_id: 4,
-        date: '2025-06-25',
-        duration_minutes: 60
-      },
-      curl_example: 'curl -X POST "http://localhost:5000/api/mcp/appointments/availability" -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_API_KEY" -d \'{"user_id": 4, "date": "2025-06-25", "duration_minutes": 60}\''
+router.get('/appointments/availability', requireReadPermission, async (req: ApiKeyRequest, res: Response) => {
+  try {
+    const userId = parseInt(req.query.user_id as string);
+    const date = req.query.date as string;
+    const durationMinutes = parseInt(req.query.duration_minutes as string) || 60;
+    const workingHoursStart = req.query.working_hours_start as string || '08:00';
+    const workingHoursEnd = req.query.working_hours_end as string || '18:00';
+
+    if (!userId || !date) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        error: 'user_id and date query parameters are required',
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null,
+        usage: {
+          method: 'GET',
+          url: '/api/mcp/appointments/availability',
+          required_parameters: ['user_id', 'date'],
+          optional_parameters: ['duration_minutes', 'working_hours_start', 'working_hours_end'],
+          example: `/api/mcp/appointments/availability?user_id=4&date=2025-06-25&duration_minutes=60`,
+          curl_example: 'curl -X GET "http://localhost:5000/api/mcp/appointments/availability?user_id=4&date=2025-06-25&duration_minutes=60" -H "Authorization: Bearer YOUR_API_KEY"'
+        }
+      });
     }
-  });
+
+    // Ensure clinic_id is available from API Key
+    if (!req.clinicId) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        error: 'Clinic ID not available from API Key',
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    }
+
+    // Inject clinic_id from API Key for security
+    const requestData = {
+      clinic_id: req.clinicId,
+      user_id: userId,
+      date: date,
+      duration_minutes: durationMinutes,
+      working_hours_start: workingHoursStart,
+      working_hours_end: workingHoursEnd
+    };
+
+    const result = await appointmentAgent.getAvailableSlots(requestData);
+
+    const statusCode = result.success ? 200 : 400;
+    res.status(statusCode).json(result);
+
+  } catch (error) {
+    console.error('MCP Availability GET Error:', error);
+    res.status(500).json({
+      success: false,
+      data: null,
+      error: 'Internal server error',
+      appointment_id: null,
+      conflicts: null,
+      next_available_slots: null
+    });
+  }
 });
 
 /**

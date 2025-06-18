@@ -139,6 +139,11 @@ export const requirePermission = (permission: 'read' | 'write' | 'admin') => {
 };
 
 /**
+ * Middleware para operações que requerem permissão de leitura
+ */
+export const requireReadPermission = requirePermission('read');
+
+/**
  * Middleware para operações que requerem permissão de escrita
  */
 export const requireWritePermission = requirePermission('write');
