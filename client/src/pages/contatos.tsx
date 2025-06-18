@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ContactAvatar } from "@/components/ContactAvatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -50,6 +52,7 @@ export function Contatos() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [patientFormTab, setPatientFormTab] = useState("basic");
   const [, setLocation] = useLocation();
   
   const { toast } = useToast();
@@ -65,11 +68,9 @@ export function Contatos() {
     }
   });
 
-  // Form for adding new contact - simplified
-  const form = useForm<InsertContact>({
-    resolver: zodResolver(insertContactSchema.extend({
-      profession: insertContactSchema.shape.profession.optional()
-    })),
+  // Form for adding new contact - using available schema fields
+  const form = useForm({
+    resolver: zodResolver(insertContactSchema),
     defaultValues: {
       clinic_id: 1,
       name: "",
@@ -77,6 +78,17 @@ export function Contatos() {
       email: "",
       profession: "",
       status: "novo",
+      gender: "",
+      age: undefined,
+      address: "",
+      emergency_contact: "",
+      medical_history: "",
+      current_medications: [],
+      allergies: [],
+      notes: "",
+      priority: "normal",
+      source: "whatsapp",
+      profile_picture: "",
     }
   });
 
@@ -262,57 +274,151 @@ export function Contatos() {
         </CardContent>
       </Card>
 
-      {/* Add Contact Modal - Simple Patient Creation Form */}
+      {/* Add Contact Modal - Complete Patient Creation Form with Tabs */}
       <Dialog open={isAddContactOpen} onOpenChange={setIsAddContactOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar novo paciente</DialogTitle>
           </DialogHeader>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitContact)} className="space-y-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>* Nome completo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Digite o nome completo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>* Celular</FormLabel>
-                        <FormControl>
-                          <Input placeholder="(11) 99999-9999" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <Tabs value={patientFormTab} onValueChange={setPatientFormTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic">Informações básicas</TabsTrigger>
+                  <TabsTrigger value="additional">Informações complementares</TabsTrigger>
+                  <TabsTrigger value="insurance">Convênio</TabsTrigger>
+                </TabsList>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Tab 1: Basic Information */}
+                <TabsContent value="basic" className="space-y-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>* Nome completo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Digite o nome completo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gênero</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="masculino">Masculino</SelectItem>
+                              <SelectItem value="feminino">Feminino</SelectItem>
+                              <SelectItem value="outro">Outro</SelectItem>
+                              <SelectItem value="nao_informado">Não informado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>* Celular</FormLabel>
+                          <FormControl>
+                            <Input placeholder="(11) 99999-9999" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="age"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Idade</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="Idade" 
+                              {...field} 
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="profession"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Profissão</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Digite a profissão" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="source"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Como conheceu a clínica</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || "whatsapp"}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                              <SelectItem value="site">Site</SelectItem>
+                              <SelectItem value="indicacao">Indicação</SelectItem>
+                              <SelectItem value="outros">Outros</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Adicionar observações</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="email@exemplo.com" 
-                            type="email" 
+                          <Textarea 
+                            placeholder="Adicione observações sobre o paciente"
+                            className="resize-none"
+                            rows={3}
                             {...field}
                             value={field.value || ""}
                           />
@@ -321,16 +427,132 @@ export function Contatos() {
                       </FormItem>
                     )}
                   />
-                  
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Contato de emergência</h4>
+                    <FormField
+                      control={form.control}
+                      name="emergency_contact"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome e telefone de emergência</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Nome: (11) 99999-9999" 
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Tab 2: Additional Information */}
+                <TabsContent value="additional" className="space-y-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="email@exemplo.com" 
+                              type="email" 
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Endereço completo</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Rua, número, bairro, cidade" 
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Prioridade</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || "normal"}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="baixa">Baixa</SelectItem>
+                              <SelectItem value="normal">Normal</SelectItem>
+                              <SelectItem value="alta">Alta</SelectItem>
+                              <SelectItem value="urgente">Urgente</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status inicial</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || "novo"}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="novo">Novo</SelectItem>
+                              <SelectItem value="em_conversa">Em conversa</SelectItem>
+                              <SelectItem value="agendado">Agendado</SelectItem>
+                              <SelectItem value="realizado">Realizado</SelectItem>
+                              <SelectItem value="pos_atendimento">Pós-atendimento</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name="profession"
+                    name="medical_history"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Profissão</FormLabel>
+                        <FormLabel>Histórico médico</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Digite a profissão" 
+                          <Textarea 
+                            placeholder="Histórico médico do paciente"
+                            className="resize-none"
+                            rows={3}
                             {...field}
                             value={field.value || ""}
                           />
@@ -339,16 +561,75 @@ export function Contatos() {
                       </FormItem>
                     )}
                   />
-                </div>
-              </div>
+                </TabsContent>
 
-              {/* Action Buttons */}
+                {/* Tab 3: Medical Information */}
+                <TabsContent value="insurance" className="space-y-4 mt-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Medicamentos atuais</h4>
+                    <FormField
+                      control={form.control}
+                      name="current_medications"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lista de medicamentos</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Liste os medicamentos separados por vírgula"
+                              className="resize-none"
+                              rows={3}
+                              {...field}
+                              value={Array.isArray(field.value) ? field.value.join(", ") : ""}
+                              onChange={(e) => {
+                                const medications = e.target.value.split(",").map(med => med.trim()).filter(Boolean);
+                                field.onChange(medications);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Alergias</h4>
+                    <FormField
+                      control={form.control}
+                      name="allergies"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lista de alergias</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Liste as alergias separadas por vírgula"
+                              className="resize-none"
+                              rows={3}
+                              {...field}
+                              value={Array.isArray(field.value) ? field.value.join(", ") : ""}
+                              onChange={(e) => {
+                                const allergies = e.target.value.split(",").map(allergy => allergy.trim()).filter(Boolean);
+                                field.onChange(allergies);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+
               <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsAddContactOpen(false)}
-                  disabled={createContactMutation.isPending}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddContactOpen(false);
+                    form.reset();
+                    setPatientFormTab("basic");
+                  }}
                 >
                   Cancelar
                 </Button>
