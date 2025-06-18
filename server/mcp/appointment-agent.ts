@@ -190,9 +190,7 @@ export class AppointmentMCPAgent {
         session_notes: validated.session_notes || null,
         payment_status: validated.payment_status,
         payment_amount: validated.payment_amount || null,
-        tag_id: validated.tag_id || null,
-        created_at: new Date(),
-        updated_at: new Date()
+        tag_id: validated.tag_id || null
       }).returning();
       
       return {
@@ -248,8 +246,7 @@ export class AppointmentMCPAgent {
       const [updatedAppointment] = await db.update(appointments)
         .set({
           status: validated.status,
-          session_notes: validated.session_notes,
-          updated_at: new Date()
+          session_notes: validated.session_notes || null
         })
         .where(and(
           eq(appointments.id, validated.appointment_id),
@@ -345,8 +342,7 @@ export class AppointmentMCPAgent {
       const [updatedAppointment] = await db.update(appointments)
         .set({
           scheduled_date: new Date(scheduledDateTime),
-          duration_minutes: duration,
-          updated_at: new Date()
+          duration_minutes: duration
         })
         .where(and(
           eq(appointments.id, validated.appointment_id),

@@ -112,48 +112,22 @@ export const pipeline_activities = pgTable("pipeline_activities", {
 });
 
 // Schema validations for forms
-export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-}).extend({
+export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).extend({
   name: z.string().min(1, "Nome é obrigatório"),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve estar no formato hexadecimal"),
 });
 
-export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics).omit({
-  id: true,
-  created_at: true,
-});
+export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics);
 
-export const insertAiTemplateSchema = createInsertSchema(ai_templates).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const insertAiTemplateSchema = createInsertSchema(ai_templates);
 
-export const insertPipelineStageSchema = createInsertSchema(pipeline_stages).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const insertPipelineStageSchema = createInsertSchema(pipeline_stages);
 
-export const insertPipelineOpportunitySchema = createInsertSchema(pipeline_opportunities).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const insertPipelineOpportunitySchema = createInsertSchema(pipeline_opportunities);
 
-export const insertPipelineHistorySchema = createInsertSchema(pipeline_history).omit({
-  id: true,
-  created_at: true,
-});
+export const insertPipelineHistorySchema = createInsertSchema(pipeline_history);
 
-export const insertPipelineActivitySchema = createInsertSchema(pipeline_activities).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const insertPipelineActivitySchema = createInsertSchema(pipeline_activities);
 
 // Type definitions
 export type AppointmentTag = typeof appointment_tags.$inferSelect;

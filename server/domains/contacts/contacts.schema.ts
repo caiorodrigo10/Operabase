@@ -69,16 +69,9 @@ export const insertContactSchema = createInsertSchema(contacts).extend({
   medical_history: z.string().nullable().optional(),
 });
 
-export const insertConversationSchema = createInsertSchema(conversations).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const insertConversationSchema = createInsertSchema(conversations);
 
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  timestamp: true,
-});
+export const insertMessageSchema = createInsertSchema(messages);
 
 export type Contact = typeof contacts.$inferSelect;
 export type InsertContact = z.infer<typeof insertContactSchema>;
