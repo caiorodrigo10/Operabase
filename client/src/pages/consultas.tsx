@@ -82,43 +82,37 @@ const patientSchema = z.object({
 
 type PatientForm = z.infer<typeof patientSchema>;
 
-// Status configuration with proper colors and ordering
+// Status configuration with proper colors and ordering (5 status only)
 const statusConfig = {
-  pendente: { 
-    label: "Pendente", 
-    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    badgeColor: "bg-yellow-500",
-    order: 0
-  },
   agendada: { 
     label: "Agendado", 
     color: "bg-blue-100 text-blue-800 border-blue-200",
     badgeColor: "bg-blue-500",
-    order: 1
+    order: 0
   },
   confirmada: { 
     label: "Confirmado", 
     color: "bg-green-100 text-green-800 border-green-200",
     badgeColor: "bg-green-500",
-    order: 2
+    order: 1
   },
   realizada: { 
     label: "Realizado", 
     color: "bg-purple-100 text-purple-800 border-purple-200",
     badgeColor: "bg-purple-500",
-    order: 3
+    order: 2
   },
   faltou: { 
     label: "Faltou", 
     color: "bg-orange-100 text-orange-800 border-orange-200",
     badgeColor: "bg-orange-500",
-    order: 4
+    order: 3
   },
   cancelada: { 
     label: "Cancelado", 
     color: "bg-red-100 text-red-800 border-red-200",
     badgeColor: "bg-red-500",
-    order: 5
+    order: 4
   }
 } as const;
 
@@ -130,12 +124,11 @@ const legacyStatusMapping: Record<string, keyof typeof statusConfig> = {
   completed: "realizada",
   cancelled: "cancelada",
   no_show: "faltou",
-  pending: "pendente"
+  pending: "agendada" // Map pending to agendada
 };
 
-// Main status list for dropdowns (no duplicates)
+// Main status list for dropdowns (5 status only)
 const mainStatusList = [
-  'pendente',
   'agendada', 
   'confirmada',
   'realizada',
@@ -146,7 +139,7 @@ const mainStatusList = [
 // Helper function to get status config (including legacy mapping)
 const getStatusConfig = (status: string) => {
   const mappedStatus = legacyStatusMapping[status] || status;
-  return statusConfig[mappedStatus as keyof typeof statusConfig];
+  return statusConfig[mappedStatus as keyof typeof statusConfig] || statusConfig.agendada; // Default to agendada if not found
 };
 
 // Support legacy status names for display
