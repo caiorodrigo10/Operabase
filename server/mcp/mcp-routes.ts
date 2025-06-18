@@ -99,13 +99,13 @@ router.post('/tools/call', async (req: Request, res: Response) => {
         break;
 
       case 'reschedule_appointment':
-        result = await appointmentAgent.rescheduleAppointment(
-          args.appointment_id,
-          args.clinic_id,
-          args.scheduled_date,
-          args.scheduled_time,
-          args.duration_minutes
-        );
+        result = await appointmentAgent.rescheduleAppointment({
+          appointment_id: args.appointment_id,
+          clinic_id: args.clinic_id,
+          scheduled_date: args.scheduled_date,
+          scheduled_time: args.scheduled_time,
+          duration_minutes: args.duration_minutes
+        });
         break;
 
       case 'cancel_appointment':

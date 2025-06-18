@@ -186,8 +186,8 @@ export class MCPResourcesRegistry {
       .from(appointments)
       .where(and(
         eq(appointments.clinic_id, clinicId),
-        gte(appointments.scheduled_date, today.toISOString()),
-        lte(appointments.scheduled_date, nextWeek.toISOString())
+        sql`${appointments.scheduled_date} >= ${today.toISOString()}`,
+        sql`${appointments.scheduled_date} <= ${nextWeek.toISOString()}`
       ))
       .orderBy(appointments.scheduled_date);
 

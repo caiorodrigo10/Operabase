@@ -576,57 +576,6 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
       error: null
     });
   }
-});,
-        data: { 
-          sessionId,
-          action: result.data?.action,
-          responseLength: naturalResponse.length,
-          totalResponseTime: Date.now() - startTime
-        }
-      });
-      
-      res.json({
-        success: true,
-        data: {
-          response: naturalResponse,
-          action: result.data?.action,
-          sessionId: sessionId || `session_${Date.now()}`
-        }
-      });
-    } else {
-      // Log do erro
-      mcpLogsService.addLog({
-        type: 'error',
-        level: 'warn',
-        message: `Marina não conseguiu processar: "${message}"`,
-        data: { 
-          sessionId,
-          error: result.error,
-          responseTime: Date.now() - startTime
-        }
-      });
-      
-      // Resposta humanizada para erros
-      res.status(200).json({
-        success: true,
-        data: {
-          response: "Ops, não consegui entender direito. Pode repetir de outra forma? 😊",
-          action: null,
-          sessionId: req.body.sessionId || `session_${Date.now()}`
-        }
-      });
-    }
-  } catch (error) {
-    console.error('🚨 Marina Chat Error:', error);
-    res.status(200).json({
-      success: true,
-      data: {
-        response: "Desculpa, tive um probleminha aqui. Pode tentar novamente? 🙏",
-        action: "error",
-        sessionId: req.body.sessionId || `session_${Date.now()}`
-      }
-    });
-  }
 });
 
 export default router;
