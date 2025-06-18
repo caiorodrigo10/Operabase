@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Phone, Video, MoreVertical, Smile, MessageCircle, User, Calendar, Trash2, Clock } from 'lucide-react';
+import { Send, Phone, Video, MoreVertical, Smile } from 'lucide-react';
 import { LogsPanel } from '../components/LogsPanel';
 
 interface Message {
@@ -15,13 +15,12 @@ export default function ChatDeTeste() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Oi! Aqui é a Marina, da Clínica TaskMed! 😊 Como posso ajudar você hoje?',
+      text: 'Oi! 😊 Aqui é a Marina da clínica! Seja bem-vindo(a)! Como posso te ajudar hoje? Posso marcar consultas, tirar dúvidas ou qualquer coisa que precisar!',
       isUser: false,
       timestamp: new Date(),
       type: 'info'
     }
   ]);
-  
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,167 +113,126 @@ export default function ChatDeTeste() {
     }
   };
 
-  const clearChat = () => {
-    setMessages([{
-      id: '1',
-      text: 'Olá! Sou seu assistente de agendamento médico. Posso ajudar você a criar, consultar, reagendar ou cancelar consultas. Como posso ajudar?',
-      isUser: false,
-      timestamp: new Date(),
-      type: 'info'
-    }]);
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
-  const getMessageIcon = (type?: string) => {
-    switch (type) {
-      case 'success':
-        return '✅';
-      case 'error':
-        return '❌';
-      case 'info':
-        return 'ℹ️';
-      default:
-        return '';
-    }
-  };
-
-  const getMessageBgColor = (isUser: boolean, type?: string) => {
-    if (isUser) {
-      return 'bg-blue-500 text-white';
+  const getMessageBgColor = (isUser: boolean, type?: string, isTyping?: boolean) => {
+    if (isTyping) {
+      return 'bg-gray-100 text-gray-600 italic';
     }
     
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 text-green-800 border border-green-200';
-      case 'error':
-        return 'bg-red-50 text-red-800 border border-red-200';
-      case 'info':
-        return 'bg-blue-50 text-blue-800 border border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    if (isUser) {
+      return 'bg-teal-500 text-white';
     }
+    
+    return 'bg-white text-gray-800 border border-gray-200';
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-900 border-b p-4">
-        <div className="flex items-center justify-between">
+    <div className="h-screen flex">
+      {/* Chat Principal */}
+      <div className="flex-1 flex flex-col">
+        {/* Header WhatsApp-style */}
+        <div className="bg-teal-600 text-white p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <MessageCircle className="h-6 w-6 text-blue-600" />
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+              <span className="text-teal-600 font-bold text-lg">M</span>
+            </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                MCP Test Interface
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Chat + Real-time Logs
-              </p>
+              <h1 className="font-semibold">Marina</h1>
+              <p className="text-sm text-teal-100">Assistente da Clínica • Online</p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex items-center space-x-1">
-                <User className="h-4 w-4" />
-                <span>cr@caiorodrigo.com.br</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-4 w-4" />
-                <span>Clínica ID: 1</span>
-              </div>
-            </div>
-            
-            <button
-              onClick={clearChat}
-              className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Limpar Chat</span>
+          <div className="flex items-center space-x-2">
+            <button className="p-2 rounded-full hover:bg-teal-700">
+              <Phone className="h-5 w-5" />
+            </button>
+            <button className="p-2 rounded-full hover:bg-teal-700">
+              <Video className="h-5 w-5" />
+            </button>
+            <button className="p-2 rounded-full hover:bg-teal-700">
+              <MoreVertical className="h-5 w-5" />
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Main Content - Split Layout */}
-      <div className="flex-1 flex flex-col gap-4">
-        {/* Chat Section (60% height) */}
-        <div className="flex-1 max-h-[60vh] bg-white dark:bg-gray-900 rounded-lg shadow-sm border flex flex-col">
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Área de mensagens */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-4" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23e5e7eb" fill-opacity="0.1"%3E%3Cpath d="m20 20 20 20-20-20z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}>
+          <div className="max-w-4xl mx-auto space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${getMessageBgColor(message.isUser, message.type)}`}
-                >
-                  <div className="flex items-start space-x-2">
-                    {!message.isUser && message.type && (
-                      <span className="text-sm">
-                        {getMessageIcon(message.type)}
-                      </span>
-                    )}
-                    <div className="flex-1">
-                      <p className="text-sm whitespace-pre-wrap">
-                        {message.text}
-                      </p>
-                      <p className={`text-xs mt-1 ${message.isUser ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
+                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${getMessageBgColor(message.isUser, message.type, message.isTyping)}`}>
+                  {message.isTyping ? (
+                    <div className="flex items-center space-x-1">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                      <span className="ml-2">{message.text}</span>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <p className="whitespace-pre-wrap">{message.text}</p>
+                      <p className={`text-xs mt-1 ${message.isUser ? 'text-teal-100' : 'text-gray-500'}`}>
+                        {formatTime(message.timestamp)}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
-            
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 px-4 py-2 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 animate-spin text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      Processando sua mensagem...
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-            
             <div ref={messagesEndRef} />
           </div>
+        </div>
 
-          {/* Input Area */}
-          <div className="border-t p-4">
-            {error && (
-              <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
-                {error}
-              </div>
-            )}
+        {/* Input de mensagem */}
+        <div className="bg-white border-t p-4">
+          <div className="flex items-center space-x-3">
+            <button className="p-2 text-gray-500 hover:text-gray-700">
+              <Smile className="h-6 w-6" />
+            </button>
             
-            <div className="flex space-x-3">
+            <div className="flex-1 relative">
               <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Digite sua mensagem sobre agendamentos... (Ex: 'Agendar consulta para João no dia 25/06 às 14h')"
-                className="flex-1 resize-none border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={2}
+                placeholder="Digite uma mensagem..."
+                className="w-full p-3 border rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                rows={1}
                 disabled={isLoading}
               />
-              
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputText.trim() || isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-              >
-                <Send className="h-4 w-4" />
-              </button>
             </div>
+            
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputText.trim() || isLoading}
+              className="p-3 bg-teal-500 text-white rounded-full hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send className="h-5 w-5" />
+            </button>
           </div>
+          
+          {error && (
+            <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Logs Section (40% height) */}
-        <LogsPanel className="min-h-[40vh]" />
+      {/* Painel de Logs */}
+      <div className="w-1/3 border-l bg-gray-50">
+        <LogsPanel />
       </div>
     </div>
   );
