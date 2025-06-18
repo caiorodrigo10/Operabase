@@ -453,7 +453,6 @@ export function ContatoDetalhes() {
                                     <span className="text-xs text-slate-500">
                                       {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
                                     </span>
-                                    {getStatusBadge(appointment.status)}
                                   </div>
                                   {appointment.doctor_name && (
                                     <p className="text-xs text-slate-600 mt-1">{appointment.doctor_name}</p>
