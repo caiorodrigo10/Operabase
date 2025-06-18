@@ -158,16 +158,21 @@ export function ContatoDetalhes() {
       if (tabsRef.current) {
         const tabsRect = tabsRef.current.getBoundingClientRect();
         const shouldBeSticky = tabsRect.top <= 0;
-        
-        if (shouldBeSticky !== isTabsSticky) {
-          setIsTabsSticky(shouldBeSticky);
-        }
+        setIsTabsSticky(shouldBeSticky);
       }
     };
 
+    // Initial check
+    handleScroll();
+    
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isTabsSticky]);
+    window.addEventListener('resize', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, []);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -257,71 +262,96 @@ export function ContatoDetalhes() {
         </div>
       </div>
 
-      {/* Navigation Tabs - Connected to header */}
+      {/* Navigation Tabs - Clean design matching reference */}
       <div ref={tabsRef} className="bg-white border-b border-slate-200">
         <div className="container mx-auto px-6">
-          <div className="grid w-full grid-cols-5 py-2">
+          <div className="flex space-x-8 overflow-x-auto">
             <button
-              className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'visao-geral'
-                  ? 'border-medical-blue text-medical-blue bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('visao-geral')}
             >
-              <User className="w-4 h-4 mr-2" />
               Visão Geral
             </button>
             <button
-              className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === 'anamneses'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+              onClick={() => handleTabChange('anamneses')}
+            >
+              Anamneses
+            </button>
+            <button
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === 'orcamentos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+              onClick={() => handleTabChange('orcamentos')}
+            >
+              Orçamentos
+            </button>
+            <button
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === 'tratamentos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+              onClick={() => handleTabChange('tratamentos')}
+            >
+              Tratamentos
+            </button>
+            <button
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === 'pagamentos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+              onClick={() => handleTabChange('pagamentos')}
+            >
+              Pagamentos
+            </button>
+            <button
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'evolucoes'
-                  ? 'border-medical-blue text-medical-blue bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('evolucoes')}
             >
-              <Edit className="w-4 h-4 mr-2" />
               Evoluções
             </button>
             <button
-              className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'mara'
-                  ? 'border-medical-blue text-medical-blue bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === 'documentos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
-              onClick={() => handleTabChange('mara')}
+              onClick={() => handleTabChange('documentos')}
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Mara IA
+              Documentos
             </button>
             <button
-              className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'arquivos'
-                  ? 'border-medical-blue text-medical-blue bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('arquivos')}
             >
-              <FileText className="w-4 h-4 mr-2" />
               Arquivos
-            </button>
-            <button
-              className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'pipeline'
-                  ? 'border-medical-blue text-medical-blue bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
-              onClick={() => handleTabChange('pipeline')}
-            >
-              <Activity className="w-4 h-4 mr-2" />
-              Pipeline
             </button>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className={`container mx-auto px-6 py-6 ${isTabsSticky ? 'pt-20' : ''}`}>
+      <div className={`container mx-auto px-6 py-6 ${isTabsSticky ? 'pt-16' : ''}`}>
         <div className="space-y-6">
           {/* Overview Tab */}
           {activeTab === 'visao-geral' && (
@@ -603,6 +633,62 @@ export function ContatoDetalhes() {
             </div>
           )}
 
+          {/* Anamneses Tab */}
+          {activeTab === 'anamneses' && (
+            <div className="p-6">
+              <Card className="border border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg">Anamneses</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-slate-500">Funcionalidade de anamneses será implementada em breve.</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Orçamentos Tab */}
+          {activeTab === 'orcamentos' && (
+            <div className="p-6">
+              <Card className="border border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg">Orçamentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-slate-500">Funcionalidade de orçamentos será implementada em breve.</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Tratamentos Tab */}
+          {activeTab === 'tratamentos' && (
+            <div className="p-6">
+              <Card className="border border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg">Tratamentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-slate-500">Funcionalidade de tratamentos será implementada em breve.</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Pagamentos Tab */}
+          {activeTab === 'pagamentos' && (
+            <div className="p-6">
+              <Card className="border border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg">Pagamentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-slate-500">Funcionalidade de pagamentos será implementada em breve.</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Evoluções Tab */}
           {activeTab === 'evolucoes' && (
             <div className="p-6">
@@ -610,77 +696,15 @@ export function ContatoDetalhes() {
             </div>
           )}
 
-          {/* Mara IA Tab */}
-          {activeTab === 'mara' && (
+          {/* Documentos Tab */}
+          {activeTab === 'documentos' && (
             <div className="p-6">
               <Card className="border border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5 text-purple-600" />
-                    Conversa com Mara IA
-                  </CardTitle>
+                  <CardTitle className="text-lg">Documentos</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Chat Area */}
-                  <div className="h-96 border rounded-lg p-4 overflow-y-auto bg-slate-50 space-y-4">
-                    {maraConversation.map((message, index) => (
-                      <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.role === 'user' 
-                            ? 'bg-medical-blue text-white' 
-                            : 'bg-white border border-slate-200 text-slate-800'
-                        }`}>
-                          <p className="text-sm">{message.content}</p>
-                          <p className="text-xs mt-1 opacity-70">
-                            {format(message.timestamp, "HH:mm", { locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    {isMaraLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-white border border-slate-200 text-slate-800 max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                            </div>
-                            <span className="text-xs text-slate-500">Mara está pensando...</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Input Area */}
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Input
-                        value={maraMessage}
-                        onChange={(e) => setMaraMessage(e.target.value)}
-                        placeholder="Pergunte algo sobre o paciente..."
-                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMaraMessage()}
-                        disabled={isMaraLoading}
-                        className="flex-1"
-                      />
-                      <Button 
-                        onClick={sendMaraMessage}
-                        disabled={isMaraLoading || !maraMessage.trim()}
-                        className="bg-medical-blue hover:bg-blue-700"
-                      >
-                        {isMaraLoading ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          "Enviar"
-                        )}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      A Mara pode analisar prontuários, histórico de consultas e dados do paciente. 
-                      Pressione Enter para enviar ou Shift+Enter para quebrar linha.
-                    </p>
-                  </div>
+                <CardContent>
+                  <p className="text-slate-500">Funcionalidade de documentos será implementada em breve.</p>
                 </CardContent>
               </Card>
             </div>
@@ -691,30 +715,10 @@ export function ContatoDetalhes() {
             <div className="p-6">
               <Card className="border border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-slate-600" />
-                    Arquivos e Documentos
-                  </CardTitle>
+                  <CardTitle className="text-lg">Arquivos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-slate-500">Funcionalidade de arquivos será implementada em breve.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Pipeline Tab */}
-          {activeTab === 'pipeline' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-orange-600" />
-                    Histórico do Pipeline
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ContactPipelineHistory contactId={contact.id} contactName={contact.name} />
                 </CardContent>
               </Card>
             </div>
@@ -726,61 +730,86 @@ export function ContatoDetalhes() {
       {isTabsSticky && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-200">
           <div className="container mx-auto px-6">
-            <div className="grid w-full grid-cols-5 py-3">
+            <div className="flex space-x-8 overflow-x-auto">
               <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'visao-geral'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('visao-geral')}
               >
-                <User className="w-4 h-4 mr-2" />
                 Visão Geral
               </button>
               <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === 'anamneses'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+                onClick={() => handleTabChange('anamneses')}
+              >
+                Anamneses
+              </button>
+              <button
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === 'orcamentos'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+                onClick={() => handleTabChange('orcamentos')}
+              >
+                Orçamentos
+              </button>
+              <button
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === 'tratamentos'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+                onClick={() => handleTabChange('tratamentos')}
+              >
+                Tratamentos
+              </button>
+              <button
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === 'pagamentos'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+                onClick={() => handleTabChange('pagamentos')}
+              >
+                Pagamentos
+              </button>
+              <button
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'evolucoes'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('evolucoes')}
               >
-                <Edit className="w-4 h-4 mr-2" />
                 Evoluções
               </button>
               <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'mara'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === 'documentos'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
-                onClick={() => handleTabChange('mara')}
+                onClick={() => handleTabChange('documentos')}
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Mara IA
+                Documentos
               </button>
               <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'arquivos'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('arquivos')}
               >
-                <FileText className="w-4 h-4 mr-2" />
                 Arquivos
-              </button>
-              <button
-                className={`flex items-center justify-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'pipeline'
-                    ? 'border-medical-blue text-medical-blue bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('pipeline')}
-              >
-                <Activity className="w-4 h-4 mr-2" />
-                Pipeline
               </button>
             </div>
           </div>
