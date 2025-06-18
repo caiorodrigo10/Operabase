@@ -103,10 +103,9 @@ const CancelRequestSchema = z.object({
 });
 
 const AvailabilityRequestSchema = z.object({
-  clinic_id: z.number().int().positive(),
   user_id: z.number().int().positive(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  duration_minutes: z.number().int().min(15).max(480),
+  duration_minutes: z.number().int().min(15).max(480).optional().default(60),
   working_hours_start: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional().default('08:00'),
   working_hours_end: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional().default('18:00')
 });
@@ -263,11 +262,17 @@ router.put('/appointments/cancel', validateRequest(CancelRequestSchema), async (
 
 /**
  * POST /api/mcp/appointments/availability
- * Get available time slots
+ * Get available time slots for a specific professional
  */
-router.post('/appointments/availability', validateRequest(AvailabilityRequestSchema), async (req: Request, res: Response) => {
+router.post('/appointments/availability', validateRequest(AvailabilityRequestSchema), async (req: ApiKeyRequest, res: Response) => {
   try {
-    const result = await appointmentAgent.getAvailableSlots(req.body);
+    // Inject clinic_id from API Key for security
+    const requestData = {
+      ...req.body,
+      clinic_id: req.clinicId
+    };
+
+    const result = await appointmentAgent.getAvailableSlots(requestData);
 
     const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);

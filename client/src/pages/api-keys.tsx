@@ -367,7 +367,7 @@ export default function ApiKeysPage() {
             <div>
               <h4 className="font-semibold mb-2">Endpoints Disponíveis</h4>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                <li>GET /api/mcp/appointments/availability - Verificar disponibilidade</li>
+                <li>POST /api/mcp/appointments/availability - Verificar disponibilidade (apenas user_id necessário)</li>
                 <li>POST /api/mcp/appointments/create - Criar consulta</li>
                 <li>PUT /api/mcp/appointments/status - Atualizar status</li>
                 <li>PUT /api/mcp/appointments/cancel - Cancelar consulta</li>

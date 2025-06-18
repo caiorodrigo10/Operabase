@@ -62,13 +62,24 @@ GET /api/mcp/status/valid
 ### 3. Consultar Disponibilidade
 
 ```http
-GET /api/mcp/appointments/availability?date=2025-06-25&duration_minutes=60
+POST /api/mcp/appointments/availability
+Content-Type: application/json
+
+{
+  "user_id": 4,
+  "date": "2025-06-25",
+  "duration_minutes": 60
+}
 ```
 
-**Parâmetros de Query:**
-- `date` (obrigatório): Data no formato YYYY-MM-DD
-- `duration_minutes` (opcional): Duração em minutos (padrão: 60)
-- `user_id` (opcional): ID do profissional específico
+**Parâmetros obrigatórios:**
+- `user_id`: ID do profissional
+- `date`: Data no formato YYYY-MM-DD
+
+**Parâmetros opcionais:**
+- `duration_minutes`: Duração em minutos (padrão: 60)
+- `working_hours_start`: Horário de início (padrão: "08:00")
+- `working_hours_end`: Horário de fim (padrão: "18:00")
 
 **Resposta (200):**
 ```json
