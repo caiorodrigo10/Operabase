@@ -111,6 +111,28 @@ export const pipeline_activities = pgTable("pipeline_activities", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Tabela para API Keys de autenticação N8N
+export const api_keys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  key_name: varchar("key_name", { length: 255 }).notNull(),
+  api_key: varchar("api_key", { length: 64 }).notNull(),
+  key_hash: text("key_hash").notNull(), // bcrypt hash da API key
+  is_active: boolean("is_active").default(true),
+  permissions: jsonb("permissions").default(['read', 'write']),
+  last_used_at: timestamp("last_used_at"),
+  usage_count: integer("usage_count").default(0),
+  expires_at: timestamp("expires_at"),
+  created_by: integer("created_by"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  unique("unique_api_key").on(table.api_key),
+  index("idx_api_keys_key").on(table.api_key),
+  index("idx_api_keys_clinic").on(table.clinic_id),
+  index("idx_api_keys_active").on(table.is_active),
+]);
+
 // Schema validations for forms
 export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).extend({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -118,6 +140,19 @@ export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).e
 });
 
 export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics);
+
+export const insertApiKeySchema = createInsertSchema(api_keys).omit({
+  id: true,
+  api_key: true,
+  key_hash: true,
+  created_at: true,
+  updated_at: true,
+  last_used_at: true,
+  usage_count: true,
+}).extend({
+  key_name: z.string().min(1, "Nome da API Key é obrigatório").max(255),
+  permissions: z.array(z.enum(['read', 'write', 'admin'])).default(['read', 'write']),
+});
 
 export const insertAiTemplateSchema = createInsertSchema(ai_templates);
 
