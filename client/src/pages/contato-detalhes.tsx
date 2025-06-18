@@ -31,7 +31,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContactAvatar } from "@/components/ContactAvatar";
-import ProntuarioEditor from "@/components/ProntuarioEditor";
+import EvolucaoEditor from "@/components/ProntuarioEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 
 interface Contact {
@@ -79,6 +79,7 @@ export function ContatoDetalhes() {
   ]);
   const [maraMessage, setMaraMessage] = useState('');
   const [isMaraLoading, setIsMaraLoading] = useState(false);
+  const [showEvolucaoEditor, setShowEvolucaoEditor] = useState(false);
 
   // Fetch contact data
   const { data: contact, isLoading: contactLoading, error: contactError } = useQuery<Contact>({
@@ -416,19 +417,14 @@ export function ContatoDetalhes() {
                         >
                           Ver todas
                         </Button>
-                        <MedicalEditorDialog
-                          contactId={contactId!.toString()}
-                          contactName={contact?.name || 'Paciente'}
-                          onSave={(content, template) => {
-                            // Aqui você pode salvar no banco de dados
-                            console.log('Salvando evolução:', { content, template });
-                          }}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setShowEvolucaoEditor(true)}
                         >
-                          <Button variant="outline" size="sm">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Nova Evolução
-                          </Button>
-                        </MedicalEditorDialog>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nova Evolução
+                        </Button>
                       </div>
                     </div>
                     
@@ -443,18 +439,14 @@ export function ContatoDetalhes() {
                         <p className="text-slate-400 text-sm mb-3">
                           Registre a primeira evolução deste paciente
                         </p>
-                        <MedicalEditorDialog
-                          contactId={contactId!.toString()}
-                          contactName={contact?.name || 'Paciente'}
-                          onSave={(content, template) => {
-                            console.log('Salvando primeira evolução:', { content, template });
-                          }}
+                        <Button 
+                          size="sm" 
+                          className="bg-medical-blue hover:bg-blue-700"
+                          onClick={() => setShowEvolucaoEditor(true)}
                         >
-                          <Button size="sm" className="bg-medical-blue hover:bg-blue-700">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Criar primeira evolução
-                          </Button>
-                        </MedicalEditorDialog>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Criar primeira evolução
+                        </Button>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -583,18 +575,13 @@ export function ContatoDetalhes() {
                       <Edit className="w-5 h-5 text-blue-600" />
                       Timeline de Evoluções do Paciente
                     </CardTitle>
-                    <MedicalEditorDialog
-                      contactId={contactId!.toString()}
-                      contactName={contact?.name || 'Paciente'}
-                      onSave={(content, template) => {
-                        console.log('Salvando evolução:', { content, template });
-                      }}
+                    <Button 
+                      className="bg-medical-blue hover:bg-blue-700"
+                      onClick={() => setShowEvolucaoEditor(true)}
                     >
-                      <Button className="bg-medical-blue hover:bg-blue-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nova Evolução
-                      </Button>
-                    </MedicalEditorDialog>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova Evolução
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -609,18 +596,13 @@ export function ContatoDetalhes() {
                       <p className="text-slate-500 mb-4">
                         Comece criando a primeira evolução para este paciente
                       </p>
-                      <MedicalEditorDialog
-                        contactId={contactId!.toString()}
-                        contactName={contact?.name || 'Paciente'}
-                        onSave={(content, template) => {
-                          console.log('Salvando primeira evolução do tab:', { content, template });
-                        }}
+                      <Button 
+                        className="bg-medical-blue hover:bg-blue-700"
+                        onClick={() => setShowEvolucaoEditor(true)}
                       >
-                        <Button className="bg-medical-blue hover:bg-blue-700">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Criar primeira evolução
-                        </Button>
-                      </MedicalEditorDialog>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Criar primeira evolução
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-6">

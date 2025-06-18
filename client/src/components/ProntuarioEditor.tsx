@@ -189,7 +189,7 @@ const medicalTemplates = [
   }
 ];
 
-export default function ProntuarioEditor({ contactId, contactName, appointments, onClose }: ProntuarioEditorProps) {
+export default function EvolucaoEditor({ contactId, contactName, appointments, onClose }: ProntuarioEditorProps) {
   const [content, setContent] = useState("");
   const [recordType, setRecordType] = useState("consultation");
   const [selectedAppointment, setSelectedAppointment] = useState<number | null>(null);
