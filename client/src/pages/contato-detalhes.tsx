@@ -30,9 +30,33 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { SelectContact } from "../../shared/schema";
 import { ContactAvatar } from "@/components/ContactAvatar";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
+
+interface Contact {
+  id: number;
+  clinic_id: number;
+  name: string;
+  phone: string;
+  email?: string;
+  age?: number;
+  gender?: string;
+  profession?: string;
+  address?: string;
+  emergency_contact?: string;
+  medical_history?: string;
+  current_medications?: string[];
+  allergies?: string[];
+  profile_picture?: string;
+  status: string;
+  priority?: string;
+  source?: string;
+  notes?: string;
+  first_contact?: Date;
+  last_interaction?: Date;
+  observations?: string;
+  medications?: string;
+}
 
 interface Appointment {
   id: number;
@@ -56,14 +80,28 @@ export function ContatoDetalhes() {
   const [isMaraLoading, setIsMaraLoading] = useState(false);
 
   // Fetch contact data
-  const { data: contact, isLoading: contactLoading, error: contactError } = useQuery<SelectContact>({
+  const { data: contact, isLoading: contactLoading, error: contactError } = useQuery<Contact>({
     queryKey: ['/api/contacts', contactId],
+    queryFn: async () => {
+      const response = await fetch(`/api/contacts/${contactId}?clinic_id=1`);
+      if (!response.ok) {
+        throw new Error('Contact not found');
+      }
+      return response.json();
+    },
     enabled: !!contactId
   });
 
   // Fetch appointments for this contact
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({
     queryKey: ['/api/appointments', { contact_id: contactId }],
+    queryFn: async () => {
+      const response = await fetch(`/api/appointments?contact_id=${contactId}&clinic_id=1`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
     enabled: !!contactId
   });
 
@@ -171,7 +209,8 @@ export function ContatoDetalhes() {
               <div className="h-6 w-px bg-slate-300"></div>
               <div className="flex items-center gap-3">
                 <ContactAvatar 
-                  contact={contact} 
+                  name={contact?.name || 'Usuário'}
+                  profilePicture={contact?.profile_picture}
                   size="md"
                 />
                 <div>
