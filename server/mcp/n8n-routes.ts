@@ -1,6 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { appointmentAgent } from './appointment-agent-simple';
 import { chatInterpreter } from './chat-interpreter';
+import { z } from 'zod';
+import { db } from '../db';
+import { eq, and } from 'drizzle-orm';
+
+// Import the appointments table from schema
+import { appointments } from '../../shared/schema';
 
 // Updated status values aligned with platform UI (5 statuses only)
 const VALID_APPOINTMENT_STATUSES = [
@@ -12,7 +18,6 @@ const VALID_APPOINTMENT_STATUSES = [
 ] as const;
 
 const VALID_PAYMENT_STATUSES = ['pendente', 'pago', 'cancelado'] as const;
-import { z } from 'zod';
 import { mcpLogsService } from './logs.service';
 import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
 import { appointments } from '../domains/appointments/appointments.schema';
@@ -188,6 +193,83 @@ router.post('/appointments/create',
 );
 
 /**
+ * PUT /api/mcp/appointments/status
+ * Update appointment status (DEPRECATED - use PUT /appointments/{id} instead)
+ */
+router.put('/appointments/status', 
+  requireWritePermission,
+  validateRequest(UpdateStatusRequestSchema), 
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const appointmentId = req.body.appointment_id;
+      
+      if (!appointmentId) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: 'appointment_id is required',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      // Build update object
+      const updateData: any = {};
+      if (req.body.status) updateData.status = req.body.status;
+      if (req.body.session_notes !== undefined) updateData.session_notes = req.body.session_notes;
+
+      // Update the appointment
+      const result = await db.update(appointments)
+        .set({
+          ...updateData,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(appointments.id, appointmentId),
+          eq(appointments.clinic_id, req.clinicId)
+        ))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          success: false,
+          data: null,
+          error: 'Appointment not found or does not belong to this clinic',
+          appointment_id: appointmentId,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          id: appointmentId,
+          updated_fields: Object.keys(updateData),
+          appointment: result[0]
+        },
+        error: null,
+        appointment_id: appointmentId,
+        conflicts: null,
+        next_available_slots: null
+      });
+
+    } catch (error) {
+      console.error('MCP Update Status Error:', error);
+      res.status(500).json({
+        success: false,
+        data: null,
+        error: 'Internal server error',
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
+      });
+    }
+  }
+);
+
+/**
  * PUT /api/mcp/appointments/{id}
  * Update appointment - unified endpoint for all fields
  */
@@ -325,16 +407,59 @@ router.put('/appointments/status',
   validateRequest(UpdateStatusRequestSchema), 
   async (req: ApiKeyRequest, res: Response) => {
     try {
-      // Override clinic_id with the one from API Key for security
-      const requestData = {
-        ...req.body,
-        clinic_id: req.clinicId,
-      };
+      const appointmentId = req.body.appointment_id;
+      
+      if (!appointmentId) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: 'appointment_id is required',
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
 
-      const result = await appointmentAgent.updateStatus(requestData);
+      // Build update object
+      const updateData: any = {};
+      if (req.body.status) updateData.status = req.body.status;
+      if (req.body.session_notes !== undefined) updateData.session_notes = req.body.session_notes;
 
-      const statusCode = result.success ? 200 : 400;
-      res.status(statusCode).json(result);
+      // Update the appointment
+      const result = await db.update(appointments)
+        .set({
+          ...updateData,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(appointments.id, appointmentId),
+          eq(appointments.clinic_id, req.clinicId)
+        ))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          success: false,
+          data: null,
+          error: 'Appointment not found or does not belong to this clinic',
+          appointment_id: appointmentId,
+          conflicts: null,
+          next_available_slots: null
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          id: appointmentId,
+          updated_fields: Object.keys(updateData),
+          appointment: result[0]
+        },
+        error: null,
+        appointment_id: appointmentId,
+        conflicts: null,
+        next_available_slots: null
+      });
 
     } catch (error) {
       console.error('MCP Update Status Error:', error);

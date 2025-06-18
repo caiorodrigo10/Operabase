@@ -239,7 +239,67 @@ Content-Type: application/json
 }
 ```
 
-### 7. Atualizar Status da Consulta
+### 7. Atualizar Consulta (Endpoint Unificado)
+
+```http
+PUT /api/mcp/appointments/{id}
+Content-Type: application/json
+
+{
+  "status": "confirmada",
+  "session_notes": "Consulta realizada com sucesso"
+}
+```
+
+**Campos disponíveis para atualização:**
+- `scheduled_date` (string): Data no formato YYYY-MM-DD
+- `scheduled_time` (string): Horário no formato HH:MM 
+- `duration_minutes` (number): Duração em minutos
+- `status` (string): Status da consulta
+- `doctor_name` (string): Nome do médico
+- `specialty` (string): Especialidade
+- `appointment_type` (string): Tipo de consulta
+- `session_notes` (string): Notas da sessão
+- `payment_status` (string): Status do pagamento
+- `payment_amount` (number): Valor do pagamento
+- `cancellation_reason` (string): Motivo do cancelamento
+- `tag_id` (number): ID da tag
+
+**Exemplo - Reagendamento:**
+```json
+{
+  "scheduled_date": "2025-06-30",
+  "scheduled_time": "15:30",
+  "duration_minutes": 90,
+  "status": "confirmada"
+}
+```
+
+**Resposta (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 25,
+    "updated_fields": ["status", "session_notes"],
+    "appointment": {
+      "id": 25,
+      "contact_id": 15,
+      "clinic_id": 1,
+      "user_id": 4,
+      "scheduled_date": "2025-06-25T14:00:00Z",
+      "duration_minutes": 60,
+      "status": "confirmada",
+      "session_notes": "Consulta realizada com sucesso",
+      "updated_at": "2025-06-18T20:19:35Z"
+    }
+  },
+  "error": null,
+  "appointment_id": 25
+}
+```
+
+### 8. Atualizar Status da Consulta (DEPRECATED)
 
 ```http
 PUT /api/mcp/appointments/status
