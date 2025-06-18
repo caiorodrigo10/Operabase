@@ -112,13 +112,13 @@ export const pipeline_activities = pgTable("pipeline_activities", {
 });
 
 // Schema validations for forms
-export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).extend({
+export const insertAppointmentTagSchema = createInsertSchema(appointment_tags, {
+  id: undefined,
+  created_at: undefined,
+  updated_at: undefined,
+}).extend({
   name: z.string().min(1, "Nome é obrigatório"),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve estar no formato hexadecimal"),
-}).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
 });
 
 export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics, {

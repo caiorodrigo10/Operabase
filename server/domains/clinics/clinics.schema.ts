@@ -101,25 +101,25 @@ export const clinic_invitations = pgTable("clinic_invitations", {
   index("idx_invitations_token").on(table.token),
 ]);
 
-export const insertClinicSchema = createInsertSchema(clinics, {
-  id: undefined,
-  created_at: undefined,
-  updated_at: undefined,
+export const insertClinicSchema = createInsertSchema(clinics).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 });
 
-export const insertClinicUserSchema = createInsertSchema(clinic_users, {
-  id: undefined,
-  created_at: undefined,
+export const insertClinicUserSchema = createInsertSchema(clinic_users).omit({
+  id: true,
+  created_at: true,
 });
 
-export const insertClinicInvitationSchema = createInsertSchema(clinic_invitations, {
-  id: undefined,
-  created_at: undefined,
+export const insertClinicInvitationSchema = createInsertSchema(clinic_invitations).omit({
+  id: true,
+  created_at: true,
 });
 
-export const insertProfessionalStatusAuditSchema = createInsertSchema(professional_status_audit, {
-  id: undefined,
-  created_at: undefined,
+export const insertProfessionalStatusAuditSchema = createInsertSchema(professional_status_audit).omit({
+  id: true,
+  created_at: true,
 });
 
 export type Clinic = typeof clinics.$inferSelect;
