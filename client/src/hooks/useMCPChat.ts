@@ -1,433 +1,158 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-interface MCPChatResponse {
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  isTyping?: boolean;
+  sessionId?: string;
+}
+
+interface MCPResponse {
   success: boolean;
-  message: string;
   data?: any;
+  error?: string;
 }
 
-interface MCPAction {
-  action: string;
-  [key: string]: any;
-}
-
-export function useMCPChat() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useMCPChat = () => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const queryClient = useQueryClient();
 
-  const sendMessage = async (message: string): Promise<MCPChatResponse> => {
-    setIsLoading(true);
-    setError(null);
+  // Gerar ID único para mensagens
+  const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
-    try {
-      // Primeiro, interpretar a mensagem com OpenAI
-      const requestBody: any = { message };
-      if (sessionId) {
-        requestBody.sessionId = sessionId;
-      }
-      
-      const interpretResponse = await fetch('/api/mcp/chat/interpret', {
+  // Gerar sessionId se não existir
+  const ensureSessionId = useCallback(() => {
+    if (!sessionId) {
+      const newSessionId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      setSessionId(newSessionId);
+      return newSessionId;
+    }
+    return sessionId;
+  }, [sessionId]);
+
+  // Mutation para enviar mensagem ao MCP
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ message, currentSessionId }: { message: string; currentSessionId: string }) => {
+      const response = await fetch('/api/mcp/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          message,
+          sessionId: currentSessionId
+        }),
       });
 
-      if (!interpretResponse.ok) {
-        throw new Error('Erro ao interpretar mensagem');
+      if (!response.ok) {
+        throw new Error('Erro ao enviar mensagem');
       }
 
-      const interpretation = await interpretResponse.json();
+      return response.json() as Promise<MCPResponse>;
+    },
+    onSuccess: (data) => {
+      setIsTyping(false);
       
-      if (!interpretation.success) {
-        return {
-          success: false,
-          message: interpretation.error || 'Não foi possível interpretar sua mensagem.'
+      if (data.success && data.data) {
+        // Adicionar resposta da MARA
+        const assistantMessage: ChatMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: data.data.action === 'chat_response' 
+            ? data.data.message 
+            : `✅ Ação executada: ${data.data.action}`,
+          timestamp: new Date(),
+          sessionId: data.data.sessionId
         };
-      }
 
-      const action: MCPAction = interpretation.data;
+        setMessages(prev => [...prev, assistantMessage]);
 
-      // Capturar sessionId se fornecido
-      if (action.sessionId && !sessionId) {
-        setSessionId(action.sessionId);
-      }
-
-      // Executar a ação interpretada
-      return await executeAction(action);
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      setError(errorMessage);
-      
-      return {
-        success: false,
-        message: 'Desculpe, ocorreu um erro ao processar sua mensagem.'
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const executeAction = async (action: MCPAction): Promise<MCPChatResponse> => {
-    try {
-      switch (action.action) {
-        case 'chat_response':
-          return {
-            success: true,
-            message: action.message,
-            data: null
-          };
-        case 'create':
-          return await createAppointment(action);
-        case 'list':
-          return await listAppointments(action);
-        case 'reschedule':
-          return await rescheduleAppointment(action);
-        case 'cancel':
-          return await cancelAppointment(action);
-        case 'availability':
-          return await checkAvailability(action);
-        case 'clarification':
-          return {
-            success: true,
-            message: action.message,
-            data: null
-          };
-        default:
-          return {
-            success: false,
-            message: 'Não entendi o que você quer fazer. Pode reformular sua mensagem?'
-          };
-      }
-    } catch (err) {
-      return {
-        success: false,
-        message: 'Erro ao executar a ação solicitada.'
-      };
-    }
-  };
-
-  const createAppointment = async (action: MCPAction): Promise<MCPChatResponse> => {
-    // Primeiro verificar se o contato existe, se não, criar
-    let contactId = action.contact_id;
-    
-    if (!contactId && action.contact_name) {
-      const contactResult = await findOrCreateContact(action.contact_name);
-      if (!contactResult.success) {
-        return contactResult;
-      }
-      contactId = contactResult.data.contact_id;
-    }
-
-    const payload = {
-      contact_id: contactId,
-      clinic_id: 1, // Hardcoded conforme especificação
-      user_id: 4,   // Hardcoded para usuário de teste
-      scheduled_date: action.date,
-      scheduled_time: action.time,
-      duration_minutes: action.duration || 60,
-      status: 'agendada',
-      doctor_name: action.doctor_name,
-      specialty: action.specialty,
-      appointment_type: action.appointment_type || 'consulta'
-    };
-
-    const response = await fetch('/api/mcp/appointments/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      return {
-        success: true,
-        message: `✅ Consulta agendada com sucesso para ${action.contact_name} no dia ${action.date} às ${action.time}. ID do agendamento: #${result.appointment_id}`,
-        data: result.data
-      };
-    } else {
-      // Tratar conflitos específicos
-      if (result.conflicts && result.conflicts.length > 0) {
-        let message = `❌ Conflito de horário detectado. Já existe uma consulta às ${action.time}.`;
-        
-        if (result.next_available_slots && result.next_available_slots.length > 0) {
-          const slots = result.next_available_slots.slice(0, 3).map((slot: any) => slot.time).join(', ');
-          message += `\n\nHorários disponíveis: ${slots}`;
+        // Atualizar sessionId se retornou um novo
+        if (data.data.sessionId && data.data.sessionId !== sessionId) {
+          setSessionId(data.data.sessionId);
         }
-        
-        return {
-          success: false,
-          message
-        };
-      }
 
-      return {
-        success: false,
-        message: result.error || 'Erro ao criar agendamento.'
-      };
-    }
-  };
-
-  const listAppointments = async (action: MCPAction): Promise<MCPChatResponse> => {
-    const payload = {
-      clinic_id: 1,
-      filters: {
-        startDate: action.date || action.start_date,
-        endDate: action.end_date || action.date,
-        status: action.status,
-        userId: action.user_id
-      }
-    };
-
-    const response = await fetch('/api/mcp/appointments/list', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      if (!result.data || result.data.length === 0) {
-        return {
-          success: true,
-          message: 'Nenhuma consulta encontrada para o período especificado.'
-        };
-      }
-
-      let message = `📅 Consultas encontradas:\n\n`;
-      
-      result.data.forEach((row: any) => {
-        // A estrutura dos dados é { appointments: {...}, contacts: {...} }
-        const appointment = row.appointments || row;
-        const contact = row.contacts || {};
-        
-        if (!appointment.scheduled_date) {
-          return; // Skip if no date
+        // Invalidar queries relacionadas se necessário
+        if (data.data.action === 'create' || data.data.action === 'list' || data.data.action === 'reschedule' || data.data.action === 'cancel') {
+          queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
         }
-        
-        const date = new Date(appointment.scheduled_date);
-        const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const dateStr = date.toLocaleDateString('pt-BR');
-        
-        const contactName = contact.name || appointment.contact_name || 'Nome não informado';
-        
-        message += `• ${timeStr} - ${contactName}`;
-        if (appointment.doctor_name) {
-          message += ` (Dr. ${appointment.doctor_name})`;
-        }
-        message += `\n`;
-      });
-
-      return {
-        success: true,
-        message,
-        data: result.data
-      };
-    } else {
-      return {
-        success: false,
-        message: result.error || 'Erro ao buscar consultas.'
-      };
-    }
-  };
-
-  const rescheduleAppointment = async (action: MCPAction): Promise<MCPChatResponse> => {
-    const payload = {
-      clinic_id: 1,
-      new_date: action.new_date || action.date,
-      new_time: action.new_time || action.time,
-      duration_minutes: action.duration || 60
-    };
-
-    const response = await fetch(`/api/mcp/appointments/${action.appointment_id}/reschedule`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      return {
-        success: true,
-        message: `✅ Consulta reagendada com sucesso para ${action.new_date || action.date} às ${action.new_time || action.time}.`,
-        data: result.data
-      };
-    } else {
-      if (result.conflicts && result.conflicts.length > 0) {
-        let message = `❌ Conflito de horário. Já existe uma consulta no novo horário.`;
-        
-        if (result.next_available_slots && result.next_available_slots.length > 0) {
-          const slots = result.next_available_slots.slice(0, 3).map((slot: any) => slot.time).join(', ');
-          message += `\n\nHorários disponíveis: ${slots}`;
-        }
-        
-        return {
-          success: false,
-          message
+      } else {
+        // Adicionar mensagem de erro
+        const errorMessage: ChatMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: `❌ Erro: ${data.error || 'Algo deu errado'}`,
+          timestamp: new Date()
         };
+        setMessages(prev => [...prev, errorMessage]);
       }
-
-      return {
-        success: false,
-        message: result.error || 'Erro ao reagendar consulta.'
+    },
+    onError: (error) => {
+      setIsTyping(false);
+      const errorMessage: ChatMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `❌ Erro de conexão: ${error.message}`,
+        timestamp: new Date()
       };
+      setMessages(prev => [...prev, errorMessage]);
     }
-  };
+  });
 
-  const cancelAppointment = async (action: MCPAction): Promise<MCPChatResponse> => {
-    const payload = {
-      clinic_id: 1,
-      cancelled_by: action.cancelled_by || 'dentista',
-      reason: action.reason || 'Cancelamento via chat'
+  // Função para enviar mensagem
+  const sendMessage = useCallback((message: string) => {
+    if (!message.trim()) return;
+
+    const currentSessionId = ensureSessionId();
+
+    // Adicionar mensagem do usuário
+    const userMessage: ChatMessage = {
+      id: generateId(),
+      role: 'user',
+      content: message,
+      timestamp: new Date(),
+      sessionId: currentSessionId
     };
 
-    const response = await fetch(`/api/mcp/appointments/${action.appointment_id}/cancel`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
 
-    const result = await response.json();
+    // Enviar para o MCP
+    sendMessageMutation.mutate({ message, currentSessionId });
+  }, [sendMessageMutation, ensureSessionId]);
 
-    if (result.success) {
-      return {
-        success: true,
-        message: `✅ Consulta cancelada com sucesso. ${action.reason ? `Motivo: ${action.reason}` : ''}`,
-        data: result.data
+  // Função para limpar conversa
+  const clearChat = useCallback(() => {
+    setMessages([]);
+    setSessionId(null);
+    setIsTyping(false);
+  }, []);
+
+  // Função para inicializar conversa
+  const initializeChat = useCallback(() => {
+    if (messages.length === 0) {
+      const welcomeMessage: ChatMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: '👋 Olá! Sou a MARA, sua assistente de agendamento médico. Como posso ajudar você hoje?\n\nPosso:\n• Agendar consultas\n• Verificar disponibilidade\n• Listar agenda\n• Reagendar ou cancelar consultas',
+        timestamp: new Date()
       };
-    } else {
-      return {
-        success: false,
-        message: result.error || 'Erro ao cancelar consulta.'
-      };
+      setMessages([welcomeMessage]);
     }
-  };
-
-  const checkAvailability = async (action: MCPAction): Promise<MCPChatResponse> => {
-    const payload = {
-      clinic_id: 1,
-      user_id: action.user_id || 4,
-      date: action.date,
-      duration_minutes: action.duration || 60,
-      working_hours_start: action.working_hours_start || '08:00',
-      working_hours_end: action.working_hours_end || '18:00'
-    };
-
-    const response = await fetch('/api/mcp/appointments/availability', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      const availableSlots = result.data || [];
-      
-      if (availableSlots.length === 0) {
-        return {
-          success: true,
-          message: `❌ Não há horários disponíveis para ${action.date}.`
-        };
-      }
-
-      let message = `📅 Horários disponíveis para ${action.date}:\n\n`;
-      
-      availableSlots.slice(0, 10).forEach((slot: any) => {
-        message += `• ${slot.time}\n`;
-      });
-
-      if (availableSlots.length > 10) {
-        message += `\n... e mais ${availableSlots.length - 10} horários.`;
-      }
-
-      return {
-        success: true,
-        message,
-        data: result.data
-      };
-    } else {
-      return {
-        success: false,
-        message: result.error || 'Erro ao verificar disponibilidade.'
-      };
-    }
-  };
-
-  const findOrCreateContact = async (contactName: string): Promise<MCPChatResponse> => {
-    // Buscar contato existente primeiro
-    const searchResponse = await fetch('/api/contacts/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        clinic_id: 1,
-        query: contactName
-      }),
-    });
-
-    if (searchResponse.ok) {
-      const searchResult = await searchResponse.json();
-      
-      if (searchResult.length > 0) {
-        return {
-          success: true,
-          message: 'Contato encontrado',
-          data: { contact_id: searchResult[0].id }
-        };
-      }
-    }
-
-    // Se não encontrou, criar novo contato
-    const createResponse = await fetch('/api/contacts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        clinic_id: 1,
-        name: contactName,
-        phone: '', // Será solicitado posteriormente se necessário
-        email: ''
-      }),
-    });
-
-    if (createResponse.ok) {
-      const createResult = await createResponse.json();
-      return {
-        success: true,
-        message: 'Contato criado',
-        data: { contact_id: createResult.id }
-      };
-    }
-
-    return {
-      success: false,
-      message: 'Erro ao encontrar ou criar contato.'
-    };
-  };
+  }, [messages.length]);
 
   return {
+    messages,
     sendMessage,
-    isLoading,
-    error,
-    setError
+    clearChat,
+    initializeChat,
+    isTyping,
+    isLoading: sendMessageMutation.isPending,
+    sessionId
   };
-}
+};
