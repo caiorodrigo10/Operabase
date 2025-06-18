@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,6 +81,10 @@ export function ContatoDetalhes() {
   const [maraMessage, setMaraMessage] = useState('');
   const [isMaraLoading, setIsMaraLoading] = useState(false);
   const [showEvolucaoEditor, setShowEvolucaoEditor] = useState(false);
+  const [isTabsSticky, setIsTabsSticky] = useState(false);
+  const [activeTab, setActiveTab] = useState('visao-geral');
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const stickyTabsRef = useRef<HTMLDivElement>(null);
 
   // Fetch contact data
   const { data: contact, isLoading: contactLoading, error: contactError } = useQuery<Contact>({
@@ -146,6 +150,24 @@ export function ContatoDetalhes() {
     setIsMaraLoading(true);
     maraMutation.mutate(maraMessage);
     setMaraMessage('');
+  };
+
+  // Sticky tabs scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (tabsRef.current) {
+        const tabsRect = tabsRef.current.getBoundingClientRect();
+        const shouldBeSticky = tabsRect.top <= 0;
+        setIsTabsSticky(shouldBeSticky);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
 
   if (contactLoading) {
@@ -234,9 +256,9 @@ export function ContatoDetalhes() {
 
       {/* Content */}
       <div className="container mx-auto px-6 py-6">
-        <Tabs defaultValue="visao-geral" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           {/* Horizontal Tabs */}
-          <TabsList className="grid w-full grid-cols-5 bg-white border border-slate-200 rounded-lg p-1">
+          <TabsList ref={tabsRef} className="grid w-full grid-cols-5 bg-white border border-slate-200 rounded-lg p-1">
             <TabsTrigger 
               value="visao-geral" 
               className="data-[state=active]:bg-medical-blue data-[state=active]:text-white"
@@ -680,6 +702,71 @@ export function ContatoDetalhes() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Sticky Tabs Overlay */}
+      {isTabsSticky && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+          <div className="container mx-auto px-6 py-3">
+            <div className="grid w-full grid-cols-5 bg-white border border-slate-200 rounded-lg p-1">
+              <button
+                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'visao-geral'
+                    ? 'bg-medical-blue text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                onClick={() => handleTabChange('visao-geral')}
+              >
+                <User className="w-4 h-4 mr-2" />
+                Visão Geral
+              </button>
+              <button
+                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'evolucoes'
+                    ? 'bg-medical-blue text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                onClick={() => handleTabChange('evolucoes')}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Evoluções
+              </button>
+              <button
+                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'mara'
+                    ? 'bg-medical-blue text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                onClick={() => handleTabChange('mara')}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Mara IA
+              </button>
+              <button
+                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'arquivos'
+                    ? 'bg-medical-blue text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                onClick={() => handleTabChange('arquivos')}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Arquivos
+              </button>
+              <button
+                className={`flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === 'pipeline'
+                    ? 'bg-medical-blue text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                onClick={() => handleTabChange('pipeline')}
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Pipeline
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Editor de Evolução */}
       {showEvolucaoEditor && (
