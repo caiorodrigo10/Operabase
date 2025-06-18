@@ -395,16 +395,188 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
       }
     });
     
-    if (result.success) {
-      // Resposta natural da Marina
-      const naturalResponse = result.data?.response || 
-        `Oi! Aqui é a Marina da clínica. ${result.data?.action ? 'Entendi sua solicitação!' : 'Como posso ajudar você hoje?'}`;
+    if (result.success && result.data) {
+      const action = result.data.action;
+      let naturalResponse = '';
+      let mcpResult = null;
+
+      // Executar ações MCP dinamicamente baseado na interpretação OpenAI
+      switch (action) {
+        case 'chat_response':
+          naturalResponse = result.data.message || 'Olá! Como posso ajudar você hoje?';
+          break;
+
+        case 'create':
+          try {
+            // Executar criação de agendamento via MCP
+            mcpResult = await appointmentAgent.createAppointment({
+              contact_id: null, // Será criado automaticamente se não existir
+              contact_name: result.data.contact_name,
+              clinic_id: result.data.clinic_id || 1,
+              user_id: result.data.user_id || 4,
+              scheduled_date: result.data.date,
+              scheduled_time: result.data.time,
+              duration_minutes: result.data.duration || 60,
+              status: 'agendada',
+              payment_status: 'pendente',
+              doctor_name: result.data.doctor_name || 'Marina',
+              specialty: result.data.specialty || 'consulta',
+              appointment_type: result.data.appointment_type || 'consulta'
+            });
+
+            if (mcpResult.success) {
+              naturalResponse = `✅ Perfeito! Agendei a consulta para ${result.data.contact_name} no dia ${result.data.date} às ${result.data.time}. O agendamento #${mcpResult.appointment_id} foi criado com sucesso!`;
+            } else {
+              naturalResponse = `❌ Ops! Não consegui agendar: ${mcpResult.error}. Que tal tentarmos outro horário?`;
+            }
+          } catch (error) {
+            console.error('❌ Erro ao criar agendamento:', error);
+            naturalResponse = '❌ Tive um problema ao agendar. Pode tentar novamente?';
+          }
+          break;
+
+        case 'list':
+          try {
+            // Executar listagem via MCP
+            mcpResult = await appointmentAgent.listAppointments(result.data.clinic_id || 1, {
+              userId: result.data.user_id || 4,
+              startDate: result.data.date || result.data.start_date,
+              endDate: result.data.end_date
+            });
+
+            if (mcpResult.success && mcpResult.appointments) {
+              if (mcpResult.appointments.length === 0) {
+                naturalResponse = '📅 Não encontrei consultas para essa data.';
+              } else {
+                const appointmentsList = mcpResult.appointments.map(apt => 
+                  `• ${apt.scheduled_time} - ${apt.contact_name || 'Paciente'} ${apt.doctor_name ? `(${apt.doctor_name})` : ''}`
+                ).join('\n');
+                naturalResponse = `📅 Consultas encontradas:\n\n${appointmentsList}`;
+              }
+            } else {
+              naturalResponse = '❌ Não consegui verificar os agendamentos no momento.';
+            }
+          } catch (error) {
+            console.error('❌ Erro ao listar agendamentos:', error);
+            naturalResponse = '❌ Tive um problema ao consultar a agenda.';
+          }
+          break;
+
+        case 'availability':
+          try {
+            // Verificar disponibilidade via MCP
+            mcpResult = await appointmentAgent.getAvailableSlots({
+              clinic_id: result.data.clinic_id || 1,
+              user_id: result.data.user_id || 4,
+              date: result.data.date,
+              duration_minutes: result.data.duration || 60,
+              working_hours_start: '08:00',
+              working_hours_end: '18:00'
+            });
+
+            if (mcpResult.success && mcpResult.available_slots) {
+              if (mcpResult.available_slots.length === 0) {
+                naturalResponse = '❌ Não há horários disponíveis para essa data. Que tal tentarmos outro dia?';
+              } else {
+                const slots = mcpResult.available_slots.slice(0, 5).join(', ');
+                naturalResponse = `✅ Horários disponíveis para ${result.data.date}: ${slots}`;
+              }
+            } else {
+              naturalResponse = '❌ Não consegui verificar a disponibilidade no momento.';
+            }
+          } catch (error) {
+            console.error('❌ Erro ao verificar disponibilidade:', error);
+            naturalResponse = '❌ Tive um problema ao verificar os horários.';
+          }
+          break;
+
+        case 'clarification':
+          naturalResponse = result.data.message || 'Preciso de mais informações. Pode me ajudar?';
+          break;
+
+        default:
+          naturalResponse = 'Entendi sua mensagem! Como posso ajudar você?';
+      }
+
+      // Log da execução MCP se houve
+      if (mcpResult) {
+        mcpLogsService.addLog({
+          type: 'mcp',
+          level: mcpResult.success ? 'info' : 'error',
+          message: `Ação MCP executada: ${action}`,
+          data: { 
+            sessionId,
+            action,
+            success: mcpResult.success,
+            result: mcpResult
+          }
+        });
+      }
       
       // Log da resposta da Marina
       mcpLogsService.addLog({
         type: 'mcp',
         level: 'info',
         message: `Marina respondeu: "${naturalResponse.substring(0, 100)}..."`,
+        data: { 
+          sessionId,
+          responseLength: naturalResponse.length,
+          processingTime: Date.now() - startTime
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          response: naturalResponse,
+          action: action,
+          sessionId: sessionId,
+          mcp_result: mcpResult
+        },
+        error: null
+      });
+    } else {
+      // Fallback para erro
+      const fallbackResponse = 'Olá! Sou a Marina, sua assistente de agendamento. Como posso ajudar você hoje?';
+      
+      res.json({
+        success: true,
+        data: {
+          response: fallbackResponse,
+          action: 'chat_response',
+          sessionId: sessionId
+        },
+        error: null
+      });
+    }
+    
+  } catch (error) {
+    console.error('💥 Chat Error:', error);
+    
+    // Log do erro
+    mcpLogsService.addLog({
+      type: 'mcp',
+      level: 'error',
+      message: `Erro no chat: ${error.message}`,
+      data: { 
+        sessionId: req.body?.sessionId,
+        error: error.message,
+        stack: error.stack
+      }
+    });
+
+    // Sempre retornar resposta amigável, mesmo em caso de erro
+    res.json({
+      success: true,
+      data: {
+        response: 'Oi! Tive um pequeno problema, mas já estou funcionando novamente. Como posso ajudar?',
+        action: 'chat_response',
+        sessionId: req.body?.sessionId
+      },
+      error: null
+    });
+  }
+});,
         data: { 
           sessionId,
           action: result.data?.action,

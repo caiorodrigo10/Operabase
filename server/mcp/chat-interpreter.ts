@@ -78,6 +78,19 @@ export class ChatInterpreter {
       // Obter contexto existente para incluir no prompt
       let context = contextManager.getContext(sessionId);
       
+      // Extrair informações de agendamento da mensagem atual
+      const extractedInfo = contextManager.extractAppointmentInfo(
+        message, 
+        context?.pendingAppointment
+      );
+
+      // Atualizar contexto com informações extraídas
+      if (Object.keys(extractedInfo).length > 0) {
+        context = contextManager.updateContext(sessionId, {
+          pendingAppointment: extractedInfo
+        });
+      }
+
       const systemPrompt = this.buildSystemPrompt();
       
       // Incluir contexto na conversa se existir
@@ -87,54 +100,127 @@ export class ChatInterpreter {
 
       // Adicionar histórico de conversa se existir
       if (context?.conversationHistory && context.conversationHistory.length > 0) {
-        const recentHistory = context.conversationHistory.slice(-3); // Últimas 3 mensagens
+        const recentHistory = context.conversationHistory.slice(-4); // Últimas 4 mensagens para mais contexto
         recentHistory.forEach(item => {
           messages.push({ role: 'user', content: item.message });
           if (item.action) {
-            messages.push({ role: 'assistant', content: `{"action": "${item.action}"}` });
+            messages.push({ role: 'assistant', content: `Ação executada: ${item.action}` });
           }
         });
       }
 
-      messages.push({ role: 'user', content: message });
+      // Adicionar contexto de agendamento pendente se existir
+      let contextualMessage = message;
+      if (context?.pendingAppointment) {
+        const pending = context.pendingAppointment;
+        const missingFields = contextManager.validateAppointment(pending);
+        
+        if (missingFields.length === 0) {
+          contextualMessage += `\n\nContexto: Agendamento completo - Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time}`;
+        } else {
+          contextualMessage += `\n\nContexto: Agendamento em progresso - Já tenho: ${Object.keys(pending).join(', ')}. Faltam: ${missingFields.join(', ')}`;
+        }
+      }
+
+      messages.push({ role: 'user', content: contextualMessage });
+
+      console.log('🧠 OpenAI Request:', {
+        sessionId,
+        messageLength: message.length,
+        hasContext: !!context?.pendingAppointment,
+        historySize: context?.conversationHistory?.length || 0
+      });
 
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-4',
         messages,
-        temperature: 0.2,
-        max_tokens: 800
+        temperature: 0.1, // Reduzido para mais consistência
+        max_tokens: 1000,
+        top_p: 0.9
       });
 
       const responseContent = completion.choices[0]?.message?.content;
       
+      console.log('🤖 OpenAI Response:', responseContent?.substring(0, 200) + '...');
+      
       if (!responseContent) {
+        // Fallback para resposta natural
         return {
-          success: false,
-          error: 'Não foi possível interpretar a mensagem'
+          success: true,
+          data: {
+            action: 'chat_response',
+            message: 'Desculpe, tive um problema para processar sua mensagem. Pode tentar novamente?',
+            sessionId
+          }
         };
       }
 
       // Tentar fazer parse do JSON retornado
       let parsedAction;
       try {
-        parsedAction = JSON.parse(responseContent);
+        // Limpar resposta se contiver texto extra
+        const cleanedResponse = responseContent.trim();
+        const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : cleanedResponse;
+        
+        parsedAction = JSON.parse(jsonString);
       } catch (parseError) {
+        console.error('❌ Parse Error:', parseError);
+        console.error('❌ Raw Response:', responseContent);
+        
+        // Fallback para resposta conversacional
         return {
-          success: false,
-          error: 'Resposta da IA não está em formato JSON válido'
+          success: true,
+          data: {
+            action: 'chat_response',
+            message: responseContent.replace(/[{}\"]/g, ''),
+            sessionId
+          }
         };
       }
 
       // Validar com Zod
-      const validatedAction = ActionSchema.parse(parsedAction);
-
-      // Atualizar contexto se necessário
-      if (sessionId && (validatedAction.action === 'create' || validatedAction.action === 'clarification')) {
-        contextManager.updateContext(sessionId, {
-          lastAction: validatedAction.action,
-          pendingAppointment: validatedAction.action === 'create' ? validatedAction : undefined
-        });
+      let validatedAction;
+      try {
+        validatedAction = ActionSchema.parse(parsedAction);
+      } catch (zodError) {
+        console.error('❌ Zod Validation Error:', zodError);
+        
+        // Tentar criar uma ação válida baseada no conteúdo
+        if (parsedAction.message || parsedAction.response) {
+          return {
+            success: true,
+            data: {
+              action: 'chat_response',
+              message: parsedAction.message || parsedAction.response || 'Entendi sua mensagem!',
+              sessionId
+            }
+          };
+        }
+        
+        return {
+          success: false,
+          error: 'Formato de resposta inválido da IA'
+        };
       }
+
+      // Atualizar contexto conforme a ação
+      if (sessionId) {
+        if (validatedAction.action === 'create') {
+          contextManager.updateContext(sessionId, {
+            lastAction: 'create',
+            pendingAppointment: validatedAction
+          });
+        } else if (validatedAction.action === 'clarification') {
+          contextManager.addMessage(sessionId, validatedAction.message, 'clarification');
+        }
+      }
+
+      console.log('✅ Validated Action:', {
+        action: validatedAction.action,
+        sessionId,
+        hasAllData: validatedAction.action === 'create' ? !!(validatedAction.contact_name && validatedAction.date && validatedAction.time) : true
+      });
 
       return {
         success: true,
@@ -142,18 +228,27 @@ export class ChatInterpreter {
       };
 
     } catch (error) {
-      console.error('Erro ao interpretar mensagem:', error);
+      console.error('💥 Interpreter Error:', error);
       
       if (error instanceof z.ZodError) {
         return {
-          success: false,
-          error: 'Formato de ação inválido interpretado pela IA'
+          success: true,
+          data: {
+            action: 'chat_response',
+            message: 'Entendi sua mensagem, mas preciso de mais detalhes. Pode me ajudar?',
+            sessionId
+          }
         };
       }
 
+      // Fallback final sempre retorna sucesso
       return {
-        success: false,
-        error: 'Erro interno ao processar mensagem'
+        success: true,
+        data: {
+          action: 'chat_response',
+          message: 'Olá! Como posso ajudar você hoje?',
+          sessionId
+        }
       };
     }
   }
