@@ -315,8 +315,26 @@ router.get('/appointments/availability', requireReadPermission, async (req: ApiK
 
     const result = await appointmentAgent.getAvailableSlots(requestData);
 
-    const statusCode = result.success ? 200 : 400;
-    res.status(statusCode).json(result);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    // Filter only available slots and format as requested
+    const availableSlots = result.data
+      .filter((slot: any) => slot.available)
+      .map((slot: any) => ({
+        datetime: `${date}T${slot.time}:00`,
+        available: true
+      }));
+
+    // Format response as requested
+    const formattedResponse = [{
+      response: JSON.stringify([{
+        msg: `Os horários disponíveis para o dia: ${date}\nsao: \n${JSON.stringify(availableSlots)}\n\n`
+      }])
+    }];
+
+    res.status(200).json(formattedResponse);
 
   } catch (error) {
     console.error('MCP Availability GET Error:', error);
