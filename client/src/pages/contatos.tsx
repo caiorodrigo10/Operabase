@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +22,7 @@ import { insertContactSchema } from "../../../server/domains/contacts/contacts.s
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 import { 
   User, 
   Phone, 
@@ -50,6 +53,7 @@ export function Contatos() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [patientFormTab, setPatientFormTab] = useState("basic");
   const [, setLocation] = useLocation();
   
   const { toast } = useToast();
@@ -65,10 +69,37 @@ export function Contatos() {
     }
   });
 
-  // Form for adding new contact - simplified
-  const form = useForm<InsertContact>({
-    resolver: zodResolver(insertContactSchema.extend({
-      profession: insertContactSchema.shape.profession.optional()
+  // Form for adding new contact - complete patient form with minimal validation
+  const form = useForm<any>({
+    resolver: zodResolver(z.object({
+      name: z.string().min(1, "Nome é obrigatório"),
+      phone: z.string().optional(),
+      email: z.string().email().optional().or(z.literal("")),
+      profession: z.string().optional(),
+      // All other fields are optional strings
+      gender: z.string().optional(),
+      reminder_preference: z.string().optional(),
+      cpf: z.string().optional(),
+      rg: z.string().optional(),
+      birth_date: z.string().optional(),
+      how_found_clinic: z.string().optional(),
+      notes: z.string().optional(),
+      emergency_contact_name: z.string().optional(),
+      emergency_contact_phone: z.string().optional(),
+      landline_phone: z.string().optional(),
+      zip_code: z.string().optional(),
+      address: z.string().optional(),
+      address_complement: z.string().optional(),
+      neighborhood: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      responsible_name: z.string().optional(),
+      responsible_cpf: z.string().optional(),
+      responsible_birth_date: z.string().optional(),
+      insurance_type: z.string().optional(),
+      insurance_holder: z.string().optional(),
+      insurance_number: z.string().optional(),
+      insurance_responsible_cpf: z.string().optional(),
     })),
     defaultValues: {
       clinic_id: 1,
@@ -77,6 +108,29 @@ export function Contatos() {
       email: "",
       profession: "",
       status: "novo",
+      gender: "",
+      reminder_preference: "whatsapp",
+      cpf: "",
+      rg: "",
+      birth_date: "",
+      how_found_clinic: "",
+      notes: "",
+      emergency_contact_name: "",
+      emergency_contact_phone: "",
+      landline_phone: "",
+      zip_code: "",
+      address: "",
+      address_complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      responsible_name: "",
+      responsible_cpf: "",
+      responsible_birth_date: "",
+      insurance_type: "particular",
+      insurance_holder: "",
+      insurance_number: "",
+      insurance_responsible_cpf: "",
     }
   });
 
@@ -116,8 +170,28 @@ export function Contatos() {
     return matchesSearch && matchesStatus;
   });
 
-  const onSubmitContact = (data: InsertContact) => {
-    createContactMutation.mutate(data);
+  const onSubmitContact = (data: any) => {
+    // Filter only the fields that exist in the contact schema
+    const contactData = {
+      clinic_id: 1,
+      name: data.name,
+      phone: data.phone || "",
+      email: data.email || null,
+      profession: data.profession || null,
+      status: "novo" as const,
+      // Store additional data in notes for now
+      notes: data.notes || [
+        data.gender && `Gênero: ${data.gender}`,
+        data.cpf && `CPF: ${data.cpf}`,
+        data.rg && `RG: ${data.rg}`,
+        data.birth_date && `Data de nascimento: ${data.birth_date}`,
+        data.emergency_contact_name && `Contato de emergência: ${data.emergency_contact_name} - ${data.emergency_contact_phone}`,
+        data.address && `Endereço: ${data.address}`,
+        data.insurance_type && data.insurance_type !== "particular" && `Convênio: ${data.insurance_type}`
+      ].filter(Boolean).join('\n') || null
+    };
+    
+    createContactMutation.mutate(contactData);
   };
 
   const handleContactClick = (contact: Contact) => {
