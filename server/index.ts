@@ -100,6 +100,10 @@ app.use((req, res, next) => {
   // Add MCP error handling
   app.use('/api/mcp', mcpErrorMiddleware);
   
+  // Add API Keys management routes
+  const apiKeysRoutes = await import('./routes/api-keys.routes');
+  app.use('/api', apiKeysRoutes.default);
+  
   // Add Phase 3 observability endpoints
   const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
   app.use('/api/observability', observabilityRoutes);

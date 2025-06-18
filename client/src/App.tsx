@@ -24,6 +24,7 @@ import { RecuperarSenha } from "./pages/recuperar-senha";
 import { ResetPassword } from "./pages/reset-password";
 import ChatDeTeste from "./pages/chat-de-teste";
 import MCPTestPage from "./pages/mcp-test";
+import ApiKeysPage from "./pages/api-keys";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -79,6 +80,7 @@ function Router() {
         <Route path="/perfil" component={Perfil} />
         <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route path="/mcptest" component={MCPTestPage} />
+        <Route path="/api-keys" component={ApiKeysPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
