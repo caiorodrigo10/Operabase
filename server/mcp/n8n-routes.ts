@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { appointmentAgent, VALID_APPOINTMENT_STATUSES, VALID_PAYMENT_STATUSES } from './appointment-agent-simple';
 import { chatInterpreter } from './chat-interpreter';
 import { z } from 'zod';
+import { mcpLogsService } from './logs.service';
 
 const router = Router();
 
@@ -360,17 +361,57 @@ const ChatMessageSchema = z.object({
 
 // Endpoint simplificado para chat WhatsApp natural
 router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
   try {
     const { message, sessionId } = req.body;
+    
+    // Log da requisição do chat
+    mcpLogsService.addLog({
+      type: 'mcp',
+      level: 'info',
+      message: `Marina recebeu mensagem: "${message}"`,
+      data: { 
+        sessionId, 
+        userMessage: message,
+        endpoint: '/api/mcp/chat'
+      }
+    });
     
     console.log('🗨️ Marina Chat Request:', { message, sessionId });
     
     const result = await chatInterpreter.interpretMessage(message, sessionId);
     
+    // Log do resultado da interpretação
+    mcpLogsService.addLog({
+      type: 'chat_interpretation',
+      level: result.success ? 'info' : 'error',
+      message: `Interpretação OpenAI: ${result.success ? 'sucesso' : 'falha'}`,
+      metadata: { 
+        sessionId,
+        success: result.success,
+        action: result.data?.action,
+        responseTime: Date.now() - startTime
+      }
+    });
+    
     if (result.success) {
       // Resposta natural da Marina
       const naturalResponse = result.data?.response || 
         `Oi! Aqui é a Marina da clínica. ${result.data?.action ? 'Entendi sua solicitação!' : 'Como posso ajudar você hoje?'}`;
+      
+      // Log da resposta da Marina
+      mcpLogsService.addLog({
+        type: 'chat_response',
+        level: 'info',
+        message: `Marina respondeu: "${naturalResponse.substring(0, 100)}..."`,
+        metadata: { 
+          sessionId,
+          action: result.data?.action,
+          responseLength: naturalResponse.length,
+          totalResponseTime: Date.now() - startTime
+        }
+      });
       
       res.json({
         success: true,
@@ -381,13 +422,25 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
         }
       });
     } else {
+      // Log do erro
+      mcpLogsService.addLog({
+        type: 'chat_error',
+        level: 'warn',
+        message: `Marina não conseguiu processar: "${message}"`,
+        metadata: { 
+          sessionId,
+          error: result.error,
+          responseTime: Date.now() - startTime
+        }
+      });
+      
       // Resposta humanizada para erros
       res.status(200).json({
         success: true,
         data: {
           response: "Ops, não consegui entender direito. Pode repetir de outra forma? 😊",
           action: null,
-          sessionId: sessionId || `session_${Date.now()}`
+          sessionId: req.body.sessionId || `session_${Date.now()}`
         }
       });
     }
@@ -398,7 +451,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
       data: {
         response: "Desculpa, tive um probleminha aqui. Pode tentar novamente? 🙏",
         action: "error",
-        sessionId: sessionId || `session_${Date.now()}`
+        sessionId: req.body.sessionId || `session_${Date.now()}`
       }
     });
   }

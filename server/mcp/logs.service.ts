@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 export interface LogEntry {
   id: string;
   timestamp: Date;
-  type: 'mcp' | 'openai' | 'database' | 'error' | 'performance';
+  type: 'mcp' | 'openai' | 'database' | 'error' | 'performance' | 'chat_request' | 'chat_interpretation' | 'chat_response' | 'chat_error';
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
   data?: any;

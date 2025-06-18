@@ -15,7 +15,7 @@ export default function ChatDeTeste() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Olá! Sou seu assistente de agendamento médico. Posso ajudar você a criar, consultar, reagendar ou cancelar consultas. Como posso ajudar?',
+      text: 'Oi! Aqui é a Marina, da Clínica TaskMed! 😊 Como posso ajudar você hoje?',
       isUser: false,
       timestamp: new Date(),
       type: 'info'
