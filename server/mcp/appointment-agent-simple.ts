@@ -543,60 +543,6 @@ export class AppointmentMCPAgent {
     pagination: { limit?: number; offset?: number } = {}
   ): Promise<MCPResponse> {
     try {
-      let query = `
-        SELECT a.*, c.name as contact_name, c.phone as contact_phone
-        FROM appointments a
-        LEFT JOIN contacts c ON a.contact_id = c.id
-        WHERE a.clinic_id = $1
-      `;
-      
-      const params: any[] = [clinicId];
-      let paramIndex = 2;
-      
-      if (filters.startDate) {
-        query += ` AND DATE(a.scheduled_date) >= $${paramIndex}`;
-        params.push(filters.startDate);
-        paramIndex++;
-      }
-      
-      if (filters.endDate) {
-        query += ` AND DATE(a.scheduled_date) <= $${paramIndex}`;
-        params.push(filters.endDate);
-        paramIndex++;
-      }
-      
-      if (filters.userId) {
-        query += ` AND a.user_id = $${paramIndex}`;
-        params.push(filters.userId);
-        paramIndex++;
-      }
-      
-      if (filters.status) {
-        query += ` AND a.status = $${paramIndex}`;
-        params.push(filters.status);
-        paramIndex++;
-      }
-      
-      if (filters.contactId) {
-        query += ` AND a.contact_id = $${paramIndex}`;
-        params.push(filters.contactId);
-        paramIndex++;
-      }
-      
-      query += ` ORDER BY a.scheduled_date ASC`;
-      
-      if (pagination.limit) {
-        query += ` LIMIT $${paramIndex}`;
-        params.push(pagination.limit);
-        paramIndex++;
-      }
-      
-      if (pagination.offset) {
-        query += ` OFFSET $${paramIndex}`;
-        params.push(pagination.offset);
-        paramIndex++;
-      }
-      
       // Build base query with conditions
       const conditions = [eq(appointments.clinic_id, clinicId)];
       
@@ -620,41 +566,12 @@ export class AppointmentMCPAgent {
         conditions.push(eq(appointments.contact_id, filters.contactId));
       }
       
-      // Execute query with proper Drizzle syntax
-      let dbQuery = db.select({
-        id: appointments.id,
-        contact_id: appointments.contact_id,
-        clinic_id: appointments.clinic_id,
-        user_id: appointments.user_id,
-        scheduled_date: appointments.scheduled_date,
-        duration_minutes: appointments.duration_minutes,
-        status: appointments.status,
-        doctor_name: appointments.doctor_name,
-        specialty: appointments.specialty,
-        appointment_type: appointments.appointment_type,
-        session_notes: appointments.session_notes,
-        payment_status: appointments.payment_status,
-        payment_amount: appointments.payment_amount,
-        tag_id: appointments.tag_id,
-        created_at: appointments.created_at,
-        updated_at: appointments.updated_at,
-        contact_name: contacts.name,
-        contact_phone: contacts.phone
-      })
-      .from(appointments)
-      .leftJoin(contacts, eq(appointments.contact_id, contacts.id))
-      .where(and(...conditions))
-      .orderBy(appointments.scheduled_date);
-      
-      if (pagination.limit) {
-        dbQuery = dbQuery.limit(pagination.limit);
-      }
-      
-      if (pagination.offset) {
-        dbQuery = dbQuery.offset(pagination.offset);
-      }
-      
-      const result = await dbQuery;
+      // Execute query with basic Drizzle syntax
+      const result = await db.select()
+        .from(appointments)
+        .leftJoin(contacts, eq(appointments.contact_id, contacts.id))
+        .where(and(...conditions))
+        .orderBy(appointments.scheduled_date);
       
       return {
         success: true,
