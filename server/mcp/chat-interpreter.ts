@@ -116,13 +116,13 @@ export class ChatInterpreter {
         const missingFields = contextManager.validateAppointment(pending);
 
         if (missingFields.length === 0) {
-          contextualMessage += `\n\nCONTEXTO COMPLETO: Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time} - EXECUTAR AGENDAMENTO`;
+          contextualMessage += `\n\nCONTEXTO COMPLETO: Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time} - EXECUTAR AGENDAMENTO AGORA!`;
         } else {
           const hasData = Object.entries(pending)
             .filter(([key, value]) => value && key !== 'incomplete_fields')
             .map(([key, value]) => `${key}: ${value}`)
             .join(', ');
-          contextualMessage += `\n\nCONTEXTO EM PROGRESSO: [${hasData}]. FALTAM: ${missingFields.join(', ')}. MANTENHA OS DADOS JÁ COLETADOS!`;
+          contextualMessage += `\n\nIMPORTANTE: DADOS JÁ COLETADOS [${hasData}]. FALTAM APENAS: ${missingFields.join(', ')}. NÃO PERGUNTE NOVAMENTE OS DADOS QUE JÁ TEMOS!`;
         }
       }
 

@@ -19,7 +19,9 @@ interface MCPResponse {
 export const useMCPChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`); // ✅ SessionId persistente
+
+  // ✅ Sessão persistente para toda a conversa
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const queryClient = useQueryClient();
 
   // Gerar ID único para mensagens

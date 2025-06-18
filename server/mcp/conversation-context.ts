@@ -90,8 +90,11 @@ class ConversationContextManager {
   }
 
   extractAppointmentInfo(message: string, existing?: any): any {
-    const appointment = { ...existing } || {}; // ✅ Preservar dados existentes
+    const appointment = existing ? { ...existing } : {}; // ✅ Preservar dados existentes
     const lowerMsg = message.toLowerCase();
+    
+    console.log('🔍 Extracting from:', message);
+    console.log('📋 Existing data:', existing);
 
     // Extrair nome do paciente (padrões mais específicos)
     if (!appointment.contact_name) { // ✅ Só extrair se ainda não temos
@@ -154,24 +157,29 @@ class ConversationContextManager {
       }
     }
 
-    // Extrair horário
-    const timePatterns = [
-      /(?:às\s+)?(\d{1,2})h(?:(\d{2}))?/i,
-      /(?:às\s+)?(\d{1,2}):(\d{2})/i,
-      /(?:às\s+)?(\d{1,2})\s*(?:horas?|h)/i,
-      /marcar.*?(?:às\s+)?(\d{1,2})h/i,
-      /para.*?(?:às\s+)?(\d{1,2})h/i
-    ];
+    // Extrair horário (só se ainda não temos)
+    if (!appointment.time) {
+      const timePatterns = [
+        /(?:às\s+)?(\d{1,2})h(?:(\d{2}))?/i,
+        /(?:às\s+)?(\d{1,2}):(\d{2})/i,
+        /(?:às\s+)?(\d{1,2})\s*(?:horas?|h)/i,
+        /marcar.*?(?:às\s+)?(\d{1,2})h/i,
+        /para.*?(?:às\s+)?(\d{1,2})h/i,
+        /(?:as|às)\s+(\d{1,2}):(\d{2})/i, // "as 11:30"
+        /(?:as|às)\s+(\d{1,2})\s*(?:e\s*(\d{2}))?/i // "as 11 e 30"
+      ];
 
     for (const pattern of timePatterns) {
-      const match = message.match(pattern);
-      if (match) {
-        const hour = parseInt(match[1]);
-        const minute = match[2] ? parseInt(match[2]) : 0;
-        
-        if (hour >= 6 && hour <= 22) { // Horário comercial razoável
-          appointment.time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          break;
+        const match = message.match(pattern);
+        if (match) {
+          const hour = parseInt(match[1]);
+          const minute = match[2] ? parseInt(match[2]) : 0;
+          
+          if (hour >= 6 && hour <= 22) { // Horário comercial razoável
+            appointment.time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            console.log('⏰ Time extracted:', appointment.time);
+            break;
+          }
         }
       }
     }
@@ -181,6 +189,7 @@ class ConversationContextManager {
       appointment.appointment_type = 'consulta';
     }
 
+    console.log('📤 Final extracted appointment:', appointment);
     return appointment;
   }
 
