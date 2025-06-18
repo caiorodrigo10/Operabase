@@ -90,41 +90,68 @@ class ConversationContextManager {
   }
 
   extractAppointmentInfo(message: string, existing?: any): any {
-    const appointment = existing || {};
+    const appointment = { ...existing } || {}; // ✅ Preservar dados existentes
     const lowerMsg = message.toLowerCase();
 
     // Extrair nome do paciente (padrões mais específicos)
-    const namePatterns = [
-      /nome\s+é\s+(.+?)$/i,  // Captura tudo após "nome é"
-      /nome\s+do\s+paciente\s+é\s+(.+)/i,
-      /paciente\s+([A-Za-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
-      /(?:agendar|marcar).*?(?:para|pro)\s+([A-Za-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
-      /^([A-Za-záàâãäçéèêëíìîïóòôõöúùûü]+\s+[A-Za-záàâãäçéèêëíìîïóòôõöúùûü]+)/i
-    ];
+    if (!appointment.contact_name) { // ✅ Só extrair se ainda não temos
+      const namePatterns = [
+        /nome\s+é\s+(.+?)$/i,
+        /nome\s+do\s+paciente\s+é\s+(.+)/i,
+        /paciente\s+([A-Za-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
+        /(?:agendar|marcar).*?(?:para|pro)\s+([A-Za-záàâãäçéèêëíìîïóòôõöúùûü\s]{3,})/i,
+        /^([A-Za-záàâãäçéèêëíìîïóòôõöúùûü]+\s+[A-Za-záàâãäçéèêëíìîïóòôõöúùûü]+)$/i // ✅ Nome isolado
+      ];
 
-    // Extrair nomes sempre, mas com padrões específicos
-    for (const pattern of namePatterns) {
-      const match = message.match(pattern);
-      if (match && match[1]) {
-        const name = match[1].trim();
-        // Remover palavras irrelevantes do final
-        const cleanName = name.replace(/\s+(consulta|agendamento|marcação).*$/i, '');
-        const excludedWords = ['marcar', 'agendar', 'amanhã', 'hoje', 'horário', 'para as'];
-        if (cleanName.length > 2 && !excludedWords.some(word => cleanName.toLowerCase().includes(word))) {
-          appointment.contact_name = cleanName;
-          break;
+      for (const pattern of namePatterns) {
+        const match = message.match(pattern);
+        if (match && match[1]) {
+          const name = match[1].trim();
+          const cleanName = name.replace(/\s+(consulta|agendamento|marcação).*$/i, '');
+          const excludedWords = ['marcar', 'agendar', 'amanhã', 'hoje', 'horário', 'para as', 'às'];
+          if (cleanName.length > 2 && !excludedWords.some(word => cleanName.toLowerCase().includes(word))) {
+            appointment.contact_name = cleanName;
+            break;
+          }
         }
       }
     }
 
-    // Extrair data
-    if (lowerMsg.includes('amanhã') || lowerMsg.includes('amanha')) {
-      const now = new Date();
-      const saoPauloOffset = -3 * 60;
-      const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
-      const tomorrow = new Date(saoPauloTime);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      appointment.date = tomorrow.toISOString().split('T')[0];
+    // Extrair data (preservar se já existe)
+    if (!appointment.date) { // ✅ Só extrair se ainda não temos
+      if (lowerMsg.includes('amanhã') || lowerMsg.includes('amanha')) {
+        const now = new Date();
+        const saoPauloOffset = -3 * 60;
+        const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
+        const tomorrow = new Date(saoPauloTime);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        appointment.date = tomorrow.toISOString().split('T')[0];
+      }
+      
+      // ✅ Extrair datas específicas (19 de junho, 19/06, etc.)
+      const datePatterns = [
+        /(\d{1,2})\s+de\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s+de\s+(\d{4})/i,
+        /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
+        /(\d{4})-(\d{1,2})-(\d{1,2})/
+      ];
+      
+      for (const pattern of datePatterns) {
+        const match = message.match(pattern);
+        if (match) {
+          if (pattern.source.includes('de')) {
+            // Formato: "19 de junho de 2025"
+            const day = parseInt(match[1]);
+            const monthNames = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+            const month = monthNames.indexOf(match[2].toLowerCase()) + 1;
+            const year = parseInt(match[3]);
+            appointment.date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+          } else {
+            // Outros formatos
+            appointment.date = match[0];
+          }
+          break;
+        }
+      }
     }
 
     // Extrair horário

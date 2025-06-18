@@ -77,7 +77,7 @@ export class ChatInterpreter {
 
       // Obter contexto existente para incluir no prompt
       let context = contextManager.getContext(sessionId);
-      
+
       // Extrair informações de agendamento da mensagem atual
       const extractedInfo = contextManager.extractAppointmentInfo(
         message, 
@@ -92,7 +92,7 @@ export class ChatInterpreter {
       }
 
       const systemPrompt = this.buildSystemPrompt();
-      
+
       // Incluir contexto na conversa se existir
       const messages: Array<{role: 'system' | 'user' | 'assistant', content: string}> = [
         { role: 'system', content: systemPrompt }
@@ -109,16 +109,20 @@ export class ChatInterpreter {
         });
       }
 
-      // Adicionar contexto de agendamento pendente se existir
+      // Incluir contexto de agendamento pendente se existir
       let contextualMessage = message;
       if (context?.pendingAppointment) {
         const pending = context.pendingAppointment;
         const missingFields = contextManager.validateAppointment(pending);
-        
+
         if (missingFields.length === 0) {
-          contextualMessage += `\n\nContexto: Agendamento completo - Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time}`;
+          contextualMessage += `\n\nCONTEXTO COMPLETO: Nome: ${pending.contact_name}, Data: ${pending.date}, Horário: ${pending.time} - EXECUTAR AGENDAMENTO`;
         } else {
-          contextualMessage += `\n\nContexto: Agendamento em progresso - Já tenho: ${Object.keys(pending).join(', ')}. Faltam: ${missingFields.join(', ')}`;
+          const hasData = Object.entries(pending)
+            .filter(([key, value]) => value && key !== 'incomplete_fields')
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ');
+          contextualMessage += `\n\nCONTEXTO EM PROGRESSO: [${hasData}]. FALTAM: ${missingFields.join(', ')}. MANTENHA OS DADOS JÁ COLETADOS!`;
         }
       }
 
@@ -140,9 +144,9 @@ export class ChatInterpreter {
       });
 
       const responseContent = completion.choices[0]?.message?.content;
-      
+
       console.log('🤖 OpenAI Response:', responseContent?.substring(0, 200) + '...');
-      
+
       if (!responseContent) {
         // Fallback para resposta natural
         return {
@@ -162,12 +166,12 @@ export class ChatInterpreter {
         const cleanedResponse = responseContent.trim();
         const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
         const jsonString = jsonMatch ? jsonMatch[0] : cleanedResponse;
-        
+
         parsedAction = JSON.parse(jsonString);
       } catch (parseError) {
         console.error('❌ Parse Error:', parseError);
         console.error('❌ Raw Response:', responseContent);
-        
+
         // Fallback para resposta conversacional
         return {
           success: true,
@@ -185,7 +189,7 @@ export class ChatInterpreter {
         validatedAction = ActionSchema.parse(parsedAction);
       } catch (zodError) {
         console.error('❌ Zod Validation Error:', zodError);
-        
+
         // Tentar criar uma ação válida baseada no conteúdo
         if (parsedAction.message || parsedAction.response) {
           return {
@@ -197,7 +201,7 @@ export class ChatInterpreter {
             }
           };
         }
-        
+
         return {
           success: false,
           error: 'Formato de resposta inválido da IA'
@@ -229,7 +233,7 @@ export class ChatInterpreter {
 
     } catch (error) {
       console.error('💥 Interpreter Error:', error);
-      
+
       if (error instanceof z.ZodError) {
         return {
           success: true,
@@ -257,11 +261,11 @@ export class ChatInterpreter {
     const now = new Date();
     const saoPauloOffset = -3 * 60;
     const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
-    
+
     const today = saoPauloTime;
     const tomorrow = new Date(saoPauloTime);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     const weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
     const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
     const todayWeekday = weekdays[today.getDay()];

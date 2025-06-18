@@ -18,22 +18,12 @@ interface MCPResponse {
 
 export const useMCPChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`); // ✅ SessionId persistente
   const queryClient = useQueryClient();
 
   // Gerar ID único para mensagens
   const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 9);
-
-  // Gerar sessionId se não existir
-  const ensureSessionId = useCallback(() => {
-    if (!sessionId) {
-      const newSessionId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-      setSessionId(newSessionId);
-      return newSessionId;
-    }
-    return sessionId;
-  }, [sessionId]);
 
   // Mutation para enviar mensagem ao MCP
   const sendMessageMutation = useMutation({
@@ -57,7 +47,7 @@ export const useMCPChat = () => {
     },
     onSuccess: (data) => {
       setIsTyping(false);
-      
+
       if (data.success && data.data) {
         // Adicionar resposta da MARA
         const assistantMessage: ChatMessage = {
@@ -71,11 +61,6 @@ export const useMCPChat = () => {
         };
 
         setMessages(prev => [...prev, assistantMessage]);
-
-        // Atualizar sessionId se retornou um novo
-        if (data.data.sessionId && data.data.sessionId !== sessionId) {
-          setSessionId(data.data.sessionId);
-        }
 
         // Invalidar queries relacionadas se necessário
         if (data.data.action === 'create' || data.data.action === 'list' || data.data.action === 'reschedule' || data.data.action === 'cancel') {
@@ -108,28 +93,25 @@ export const useMCPChat = () => {
   const sendMessage = useCallback((message: string) => {
     if (!message.trim()) return;
 
-    const currentSessionId = ensureSessionId();
-
     // Adicionar mensagem do usuário
     const userMessage: ChatMessage = {
       id: generateId(),
       role: 'user',
       content: message,
       timestamp: new Date(),
-      sessionId: currentSessionId
+      sessionId: sessionId // ✅ Usando o mesmo sessionId para toda a conversa
     };
 
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
     // Enviar para o MCP
-    sendMessageMutation.mutate({ message, currentSessionId });
-  }, [sendMessageMutation, ensureSessionId]);
+    sendMessageMutation.mutate({ message, currentSessionId: sessionId });
+  }, [sendMessageMutation, sessionId]);
 
   // Função para limpar conversa
   const clearChat = useCallback(() => {
     setMessages([]);
-    setSessionId(null);
     setIsTyping(false);
   }, []);
 
