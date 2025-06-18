@@ -65,10 +65,9 @@ export function Contatos() {
     }
   });
 
-  // Form for adding new contact
+  // Form for adding new contact - simplified
   const form = useForm<InsertContact>({
     resolver: zodResolver(insertContactSchema.extend({
-      age: insertContactSchema.shape.age.optional(),
       profession: insertContactSchema.shape.profession.optional()
     })),
     defaultValues: {
@@ -76,11 +75,8 @@ export function Contatos() {
       name: "",
       phone: "",
       email: "",
-      age: undefined,
       profession: "",
       status: "novo",
-      priority: "normal",
-      source: "whatsapp"
     }
   });
 
@@ -266,35 +262,23 @@ export function Contatos() {
         </CardContent>
       </Card>
 
-      {/* Add Contact Modal */}
+      {/* Add Contact Modal - Simple Patient Creation Form */}
       <Dialog open={isAddContactOpen} onOpenChange={setIsAddContactOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-medical-blue" />
-              Adicionar Novo Contato
-            </DialogTitle>
-            <DialogDescription>
-              Preencha as informações básicas do novo contato
-            </DialogDescription>
+            <DialogTitle>Cadastrar novo paciente</DialogTitle>
           </DialogHeader>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitContact)} className="space-y-6">
-              {/* Basic Information */}
-              <div className="bg-slate-50 p-4 rounded-lg space-y-4">
-                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Informações Básicas
-                </h3>
-                
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome Completo *</FormLabel>
+                        <FormLabel>* Nome completo</FormLabel>
                         <FormControl>
                           <Input placeholder="Digite o nome completo" {...field} />
                         </FormControl>
@@ -302,13 +286,13 @@ export function Contatos() {
                       </FormItem>
                     )}
                   />
-
+                  
                   <FormField
                     control={form.control}
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telefone *</FormLabel>
+                        <FormLabel>* Celular</FormLabel>
                         <FormControl>
                           <Input placeholder="(11) 99999-9999" {...field} />
                         </FormControl>
@@ -316,7 +300,9 @@ export function Contatos() {
                       </FormItem>
                     )}
                   />
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="email"
@@ -325,8 +311,8 @@ export function Contatos() {
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                           <Input 
-                            type="email" 
                             placeholder="email@exemplo.com" 
+                            type="email" 
                             {...field}
                             value={field.value || ""}
                           />
@@ -335,27 +321,7 @@ export function Contatos() {
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="age"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Idade</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Idade" 
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
+                  
                   <FormField
                     control={form.control}
                     name="profession"
@@ -364,7 +330,7 @@ export function Contatos() {
                         <FormLabel>Profissão</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Profissão" 
+                            placeholder="Digite a profissão" 
                             {...field}
                             value={field.value || ""}
                           />
@@ -373,125 +339,7 @@ export function Contatos() {
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status Inicial</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="novo">Novo</SelectItem>
-                            <SelectItem value="em_conversa">Em conversa</SelectItem>
-                            <SelectItem value="agendado">Agendado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
-              </div>
-
-              {/* Additional Information */}
-              <div className="bg-slate-50 p-4 rounded-lg space-y-4">
-                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Informações Adicionais
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="source"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Origem do Contato</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Como chegou até nós?" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                            <SelectItem value="telefone">Telefone</SelectItem>
-                            <SelectItem value="indicacao">Indicação</SelectItem>
-                            <SelectItem value="website">Website</SelectItem>
-                            <SelectItem value="redes_sociais">Redes Sociais</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="priority"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Prioridade</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Nível de prioridade" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="baixa">Baixa</SelectItem>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="alta">Alta</SelectItem>
-                            <SelectItem value="urgente">Urgente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Endereço</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Endereço completo" 
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="emergency_contact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contato de Emergência</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Nome e telefone do contato de emergência" 
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               {/* Action Buttons */}
@@ -512,12 +360,12 @@ export function Contatos() {
                   {createContactMutation.isPending ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Salvando...
+                      Cadastrando...
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Salvar Contato
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Cadastrar paciente
                     </>
                   )}
                 </Button>
