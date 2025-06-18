@@ -327,7 +327,7 @@ export function useMCPChat() {
     const result = await response.json();
 
     if (result.success) {
-      const availableSlots = result.data.available_slots || [];
+      const availableSlots = result.data || [];
       
       if (availableSlots.length === 0) {
         return {

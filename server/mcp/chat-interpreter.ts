@@ -136,6 +136,8 @@ CONTEXTO:
 - clinic_id sempre será 1
 - user_id sempre será 4 (usuário de teste)
 - Data atual: ${new Date().toISOString().split('T')[0]}
+- Amanhã: ${new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0]}
+- Use cálculo correto de datas baseado na data atual
 
 FORMATOS DE AÇÃO VÁLIDOS:
 
@@ -211,19 +213,25 @@ REGRAS IMPORTANTES:
 - Interprete linguagem natural: "manhã" = 09:00, "tarde" = 14:00, "noite" = 19:00
 - Para reagendamento sem ID específico, solicite clarificação
 
+CÁLCULO DE DATAS CORRETO:
+- Hoje: 2025-06-18 (terça-feira)
+- Amanhã: 2025-06-19 (quarta-feira)
+- Quinta-feira: 2025-06-19 (amanhã)
+- Sexta-feira: 2025-06-20
+
 EXEMPLOS:
 
 Usuário: "Agendar consulta para Maria Silva amanhã às 10h"
-Resposta: {"action":"create","contact_name":"Maria Silva","date":"${new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0]}","time":"10:00","duration":60}
+Resposta: {"action":"create","contact_name":"Maria Silva","date":"2025-06-19","time":"10:00","duration":60}
 
 Usuário: "Quais consultas temos hoje?"
-Resposta: {"action":"list","date":"${new Date().toISOString().split('T')[0]}"}
+Resposta: {"action":"list","date":"2025-06-18"}
+
+Usuário: "Você tem horário para quinta?"
+Resposta: {"action":"availability","date":"2025-06-19","user_id":4,"duration":60,"working_hours_start":"08:00","working_hours_end":"18:00"}
 
 Usuário: "Reagendar a consulta 15 para sexta às 16h"
-Resposta: {"action":"reschedule","appointment_id":15,"new_date":"2025-06-27","new_time":"16:00"}
-
-Usuário: "Cancelar consulta 20"
-Resposta: {"action":"cancel","appointment_id":20,"cancelled_by":"dentista"}
+Resposta: {"action":"reschedule","appointment_id":15,"new_date":"2025-06-20","new_time":"16:00"}
 
 RETORNE APENAS O JSON, SEM EXPLICAÇÕES ADICIONAIS.`;
   }
