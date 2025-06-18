@@ -410,7 +410,7 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
           try {
             // Executar criação de agendamento via MCP
             mcpResult = await appointmentAgent.createAppointment({
-              contact_id: null, // Será criado automaticamente se não existir
+              contact_id: 0, // Será criado automaticamente se não existir
               contact_name: result.data.contact_name,
               clinic_id: result.data.clinic_id || 1,
               user_id: result.data.user_id || 4,
@@ -444,11 +444,12 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
               endDate: result.data.end_date
             });
 
-            if (mcpResult.success && mcpResult.appointments) {
-              if (mcpResult.appointments.length === 0) {
+            if (mcpResult.success && mcpResult.data) {
+              const appointments = Array.isArray(mcpResult.data) ? mcpResult.data : [];
+              if (appointments.length === 0) {
                 naturalResponse = '📅 Não encontrei consultas para essa data.';
               } else {
-                const appointmentsList = mcpResult.appointments.map(apt => 
+                const appointmentsList = appointments.map((apt: any) => 
                   `• ${apt.scheduled_time} - ${apt.contact_name || 'Paciente'} ${apt.doctor_name ? `(${apt.doctor_name})` : ''}`
                 ).join('\n');
                 naturalResponse = `📅 Consultas encontradas:\n\n${appointmentsList}`;
@@ -474,11 +475,11 @@ router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, re
               working_hours_end: '18:00'
             });
 
-            if (mcpResult.success && mcpResult.available_slots) {
-              if (mcpResult.available_slots.length === 0) {
+            if (mcpResult.success && mcpResult.next_available_slots) {
+              if (mcpResult.next_available_slots.length === 0) {
                 naturalResponse = '❌ Não há horários disponíveis para essa data. Que tal tentarmos outro dia?';
               } else {
-                const slots = mcpResult.available_slots.slice(0, 5).join(', ');
+                const slots = mcpResult.next_available_slots.slice(0, 5).join(', ');
                 naturalResponse = `✅ Horários disponíveis para ${result.data.date}: ${slots}`;
               }
             } else {

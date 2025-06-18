@@ -175,7 +175,11 @@ class MCPLogsService extends EventEmitter {
       openai: 0,
       database: 0,
       error: 0,
-      performance: 0
+      performance: 0,
+      chat_request: 0,
+      chat_interpretation: 0,
+      chat_response: 0,
+      chat_error: 0
     };
     const byLevel: Record<LogEntry['level'], number> = {
       info: 0,

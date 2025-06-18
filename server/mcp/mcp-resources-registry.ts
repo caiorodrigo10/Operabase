@@ -4,7 +4,7 @@ import { contacts } from '../domains/contacts/contacts.schema';
 import { appointments } from '../domains/appointments/appointments.schema';
 import { users } from '../domains/auth/auth.schema';
 import { clinic_users } from '../domains/clinics/clinics.schema';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 
 /**
