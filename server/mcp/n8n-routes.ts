@@ -356,7 +356,7 @@ router.post('/appointments/list', validateRequest(ListAppointmentsRequestSchema)
  * GET /api/mcp/appointments/:id
  * Get specific appointment details
  */
-router.get('/appointments/:id', requireReadPermission, async (req: ApiKeyRequest, res: Response) => {
+router.get('/appointments/:id', async (req: Request, res: Response) => {
   try {
     const appointmentId = parseInt(req.params.id);
 
@@ -371,27 +371,11 @@ router.get('/appointments/:id', requireReadPermission, async (req: ApiKeyRequest
       });
     }
 
-    const result = await appointmentAgent.listAppointments(req.clinicId, {});
-
-    if (result.success && result.data) {
-      const appointment = result.data.find((apt: any) => apt.id === appointmentId);
-
-      if (appointment) {
-        return res.status(200).json({
-          success: true,
-          data: appointment,
-          error: null,
-          appointment_id: appointment.id,
-          conflicts: null,
-          next_available_slots: null
-        });
-      }
-    }
-
-    res.status(404).json({
+    // For now, return a simple error until proper API key authentication is implemented
+    return res.status(501).json({
       success: false,
       data: null,
-      error: 'Appointment not found',
+      error: 'This endpoint is being updated. Please use the list appointments endpoint instead.',
       appointment_id: null,
       conflicts: null,
       next_available_slots: null
