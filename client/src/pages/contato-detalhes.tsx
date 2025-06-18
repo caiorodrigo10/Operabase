@@ -237,13 +237,20 @@ export function ContatoDetalhes() {
       <div className="container mx-auto px-6 py-6">
         <Tabs defaultValue="visao-geral" className="space-y-6">
           {/* Horizontal Tabs */}
-          <TabsList className="grid w-full grid-cols-4 bg-white border border-slate-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-5 bg-white border border-slate-200 rounded-lg p-1">
             <TabsTrigger 
               value="visao-geral" 
               className="data-[state=active]:bg-medical-blue data-[state=active]:text-white"
             >
               <User className="w-4 h-4 mr-2" />
               Visão Geral
+            </TabsTrigger>
+            <TabsTrigger 
+              value="evolucoes"
+              className="data-[state=active]:bg-medical-blue data-[state=active]:text-white"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Evoluções
             </TabsTrigger>
             <TabsTrigger 
               value="mara"
@@ -391,53 +398,100 @@ export function ContatoDetalhes() {
 
               {/* Right Column - Appointments and Messages (wider) */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Latest Appointments */}
+                {/* Latest Evolutions */}
                 <Card className="bg-white border border-slate-200">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-semibold text-slate-900">Últimas Evoluções</h2>
-                      <Button variant="outline" size="sm">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Adicionar
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const tabs = document.querySelector('[data-state="active"]')?.parentElement;
+                            const evolucoesTrigger = tabs?.querySelector('[value="evolucoes"]') as HTMLElement;
+                            evolucoesTrigger?.click();
+                          }}
+                        >
+                          Ver todas
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nova Evolução
+                        </Button>
+                      </div>
                     </div>
                     
                     {appointments?.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <div className="text-slate-400">🔍</div>
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Edit className="w-8 h-8 text-blue-500" />
                         </div>
                         <p className="text-slate-500 mb-2">
-                          Você ainda não registrou evoluções para este paciente.
+                          Nenhuma evolução registrada ainda
                         </p>
-                        <p className="text-slate-400 text-sm">Vamos começar?</p>
+                        <p className="text-slate-400 text-sm mb-3">
+                          Registre a primeira evolução deste paciente
+                        </p>
+                        <Button size="sm" className="bg-medical-blue hover:bg-blue-700">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Criar primeira evolução
+                        </Button>
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {appointments.slice(0, 5).map((appointment) => (
-                          <div key={appointment.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50">
-                            <div className="flex-1">
+                        {appointments.slice(0, 3).map((appointment) => (
+                          <div key={appointment.id} className="p-3 border border-slate-100 rounded-lg hover:bg-slate-50 cursor-pointer">
+                            <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <span className="text-sm font-medium text-slate-900">
-                                  {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
-                                </span>
-                                <span className="text-sm text-slate-500">
-                                  {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
-                                </span>
-                                <span className="text-sm text-slate-600">{appointment.doctor_name}</span>
-                                {getStatusBadge(appointment.status)}
+                                <div className="w-2 h-2 bg-medical-blue rounded-full"></div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-slate-900">
+                                      {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
+                                    </span>
+                                    <span className="text-xs text-slate-500">
+                                      {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
+                                    </span>
+                                    {getStatusBadge(appointment.status)}
+                                  </div>
+                                  {appointment.doctor_name && (
+                                    <p className="text-xs text-slate-600 mt-1">{appointment.doctor_name}</p>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
                               <Button variant="ghost" size="sm">
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="sm">
-                                <Info className="w-4 h-4" />
-                              </Button>
                             </div>
+                            {appointment.notes && (
+                              <div className="mt-2 ml-5">
+                                <p className="text-xs text-slate-600 line-clamp-2">
+                                  {appointment.notes.length > 80 ? 
+                                    appointment.notes.substring(0, 80) + '...' : 
+                                    appointment.notes
+                                  }
+                                </p>
+                              </div>
+                            )}
                           </div>
                         ))}
+                        {appointments.length > 3 && (
+                          <div className="text-center pt-2">
+                            <Button 
+                              variant="link" 
+                              size="sm"
+                              className="text-medical-blue"
+                              onClick={() => {
+                                const tabs = document.querySelector('[data-state="active"]')?.parentElement;
+                                const evolucoesTrigger = tabs?.querySelector('[value="evolucoes"]') as HTMLElement;
+                                evolucoesTrigger?.click();
+                              }}
+                            >
+                              Ver todas as {appointments.length} evoluções
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -499,6 +553,108 @@ export function ContatoDetalhes() {
                   </CardContent>
                 </Card>
               </div>
+            </div>
+          </TabsContent>
+
+          {/* Evoluções Tab */}
+          <TabsContent value="evolucoes" className="mt-0">
+            <div className="p-6">
+              <Card className="border border-slate-200">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Edit className="w-5 h-5 text-blue-600" />
+                      Timeline de Evoluções do Paciente
+                    </CardTitle>
+                    <Button className="bg-medical-blue hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova Evolução
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {appointments?.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Edit className="w-12 h-12 text-slate-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-slate-900 mb-2">
+                        Nenhuma evolução registrada
+                      </h3>
+                      <p className="text-slate-500 mb-4">
+                        Comece criando a primeira evolução para este paciente
+                      </p>
+                      <Button className="bg-medical-blue hover:bg-blue-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Criar primeira evolução
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Timeline */}
+                      <div className="relative">
+                        {appointments.map((appointment, index) => (
+                          <div key={appointment.id} className="relative flex items-start space-x-4 pb-6">
+                            {/* Timeline line */}
+                            {index !== appointments.length - 1 && (
+                              <div className="absolute left-4 top-8 w-0.5 h-full bg-slate-200"></div>
+                            )}
+                            
+                            {/* Timeline dot */}
+                            <div className="relative flex-shrink-0">
+                              <div className="w-8 h-8 bg-medical-blue rounded-full flex items-center justify-center">
+                                <Edit className="w-4 h-4 text-white" />
+                              </div>
+                            </div>
+                            
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <Card className="border border-slate-200 hover:border-slate-300 transition-colors">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                      <h4 className="font-medium text-slate-900">
+                                        Evolução - {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
+                                      </h4>
+                                      {getStatusBadge(appointment.status)}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm text-slate-500">
+                                        {appointment.scheduled_date && format(new Date(appointment.scheduled_date), "HH:mm", { locale: ptBR })}
+                                      </span>
+                                      <Button variant="ghost" size="sm">
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    {appointment.doctor_name && (
+                                      <p className="text-sm text-slate-600">
+                                        <span className="font-medium">Profissional:</span> {appointment.doctor_name}
+                                      </p>
+                                    )}
+                                    {appointment.specialty && (
+                                      <p className="text-sm text-slate-600">
+                                        <span className="font-medium">Especialidade:</span> {appointment.specialty}
+                                      </p>
+                                    )}
+                                    {appointment.notes && (
+                                      <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                                        <p className="text-sm text-slate-700">{appointment.notes}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
