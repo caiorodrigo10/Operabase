@@ -247,7 +247,7 @@ export default function EvolucaoEditor({ contactId, contactName, appointments, o
     }
 
     const recordData: any = {
-      contact_id: contactId,
+      contact_id: parseInt(contactId),
       clinic_id: 1, // Assumindo clinic_id fixo
       record_type: recordType,
       content: content.trim()
