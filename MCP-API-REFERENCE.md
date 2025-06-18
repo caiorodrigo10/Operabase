@@ -2,7 +2,14 @@
 
 ## Visão Geral
 
-A API MCP (Model Context Protocol) do TaskMed oferece endpoints seguros para integração com N8N e ferramentas de automação, com autenticação por API Keys e isolamento multi-tenant completo.
+A API MCP (Model Context Protocol) do TaskMed oferece endpoints REST completos para integração com N8N e ferramentas de automação. Cada clínica possui isolamento completo de dados através de API Keys únicas.
+
+### Características Principais
+- **Autenticação por API Key**: Cada clínica tem suas próprias chaves de acesso
+- **Isolamento Multi-Tenant**: Dados completamente separados por clínica
+- **Endpoints RESTful**: Seguem padrões REST com métodos HTTP apropriados
+- **Validação Robusta**: Todos os parâmetros são validados antes do processamento
+- **Respostas Padronizadas**: Formato consistente para todas as respostas
 
 ## Base URL
 
@@ -12,11 +19,21 @@ https://your-domain.replit.app/api/mcp
 
 ## Autenticação
 
-Todos os endpoints MCP requerem autenticação via API Key no header Authorization:
+Todos os endpoints MCP requerem autenticação via API Key no header Authorization. A API Key determina automaticamente a clínica e as permissões do usuário.
 
+```http
+Authorization: Bearer tk_clinic_{clinic_id}_{hash}
+```
+
+**Exemplo:**
 ```http
 Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c
 ```
+
+### Permissões Disponíveis
+- **read**: Consultar dados (GET)
+- **write**: Criar e atualizar dados (POST, PUT)
+- **delete**: Remover dados (DELETE)
 
 ## Endpoints Disponíveis
 
@@ -175,14 +192,348 @@ GET /api/mcp/appointments/:id
 }
 ```
 
-### 6. Criar Consulta
+## Endpoints de Consultas (Appointments)
 
-```http
-POST /api/mcp/appointments/create
-Content-Type: application/json
+### 1. Criar Consulta
 
+**Endpoint:** `POST /api/mcp/appointments/create`
+
+**Descrição:** Cria uma nova consulta com validação completa de conflitos e disponibilidade.
+
+**Body da Requisição:**
+```json
 {
   "contact_id": 15,
+  "user_id": 4,
+  "scheduled_date": "2025-06-25",
+  "scheduled_time": "14:00",
+  "duration_minutes": 60,
+  "doctor_name": "Dr. Silva",
+  "specialty": "consulta",
+  "appointment_type": "consulta",
+  "payment_amount": 15000
+}
+```
+
+**Parâmetros Obrigatórios:**
+- `contact_id`: ID do paciente
+- `user_id`: ID do profissional
+- `scheduled_date`: Data no formato YYYY-MM-DD
+- `scheduled_time`: Horário no formato HH:MM
+
+**Parâmetros Opcionais:**
+- `duration_minutes`: Duração em minutos (padrão: 60)
+- `doctor_name`: Nome do profissional
+- `specialty`: Especialidade
+- `appointment_type`: Tipo de consulta
+- `payment_amount`: Valor em centavos (ex: 15000 = R$ 150,00)
+
+**Resposta (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 25,
+    "contact_id": 15,
+    "user_id": 4,
+    "scheduled_date": "2025-06-25T14:00:00.000Z",
+    "duration_minutes": 60,
+    "status": "agendada",
+    "doctor_name": "Dr. Silva",
+    "specialty": "consulta",
+    "payment_amount": 15000,
+    "created_at": "2025-06-18T20:00:00.000Z"
+  },
+  "error": null,
+  "appointment_id": 25,
+  "conflicts": null,
+  "next_available_slots": null
+}
+```
+
+### 2. Atualizar Consulta (Unificado)
+
+**Endpoint:** `PUT /api/mcp/appointments?id={appointment_id}`
+
+**Descrição:** Endpoint unificado para atualizar qualquer campo da consulta: status, reagendamento, notas, pagamento, etc.
+
+**Parâmetros:**
+- `id` (query parameter): ID da consulta
+
+**Exemplos de Uso:**
+
+#### Atualizar Status:
+```json
+{
+  "status": "realizada",
+  "session_notes": "Consulta finalizada com sucesso"
+}
+```
+
+#### Reagendar:
+```json
+{
+  "scheduled_date": "2025-06-26",
+  "scheduled_time": "15:30",
+  "duration_minutes": 45
+}
+```
+
+#### Atualizar Pagamento:
+```json
+{
+  "payment_status": "pago",
+  "payment_amount": 18000
+}
+```
+
+#### Cancelar com Motivo:
+```json
+{
+  "status": "cancelada",
+  "cancellation_reason": "Paciente não compareceu"
+}
+```
+
+**Resposta (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 12,
+    "contact_id": 21,
+    "clinic_id": 1,
+    "user_id": 6,
+    "doctor_name": "Dr. Silva",
+    "specialty": "consulta",
+    "scheduled_date": "2025-06-26T15:30:00.000Z",
+    "duration_minutes": 45,
+    "status": "confirmada",
+    "session_notes": "Consulta reagendada",
+    "payment_status": "pago",
+    "payment_amount": 18000,
+    "updated_at": "2025-06-18T20:47:36.049Z"
+  },
+  "error": null,
+  "appointment_id": 12,
+  "conflicts": null,
+  "next_available_slots": null
+}
+```
+
+### 3. Listar Consultas
+
+**Endpoint:** `GET /api/mcp/appointments`
+
+**Descrição:** Lista consultas com filtros opcionais via query parameters.
+
+**Query Parameters:**
+- `date`: Data específica (YYYY-MM-DD)
+- `date_from`: Data inicial para período
+- `date_to`: Data final para período
+- `status`: Status da consulta
+- `user_id`: ID do profissional
+- `contact_id`: ID do paciente
+- `limit`: Limite de resultados (padrão: 50)
+- `offset`: Offset para paginação (padrão: 0)
+
+**Exemplo:** `GET /api/mcp/appointments?date=2025-06-25&status=agendada&limit=10`
+
+### 4. Obter Consulta Específica
+
+**Endpoint:** `GET /api/mcp/appointments/{id}`
+
+**Descrição:** Retorna detalhes completos de uma consulta específica.
+
+### 5. Consultar Disponibilidade
+
+**Endpoint:** `POST /api/mcp/appointments/availability`
+
+**Descrição:** Consulta horários disponíveis para agendamento.
+
+**Body da Requisição:**
+```json
+{
+  "user_id": 4,
+  "date": "2025-06-25",
+  "duration_minutes": 60,
+  "working_hours_start": "08:00",
+  "working_hours_end": "18:00"
+}
+```
+
+## Endpoints de Contatos (Contacts)
+
+### 1. Criar Contato
+
+**Endpoint:** `POST /api/mcp/contacts/create`
+
+**Descrição:** Cria um novo contato/paciente no sistema.
+
+**Body da Requisição:**
+```json
+{
+  "name": "João Silva",
+  "email": "joao@email.com",
+  "phone": "+5511999999999",
+  "birth_date": "1985-03-15",
+  "cpf": "12345678901",
+  "address": "Rua das Flores, 123",
+  "city": "São Paulo",
+  "state": "SP",
+  "zip_code": "01234-567"
+}
+```
+
+**Parâmetros Obrigatórios:**
+- `name`: Nome completo do contato
+
+**Parâmetros Opcionais:**
+- `email`: Email do contato
+- `phone`: Telefone com código do país
+- `birth_date`: Data de nascimento (YYYY-MM-DD)
+- `cpf`: Documento CPF
+- `address`, `city`, `state`, `zip_code`: Dados de endereço
+
+**Resposta (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 45,
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "phone": "+5511999999999",
+    "birth_date": "1985-03-15",
+    "cpf": "12345678901",
+    "clinic_id": 1,
+    "created_at": "2025-06-18T20:00:00.000Z"
+  },
+  "error": null
+}
+```
+
+## Status de Consultas Válidos
+
+O sistema suporta 5 status padronizados para consultas:
+
+- **`agendada`**: Consulta marcada, aguardando confirmação
+- **`confirmada`**: Consulta confirmada pelo paciente
+- **`realizada`**: Consulta foi realizada com sucesso
+- **`faltou`**: Paciente não compareceu na consulta
+- **`cancelada`**: Consulta foi cancelada
+
+### Endpoint para Listar Status Válidos
+
+**Endpoint:** `GET /api/mcp/status/valid`
+
+**Resposta (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "valid_statuses": [
+      "agendada",
+      "confirmada", 
+      "realizada",
+      "faltou",
+      "cancelada"
+    ],
+    "default_status": "agendada"
+  },
+  "error": null
+}
+```
+
+## Chat AI - Análise de Pacientes
+
+### Conversar com IA sobre Paciente
+
+**Endpoint:** `POST /api/mcp/chat`
+
+**Descrição:** Permite fazer perguntas sobre um paciente usando IA que analisa o histórico completo.
+
+**Body da Requisição:**
+```json
+{
+  "contact_id": 15,
+  "message": "Como está o progresso deste paciente?"
+}
+```
+
+**Resposta (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "response": "Baseado no histórico, João Silva tem mostrado boa evolução. Teve 3 consultas nos últimos 2 meses, com boa aderência ao tratamento...",
+    "contact_id": 15,
+    "timestamp": "2025-06-18T20:00:00.000Z"
+  },
+  "error": null
+}
+```
+
+## Endpoints Utilitários
+
+### Health Check
+
+**Endpoint:** `GET /api/mcp/health`
+
+**Resposta (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "timestamp": "2025-06-18T20:00:00.000Z",
+    "version": "1.0.0"
+  },
+  "error": null
+}
+```
+
+## Formato Padrão de Respostas
+
+Todas as respostas da API seguem o formato padronizado:
+
+```json
+{
+  "success": boolean,
+  "data": object | array | null,
+  "error": string | null,
+  "appointment_id": number | null,
+  "conflicts": array | null,
+  "next_available_slots": array | null
+}
+```
+
+### Campos de Resposta:
+- **`success`**: Indica se a operação foi bem-sucedida
+- **`data`**: Dados retornados pela operação
+- **`error`**: Mensagem de erro (se houver)
+- **`appointment_id`**: ID da consulta (específico para endpoints de consultas)
+- **`conflicts`**: Lista de conflitos encontrados (agendamentos)
+- **`next_available_slots`**: Próximos horários disponíveis (agendamentos)
+
+## Códigos de Status HTTP
+
+- **200**: Operação bem-sucedida
+- **201**: Recurso criado com sucesso
+- **400**: Erro de validação ou parâmetros inválidos
+- **401**: Não autorizado (API Key inválida)
+- **404**: Recurso não encontrado
+- **500**: Erro interno do servidor
+
+## Exemplos de Uso com cURL
+
+### Criar uma consulta:
+```bash
+curl -X POST "https://your-domain.replit.app/api/mcp/appointments/create" \
+  -H "Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contact_id": 15,
   "user_id": 4,
   "scheduled_date": "2025-06-25",
   "scheduled_time": "14:00",
