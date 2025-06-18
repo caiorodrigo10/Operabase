@@ -34,15 +34,16 @@ import {
 } from "lucide-react";
 import type { Contact, InsertContact } from "../../../server/domains/contacts/contacts.schema";
 
+// Status labels for contacts (no longer displaying as badges)
 const statusLabels = {
-  novo: { label: "Novo", color: "bg-slate-100 text-slate-800" },
-  em_conversa: { label: "Em conversa", color: "bg-blue-100 text-blue-800" },
-  agendado: { label: "Agendado", color: "bg-green-100 text-green-800" },
-  realizado: { label: "Realizado", color: "bg-purple-100 text-purple-800" },
-  pos_atendimento: { label: "Pós-atendimento", color: "bg-emerald-100 text-emerald-800" },
-  ativo: { label: "Ativo", color: "bg-green-100 text-green-800" },
-  inativo: { label: "Inativo", color: "bg-slate-100 text-slate-800" },
-  arquivado: { label: "Arquivado", color: "bg-gray-100 text-gray-800" },
+  novo: "Novo",
+  em_conversa: "Em conversa",
+  agendado: "Agendado",
+  realizado: "Realizado",
+  pos_atendimento: "Pós-atendimento",
+  ativo: "Ativo",
+  inativo: "Inativo",
+  arquivado: "Arquivado",
 };
 
 export function Contatos() {
