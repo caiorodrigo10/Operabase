@@ -427,7 +427,7 @@ export function ContatoDetalhes() {
                 {/* Additional Services */}
                 <Card className="border border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <CardTitle className="text-base font-medium flex items-center justify-between">
                       Consulta no Serasa
                       <Button variant="outline" size="sm">
                         Consultar
@@ -454,7 +454,7 @@ export function ContatoDetalhes() {
                 {/* Satisfaction Survey */}
                 <Card className="border border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <CardTitle className="text-base font-medium flex items-center justify-between">
                       Pesquisa de satisfação
                       <Button variant="outline" size="sm">
                         Ativar
