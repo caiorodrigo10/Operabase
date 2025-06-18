@@ -358,42 +358,48 @@ const ChatMessageSchema = z.object({
   sessionId: z.string().optional()
 });
 
-router.post('/chat/interpret', validateRequest(ChatMessageSchema), async (req: Request, res: Response) => {
+// Endpoint simplificado para chat WhatsApp natural
+router.post('/chat', validateRequest(ChatMessageSchema), async (req: Request, res: Response) => {
   try {
     const { message, sessionId } = req.body;
     
-    console.log('Chat interpret request:', { message, sessionId });
+    console.log('🗨️ Marina Chat Request:', { message, sessionId });
     
     const result = await chatInterpreter.interpretMessage(message, sessionId);
     
     if (result.success) {
+      // Resposta natural da Marina
+      const naturalResponse = result.data?.response || 
+        `Oi! Aqui é a Marina da clínica. ${result.data?.action ? 'Entendi sua solicitação!' : 'Como posso ajudar você hoje?'}`;
+      
       res.json({
         success: true,
-        data: result.data,
-        error: null,
-        appointment_id: null,
-        conflicts: null,
-        next_available_slots: null
+        data: {
+          response: naturalResponse,
+          action: result.data?.action,
+          sessionId: sessionId || `session_${Date.now()}`
+        }
       });
     } else {
-      res.status(400).json({
-        success: false,
-        data: null,
-        error: result.error,
-        appointment_id: null,
-        conflicts: null,
-        next_available_slots: null
+      // Resposta humanizada para erros
+      res.status(200).json({
+        success: true,
+        data: {
+          response: "Ops, não consegui entender direito. Pode repetir de outra forma? 😊",
+          action: null,
+          sessionId: sessionId || `session_${Date.now()}`
+        }
       });
     }
   } catch (error) {
-    console.error('Chat interpret error:', error);
-    res.status(500).json({
-      success: false,
-      data: null,
-      error: error instanceof Error ? error.message : 'Internal server error',
-      appointment_id: null,
-      conflicts: null,
-      next_available_slots: null
+    console.error('🚨 Marina Chat Error:', error);
+    res.status(200).json({
+      success: true,
+      data: {
+        response: "Desculpa, tive um probleminha aqui. Pode tentar novamente? 🙏",
+        action: "error",
+        sessionId: sessionId || `session_${Date.now()}`
+      }
     });
   }
 });
