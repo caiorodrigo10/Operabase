@@ -322,7 +322,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   });
 
   // Initialize default templates for a clinic
-  app.post('/api/anamnesis/templates/init', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/anamnesis/templates/init', anamnesisAuth, async (req: Request, res: Response) => {
     try {
       // For authenticated users, always allow access to clinic 1
       const defaultClinicId = 1;
@@ -332,7 +332,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         .select()
         .from(anamnesis_templates)
         .where(and(
-          eq(anamnesis_templates.clinic_id, clinicAccess.clinicId),
+          eq(anamnesis_templates.clinic_id, defaultClinicId),
           eq(anamnesis_templates.is_default, true)
         ));
 
@@ -343,9 +343,9 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
       // Create default templates
       const templates = DEFAULT_TEMPLATES.map(template => ({
         ...template,
-        clinic_id: clinicAccess.clinicId,
+        clinic_id: defaultClinicId,
         is_default: true,
-        created_by: userId
+        created_by: null
       }));
 
       const result = await db.insert(anamnesis_templates).values(templates).returning();
@@ -430,7 +430,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   });
 
   // Get anamneses for a contact
-  app.get('/api/contacts/:contactId/anamnesis', isAuthenticated, hasClinicAccess('contactId'), async (req: Request, res: Response) => {
+  app.get('/api/contacts/:contactId/anamnesis', anamnesisAuth, async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
       const userId = (req.user as any)?.id;
