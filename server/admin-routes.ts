@@ -13,10 +13,10 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
   // Admin Dashboard Metrics
   app.get('/api/admin/dashboard', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Check if user has super_admin role
+      // Check if user has admin role (works with existing auth system)
       const user = (req as any).user;
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ error: 'Access denied. Super admin role required.' });
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+        return res.status(403).json({ error: 'Access denied. Admin role required.' });
       }
 
       // Get metrics by aggregating data from all clinics
@@ -45,8 +45,8 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
   app.get('/api/admin/clinics', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ error: 'Access denied. Super admin role required.' });
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+        return res.status(403).json({ error: 'Access denied. Admin role required.' });
       }
 
       // For now, return a hardcoded clinic structure since we have one main clinic
@@ -62,8 +62,8 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
   app.get('/api/admin/users', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ error: 'Access denied. Super admin role required.' });
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+        return res.status(403).json({ error: 'Access denied. Admin role required.' });
       }
 
       const { clinic_id } = req.query;
