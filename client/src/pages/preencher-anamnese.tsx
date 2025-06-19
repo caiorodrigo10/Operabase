@@ -255,19 +255,7 @@ export default function PreencherAnamnese() {
 
     if (!selectedTemplate) return;
 
-    // Validate required fields
-    const requiredQuestions = selectedTemplate.fields.questions.filter(q => q.required);
-    const missingResponses = requiredQuestions.filter(q => !responses[q.id] || responses[q.id].trim() === '');
-    
-    if (missingResponses.length > 0) {
-      toast({
-        title: "Campos obrigatórios não preenchidos",
-        description: `Complete os campos: ${missingResponses.map(q => q.text).join(', ')}`,
-        variant: "destructive"
-      });
-      return;
-    }
-
+    // Allow partial saves for internal filling - no required field validation
     createAnamnesisMutation.mutate({
       template_id: selectedTemplateId,
       patient_name: patientInfo.name,
