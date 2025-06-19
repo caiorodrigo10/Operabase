@@ -1293,6 +1293,19 @@ export function Consultas() {
 
 
 
+  // Show loading skeleton while data is loading
+  if (appointmentsLoading) {
+    return (
+      <div className="p-4 lg:p-6">
+        <Card className="animate-pulse">
+          <CardContent className="p-6">
+            <div className="h-96 bg-slate-200 rounded"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 lg:p-6">
       {/* Header Section */}
@@ -1530,10 +1543,7 @@ export function Consultas() {
                   );
                 }
 
-                // Show nothing while loading to prevent flash of empty state
-                if (appointmentsLoading) {
-                  return <div></div>;
-                }
+
 
                 return (
                   <>
