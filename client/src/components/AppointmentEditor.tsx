@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AppointmentForm } from "@/components/AppointmentForm";
+import { FindTimeSlots } from "@/components/FindTimeSlots";
+import { useAvailabilityCheck, formatConflictMessage } from "@/hooks/useAvailability";
+import { format } from "date-fns";
 import type { Contact } from "../../../server/domains/contacts/contacts.schema";
 
 interface AppointmentEditorProps {
@@ -17,9 +23,108 @@ interface AppointmentEditorProps {
 export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, preselectedContact }: AppointmentEditorProps) {
   const { toast } = useToast();
   const [showNewPatientDialog, setShowNewPatientDialog] = useState(false);
+  const [findTimeSlotsOpen, setFindTimeSlotsOpen] = useState(false);
   const [availabilityConflict, setAvailabilityConflict] = useState<any>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [workingHoursWarning, setWorkingHoursWarning] = useState<any>(null);
+
+  // Appointment form schema
+  const appointmentSchema = z.object({
+    contact_id: z.string().min(1, "Contato é obrigatório"),
+    user_id: z.string().min(1, "Profissional é obrigatório"),
+    scheduled_date: z.string().min(1, "Data é obrigatória"),
+    scheduled_time: z.string().min(1, "Horário é obrigatório"),
+    duration: z.string().min(1, "Duração é obrigatória"),
+    type: z.string().min(1, "Tipo é obrigatório"),
+    notes: z.string().optional(),
+    tag_id: z.string().optional(),
+  });
+
+  type AppointmentFormData = z.infer<typeof appointmentSchema>;
+
+  // Patient form for new patient creation
+  const patientForm = useForm({
+    resolver: zodResolver(z.object({
+      name: z.string().min(1, "Nome é obrigatório"),
+      phone: z.string().min(1, "Telefone é obrigatório"),
+      email: z.string().email("Email inválido").optional().or(z.literal("")),
+      age: z.string().optional(),
+      gender: z.string().optional(),
+    })),
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      age: "",
+      gender: "",
+    },
+  });
+
+  // Availability check hook
+  const { checkAvailability } = useAvailabilityCheck();
+
+  // Fetch contacts for patient search
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['/api/contacts'],
+    queryFn: async () => {
+      const response = await fetch('/api/contacts?clinic_id=1');
+      if (!response.ok) {
+        throw new Error('Failed to fetch contacts');
+      }
+      return response.json();
+    },
+  });
+
+  // Fetch clinic users
+  const { data: clinicUsers = [] } = useQuery({
+    queryKey: ['/api/clinic/1/users/management'],
+    queryFn: async () => {
+      const response = await fetch('/api/clinic/1/users/management');
+      if (!response.ok) {
+        throw new Error('Failed to fetch clinic users');
+      }
+      return response.json();
+    },
+  });
+
+  // Create new patient mutation
+  const createPatientMutation = useMutation({
+    mutationFn: async (patientData: any) => {
+      const response = await apiRequest('/api/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...patientData,
+          clinic_id: 1,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create patient');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (newPatient) => {
+      toast({
+        title: "Paciente cadastrado",
+        description: "Novo paciente criado com sucesso.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
+      setShowNewPatientDialog(false);
+      patientForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao cadastrar",
+        description: error.message || "Erro ao criar novo paciente.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Create appointment mutation
   const createAppointmentMutation = useMutation({
@@ -69,35 +174,199 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
     },
   });
 
+  // Handle availability check
+  const handleAvailabilityCheck = async (data: AppointmentFormData) => {
+    if (!data.user_id || !data.scheduled_date || !data.scheduled_time || !data.duration) {
+      setAvailabilityConflict(null);
+      setWorkingHoursWarning(null);
+      return;
+    }
+
+    setIsCheckingAvailability(true);
+    
+    try {
+      const result = await checkAvailability({
+        user_id: parseInt(data.user_id),
+        scheduled_date: data.scheduled_date,
+        scheduled_time: data.scheduled_time,
+        duration: parseInt(data.duration),
+        appointment_id: appointmentId, // For editing existing appointments
+      });
+
+      setAvailabilityConflict(result.conflict);
+      setWorkingHoursWarning(result.workingHoursWarning);
+    } catch (error) {
+      console.error('Error checking availability:', error);
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  };
+
+  // Handle form submission
   const handleSubmit = (data: any) => {
     createAppointmentMutation.mutate(data);
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Agendar Nova Consulta</DialogTitle>
-          <DialogDescription>
-            Preencha os dados para agendar uma nova consulta. O sistema verificará automaticamente a disponibilidade.
-          </DialogDescription>
-        </DialogHeader>
+  // Handle new patient creation
+  const handleCreatePatient = (patientData: any) => {
+    createPatientMutation.mutate(patientData);
+  };
 
-        <AppointmentForm
-          onSubmit={handleSubmit}
-          isSubmitting={createAppointmentMutation.isPending}
-          submitButtonText="Agendar Consulta"
-          cancelButtonText="Cancelar"
-          onCancel={onClose}
-          preselectedContact={preselectedContact}
-          showCancelButton={true}
-          showFindTimeButton={true}
-          setShowNewPatientDialog={setShowNewPatientDialog}
-          availabilityConflict={availabilityConflict}
-          isCheckingAvailability={isCheckingAvailability}
-          workingHoursWarning={workingHoursWarning}
-        />
-      </DialogContent>
-    </Dialog>
+  // Handle find time slots
+  const handleFindTimeClick = () => {
+    setFindTimeSlotsOpen(true);
+  };
+
+  return (
+    <>
+      {/* Main Appointment Dialog */}
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Agendar Nova Consulta</DialogTitle>
+            <DialogDescription>
+              Preencha os dados para agendar uma nova consulta. O sistema verificará automaticamente a disponibilidade.
+            </DialogDescription>
+          </DialogHeader>
+
+          <AppointmentForm
+            onSubmit={handleSubmit}
+            isSubmitting={createAppointmentMutation.isPending}
+            submitButtonText="Agendar Consulta"
+            cancelButtonText="Cancelar"
+            onCancel={onClose}
+            preselectedContact={preselectedContact}
+            showCancelButton={true}
+            showFindTimeButton={true}
+            onFindTimeClick={handleFindTimeClick}
+            setShowNewPatientDialog={setShowNewPatientDialog}
+            availabilityConflict={availabilityConflict}
+            isCheckingAvailability={isCheckingAvailability}
+            workingHoursWarning={workingHoursWarning}
+            onAvailabilityCheck={handleAvailabilityCheck}
+            contacts={contacts}
+            clinicUsers={clinicUsers}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* New Patient Dialog */}
+      <Dialog open={showNewPatientDialog} onOpenChange={setShowNewPatientDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Paciente</DialogTitle>
+            <DialogDescription>
+              Cadastre um novo paciente no sistema.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={patientForm.handleSubmit(handleCreatePatient)} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Nome *</label>
+              <input
+                {...patientForm.register("name")}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Nome completo"
+              />
+              {patientForm.formState.errors.name && (
+                <p className="text-red-500 text-xs mt-1">{patientForm.formState.errors.name.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Telefone *</label>
+              <input
+                {...patientForm.register("phone")}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="(00) 00000-0000"
+              />
+              {patientForm.formState.errors.phone && (
+                <p className="text-red-500 text-xs mt-1">{patientForm.formState.errors.phone.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Email</label>
+              <input
+                {...patientForm.register("email")}
+                type="email"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="email@exemplo.com"
+              />
+              {patientForm.formState.errors.email && (
+                <p className="text-red-500 text-xs mt-1">{patientForm.formState.errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Idade</label>
+                <input
+                  {...patientForm.register("age")}
+                  type="number"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Idade"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Gênero</label>
+                <select
+                  {...patientForm.register("gender")}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecione</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="feminino">Feminino</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowNewPatientDialog(false)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                disabled={createPatientMutation.isPending}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                disabled={createPatientMutation.isPending}
+              >
+                {createPatientMutation.isPending ? "Cadastrando..." : "Cadastrar"}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Find Time Slots Dialog */}
+      <Dialog open={findTimeSlotsOpen} onOpenChange={setFindTimeSlotsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Encontrar Horários Disponíveis</DialogTitle>
+            <DialogDescription>
+              Visualize os horários disponíveis e selecione o melhor momento para a consulta.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <FindTimeSlots
+            onClose={() => setFindTimeSlotsOpen(false)}
+            onTimeSelect={(date: string, time: string, duration: number, professionalId: number) => {
+              // This would update the appointment form with selected time
+              setFindTimeSlotsOpen(false);
+              toast({
+                title: "Horário selecionado",
+                description: `${format(new Date(date), 'dd/MM/yyyy')} às ${time} - ${duration} minutos`,
+              });
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

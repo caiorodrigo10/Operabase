@@ -2,10 +2,11 @@ import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
 interface AvailabilityRequest {
-  startDateTime: string;
-  endDateTime: string;
-  excludeAppointmentId?: number;
-  professionalName?: string;
+  user_id: number;
+  scheduled_date: string;
+  scheduled_time: string;
+  duration: number;
+  appointment_id?: number;
 }
 
 interface ConflictDetails {
@@ -24,13 +25,78 @@ interface AvailabilityResponse {
 }
 
 export function useAvailabilityCheck() {
-  return useMutation({
-    mutationFn: async (data: AvailabilityRequest): Promise<AvailabilityResponse> => {
-      const response = await apiRequest('POST', '/api/availability/check', data);
-      return response.json();
+  const checkAvailability = async (data: AvailabilityRequest): Promise<{
+    conflict: any;
+    workingHoursWarning: any;
+  }> => {
+    if (!data.user_id || !data.scheduled_date || !data.scheduled_time || !data.duration) {
+      return { conflict: null, workingHoursWarning: null };
     }
-  });
+
+    try {
+      const startDateTime = new Date(`${data.scheduled_date}T${data.scheduled_time}`);
+      const endDateTime = new Date(startDateTime.getTime() + data.duration * 60000);
+
+      const response = await apiRequest('/api/availability/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          startDateTime: startDateTime.toISOString(),
+          endDateTime: endDateTime.toISOString(),
+          excludeAppointmentId: data.appointment_id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to check availability');
+      }
+
+      const result = await response.json();
+
+      if (result.conflict) {
+        return {
+          conflict: {
+            hasConflict: true,
+            message: formatConflictMessage(result.conflictType, result.conflictDetails),
+            conflictType: result.conflictType
+          },
+          workingHoursWarning: null
+        };
+      }
+
+      // Check working hours
+      const time = data.scheduled_time;
+      const [hours] = time.split(':').map(Number);
+      
+      let workingHoursWarning = null;
+      if (hours < 8 || hours >= 18) {
+        workingHoursWarning = {
+          hasWarning: true,
+          message: 'fora do horário comercial',
+          details: 'Horário fora do padrão de funcionamento (8h às 18h)'
+        };
+      }
+
+      return {
+        conflict: {
+          hasConflict: false,
+          message: "Horário disponível",
+          conflictType: undefined
+        },
+        workingHoursWarning
+      };
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return { conflict: null, workingHoursWarning: null };
+    }
+  };
+
+  return { checkAvailability };
 }
+
+
 
 interface TimeSlot {
   startTime: string;
