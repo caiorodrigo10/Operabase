@@ -258,7 +258,8 @@ export const isAuthenticated = async (req: any, res: any, next: any) => {
 // Middleware to check if user has access to specific clinic
 export const hasClinicAccess = (paramName: string = 'clinicId') => {
   return async (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated()) {
+    // Check if user is authenticated (should be set by isAuthenticated middleware)
+    if (!req.user) {
       return res.status(401).json({ error: "Não autenticado" });
     }
 
@@ -275,6 +276,7 @@ export const hasClinicAccess = (paramName: string = 'clinicId') => {
     }
 
     // Check if user has access to this clinic
+    const storage = req.app.get('storage');
     const hasAccess = await storage.userHasClinicAccess(user.id, clinicId);
     if (!hasAccess) {
       return res.status(403).json({ error: "Acesso negado a esta clínica" });
