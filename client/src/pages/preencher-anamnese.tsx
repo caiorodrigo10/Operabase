@@ -130,7 +130,8 @@ export default function PreencherAnamnese() {
   });
 
   const handleBack = () => {
-    setLocation(`/contatos/${contactId}`);
+    // Navigate back to contact page and focus on anamnesis section
+    setLocation(`/contatos/${contactId}#anamnesis`);
   };
 
   const generateShareableLink = () => {
