@@ -179,12 +179,7 @@ export function Contatos() {
     }
   });
 
-  const filteredContacts = contacts.filter((contact: Contact) => {
-    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.phone.includes(searchTerm);
-    const matchesStatus = statusFilter === "all" || contact.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+
 
   const onSubmitContact = (data: any) => {
     // Filter only the fields that exist in the contact schema
@@ -210,9 +205,26 @@ export function Contatos() {
     createContactMutation.mutate(contactData);
   };
 
-  const handleContactClick = (contact: Contact) => {
-    setLocation(`/contatos/${contact.id}`);
-  };
+  // Optimized contact click handler with useCallback
+  const handleContactClick = useCallback((contactId: number) => {
+    setLocation(`/contatos/${contactId}`);
+  }, [setLocation]);
+
+  // Filter contacts with memoization for better performance
+  const filteredContacts = useMemo(() => {
+    if (!contacts) return [];
+    
+    return contacts.filter((contact: Contact) => {
+      const matchesSearch = !debouncedSearchTerm || 
+        contact.name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        contact.phone?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        contact.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || contact.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [contacts, debouncedSearchTerm, statusFilter]);
 
   if (isLoading) {
     return (
@@ -269,84 +281,23 @@ export function Contatos() {
               if (!contact) return null;
               
               return (
-                <div
+                <OptimizedContactCard
                   key={contact.id}
-                  className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-medical-blue"
-                  onClick={() => handleContactClick(contact)}
-                >
-                  <div className="flex items-start mb-3">
-                    <div className="flex items-center gap-3">
-                      <ContactAvatar 
-                        name={contact.name}
-                        profilePicture={contact.profile_picture}
-                        size="md"
-                      />
-                      <div>
-                        <h3 className="font-semibold text-slate-900 truncate">{contact.name}</h3>
-                        <div className="flex items-center gap-1 text-sm text-slate-600">
-                          <Phone className="w-3 h-3" />
-                          {contact.phone}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-slate-600">
-                    {contact.profession && (
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {contact.profession}
-                      </div>
-                    )}
-                    
-                    {contact.address && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        <span className="truncate">{contact.address}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {contact.first_contact 
-                        ? formatDistanceToNow(new Date(contact.first_contact), { addSuffix: true, locale: ptBR })
-                        : 'Data não informada'
-                      }
-                    </div>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                      <MessageCircle className="w-3 h-3" />
-                      {contact.source || 'WhatsApp'}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">
-                        Ver detalhes →
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  contact={contact}
+                  onClick={handleContactClick}
+                />
               );
             })}
           </div>
-
-          {filteredContacts.length === 0 && (
-            <div className="text-center py-12">
-              <User className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-600 mb-2">Nenhum contato encontrado</h3>
-              <p className="text-slate-500 mb-4">
-                {searchTerm || statusFilter !== "all" 
-                  ? "Tente ajustar os filtros de busca" 
-                  : "Comece adicionando o primeiro contato"}
+          
+          {filteredContacts?.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-slate-500">
+                {debouncedSearchTerm || statusFilter !== 'all' 
+                  ? 'Nenhum contato encontrado com os filtros aplicados.'
+                  : 'Nenhum contato cadastrado ainda.'
+                }
               </p>
-              <Button 
-                onClick={() => setIsAddContactOpen(true)}
-                className="bg-medical-blue hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Primeiro Contato
-              </Button>
             </div>
           )}
         </CardContent>
