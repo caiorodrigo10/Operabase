@@ -190,8 +190,8 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
         return res.status(404).json({ error: 'Modelo de anamnese não encontrado' });
       }
 
-      const currentFields = template.rows[0].fields;
-      const questions = currentFields.questions || [];
+      const currentFields = template.rows[0].fields as any;
+      const questions = currentFields?.questions || [];
 
       // Gerar novo ID para a pergunta
       const newQuestionId = (questions.length + 1).toString();
@@ -227,7 +227,8 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
         `);
 
         for (const otherTemplate of allTemplates.rows) {
-          const otherQuestions = otherTemplate.fields.questions || [];
+          const otherFields = otherTemplate.fields as any;
+          const otherQuestions = otherFields?.questions || [];
           const otherNewQuestionId = (otherQuestions.length + 1).toString();
           
           otherQuestions.push({
@@ -267,8 +268,8 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
         return res.status(404).json({ error: 'Modelo de anamnese não encontrado' });
       }
 
-      const currentFields = template.rows[0].fields;
-      const questions = currentFields.questions || [];
+      const currentFields = template.rows[0].fields as any;
+      const questions = currentFields?.questions || [];
 
       const questionIndex = questions.findIndex((q: any) => q.id === perguntaId);
       if (questionIndex === -1) {
@@ -316,8 +317,8 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
         return res.status(404).json({ error: 'Modelo de anamnese não encontrado' });
       }
 
-      const currentFields = template.rows[0].fields;
-      const questions = currentFields.questions || [];
+      const currentFields = template.rows[0].fields as any;
+      const questions = currentFields?.questions || [];
 
       const filteredQuestions = questions.filter((q: any) => q.id !== perguntaId);
 
