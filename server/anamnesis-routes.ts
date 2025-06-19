@@ -365,7 +365,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         fields,
         clinic_id: clinicAccess.clinicId,
         is_default: false,
-        created_by: userId
+        created_by: 'system'
       }).returning();
 
       res.json(result[0]);
@@ -394,16 +394,23 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
-      const result = await db.insert(anamnesis_responses).values({
-        contact_id: contactId,
-        clinic_id: clinicAccess.clinicId,
-        template_id: parseInt(template_id),
-        responses: {},
-        status: status || 'pending',
-        share_token: shareToken,
-        expires_at: expiresAt,
-        created_by: userId
-      }).returning();
+      // Use direct SQL query to avoid schema conflicts
+      const client = await pool.connect();
+      const result = await client.query(`
+        INSERT INTO anamnesis_responses 
+        (contact_id, clinic_id, template_id, responses, status, share_token, expires_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id, contact_id, clinic_id, template_id, responses, status, share_token, expires_at
+      `, [
+        contactId,
+        clinicAccess.clinicId,
+        parseInt(template_id),
+        JSON.stringify({}),
+        status || 'solicitado',
+        shareToken,
+        expiresAt
+      ]);
+      client.release();
 
       res.json(result[0]);
     } catch (error) {
@@ -599,16 +606,18 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
     try {
       const contactId = parseInt(req.params.contactId);
       
-      const result = await db
-        .select({ name: contacts.name })
-        .from(contacts)
-        .where(eq(contacts.id, contactId));
+      const client = await pool.connect();
+      const result = await client.query(
+        'SELECT name FROM contacts WHERE id = $1',
+        [contactId]
+      );
+      client.release();
 
-      if (result.length === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Contact not found' });
       }
 
-      res.json({ name: result[0].name });
+      res.json({ name: result.rows[0].name });
     } catch (error) {
       console.error('Error fetching contact name:', error);
       res.status(500).json({ error: 'Failed to fetch contact name' });
