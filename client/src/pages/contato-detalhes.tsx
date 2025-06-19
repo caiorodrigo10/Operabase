@@ -34,8 +34,7 @@ import { ContactAvatar } from "@/components/ContactAvatar";
 import EvolucaoEditor from "@/components/EvolucaoEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import ProntuarioMedico from "@/components/ProntuarioMedico";
-import { AppointmentForm } from "@/components/AppointmentForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AppointmentEditor } from "@/components/AppointmentEditor";
 
 interface Contact {
   id: number;
@@ -836,28 +835,17 @@ export function ContatoDetalhes() {
         />
       )}
 
-      {/* Dialog de Agendamento */}
-      <Dialog open={showAppointmentEditor} onOpenChange={setShowAppointmentEditor}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nova Consulta - {contact?.name}</DialogTitle>
-          </DialogHeader>
-          <AppointmentForm
-            preselectedContactId={contact?.id}
-            onCancel={() => setShowAppointmentEditor(false)}
-            onSuccess={() => {
-              // Refresh appointments data after saving
-              queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
-              setShowAppointmentEditor(false);
-            }}
-            showCancelButton={true}
-            cancelButtonText="Cancelar"
-            submitButtonText="Agendar consulta"
-            showFindTimeButton={true}
-            setShowNewPatientDialog={null}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Editor de Agendamento */}
+      <AppointmentEditor
+        isOpen={showAppointmentEditor}
+        onClose={() => setShowAppointmentEditor(false)}
+        preselectedContact={contact}
+        onSave={() => {
+          // Refresh appointments data after saving
+          queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+          setShowAppointmentEditor(false);
+        }}
+      />
     </div>
   );
 }
