@@ -1353,6 +1353,7 @@ export function Consultas() {
           </DialogHeader>
 
           <AppointmentForm
+            form={form}
             onSubmit={(data) => createAppointmentMutation.mutate(data)}
             isSubmitting={createAppointmentMutation.isPending}
             submitButtonText="Agendar Consulta"
