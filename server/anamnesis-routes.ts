@@ -517,8 +517,8 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         if (!anamnesis.template_fields || !anamnesis.template_name) {
           console.log(`Template ${anamnesis.template_id} not found, looking for default template`);
           
-          // Get the first available template as fallback
-          const defaultTemplateResult = await client.query(`
+          // First try to find "Anamnese Geral" template as it's the most common default
+          let defaultTemplateResult = await client.query(`
             SELECT id, name, fields
             FROM anamnesis_templates
             WHERE clinic_id = (
@@ -526,9 +526,44 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
               FROM contacts c 
               WHERE c.id = $1
             )
-            ORDER BY created_at ASC
+            AND name ILIKE '%anamnese geral%'
+            AND is_active = true
+            ORDER BY created_at DESC
             LIMIT 1
           `, [anamnesis.contact_id]);
+
+          // If no "Anamnese Geral" found, try to find any default template
+          if (defaultTemplateResult.rows.length === 0) {
+            defaultTemplateResult = await client.query(`
+              SELECT id, name, fields
+              FROM anamnesis_templates
+              WHERE clinic_id = (
+                SELECT c.clinic_id 
+                FROM contacts c 
+                WHERE c.id = $1
+              )
+              AND is_default = true
+              AND is_active = true
+              ORDER BY created_at ASC
+              LIMIT 1
+            `, [anamnesis.contact_id]);
+          }
+
+          // If still no template found, get any available template
+          if (defaultTemplateResult.rows.length === 0) {
+            defaultTemplateResult = await client.query(`
+              SELECT id, name, fields
+              FROM anamnesis_templates
+              WHERE clinic_id = (
+                SELECT c.clinic_id 
+                FROM contacts c 
+                WHERE c.id = $1
+              )
+              AND is_active = true
+              ORDER BY created_at ASC
+              LIMIT 1
+            `, [anamnesis.contact_id]);
+          }
 
           if (defaultTemplateResult.rows.length > 0) {
             const defaultTemplate = defaultTemplateResult.rows[0];
@@ -542,7 +577,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
               WHERE id = $2
             `, [defaultTemplate.id, anamnesis.id]);
             
-            console.log(`Updated anamnesis ${anamnesis.id} to use template ${defaultTemplate.id}`);
+            console.log(`Updated anamnesis ${anamnesis.id} to use template ${defaultTemplate.id} (${defaultTemplate.name})`);
           } else {
             console.log('No templates found, creating default template');
             
