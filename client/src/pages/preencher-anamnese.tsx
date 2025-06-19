@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
-import { ArrowLeft, FileText, Send } from 'lucide-react';
+import { ArrowLeft, FileText, Send, Copy, X, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -47,6 +48,7 @@ export default function PreencherAnamnese() {
     email: '',
     phone: ''
   });
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Get contact info
   const { data: contact } = useQuery<Contact>({
@@ -128,6 +130,39 @@ export default function PreencherAnamnese() {
 
   const handleBack = () => {
     setLocation(`/contatos/${contactId}`);
+  };
+
+  const generateShareableLink = () => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/anamnese-publica/${contactId}/${selectedTemplateId}`;
+  };
+
+  const handleCopyLink = async () => {
+    const link = generateShareableLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      toast({
+        title: "Link copiado!",
+        description: "O link foi copiado para a área de transferência.",
+      });
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o link.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleWhatsAppShare = () => {
+    const link = generateShareableLink();
+    const message = encodeURIComponent(`Olá! Por favor, preencha esta anamnese: ${link}`);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
+  };
+
+  const generateQRCode = () => {
+    const link = generateShareableLink();
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`;
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -365,7 +400,7 @@ export default function PreencherAnamnese() {
         
         {selectedTemplateId && (
           <Button 
-            onClick={() => setLocation(`/anamnese-publica/preview/${contactId}/${selectedTemplateId}`)}
+            onClick={() => setShowShareModal(true)}
             variant="outline"
             size="sm"
             className="whitespace-nowrap"
@@ -420,6 +455,78 @@ export default function PreencherAnamnese() {
           </Button>
         </div>
       )}
+
+      {/* Share Modal */}
+      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Compartilhar link para preenchimento</DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowShareModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Compartilhe o documento com seu paciente pelo WhatsApp, SMS, Telegram, e-mail ou como ele escolher.
+            </p>
+            <p className="text-sm text-gray-600">
+              Ao acessar o link, ele poderá preencher a anamnese.
+            </p>
+            
+            {/* Link Input */}
+            <div className="flex items-center space-x-2">
+              <Input
+                value={generateShareableLink()}
+                readOnly
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                Copiar
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleWhatsAppShare}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Enviar pelo WhatsApp
+              </Button>
+            </div>
+
+            {/* QR Code Section */}
+            <div className="border-t pt-4">
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0">
+                  <img
+                    src={generateQRCode()}
+                    alt="QR Code"
+                    className="w-24 h-24 border rounded"
+                  />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-gray-600">
+                    Se preferir, você pode solicitar ao seu paciente que aponte a câmera do celular para o QR code ao lado.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Ele será direcionado à página de assinatura.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
