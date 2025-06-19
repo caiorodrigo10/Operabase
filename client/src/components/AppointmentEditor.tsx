@@ -76,9 +76,10 @@ interface AppointmentEditorProps {
   isOpen: boolean;
   onClose: () => void;
   onSave?: (appointment: any) => void;
+  preselectedContact?: Contact;
 }
 
-export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave }: AppointmentEditorProps) {
+export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, preselectedContact }: AppointmentEditorProps) {
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -171,6 +172,14 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave }: Ap
       }
     }
   }, [appointment, contacts, form]);
+
+  // Handle preselected contact
+  useEffect(() => {
+    if (preselectedContact && !appointmentId) {
+      setSelectedContact(preselectedContact);
+      form.setValue('contact_id', preselectedContact.id);
+    }
+  }, [preselectedContact, appointmentId, form]);
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter((contact: Contact) =>

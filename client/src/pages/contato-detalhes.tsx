@@ -34,6 +34,7 @@ import { ContactAvatar } from "@/components/ContactAvatar";
 import EvolucaoEditor from "@/components/EvolucaoEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import ProntuarioMedico from "@/components/ProntuarioMedico";
+import { AppointmentEditor } from "@/components/AppointmentEditor";
 
 interface Contact {
   id: number;
@@ -81,6 +82,7 @@ export function ContatoDetalhes() {
   const [maraMessage, setMaraMessage] = useState('');
   const [isMaraLoading, setIsMaraLoading] = useState(false);
   const [showEvolucaoEditor, setShowEvolucaoEditor] = useState(false);
+  const [showAppointmentEditor, setShowAppointmentEditor] = useState(false);
   const [isTabsSticky, setIsTabsSticky] = useState(false);
   const [activeTab, setActiveTab] = useState('visao-geral');
   const tabsRef = useRef<HTMLDivElement>(null);
