@@ -149,11 +149,11 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
         ...patientData,
         clinic_id: 1,
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to create patient');
       }
-      
+
       return response.json();
     },
     onSuccess: (newPatient) => {
@@ -161,7 +161,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
         title: "Paciente cadastrado",
         description: "Novo paciente criado com sucesso.",
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
       setShowNewPatientDialog(false);
       patientForm.reset();
@@ -298,7 +298,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
   // Separate effect for professional selection - immediate response
   useEffect(() => {
     const professionalName = getProfessionalNameById(watchedProfessionalId);
-    
+
     if (!watchedProfessionalId || !professionalName) {
       setAvailabilityConflict({
         hasConflict: true,
@@ -316,7 +316,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
   // Separate effect for date/time changes - with debounce
   useEffect(() => {
     if (!watchedProfessionalId) return;
-    
+
     const professionalName = getProfessionalNameById(watchedProfessionalId);
     if (!professionalName) return;
 
@@ -387,7 +387,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
           <DialogHeader>
             <DialogTitle>Cadastrar novo paciente</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...patientForm}>
             <form onSubmit={patientForm.handleSubmit(handleCreatePatient)} className="space-y-6">
               <Tabs value={patientFormTab} onValueChange={setPatientFormTab} className="w-full">
@@ -413,7 +413,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="gender"
@@ -452,7 +452,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="phone"
@@ -482,7 +482,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="rg"
@@ -496,7 +496,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="birth_date"
@@ -526,7 +526,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="how_found_clinic"
@@ -559,7 +559,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="emergency_contact_phone"
@@ -589,7 +589,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="city"
@@ -603,7 +603,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="state"
@@ -664,7 +664,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={patientForm.control}
                       name="insurance_number"
@@ -717,26 +717,24 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
         </DialogContent>
       </Dialog>
 
-      {/* Find Time Slots Dialog */}
+      {/* Find Time Slots Dialog (igual ao de /consultas) */}
       <Dialog open={findTimeSlotsOpen} onOpenChange={setFindTimeSlotsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Encontrar Horários Disponíveis</DialogTitle>
-            <DialogDescription>
-              Visualize os horários disponíveis e selecione o melhor momento para a consulta.
-            </DialogDescription>
-          </DialogHeader>
-          
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto z-[60]">
           <FindTimeSlots
-            onClose={() => setFindTimeSlotsOpen(false)}
-            onTimeSelect={(date: string, time: string, duration: number, professionalId: number) => {
-              // This would update the appointment form with selected time
+            selectedDate={watchedDate || ''}
+            duration={parseInt(watchedDuration) || 30}
+            professionalName={getProfessionalNameById(watchedProfessionalId)}
+            onTimeSelect={(time: string, date: string) => {
+              // Update the appointment form with selected time
+              form.setValue("scheduled_time", time);
+              form.setValue("scheduled_date", date);
               setFindTimeSlotsOpen(false);
               toast({
                 title: "Horário selecionado",
-                description: `${format(new Date(date), 'dd/MM/yyyy')} às ${time} - ${duration} minutos`,
+                description: `${format(new Date(date), 'dd/MM/yyyy')} às ${time}`,
               });
             }}
+            onClose={() => setFindTimeSlotsOpen(false)}
           />
         </DialogContent>
       </Dialog>
