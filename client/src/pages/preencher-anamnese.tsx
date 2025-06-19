@@ -56,7 +56,16 @@ export default function PreencherAnamnese() {
 
   // Get available templates
   const { data: templates = [] } = useQuery<AnamnesisTemplate[]>({
-    queryKey: ['/api/anamnesis/templates']
+    queryKey: ['/api/anamnesis/templates'],
+    queryFn: async () => {
+      const response = await fetch('/api/anamnesis/templates', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch templates');
+      return response.json();
+    }
   });
 
   // Get selected template details
@@ -72,6 +81,14 @@ export default function PreencherAnamnese() {
       });
     }
   }, [contact]);
+
+  // Auto-select default template (Anamnese Geral)
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplateId) {
+      const defaultTemplate = templates.find(t => t.name === 'Anamnese Geral') || templates[0];
+      setSelectedTemplateId(defaultTemplate.id);
+    }
+  }, [templates, selectedTemplateId]);
 
   // Create anamnesis mutation
   const createAnamnesisMutation = useMutation({
