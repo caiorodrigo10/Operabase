@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { IStorage } from './storage';
 import { isAuthenticated } from './auth';
+import { requireAdminRole } from './middleware/admin-auth';
 
 interface BasicAdminMetrics {
   totalClinics: number;
@@ -11,21 +12,8 @@ interface BasicAdminMetrics {
 
 export function setupAdminRoutes(app: any, storage: IStorage) {
   // Admin Dashboard Metrics
-  app.get('/api/admin/dashboard', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/admin/dashboard', isAuthenticated, requireAdminRole, async (req: Request, res: Response) => {
     try {
-      // Check if user has admin role (works with existing auth system)
-      const user = (req as any).user;
-      console.log('Admin dashboard - User:', user);
-      if (!user) {
-        return res.status(401).json({ error: 'Acesso negado' });
-      }
-      
-      // Allow users with super_admin or admin role to access admin panel
-      const hasAdminAccess = user.role === 'super_admin' || user.role === 'admin';
-      
-      if (!hasAdminAccess) {
-        return res.status(403).json({ error: 'Access denied. Admin role required.' });
-      }
 
       // Get metrics by aggregating data from all clinics
       // For now, we'll use clinic 1 as the primary clinic and get basic counts
@@ -67,12 +55,8 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
   });
 
   // Admin Users Cross-Tenant
-  app.get('/api/admin/users', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/admin/users', isAuthenticated, requireAdminRole, async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
-      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
-        return res.status(403).json({ error: 'Access denied. Admin role required.' });
-      }
 
       const { clinic_id } = req.query;
       
@@ -106,12 +90,8 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
   });
 
   // Create new clinic (for future growth)
-  app.post('/api/admin/clinics', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/admin/clinics', isAuthenticated, requireAdminRole, async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
-      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
-        return res.status(403).json({ error: 'Access denied. Admin role required.' });
-      }
 
       const { name, email, phone, address } = req.body;
       
