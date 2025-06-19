@@ -4,6 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AppointmentForm } from "@/components/AppointmentForm";
@@ -27,6 +33,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
   const [availabilityConflict, setAvailabilityConflict] = useState<any>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [workingHoursWarning, setWorkingHoursWarning] = useState<any>(null);
+  const [patientFormTab, setPatientFormTab] = useState("basic");
 
   // Appointment form schema
   const appointmentSchema = z.object({
@@ -42,21 +49,69 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
 
   type AppointmentFormData = z.infer<typeof appointmentSchema>;
 
+  // Patient form schema - comprehensive form matching contacts page
+  const patientSchema = z.object({
+    name: z.string().min(1, "Nome é obrigatório"),
+    phone: z.string().optional(),
+    email: z.string().email().optional().or(z.literal("")),
+    profession: z.string().optional(),
+    gender: z.string().optional(),
+    reminder_preference: z.string().optional(),
+    cpf: z.string().optional(),
+    rg: z.string().optional(),
+    birth_date: z.string().optional(),
+    how_found_clinic: z.string().optional(),
+    notes: z.string().optional(),
+    emergency_contact_name: z.string().optional(),
+    emergency_contact_phone: z.string().optional(),
+    landline_phone: z.string().optional(),
+    zip_code: z.string().optional(),
+    address: z.string().optional(),
+    address_complement: z.string().optional(),
+    neighborhood: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    responsible_name: z.string().optional(),
+    responsible_cpf: z.string().optional(),
+    responsible_birth_date: z.string().optional(),
+    insurance_type: z.string().optional(),
+    insurance_holder: z.string().optional(),
+    insurance_number: z.string().optional(),
+    insurance_responsible_cpf: z.string().optional(),
+  });
+
   // Patient form for new patient creation
   const patientForm = useForm({
-    resolver: zodResolver(z.object({
-      name: z.string().min(1, "Nome é obrigatório"),
-      phone: z.string().min(1, "Telefone é obrigatório"),
-      email: z.string().email("Email inválido").optional().or(z.literal("")),
-      age: z.string().optional(),
-      gender: z.string().optional(),
-    })),
+    resolver: zodResolver(patientSchema),
     defaultValues: {
+      clinic_id: 1,
       name: "",
       phone: "",
       email: "",
-      age: "",
+      profession: "",
       gender: "",
+      reminder_preference: "whatsapp",
+      cpf: "",
+      rg: "",
+      birth_date: "",
+      how_found_clinic: "",
+      notes: "",
+      emergency_contact_name: "",
+      emergency_contact_phone: "",
+      landline_phone: "",
+      zip_code: "",
+      address: "",
+      address_complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      responsible_name: "",
+      responsible_cpf: "",
+      responsible_birth_date: "",
+      insurance_type: "",
+      insurance_holder: "",
+      insurance_number: "",
+      insurance_responsible_cpf: "",
     },
   });
 
