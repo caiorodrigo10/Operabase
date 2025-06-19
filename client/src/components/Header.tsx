@@ -323,7 +323,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   </DropdownMenuItem>
                   
                   {/* Admin Panel Toggle - Only show for admin users */}
-                  {(user?.role === 'super_admin' || user?.role === 'admin' || user?.id === '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4' || user?.email === 'cr@caiorodrigo.com.br') && (
+                  {(user?.role === 'super_admin' || user?.role === 'admin') && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 

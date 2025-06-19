@@ -12,6 +12,7 @@ import { useGleap } from "@/hooks/useGleap";
 import { LoginForm } from "@/components/LoginForm";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
+import { AdminRouteGuard } from "./components/AdminRouteGuard";
 import { Dashboard } from "./pages/dashboard";
 import { Conversas } from "./pages/conversas";
 import { Pipeline } from "./pages/pipeline";
@@ -69,22 +70,9 @@ function Router() {
 
   console.log('✅ User authenticated - showing main app');
 
-  // If user is in admin view, show admin layout
-  if (isAdminView) {
-    return (
-      <AdminLayout>
-        <Switch>
-          <Route path="/admin" component={AdminDashboard} />
-          <Route path="/admin/clinics" component={() => <div>Admin Clinics Page</div>} />
-          <Route path="/admin/users" component={() => <div>Admin Users Page</div>} />
-          <Route path="/admin/settings" component={() => <div>Admin Settings Page</div>} />
-          <Route component={() => <AdminDashboard />} />
-        </Switch>
-      </AdminLayout>
-    );
-  }
 
-  // Default user layout
+
+  // Default user layout with admin route protection
   return (
     <Layout currentPage={getCurrentPage()}>
       <Switch>
@@ -101,6 +89,44 @@ function Router() {
         <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
+        {/* Protected Admin Routes */}
+        <Route path="/admin" component={() => (
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )} />
+        <Route path="/admin/clinics" component={() => (
+          <AdminRouteGuard>
+            <AdminLayout>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Gestão de Clínicas</h1>
+                <p className="text-gray-600">Página em desenvolvimento...</p>
+              </div>
+            </AdminLayout>
+          </AdminRouteGuard>
+        )} />
+        <Route path="/admin/users" component={() => (
+          <AdminRouteGuard>
+            <AdminLayout>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Gestão de Usuários</h1>
+                <p className="text-gray-600">Página em desenvolvimento...</p>
+              </div>
+            </AdminLayout>
+          </AdminRouteGuard>
+        )} />
+        <Route path="/admin/settings" component={() => (
+          <AdminRouteGuard>
+            <AdminLayout>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Configurações do Sistema</h1>
+                <p className="text-gray-600">Página em desenvolvimento...</p>
+              </div>
+            </AdminLayout>
+          </AdminRouteGuard>
+        )} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
