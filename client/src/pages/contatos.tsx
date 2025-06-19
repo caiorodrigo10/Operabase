@@ -15,6 +15,14 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,10 +63,14 @@ export function Contatos() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [patientFormTab, setPatientFormTab] = useState("basic");
+  const [currentPage, setCurrentPage] = useState(1);
   const [, setLocation] = useLocation();
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Pagination constants
+  const ITEMS_PER_PAGE = 20;
 
   // Debounce search term to reduce API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -226,6 +238,16 @@ export function Contatos() {
     });
   }, [contacts, debouncedSearchTerm, statusFilter]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedContacts = filteredContacts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset to first page when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, statusFilter]);
+
   if (isLoading) {
     return (
       <div className="p-4 lg:p-6">
@@ -277,7 +299,7 @@ export function Contatos() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContacts?.map((contact: Contact) => {
+            {paginatedContacts?.map((contact: Contact) => {
               if (!contact) return null;
               
               return (
@@ -298,6 +320,44 @@ export function Contatos() {
                   : 'Nenhum contato cadastrado ainda.'
                 }
               </p>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-slate-600">
+                Mostrando {startIndex + 1} a {Math.min(startIndex + ITEMS_PER_PAGE, filteredContacts.length)} de {filteredContacts.length} contatos
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(page)}
+                        isActive={currentPage === page}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
         </CardContent>
