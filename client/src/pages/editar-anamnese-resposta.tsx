@@ -51,7 +51,11 @@ export default function EditarAnamneseResposta() {
   const { data: anamnesis, isLoading } = useQuery({
     queryKey: ['/api/anamnesis', anamnesisId],
     queryFn: async () => {
-      const response = await fetch(`/api/anamnesis/${anamnesisId}`);
+      const response = await fetch(`/api/anamnesis/${anamnesisId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch anamnesis');
       return response.json();
     },
@@ -62,7 +66,11 @@ export default function EditarAnamneseResposta() {
   const { data: contact } = useQuery({
     queryKey: ['/api/contacts', contactId],
     queryFn: async () => {
-      const response = await fetch(`/api/contacts/${contactId}`);
+      const response = await fetch(`/api/contacts/${contactId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch contact');
       return response.json();
     },
@@ -91,6 +99,7 @@ export default function EditarAnamneseResposta() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(data)
       });
