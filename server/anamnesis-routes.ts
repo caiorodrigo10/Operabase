@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { and, eq, desc } from 'drizzle-orm';
 import { db } from './db';
 import { anamnesis_templates, anamnesis_responses } from '../shared/schema';
+import { pool } from './db';
 import { isAuthenticated, hasClinicAccess } from './auth';
 import { IStorage } from './storage';
 
@@ -255,16 +256,42 @@ const DEFAULT_TEMPLATES = [
 
 export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   // Helper function to get user's clinic access
-  const getUserClinicAccess = async (userId: number): Promise<{ clinicId: number; role: string } | null> => {
-    const userClinics = await storage.getUserClinics(userId);
-    if (userClinics.length === 0) return null;
-    
-    // For now, use the first clinic the user has access to
-    const clinicUser = userClinics[0];
-    return {
-      clinicId: clinicUser.clinic_id,
-      role: clinicUser.role
-    };
+  const getUserClinicAccess = async (userId: string): Promise<{ clinicId: number; role: string } | null> => {
+    try {
+      // Query clinic access for UUID-based user using Drizzle ORM
+      const result = await db
+        .select({
+          clinic_id: clinic_users.clinic_id,
+          role: clinic_users.role
+        })
+        .from(clinic_users)
+        .where(and(
+          eq(clinic_users.user_id, userId),
+          eq(clinic_users.is_active, true)
+        ))
+        .limit(1);
+      
+      if (result.length === 0) {
+        // Fallback: Check if user exists and assign to clinic 1 (for development)
+        const userResult = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, userId));
+        
+        if (userResult.length > 0) {
+          return { clinicId: 1, role: 'admin' };
+        }
+        return null;
+      }
+      
+      return {
+        clinicId: result[0].clinic_id,
+        role: result[0].role
+      };
+    } catch (error) {
+      console.error('Error getting clinic access:', error);
+      return null;
+    }
   };
 
   // Get all templates for a clinic

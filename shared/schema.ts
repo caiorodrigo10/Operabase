@@ -167,7 +167,7 @@ export const anamnesis_templates = pgTable("anamnesis_templates", {
   fields: jsonb("fields").notNull(), // Structure: {questions: [{id, text, type, options, required}]}
   is_default: boolean("is_default").default(false),
   is_active: boolean("is_active").default(true),
-  created_by: integer("created_by"),
+  created_by: uuid("created_by"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -188,7 +188,7 @@ export const anamnesis_responses = pgTable("anamnesis_responses", {
   patient_phone: text("patient_phone"),
   completed_at: timestamp("completed_at"),
   expires_at: timestamp("expires_at"),
-  created_by: integer("created_by"),
+  created_by: uuid("created_by"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [
