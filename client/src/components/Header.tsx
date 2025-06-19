@@ -37,6 +37,14 @@ const navigationItems = [
   { name: "Pacientes", href: "/contatos", key: "contatos" },
 ];
 
+// Admin navigation items
+const adminNavigationItems = [
+  { name: "Dashboard", href: "/admin", key: "admin-dashboard" },
+  { name: "Clínicas", href: "/admin/clinics", key: "admin-clinics" },
+  { name: "Usuários", href: "/admin/users", key: "admin-users" },
+  { name: "Configurações", href: "/admin/settings", key: "admin-settings" },
+];
+
 // Right side icon buttons
 const iconButtons = [
   { 
@@ -68,6 +76,29 @@ const iconButtons = [
     icon: Settings, 
     tooltip: "Configurações Gerais", 
     href: "/configuracoes",
+    active: true 
+  },
+];
+
+// Admin icon buttons
+const adminIconButtons = [
+  { 
+    icon: Search, 
+    tooltip: "Buscar no Sistema", 
+    href: "#",
+    active: false,
+    isSearch: true
+  },
+  { 
+    icon: Bell, 
+    tooltip: "Alertas do Sistema", 
+    href: "#",
+    active: false 
+  },
+  { 
+    icon: Settings, 
+    tooltip: "Configurações Admin", 
+    href: "/admin/settings",
     active: true 
   },
 ];
@@ -126,22 +157,40 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
           {/* Logo and Left Navigation */}
           <div className="flex items-center space-x-8">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Stethoscope className="w-4 h-4 text-white" />
+            <Link href={isAdminView ? "/admin" : "/"} className="flex items-center space-x-2">
+              <div className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                isAdminView ? "bg-orange-600" : "bg-blue-600"
+              )}>
+                {isAdminView ? (
+                  <Settings className="w-4 h-4 text-white" />
+                ) : (
+                  <Stethoscope className="w-4 h-4 text-white" />
+                )}
               </div>
-              <span className="text-lg font-semibold text-slate-800 hidden sm:block">
-                Taskmed
-              </span>
+              <div className="hidden sm:block">
+                <span className="text-lg font-semibold text-slate-800">
+                  Taskmed
+                </span>
+                {isAdminView && (
+                  <span className="text-xs text-orange-600 font-medium block -mt-1">
+                    Admin Panel
+                  </span>
+                )}
+              </div>
             </Link>
 
             {/* Main Navigation - Hidden on mobile */}
             <nav className="hidden md:flex items-center space-x-6">
-              {navigationItems.map((item) => {
+              {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
                 const isActive = location === item.href || 
                   (item.key === "dashboard" && location === "/") ||
+                  (item.key === "admin-dashboard" && location === "/admin") ||
                   (item.key === "contatos" && location.startsWith("/contatos")) ||
-                  (item.key === "consultas" && location.startsWith("/consultas"));
+                  (item.key === "consultas" && location.startsWith("/consultas")) ||
+                  (item.key === "admin-clinics" && location.startsWith("/admin/clinics")) ||
+                  (item.key === "admin-users" && location.startsWith("/admin/users")) ||
+                  (item.key === "admin-settings" && location.startsWith("/admin/settings"));
                 
                 return (
                   <Link
@@ -175,7 +224,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
           <div className="flex items-center space-x-3">
             {/* Icon Buttons */}
             <div className="hidden sm:flex items-center space-x-2">
-              {iconButtons.map((button, index) => {
+              {(isAdminView ? adminIconButtons : iconButtons).map((button, index) => {
                 const Icon = button.icon;
                 
                 if (!button.active) {
@@ -313,11 +362,15 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
         {/* Mobile Navigation Menu */}
         {isMobile && (
           <nav className="mt-3 pt-3 border-t border-slate-200 flex space-x-4 md:hidden">
-            {navigationItems.map((item) => {
+            {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
               const isActive = location === item.href || 
                 (item.key === "dashboard" && location === "/") ||
+                (item.key === "admin-dashboard" && location === "/admin") ||
                 (item.key === "contatos" && location.startsWith("/contatos")) ||
-                (item.key === "consultas" && location.startsWith("/consultas"));
+                (item.key === "consultas" && location.startsWith("/consultas")) ||
+                (item.key === "admin-clinics" && location.startsWith("/admin/clinics")) ||
+                (item.key === "admin-users" && location.startsWith("/admin/users")) ||
+                (item.key === "admin-settings" && location.startsWith("/admin/settings"));
               
               return (
                 <Link
