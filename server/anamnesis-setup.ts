@@ -1,10 +1,10 @@
 import { db } from './db.js';
+import { sql } from 'drizzle-orm';
 
 export async function initializeAnamnesisSystem() {
-  
   try {
     // Create anamnesis_templates table
-    await client.query(`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS anamnesis_templates (
         id SERIAL PRIMARY KEY,
         clinic_id INTEGER REFERENCES clinics(id) ON DELETE CASCADE,
@@ -19,7 +19,7 @@ export async function initializeAnamnesisSystem() {
     `);
 
     // Create anamnesis_responses table
-    await client.query(`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS anamnesis_responses (
         id SERIAL PRIMARY KEY,
         template_id INTEGER REFERENCES anamnesis_templates(id) ON DELETE CASCADE,
@@ -35,7 +35,7 @@ export async function initializeAnamnesisSystem() {
     `);
 
     // Create indexes
-    await client.query(`
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_anamnesis_templates_clinic ON anamnesis_templates(clinic_id);
       CREATE INDEX IF NOT EXISTS idx_anamnesis_responses_template ON anamnesis_responses(template_id);
       CREATE INDEX IF NOT EXISTS idx_anamnesis_responses_contact ON anamnesis_responses(contact_id);
@@ -47,7 +47,7 @@ export async function initializeAnamnesisSystem() {
     console.log('✅ Anamnesis tables created successfully');
     
     // Always recreate templates to ensure updates
-    await client.query('DELETE FROM anamnesis_templates WHERE is_default = true');
+    await db.execute(sql`DELETE FROM anamnesis_templates WHERE is_default = true`);
     
     const defaultTemplates = [
       {
@@ -153,10 +153,10 @@ export async function initializeAnamnesisSystem() {
     ];
 
     for (const template of defaultTemplates) {
-      await client.query(
-        'INSERT INTO anamnesis_templates (clinic_id, name, description, fields, is_default, is_active) VALUES ($1, $2, $3, $4, $5, $6)',
-        [1, template.name, template.description, JSON.stringify(template.fields), true, true]
-      );
+      await db.execute(sql`
+        INSERT INTO anamnesis_templates (clinic_id, name, description, fields, is_default, is_active) 
+        VALUES (1, ${template.name}, ${template.description}, ${JSON.stringify(template.fields)}, true, true)
+      `);
     }
     
     console.log('✅ Default anamnesis templates created');
@@ -164,8 +164,5 @@ export async function initializeAnamnesisSystem() {
   } catch (error) {
     console.error('❌ Error initializing anamnesis system:', error);
     throw error;
-  } finally {
-    client.release();
-    pool.end();
   }
 }
