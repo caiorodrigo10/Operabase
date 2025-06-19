@@ -21,14 +21,14 @@ export function AdminDashboard() {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Check if user has super admin access
-  if (user?.role !== 'super_admin') {
+  // Check if user has admin access (works with existing auth system)
+  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     return (
       <div className="p-4 lg:p-6">
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Acesso negado. Você precisa de permissões de super administrador para acessar esta página.
+            Acesso negado. Você precisa de permissões de administrador para acessar esta página.
           </AlertDescription>
         </Alert>
       </div>

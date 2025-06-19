@@ -101,8 +101,8 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
   app.post('/api/admin/clinics', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ error: 'Access denied. Super admin role required.' });
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+        return res.status(403).json({ error: 'Access denied. Admin role required.' });
       }
 
       const { name, email, phone, address } = req.body;
