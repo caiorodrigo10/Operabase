@@ -461,55 +461,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
     }
   });
 
-  // Get anamnesis response details
-  app.get('/api/anamnesis/:responseId', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const responseId = parseInt(req.params.responseId);
-      const userId = (req.user as any)?.id;
 
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
-
-      const clinicAccess = await getUserClinicAccess(userId);
-      if (!clinicAccess) {
-        return res.status(403).json({ error: 'No clinic access' });
-      }
-
-      const result = await db
-        .select({
-          id: anamnesis_responses.id,
-          contact_id: anamnesis_responses.contact_id,
-          template_id: anamnesis_responses.template_id,
-          template_name: anamnesis_templates.name,
-          template_fields: anamnesis_templates.fields,
-          responses: anamnesis_responses.responses,
-          status: anamnesis_responses.status,
-          share_token: anamnesis_responses.share_token,
-          patient_name: anamnesis_responses.patient_name,
-          patient_email: anamnesis_responses.patient_email,
-          patient_phone: anamnesis_responses.patient_phone,
-          completed_at: anamnesis_responses.completed_at,
-          created_at: anamnesis_responses.created_at,
-          expires_at: anamnesis_responses.expires_at
-        })
-        .from(anamnesis_responses)
-        .leftJoin(anamnesis_templates, eq(anamnesis_responses.template_id, anamnesis_templates.id))
-        .where(and(
-          eq(anamnesis_responses.id, responseId),
-          eq(anamnesis_responses.clinic_id, clinicAccess.clinicId)
-        ));
-
-      if (result.length === 0) {
-        return res.status(404).json({ error: 'Anamnesis not found' });
-      }
-
-      res.json(result[0]);
-    } catch (error) {
-      console.error('Error fetching anamnesis details:', error);
-      res.status(500).json({ error: 'Failed to fetch anamnesis details' });
-    }
-  });
 
   // Public endpoint - Get anamnesis form by token
   app.get('/api/public/anamnesis/:token', async (req: Request, res: Response) => {
