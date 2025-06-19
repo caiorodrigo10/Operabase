@@ -44,7 +44,7 @@ function Router() {
   console.log('🔍 Router state:', { user: !!user, loading, location });
   
   // Handle public routes first, completely outside auth system
-  if (location.startsWith('/public/anamnese/')) {
+  if (location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/')) {
     return <AnamnesisPublica />;
   }
   
@@ -138,7 +138,7 @@ function Router() {
         <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
-        <Route path="/public/anamnese/:token" component={AnamnesisPublica} />
+
         <Route component={NotFound} />
       </Switch>
     </Layout>
