@@ -86,16 +86,16 @@ export async function initializeAnamnesisSystem() {
         description: 'Avaliação pré-operatória para procedimentos cirúrgicos e implantes',
         fields: {
           questions: [
-            { id: '1', text: 'Procedimento a ser realizado', type: 'text', required: true },
-            { id: '2', text: 'Histórico de cirurgias anteriores', type: 'textarea', required: true },
-            { id: '3', text: 'Medicamentos em uso', type: 'textarea', required: true },
-            { id: '4', text: 'Alergias (medicamentos, látex, outros)', type: 'textarea', required: true },
-            { id: '5', text: 'Problemas de coagulação', type: 'radio', options: ['Sim', 'Não'], required: true },
-            { id: '6', text: 'Pressão arterial controlada', type: 'radio', options: ['Sim', 'Não'], required: true },
-            { id: '7', text: 'Diabetes controlado', type: 'radio', options: ['Sim', 'Não'], required: true },
-            { id: '8', text: 'Problemas cardíacos', type: 'radio', options: ['Sim', 'Não'], required: true },
-            { id: '9', text: 'Consumo de álcool ou tabaco', type: 'textarea', required: false },
-            { id: '10', text: 'Expectativas com o procedimento', type: 'textarea', required: true }
+            { id: '1', text: 'Procedimento a ser realizado', type: 'somente_texto', required: true },
+            { id: '2', text: 'Histórico de cirurgias anteriores', type: 'somente_texto', required: true },
+            { id: '3', text: 'Medicamentos em uso', type: 'somente_texto', required: true },
+            { id: '4', text: 'Alergias (medicamentos, látex, outros)', type: 'somente_texto', required: true },
+            { id: '5', text: 'Problemas de coagulação', type: 'sim_nao_nao_sei', required: true },
+            { id: '6', text: 'Pressão arterial controlada', type: 'sim_nao_nao_sei', required: true },
+            { id: '7', text: 'Diabetes controlado', type: 'sim_nao_nao_sei', required: true },
+            { id: '8', text: 'Problemas cardíacos', type: 'sim_nao_nao_sei', required: true },
+            { id: '9', text: 'Consumo de álcool ou tabaco', type: 'somente_texto', required: false },
+            { id: '10', text: 'Expectativas com o procedimento', type: 'somente_texto', required: true }
           ]
         }
       },
@@ -104,16 +104,16 @@ export async function initializeAnamnesisSystem() {
         description: 'Formulário específico para atendimento infantil',
         fields: {
           questions: [
-            { id: '1', text: 'Idade da criança', type: 'text', required: true },
-            { id: '2', text: 'Responsável', type: 'text', required: true },
-            { id: '3', text: 'Motivo da consulta', type: 'textarea', required: true },
-            { id: '4', text: 'Histórico de nascimento', type: 'textarea', required: true },
-            { id: '5', text: 'Vacinação em dia', type: 'radio', options: ['Sim', 'Não'], required: true },
-            { id: '6', text: 'Alergias conhecidas', type: 'textarea', required: false },
-            { id: '7', text: 'Medicamentos em uso', type: 'textarea', required: false },
-            { id: '8', text: 'Desenvolvimento motor', type: 'textarea', required: true },
-            { id: '9', text: 'Alimentação atual', type: 'textarea', required: true },
-            { id: '10', text: 'Sono e comportamento', type: 'textarea', required: true }
+            { id: '1', text: 'Idade da criança', type: 'somente_texto', required: true },
+            { id: '2', text: 'Responsável', type: 'somente_texto', required: true },
+            { id: '3', text: 'Motivo da consulta', type: 'somente_texto', required: true },
+            { id: '4', text: 'Histórico de nascimento', type: 'somente_texto', required: true },
+            { id: '5', text: 'Vacinação em dia', type: 'sim_nao_nao_sei', required: true },
+            { id: '6', text: 'Alergias conhecidas', type: 'somente_texto', required: false },
+            { id: '7', text: 'Medicamentos em uso', type: 'somente_texto', required: false },
+            { id: '8', text: 'Desenvolvimento motor', type: 'somente_texto', required: true },
+            { id: '9', text: 'Alimentação atual', type: 'somente_texto', required: true },
+            { id: '10', text: 'Sono e comportamento', type: 'somente_texto', required: true }
           ]
         }
       },
@@ -122,14 +122,14 @@ export async function initializeAnamnesisSystem() {
         description: 'Avaliação específica para tratamento ortodôntico',
         fields: {
           questions: [
-            { id: '1', text: 'Queixa principal relacionada aos dentes', type: 'textarea', required: true },
-            { id: '2', text: 'Histórico de tratamento ortodôntico anterior', type: 'textarea', required: false },
-            { id: '3', text: 'Hábitos (chupar dedo, ranger dentes)', type: 'textarea', required: true },
-            { id: '4', text: 'Dor na ATM', type: 'radio', options: ['Sim', 'Não'], required: true },
-            { id: '5', text: 'Respiração bucal', type: 'radio', options: ['Sim', 'Não'], required: true },
-            { id: '6', text: 'Histórico familiar de problemas ortodônticos', type: 'textarea', required: false },
-            { id: '7', text: 'Expectativas com o tratamento', type: 'textarea', required: true },
-            { id: '8', text: 'Disponibilidade para consultas regulares', type: 'radio', options: ['Sim', 'Não'], required: true }
+            { id: '1', text: 'Queixa principal relacionada aos dentes', type: 'somente_texto', required: true },
+            { id: '2', text: 'Histórico de tratamento ortodôntico anterior', type: 'somente_texto', required: false },
+            { id: '3', text: 'Hábitos (chupar dedo, ranger dentes)', type: 'somente_texto', required: true },
+            { id: '4', text: 'Dor na ATM', type: 'sim_nao_nao_sei', required: true },
+            { id: '5', text: 'Respiração bucal', type: 'sim_nao_nao_sei', required: true },
+            { id: '6', text: 'Histórico familiar de problemas ortodônticos', type: 'somente_texto', required: false },
+            { id: '7', text: 'Expectativas com o tratamento', type: 'somente_texto', required: true },
+            { id: '8', text: 'Disponibilidade para consultas regulares', type: 'sim_nao_nao_sei', required: true }
           ]
         }
       },
@@ -138,15 +138,15 @@ export async function initializeAnamnesisSystem() {
         description: 'Formulário para primeira consulta psicológica',
         fields: {
           questions: [
-            { id: '1', text: 'Motivo da busca por terapia', type: 'textarea', required: true },
-            { id: '2', text: 'Quando os sintomas começaram', type: 'textarea', required: true },
-            { id: '3', text: 'Tratamento psicológico anterior', type: 'textarea', required: false },
-            { id: '4', text: 'Uso de medicação psiquiátrica', type: 'textarea', required: true },
-            { id: '5', text: 'Histórico familiar de transtornos mentais', type: 'textarea', required: false },
-            { id: '6', text: 'Relacionamentos interpessoais', type: 'textarea', required: true },
-            { id: '7', text: 'Sono e apetite', type: 'textarea', required: true },
-            { id: '8', text: 'Situação financeira atual', type: 'textarea', required: false },
-            { id: '9', text: 'Expectativas com o tratamento', type: 'textarea', required: true }
+            { id: '1', text: 'Motivo da busca por terapia', type: 'somente_texto', required: true },
+            { id: '2', text: 'Quando os sintomas começaram', type: 'somente_texto', required: true },
+            { id: '3', text: 'Tratamento psicológico anterior', type: 'somente_texto', required: false },
+            { id: '4', text: 'Uso de medicação psiquiátrica', type: 'somente_texto', required: true },
+            { id: '5', text: 'Histórico familiar de transtornos mentais', type: 'somente_texto', required: false },
+            { id: '6', text: 'Relacionamentos interpessoais', type: 'somente_texto', required: true },
+            { id: '7', text: 'Sono e apetite', type: 'somente_texto', required: true },
+            { id: '8', text: 'Situação financeira atual', type: 'somente_texto', required: false },
+            { id: '9', text: 'Expectativas com o tratamento', type: 'somente_texto', required: true }
           ]
         }
       }
