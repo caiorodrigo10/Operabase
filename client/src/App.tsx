@@ -33,6 +33,7 @@ import AnamnesisPublica from "./pages/anamnese-publica";
 import PreencherAnamnese from "./pages/preencher-anamnese";
 import AnamnesisTemplatesPage from "./pages/anamneses";
 import EditarAnamnesePage from "./pages/editar-anamnese";
+import EditarAnamneseResposta from "./pages/editar-anamnese-resposta";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -129,6 +130,7 @@ function Router() {
         <Route path="/contatos" component={Contatos} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
         <Route path="/contatos/:contactId/preencher-anamnese" component={PreencherAnamnese} />
+        <Route path="/contatos/:contactId/anamnese/:anamnesisId/editar" component={EditarAnamneseResposta} />
         <Route path="/anamneses" component={AnamnesisTemplatesPage} />
         <Route path="/anamneses/:id/editar" component={EditarAnamnesePage} />
         {/* <Route path="/prontuario/:id?" component={Prontuario} /> */}

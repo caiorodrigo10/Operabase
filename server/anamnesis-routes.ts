@@ -657,4 +657,92 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
       res.status(500).json({ error: 'Failed to delete anamnesis' });
     }
   });
+
+  // Get individual anamnesis response for editing
+  app.get('/api/anamnesis/:responseId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const responseId = parseInt(req.params.responseId);
+      const userId = (req.user as any)?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const clinicAccess = await getUserClinicAccess(userId);
+      if (!clinicAccess) {
+        return res.status(403).json({ error: 'No clinic access' });
+      }
+
+      // Get anamnesis response with template data
+      const result = await db
+        .select({
+          id: anamnesis_responses.id,
+          contact_id: anamnesis_responses.contact_id,
+          template_id: anamnesis_responses.template_id,
+          responses: anamnesis_responses.responses,
+          status: anamnesis_responses.status,
+          patient_name: anamnesis_responses.patient_name,
+          created_at: anamnesis_responses.created_at,
+          updated_at: anamnesis_responses.updated_at,
+          template_name: anamnesis_templates.name,
+          template_fields: anamnesis_templates.fields
+        })
+        .from(anamnesis_responses)
+        .leftJoin(anamnesis_templates, eq(anamnesis_responses.template_id, anamnesis_templates.id))
+        .where(and(
+          eq(anamnesis_responses.id, responseId),
+          eq(anamnesis_responses.clinic_id, clinicAccess.clinicId)
+        ));
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Anamnesis response not found' });
+      }
+
+      res.json(result[0]);
+    } catch (error) {
+      console.error('Error fetching anamnesis response:', error);
+      res.status(500).json({ error: 'Failed to fetch anamnesis response' });
+    }
+  });
+
+  // Update anamnesis response
+  app.put('/api/anamnesis/:responseId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const responseId = parseInt(req.params.responseId);
+      const { responses, status } = req.body;
+      const userId = (req.user as any)?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const clinicAccess = await getUserClinicAccess(userId);
+      if (!clinicAccess) {
+        return res.status(403).json({ error: 'No clinic access' });
+      }
+
+      // Update the anamnesis response
+      const result = await db
+        .update(anamnesis_responses)
+        .set({
+          responses,
+          status: status || 'completed',
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(anamnesis_responses.id, responseId),
+          eq(anamnesis_responses.clinic_id, clinicAccess.clinicId)
+        ))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Anamnesis response not found' });
+      }
+
+      res.json(result[0]);
+    } catch (error) {
+      console.error('Error updating anamnesis response:', error);
+      res.status(500).json({ error: 'Failed to update anamnesis response' });
+    }
+  });
 }

@@ -177,7 +177,7 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
                     <div>
                       <h3 
                         className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer transition-colors"
-                        onClick={() => setLocation(`/anamneses/${anamnesis.template_id}/editar`)}
+                        onClick={() => setLocation(`/contatos/${contactId}/anamnese/${anamnesis.id}/editar`)}
                       >
                         {anamnesis.template_name}
                       </h3>
