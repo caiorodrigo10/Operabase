@@ -412,7 +412,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
       ]);
       client.release();
 
-      res.json(result[0]);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error('Error creating anamnesis:', error);
       res.status(500).json({ error: 'Failed to create anamnesis' });
