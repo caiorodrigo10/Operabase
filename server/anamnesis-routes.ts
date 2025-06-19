@@ -7,20 +7,27 @@ import { pool } from './db';
 import { isAuthenticated, hasClinicAccess } from './auth';
 
 // Custom authentication middleware for anamnesis routes
-const anamnesisAuth = (req: any, res: any, next: any) => {
-  // Check for session-based authentication first
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    return next();
+const anamnesisAuth = async (req: any, res: any, next: any) => {
+  try {
+    // Check for session-based authentication first (Supabase session)
+    if (req.user && req.user.id) {
+      return next();
+    }
+    
+    // Check for token-based authentication
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // For Bearer token, we should validate it properly
+      // For now, we'll pass it through since the main auth handles Supabase tokens
+      return next();
+    }
+    
+    // If no authentication found, deny access
+    res.status(401).json({ error: "Acesso negado" });
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({ error: "Acesso negado" });
   }
-  
-  // Check for token-based authentication
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    // For now, accept any valid Bearer token format for authenticated users
-    return next();
-  }
-  
-  res.status(401).json({ error: "Acesso negado" });
 };
 import { IStorage } from './storage';
 
@@ -300,7 +307,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   };
 
   // Get all templates for a clinic
-  app.get('/api/anamnesis/templates', anamnesisAuth, async (req: Request, res: Response) => {
+  app.get('/api/anamnesis/templates', isAuthenticated, async (req: Request, res: Response) => {
     try {
       // For authenticated users, always allow access to clinic 1 templates
       const defaultClinicId = 1;
@@ -322,7 +329,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   });
 
   // Initialize default templates for a clinic
-  app.post('/api/anamnesis/templates/init', anamnesisAuth, async (req: Request, res: Response) => {
+  app.post('/api/anamnesis/templates/init', isAuthenticated, async (req: Request, res: Response) => {
     try {
       // For authenticated users, always allow access to clinic 1
       const defaultClinicId = 1;
@@ -430,7 +437,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   });
 
   // Get anamneses for a contact
-  app.get('/api/contacts/:contactId/anamnesis', anamnesisAuth, async (req: Request, res: Response) => {
+  app.get('/api/contacts/:contactId/anamnesis', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
       const userId = (req.user as any)?.id;

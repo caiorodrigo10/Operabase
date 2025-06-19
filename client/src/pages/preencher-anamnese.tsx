@@ -263,6 +263,68 @@ export default function PreencherAnamnese() {
           </div>
         );
 
+      case 'sim_nao_nao_sei':
+        return (
+          <div className="space-y-3">
+            <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)} className="flex space-x-6">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
+                <Label htmlFor={`${question.id}-sim`} className="text-sm font-normal">Sim</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Não" id={`${question.id}-nao`} />
+                <Label htmlFor={`${question.id}-nao`} className="text-sm font-normal">Não</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Não sei" id={`${question.id}-nao-sei`} />
+                <Label htmlFor={`${question.id}-nao-sei`} className="text-sm font-normal">Não sei</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        );
+
+      case 'sim_nao_nao_sei_texto':
+        return (
+          <div className="space-y-3">
+            <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)} className="flex space-x-6">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
+                <Label htmlFor={`${question.id}-sim`} className="text-sm font-normal">Sim</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Não" id={`${question.id}-nao`} />
+                <Label htmlFor={`${question.id}-nao`} className="text-sm font-normal">Não</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Não sei" id={`${question.id}-nao-sei`} />
+                <Label htmlFor={`${question.id}-nao-sei`} className="text-sm font-normal">Não sei</Label>
+              </div>
+            </RadioGroup>
+            
+            <div className="mt-3">
+              <Label className="text-sm text-gray-600 mb-2 block">Informações adicionais</Label>
+              <Textarea
+                value={additionalValue}
+                onChange={(e) => handleResponseChange(`${question.id}_additional`, e.target.value)}
+                placeholder="Digite aqui..."
+                rows={2}
+                className="w-full"
+              />
+            </div>
+          </div>
+        );
+
+      case 'somente_texto':
+        return (
+          <Textarea
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder="Digite sua resposta..."
+            rows={3}
+            className="w-full"
+          />
+        );
+
       default:
         return null;
     }
