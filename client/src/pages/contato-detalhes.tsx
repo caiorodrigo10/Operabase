@@ -90,6 +90,16 @@ export function ContatoDetalhes() {
   const tabsRef = useRef<HTMLDivElement>(null);
   const stickyTabsRef = useRef<HTMLDivElement>(null);
 
+  // Handle hash fragment navigation (e.g., from anamnesis editing back button)
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    if (hash === 'anamnesis') {
+      setActiveTab('anamneses');
+      // Clear the hash after handling it
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
   // Fetch contact data
   const { data: contact, isLoading: contactLoading, error: contactError } = useQuery<Contact>({
     queryKey: ['/api/contacts', contactId],
@@ -667,7 +677,7 @@ export function ContatoDetalhes() {
 
           {/* Anamneses Tab */}
           {activeTab === 'anamneses' && (
-            <div className="p-6">
+            <div id="anamnesis" className="p-6">
               <AnamnesisManager contactId={contactId!} />
             </div>
           )}

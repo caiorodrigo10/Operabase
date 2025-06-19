@@ -137,7 +137,8 @@ export default function EditarAnamneseResposta() {
   };
 
   const handleBack = () => {
-    setLocation(`/contatos/${contactId}`);
+    // Navigate back to contact page and focus on anamnesis section
+    setLocation(`/contatos/${contactId}#anamnesis`);
   };
 
   const renderQuestion = (question: AnamnesisQuestion) => {
