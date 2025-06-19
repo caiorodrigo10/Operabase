@@ -130,6 +130,8 @@ export default function PreencherAnamnese() {
   });
 
   const handleBack = () => {
+    // Invalidate cache before navigating to ensure fresh data
+    queryClient.invalidateQueries({ queryKey: ['/api/contacts', contactId, 'anamnesis'] });
     // Navigate back to contact page and focus on anamnesis section
     setLocation(`/contatos/${contactId}#anamnesis`);
   };
@@ -192,8 +194,8 @@ export default function PreencherAnamnese() {
     },
     onSuccess: (data) => {
       setShareToken(data.share_token);
-      // Invalidate anamnesis cache
-      queryClient.invalidateQueries({ queryKey: [`/api/contacts/${contactId}/anamnesis`] });
+      // Invalidate anamnesis cache using the correct query key format
+      queryClient.invalidateQueries({ queryKey: ['/api/contacts', contactId, 'anamnesis'] });
       toast({
         title: "Link criado!",
         description: "O link foi criado e a anamnese foi adicionada à lista.",
