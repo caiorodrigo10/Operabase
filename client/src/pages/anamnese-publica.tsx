@@ -247,6 +247,15 @@ export default function AnamnesisPublica() {
 
             {/* Questions */}
             <div className="space-y-8">
+              {/* Debug info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="bg-yellow-50 p-4 rounded text-xs">
+                  <p>Debug - Template: {anamnesis.template_name}</p>
+                  <p>Questions count: {anamnesis.template_fields?.questions?.length || 0}</p>
+                  <p>Questions exist: {!!anamnesis.template_fields?.questions ? 'Yes' : 'No'}</p>
+                </div>
+              )}
+              
               {anamnesis.template_fields?.questions?.map((question, index) => (
                 <div key={question.id} className="bg-gray-50 rounded-lg p-6">
                   <Label className="text-base font-medium text-gray-900 block mb-4">
@@ -256,6 +265,12 @@ export default function AnamnesisPublica() {
                   {renderQuestion(question)}
                 </div>
               ))}
+              
+              {(!anamnesis.template_fields?.questions || anamnesis.template_fields.questions.length === 0) && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Nenhuma pergunta encontrada no template.</p>
+                </div>
+              )}
             </div>
 
             {/* Submit button */}
