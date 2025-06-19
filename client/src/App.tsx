@@ -14,7 +14,7 @@ import { Dashboard } from "./pages/dashboard";
 import { Conversas } from "./pages/conversas";
 import { Pipeline } from "./pages/pipeline";
 import { Consultas } from "./pages/consultas";
-import { Contatos } from "./pages/contatos";
+import { ContatosWithPagination } from "./pages/contatos-with-pagination";
 import { Configuracoes } from "./pages/configuracoes";
 import { LiviaConfig } from "./pages/livia-config";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
@@ -72,7 +72,7 @@ function Router() {
         <Route path="/conversas" component={Conversas} />
         <Route path="/pipeline" component={Pipeline} />
         <Route path="/consultas" component={Consultas} />
-        <Route path="/contatos" component={Contatos} />
+        <Route path="/contatos" component={ContatosWithPagination} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
         {/* <Route path="/prontuario/:id?" component={Prontuario} /> */}
         <Route path="/configuracoes" component={Configuracoes} />
