@@ -185,6 +185,7 @@ export default function PreencherAnamnese() {
 
   const renderQuestion = (question: any) => {
     const value = responses[question.id] || '';
+    const additionalValue = responses[`${question.id}_additional`] || '';
 
     switch (question.type) {
       case 'text':
@@ -204,8 +205,9 @@ export default function PreencherAnamnese() {
           <Textarea
             value={value}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            placeholder="Digite sua resposta..."
+            placeholder="Informações adicionais"
             rows={3}
+            className="w-full"
           />
         );
 
@@ -236,14 +238,29 @@ export default function PreencherAnamnese() {
 
       case 'radio':
         return (
-          <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)}>
-            {question.options?.map((option: string) => (
-              <div key={option} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`${question.id}-${option}`} />
-                <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
+          <div className="space-y-3">
+            <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)} className="flex space-x-6">
+              {question.options?.map((option: string) => (
+                <div key={option} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option} id={`${question.id}-${option}`} />
+                  <Label htmlFor={`${question.id}-${option}`} className="text-sm font-normal">{option}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+            
+            {question.hasAdditional && (
+              <div className="mt-3">
+                <Label className="text-sm text-gray-600 mb-2 block">Informações adicionais</Label>
+                <Textarea
+                  value={additionalValue}
+                  onChange={(e) => handleResponseChange(`${question.id}_additional`, e.target.value)}
+                  placeholder="Digite aqui..."
+                  rows={2}
+                  className="w-full"
+                />
               </div>
-            ))}
-          </RadioGroup>
+            )}
+          </div>
         );
 
       default:
@@ -316,60 +333,17 @@ export default function PreencherAnamnese() {
         </CardContent>
       </Card>
 
-      {/* Patient Information */}
-      {selectedTemplate && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Informações do Paciente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="patient-name">Nome completo *</Label>
-                <Input
-                  id="patient-name"
-                  value={patientInfo.name}
-                  onChange={(e) => handlePatientInfoChange('name', e.target.value)}
-                  placeholder="Nome do paciente"
-                />
-              </div>
-              <div>
-                <Label htmlFor="patient-email">Email</Label>
-                <Input
-                  id="patient-email"
-                  type="email"
-                  value={patientInfo.email}
-                  onChange={(e) => handlePatientInfoChange('email', e.target.value)}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="patient-phone">Telefone</Label>
-                <Input
-                  id="patient-phone"
-                  type="tel"
-                  value={patientInfo.phone}
-                  onChange={(e) => handlePatientInfoChange('phone', e.target.value)}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Questions Form */}
       {selectedTemplate && (
         <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Questionário</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+          <CardContent className="pt-6">
+            <div className="space-y-8">
               {selectedTemplate.fields.questions.map((question, index) => (
-                <div key={question.id} className="space-y-2">
-                  <Label className="text-base font-medium">
-                    {index + 1}. {question.text}
+                <div key={question.id} className="space-y-3">
+                  <Label className="text-base font-medium text-gray-900 block">
+                    {question.text}
                     {question.required && <span className="text-red-500 ml-1">*</span>}
                   </Label>
                   {renderQuestion(question)}
