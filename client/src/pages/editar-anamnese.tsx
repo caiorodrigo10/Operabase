@@ -13,6 +13,25 @@ import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Search } from 'lucide-reac
 import { useLocation, useRoute } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Question {
   id: string;
@@ -21,6 +40,85 @@ interface Question {
   required: boolean;
   hasAdditional?: boolean;
   active?: boolean;
+  order?: number;
+}
+
+interface SortableQuestionItemProps {
+  question: Question;
+  onEdit: (question: Question) => void;
+  onRemove: (questionId: string) => void;
+}
+
+function SortableQuestionItem({ question, onEdit, onRemove }: SortableQuestionItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="hover:shadow-sm transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-center space-x-4">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical className="w-5 h-5 text-gray-400" />
+          </div>
+          
+          <div className="flex-1">
+            <p className="font-medium text-gray-900">{question.text}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Tipo: {
+                question.type === 'somente_texto' ? 'Somente texto' :
+                question.type === 'sim_nao_nao_sei' ? 'Sim / Não / Não sei' :
+                'Sim / Não / Não sei e Texto'
+              }
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                checked={question.active !== false}
+                onCheckedChange={() => {}}
+              />
+              <span className="text-sm text-gray-600">Ativo</span>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onEdit(question)}
+            >
+              <Edit className="w-4 h-4 mr-1" />
+              Editar
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onRemove(question.id)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              Remover
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 interface Template {
@@ -50,6 +148,53 @@ export default function EditarAnamnesePage() {
     tipo: 'somente_texto',
     addToAllTemplates: false
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Mutation para reordenar perguntas
+  const reorderQuestionsMutation = useMutation({
+    mutationFn: async (newOrder: string[]) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch(`/api/anamneses/${templateId}/perguntas/reorder`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ order: newOrder })
+      });
+      if (!response.ok) throw new Error('Failed to reorder questions');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/anamneses', templateId, 'editar'] });
+    }
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const questions = template?.fields?.questions || [];
+      const oldIndex = questions.findIndex((q: Question) => q.id === active.id);
+      const newIndex = questions.findIndex((q: Question) => q.id === over?.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(questions, oldIndex, newIndex);
+        const questionIds = newOrder.map((q: Question) => q.id);
+        reorderQuestionsMutation.mutate(questionIds);
+      }
+    }
+  }
 
   // Buscar template
   const { data: template, isLoading } = useQuery({
