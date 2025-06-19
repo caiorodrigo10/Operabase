@@ -34,7 +34,7 @@ import { ContactAvatar } from "@/components/ContactAvatar";
 import EvolucaoEditor from "@/components/EvolucaoEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import ProntuarioMedico from "@/components/ProntuarioMedico";
-import { AppointmentForm } from "@/components/AppointmentForm";
+import { AppointmentEditor } from "@/components/AppointmentEditor";
 
 interface Contact {
   id: number;
@@ -837,13 +837,14 @@ export function ContatoDetalhes() {
 
       {/* Editor de Agendamento */}
       {showAppointmentEditor && (
-        <AppointmentForm
+        <AppointmentEditor
           isOpen={showAppointmentEditor}
           onClose={() => setShowAppointmentEditor(false)}
           preselectedContact={contact}
           onSave={() => {
             // Refresh appointments data after saving
             queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+            setShowAppointmentEditor(false);
           }}
         />
       )}
