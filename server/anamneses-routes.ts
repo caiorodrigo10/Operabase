@@ -10,7 +10,15 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
   app.get('/api/anamneses', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      const userClinicId = user.clinic_id || 1;
+      
+      // Get user's clinic ID - super admin gets default clinic
+      let userClinicId = 1;
+      if (user.role !== 'super_admin') {
+        const userClinics = await storage.getUserClinics(user.id);
+        if (userClinics && userClinics.length > 0) {
+          userClinicId = userClinics[0].id;
+        }
+      }
       
       const templates = await db.execute(sql`
         SELECT id, name, description, created_at, updated_at,
@@ -34,7 +42,15 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
   app.post('/api/anamneses', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      const userClinicId = user.clinic_id || 1;
+      
+      // Get user's clinic ID - super admin gets default clinic
+      let userClinicId = 1;
+      if (user.role !== 'super_admin') {
+        const userClinics = await storage.getUserClinics(user.id);
+        if (userClinics && userClinics.length > 0) {
+          userClinicId = userClinics[0].id;
+        }
+      }
       const { name, description, copyFromId, questions } = req.body;
 
       if (!name) {
@@ -77,7 +93,15 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
   app.get('/api/anamneses/:id/editar', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      const userClinicId = user.clinic_id || 1;
+      
+      // Get user's clinic ID - super admin gets default clinic
+      let userClinicId = 1;
+      if (user.role !== 'super_admin') {
+        const userClinics = await storage.getUserClinics(user.id);
+        if (userClinics && userClinics.length > 0) {
+          userClinicId = userClinics[0].id;
+        }
+      }
       const { id } = req.params;
 
       const template = await db.execute(sql`
@@ -101,7 +125,15 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
   app.put('/api/anamneses/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      const userClinicId = user.clinic_id || 1;
+      
+      // Get user's clinic ID - super admin gets default clinic
+      let userClinicId = 1;
+      if (user.role !== 'super_admin') {
+        const userClinics = await storage.getUserClinics(user.id);
+        if (userClinics && userClinics.length > 0) {
+          userClinicId = userClinics[0].id;
+        }
+      }
       const { id } = req.params;
       const { name, description, questions } = req.body;
 
