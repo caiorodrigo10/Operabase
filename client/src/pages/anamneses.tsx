@@ -33,15 +33,26 @@ export default function AnamnesisTemplatesPage() {
   // Buscar modelos de anamnese
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['/api/anamneses'],
-    queryFn: () => apiRequest('/api/anamneses')
+    queryFn: async () => {
+      const response = await fetch('/api/anamneses', {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to fetch templates');
+      return response.json();
+    }
   });
 
   // Mutation para criar modelo
   const createTemplateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/anamneses', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/anamneses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create template');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/anamneses'] });
       setIsCreateDialogOpen(false);

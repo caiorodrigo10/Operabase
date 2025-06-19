@@ -51,7 +51,8 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
         `);
         
         if (sourceTemplate.rows.length > 0) {
-          templateQuestions = sourceTemplate.rows[0].fields.questions || [];
+          const sourceFields = sourceTemplate.rows[0].fields as any;
+          templateQuestions = sourceFields?.questions || [];
         }
       }
 

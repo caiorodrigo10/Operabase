@@ -42,9 +42,15 @@ export default function EditarAnamnesePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-  const [questionForm, setQuestionForm] = useState({
+  const [questionForm, setQuestionForm] = useState<{
+    pergunta: string;
+    tipo: 'sim_nao_nao_sei' | 'sim_nao_nao_sei_texto' | 'somente_texto';
+    showAlert: boolean;
+    alertText: string;
+    addToAllTemplates: boolean;
+  }>({
     pergunta: '',
-    tipo: 'somente_texto' as const,
+    tipo: 'somente_texto',
     showAlert: false,
     alertText: '',
     addToAllTemplates: false
@@ -53,16 +59,25 @@ export default function EditarAnamnesePage() {
   // Buscar template
   const { data: template, isLoading } = useQuery({
     queryKey: ['/api/anamneses', templateId, 'editar'],
-    queryFn: () => apiRequest(`/api/anamneses/${templateId}/editar`),
+    queryFn: async () => {
+      const response = await fetch(`/api/anamneses/${templateId}/editar`);
+      if (!response.ok) throw new Error('Failed to fetch template');
+      return response.json();
+    },
     enabled: !!templateId
   });
 
   // Mutation para adicionar pergunta
   const addQuestionMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/anamneses/${templateId}/perguntas`, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
+    mutationFn: async (data: any) => {
+      const response = await fetch(`/api/anamneses/${templateId}/perguntas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to add question');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/anamneses', templateId, 'editar'] });
       setIsAddQuestionOpen(false);
@@ -72,11 +87,15 @@ export default function EditarAnamnesePage() {
 
   // Mutation para editar pergunta
   const editQuestionMutation = useMutation({
-    mutationFn: ({ questionId, data }: { questionId: string; data: any }) => 
-      apiRequest(`/api/anamneses/${templateId}/perguntas/${questionId}`, {
+    mutationFn: async ({ questionId, data }: { questionId: string; data: any }) => {
+      const response = await fetch(`/api/anamneses/${templateId}/perguntas/${questionId}`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      }),
+      });
+      if (!response.ok) throw new Error('Failed to edit question');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/anamneses', templateId, 'editar'] });
       setEditingQuestion(null);
@@ -86,10 +105,13 @@ export default function EditarAnamnesePage() {
 
   // Mutation para remover pergunta
   const removeQuestionMutation = useMutation({
-    mutationFn: (questionId: string) => 
-      apiRequest(`/api/anamneses/${templateId}/perguntas/${questionId}`, {
+    mutationFn: async (questionId: string) => {
+      const response = await fetch(`/api/anamneses/${templateId}/perguntas/${questionId}`, {
         method: 'DELETE'
-      }),
+      });
+      if (!response.ok) throw new Error('Failed to remove question');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/anamneses', templateId, 'editar'] });
     }
