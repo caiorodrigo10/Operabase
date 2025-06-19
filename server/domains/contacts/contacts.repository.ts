@@ -24,4 +24,22 @@ export class ContactsRepository {
   async updateContactStatus(contactId: number, status: string) {
     return this.storage.updateContactStatus(contactId, status);
   }
+
+  async countContacts(clinicId: number, filters: { status?: string; search?: string } = {}): Promise<number> {
+    const allContacts = await this.storage.getContacts(clinicId, filters);
+    return allContacts.length;
+  }
+
+  async findPaginated(
+    clinicId: number, 
+    pagination: { page: number; limit: number; offset: number },
+    filters: { status?: string; search?: string } = {}
+  ) {
+    const allContacts = await this.storage.getContacts(clinicId, filters);
+    
+    const startIndex = pagination.offset;
+    const endIndex = startIndex + pagination.limit;
+    
+    return allContacts.slice(startIndex, endIndex);
+  }
 }

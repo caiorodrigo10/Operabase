@@ -10,6 +10,9 @@ export function createContactsRoutes(storage: Storage): Router {
   // Get contacts with filters
   router.get('/contacts', controller.getContacts.bind(controller));
 
+  // Get paginated contacts
+  router.get('/contacts/paginated', controller.getContactsPaginated.bind(controller));
+
   // Get contact by ID
   router.get('/contacts/:id', controller.getContactById.bind(controller));
 

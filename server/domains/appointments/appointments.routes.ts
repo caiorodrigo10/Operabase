@@ -11,6 +11,9 @@ export function createAppointmentsRoutes(storage: IStorage): Router {
   // Get appointments with filters
   router.get('/appointments', controller.getAppointments.bind(controller));
 
+  // Get paginated appointments
+  router.get('/appointments/paginated', controller.getAppointmentsPaginated.bind(controller));
+
   // Get appointment by ID
   router.get('/appointments/:id', controller.getAppointmentById.bind(controller));
 

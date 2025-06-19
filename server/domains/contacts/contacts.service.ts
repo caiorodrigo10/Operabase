@@ -36,4 +36,33 @@ export class ContactsService {
     }
     return contact;
   }
+
+  async getContactsPaginated(
+    clinicId: number, 
+    pagination: { page: number; limit: number; offset: number },
+    filters: { status?: string; search?: string } = {}
+  ) {
+    try {
+      // Get total count for pagination
+      const totalItems = await this.repository.countContacts(clinicId, filters);
+      
+      // Get paginated data
+      const contacts = await this.repository.findPaginated(clinicId, pagination, filters);
+      
+      return {
+        data: contacts,
+        pagination: {
+          currentPage: pagination.page,
+          totalPages: Math.ceil(totalItems / pagination.limit),
+          totalItems,
+          itemsPerPage: pagination.limit,
+          hasNext: pagination.page < Math.ceil(totalItems / pagination.limit),
+          hasPrev: pagination.page > 1
+        }
+      };
+    } catch (error) {
+      console.error('Error in getContactsPaginated:', error);
+      throw error;
+    }
+  }
 }

@@ -149,4 +149,41 @@ export class ContactsController {
       res.status(500).json({ error: error.message || "Internal server error" });
     }
   }
+
+  async getContactsPaginated(req: Request, res: Response) {
+    try {
+      const { clinic_id, page = 1, limit = 25, status, search } = req.query;
+      
+      if (!clinic_id) {
+        return res.status(400).json({ error: 'clinic_id is required' });
+      }
+
+      const clinicId = parseInt(clinic_id as string);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: 'Invalid clinic ID' });
+      }
+
+      const paginationParams = {
+        page: parseInt(page as string),
+        limit: Math.min(parseInt(limit as string), 100),
+        offset: (parseInt(page as string) - 1) * parseInt(limit as string)
+      };
+
+      const filters = {
+        status: status as string,
+        search: search as string
+      };
+
+      const result = await this.service.getContactsPaginated(
+        clinicId,
+        paginationParams,
+        filters
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error fetching paginated contacts:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch contacts' });
+    }
+  }
 }
