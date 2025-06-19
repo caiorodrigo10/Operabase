@@ -182,11 +182,15 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
         contact_id: parseInt(data.contact_id),
         user_id: parseInt(data.user_id),
         clinic_id: 1,
+        type: data.type,
         appointment_type: data.type,
         specialty: data.type,
-        scheduled_date: `${data.scheduled_date} ${data.scheduled_time}:00`,
+        scheduled_date: data.scheduled_date, // Keep date as YYYY-MM-DD
+        scheduled_time: data.scheduled_time, // Keep time as HH:MM
+        duration: parseInt(data.duration),
         duration_minutes: parseInt(data.duration),
         status: "agendada",
+        notes: data.notes || null,
         session_notes: data.notes || null,
         tag_id: data.tag_id ? parseInt(data.tag_id) : null,
       };
