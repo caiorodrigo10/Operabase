@@ -270,7 +270,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   // Get all templates for a clinic
   app.get('/api/anamnesis/templates', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
@@ -299,7 +299,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   // Initialize default templates for a clinic
   app.post('/api/anamnesis/templates/init', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
@@ -342,7 +342,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   // Create new custom template
   app.post('/api/anamnesis/templates', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
@@ -374,7 +374,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   app.post('/api/contacts/:contactId/anamnesis', isAuthenticated, hasClinicAccess('contactId'), async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       const { template_id } = req.body;
 
       if (!userId) {
@@ -395,7 +395,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
 
       const result = await db.insert(anamnesis_responses).values({
         contact_id: contactId,
-        clinic_id: clinicId,
+        clinic_id: clinicAccess.clinicId,
         template_id: parseInt(template_id),
         responses: {},
         status: 'pending',
@@ -415,10 +415,15 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   app.get('/api/contacts/:contactId/anamnesis', isAuthenticated, hasClinicAccess('contactId'), async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
-      const clinicId = req.user?.clinic_id;
+      const userId = (req.user as any)?.id;
 
-      if (!clinicId) {
-        return res.status(400).json({ error: 'Clinic ID required' });
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const clinicAccess = await getUserClinicAccess(userId);
+      if (!clinicAccess) {
+        return res.status(403).json({ error: 'No clinic access' });
       }
 
       const anamneses = await db
@@ -437,7 +442,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         .leftJoin(anamnesis_templates, eq(anamnesis_responses.template_id, anamnesis_templates.id))
         .where(and(
           eq(anamnesis_responses.contact_id, contactId),
-          eq(anamnesis_responses.clinic_id, clinicId)
+          eq(anamnesis_responses.clinic_id, clinicAccess.clinicId)
         ))
         .orderBy(desc(anamnesis_responses.created_at));
 
@@ -452,10 +457,15 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   app.get('/api/anamnesis/:responseId', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const responseId = parseInt(req.params.responseId);
-      const clinicId = req.user?.clinic_id;
+      const userId = (req.user as any)?.id;
 
-      if (!clinicId) {
-        return res.status(400).json({ error: 'Clinic ID required' });
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const clinicAccess = await getUserClinicAccess(userId);
+      if (!clinicAccess) {
+        return res.status(403).json({ error: 'No clinic access' });
       }
 
       const result = await db
@@ -479,7 +489,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         .leftJoin(anamnesis_templates, eq(anamnesis_responses.template_id, anamnesis_templates.id))
         .where(and(
           eq(anamnesis_responses.id, responseId),
-          eq(anamnesis_responses.clinic_id, clinicId)
+          eq(anamnesis_responses.clinic_id, clinicAccess.clinicId)
         ));
 
       if (result.length === 0) {
@@ -587,17 +597,22 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   app.delete('/api/anamnesis/:responseId', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const responseId = parseInt(req.params.responseId);
-      const clinicId = req.user?.clinic_id;
+      const userId = (req.user as any)?.id;
 
-      if (!clinicId) {
-        return res.status(400).json({ error: 'Clinic ID required' });
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const clinicAccess = await getUserClinicAccess(userId);
+      if (!clinicAccess) {
+        return res.status(403).json({ error: 'No clinic access' });
       }
 
       await db
         .delete(anamnesis_responses)
         .where(and(
           eq(anamnesis_responses.id, responseId),
-          eq(anamnesis_responses.clinic_id, clinicId)
+          eq(anamnesis_responses.clinic_id, clinicAccess.clinicId)
         ));
 
       res.json({ message: 'Anamnesis deleted successfully' });
