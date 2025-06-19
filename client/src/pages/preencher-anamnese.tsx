@@ -330,7 +330,7 @@ export default function PreencherAnamnese() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 bg-white min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
