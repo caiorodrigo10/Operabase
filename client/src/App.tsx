@@ -140,6 +140,7 @@ function Router() {
         <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
+        <Route path="/public/anamnese/:token" component={AnamnesisPublica} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
