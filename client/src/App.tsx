@@ -148,7 +148,15 @@ function Router() {
 }
 
 function GleapWrapper() {
-  useGleap(); // Initialize Gleap with user data
+  const [location] = useLocation();
+  
+  // Don't initialize Gleap for public anamnesis pages
+  const isPublicPage = location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/');
+  
+  if (!isPublicPage) {
+    useGleap(); // Initialize Gleap with user data only for internal pages
+  }
+  
   return <Router />;
 }
 

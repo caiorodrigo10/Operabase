@@ -33,7 +33,7 @@ export default function AnamnesisPublica() {
   const token = window.location.pathname.split('/').pop();
   
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
-  const [contactName, setContactName] = useState('');
+  const [clinicName, setClinicName] = useState('');
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -55,12 +55,8 @@ export default function AnamnesisPublica() {
       const data = await response.json();
       setAnamnesis(data);
       
-      // Fetch contact name if contact_id exists
-      if (data.contact_id) {
-        fetchContactName(data.contact_id);
-      } else {
-        setContactName('Paciente');
-      }
+      // Set clinic name - since this is an external form, show clinic name
+      setClinicName('Clínica');
     } catch (error) {
       console.error('Error fetching anamnesis:', error);
       toast({
@@ -73,18 +69,7 @@ export default function AnamnesisPublica() {
     }
   };
 
-  const fetchContactName = async (contactId: number) => {
-    try {
-      const response = await fetch(`/api/public/contact/${contactId}/name`);
-      if (response.ok) {
-        const data = await response.json();
-        setContactName(data.name || 'Paciente');
-      }
-    } catch (error) {
-      console.error('Error fetching contact name:', error);
-      setContactName('Paciente');
-    }
-  };
+
 
   const handleResponseChange = (questionId: string, value: string) => {
     setResponses(prev => ({
@@ -110,7 +95,7 @@ export default function AnamnesisPublica() {
         },
         body: JSON.stringify({
           responses,
-          patient_name: contactName,
+          patient_name: 'Paciente',
         })
       });
 
@@ -264,10 +249,10 @@ export default function AnamnesisPublica() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50">
-        {/* Patient name header */}
+        {/* Clinic name header */}
         <div className="bg-blue-600 text-white py-4">
           <div className="max-w-3xl mx-auto px-6">
-            <h1 className="text-lg font-medium text-center">{contactName}</h1>
+            <h1 className="text-lg font-medium text-center">{clinicName}</h1>
           </div>
         </div>
 
@@ -283,15 +268,6 @@ export default function AnamnesisPublica() {
 
             {/* Questions */}
             <div className="space-y-8">
-              {/* Debug info */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="bg-yellow-50 p-4 rounded text-xs">
-                  <p>Debug - Template: {anamnesis.template_name}</p>
-                  <p>Questions count: {anamnesis.template_fields?.questions?.length || 0}</p>
-                  <p>Questions exist: {!!anamnesis.template_fields?.questions ? 'Yes' : 'No'}</p>
-                </div>
-              )}
-              
               {anamnesis.template_fields?.questions?.map((question, index) => (
                 <div key={question.id} className="bg-gray-50 rounded-lg p-6">
                   <Label className="text-base font-medium text-gray-900 block mb-4">
