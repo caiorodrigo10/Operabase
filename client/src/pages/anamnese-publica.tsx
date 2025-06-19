@@ -49,9 +49,37 @@ export default function AnamnesisPublica() {
   const fetchAnamnesis = async () => {
     try {
       const response = await fetch(`/api/public/anamnesis/${token}`);
+      
       if (!response.ok) {
-        throw new Error('Anamnese não encontrada');
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 410) {
+          if (errorData.error === 'Anamnesis already completed') {
+            setShowSuccessScreen(true);
+            setClinicName('Clínica');
+            return;
+          } else if (errorData.error === 'Anamnesis expired') {
+            toast({
+              title: "Link expirado",
+              description: "Este link de anamnese expirou. Entre em contato com a clínica.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+        
+        if (response.status === 404) {
+          toast({
+            title: "Link inválido",
+            description: "Este link de anamnese não é válido ou foi removido.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        throw new Error('Erro ao carregar anamnese');
       }
+      
       const data = await response.json();
       setAnamnesis(data);
       
