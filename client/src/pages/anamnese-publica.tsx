@@ -15,11 +15,11 @@ interface AnamnesisQuestion {
 
 interface AnamnesisData {
   id: number;
-  contact_id: number;
+  contact_id?: number;
   template_name: string;
   template_fields: {
     questions: AnamnesisQuestion[];
-  };
+  } | null;
   status: string;
   expires_at: string;
 }
@@ -50,9 +50,11 @@ export default function AnamnesisPublica() {
       const data = await response.json();
       setAnamnesis(data);
       
-      // Fetch contact name
+      // Fetch contact name if contact_id exists
       if (data.contact_id) {
         fetchContactName(data.contact_id);
+      } else {
+        setContactName('Paciente');
       }
     } catch (error) {
       console.error('Error fetching anamnesis:', error);
@@ -243,7 +245,7 @@ export default function AnamnesisPublica() {
 
           {/* Questions */}
           <div className="space-y-8">
-            {anamnesis.template_fields.questions.map((question, index) => (
+            {anamnesis.template_fields?.questions?.map((question, index) => (
               <div key={question.id} className="bg-gray-50 rounded-lg p-6">
                 <Label className="text-base font-medium text-gray-900 block mb-4">
                   {question.text}

@@ -516,24 +516,29 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
     try {
       const token = req.params.token;
 
-      const result = await db
-        .select({
-          id: anamnesis_responses.id,
-          template_name: anamnesis_templates.name,
-          template_fields: anamnesis_templates.fields,
-          status: anamnesis_responses.status,
-          patient_name: anamnesis_responses.patient_name,
-          expires_at: anamnesis_responses.expires_at
-        })
-        .from(anamnesis_responses)
-        .leftJoin(anamnesis_templates, eq(anamnesis_responses.template_id, anamnesis_templates.id))
-        .where(eq(anamnesis_responses.share_token, token));
+      // Use direct SQL query to ensure proper joins
+      const client = await pool.connect();
+      const result = await client.query(`
+        SELECT 
+          ar.id,
+          ar.contact_id,
+          ar.template_id,
+          ar.status,
+          ar.patient_name,
+          ar.expires_at,
+          at.name as template_name,
+          at.fields as template_fields
+        FROM anamnesis_responses ar
+        LEFT JOIN anamnesis_templates at ON ar.template_id = at.id
+        WHERE ar.share_token = $1
+      `, [token]);
+      client.release();
 
-      if (result.length === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Anamnesis not found' });
       }
 
-      const anamnesis = result[0];
+      const anamnesis = result.rows[0];
 
       // Check if expired
       if (anamnesis.expires_at && new Date() > new Date(anamnesis.expires_at)) {
