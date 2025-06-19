@@ -316,11 +316,10 @@ export default function PreencherAnamnese() {
 
       case 'somente_texto':
         return (
-          <Textarea
+          <Input
             value={value}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
             placeholder="Digite sua resposta..."
-            rows={3}
             className="w-full"
           />
         );
