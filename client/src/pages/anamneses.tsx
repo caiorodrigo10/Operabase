@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Plus, FileText, Edit } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
+import { supabase } from '@/lib/supabase';
 
 interface AnamnesisTemplate {
   id: number;
@@ -34,8 +35,15 @@ export default function AnamnesisTemplatesPage() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['/api/anamneses'],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch('/api/anamneses', {
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch templates');

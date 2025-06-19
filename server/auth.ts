@@ -208,11 +208,50 @@ export function setupAuth(app: Express, storage: IStorage) {
   });
 }
 
-// Middleware to check if user is authenticated
-export const isAuthenticated = (req: any, res: any, next: any) => {
+// Middleware to check if user is authenticated (supports both session and Supabase token)
+export const isAuthenticated = async (req: any, res: any, next: any) => {
+  // Check session-based authentication first
   if (req.isAuthenticated()) {
     return next();
   }
+  
+  // Check Supabase token authentication
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    
+    try {
+      // Verify Supabase token and get user
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_ANON_KEY!
+      );
+      
+      const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
+      
+      if (error || !supabaseUser) {
+        return res.status(401).json({ error: "Token inválido" });
+      }
+      
+      // Get user from database by email
+      const storage = req.app.get('storage');
+      const user = await storage.getUserByEmail(supabaseUser.email);
+      
+      if (!user) {
+        return res.status(401).json({ error: "Usuário não encontrado" });
+      }
+      
+      // Set user in request for downstream middleware
+      req.user = user;
+      return next();
+      
+    } catch (error) {
+      console.error('Error verifying Supabase token:', error);
+      return res.status(401).json({ error: "Erro de autenticação" });
+    }
+  }
+  
   res.status(401).json({ error: "Acesso negado" });
 };
 
