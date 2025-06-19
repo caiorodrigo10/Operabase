@@ -836,18 +836,16 @@ export function ContatoDetalhes() {
       )}
 
       {/* Editor de Agendamento */}
-      {showAppointmentEditor && (
-        <AppointmentEditor
-          isOpen={showAppointmentEditor}
-          onClose={() => setShowAppointmentEditor(false)}
-          preselectedContact={contact}
-          onSave={() => {
-            // Refresh appointments data after saving
-            queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
-            setShowAppointmentEditor(false);
-          }}
-        />
-      )}
+      <AppointmentEditor
+        isOpen={showAppointmentEditor}
+        onClose={() => setShowAppointmentEditor(false)}
+        preselectedContact={contact}
+        onSave={() => {
+          // Refresh appointments data after saving
+          queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+          setShowAppointmentEditor(false);
+        }}
+      />
     </div>
   );
 }

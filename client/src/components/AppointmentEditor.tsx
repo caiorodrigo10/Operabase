@@ -174,37 +174,125 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
     },
   });
 
-  // Handle availability check
-  const handleAvailabilityCheck = async (data: AppointmentFormData) => {
-    if (!data.user_id || !data.scheduled_date || !data.scheduled_time || !data.duration) {
+  // Form instance for appointment creation
+  const form = useForm<AppointmentFormData>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      contact_id: "",
+      user_id: "",
+      type: "consulta",
+      scheduled_date: "",
+      scheduled_time: "",
+      duration: "60",
+      tag_id: "",
+      notes: "",
+    },
+  });
+
+  // Watch form fields for availability checking
+  const watchedDate = form.watch("scheduled_date");
+  const watchedTime = form.watch("scheduled_time");
+  const watchedDuration = form.watch("duration");
+  const watchedProfessionalId = form.watch("user_id");
+
+  // Set preselected contact
+  useEffect(() => {
+    if (preselectedContact) {
+      form.setValue('contact_id', preselectedContact.id.toString());
+    }
+  }, [preselectedContact, form]);
+
+  // Handle availability check with useAvailabilityCheck hook
+  const availabilityCheckHook = useAvailabilityCheck();
+
+  const checkAvailability = React.useCallback(async (date: string, time: string, duration: string, professionalName?: string) => {
+    if (!date || !time || !duration) {
       setAvailabilityConflict(null);
-      setWorkingHoursWarning(null);
+      setIsCheckingAvailability(false);
       return;
     }
 
     setIsCheckingAvailability(true);
-    
+    const startDateTime = new Date(`${date}T${time}`);
+    const durationMinutes = parseInt(duration);
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+
     try {
-      const result = await checkAvailability({
-        user_id: parseInt(data.user_id),
-        scheduled_date: data.scheduled_date,
-        scheduled_time: data.scheduled_time,
-        duration: parseInt(data.duration),
-        appointment_id: appointmentId, // For editing existing appointments
+      const result = await availabilityCheckHook.mutateAsync({
+        startDateTime: startDateTime.toISOString(),
+        endDateTime: endDateTime.toISOString(),
+        professionalName: professionalName
       });
 
-      setAvailabilityConflict(result.conflict);
-      setWorkingHoursWarning(result.workingHoursWarning);
+      if (result.conflict) {
+        setAvailabilityConflict({
+          hasConflict: true,
+          message: `Conflito detectado: ${result.conflictType}`,
+          conflictType: result.conflictType
+        });
+      } else {
+        setAvailabilityConflict({
+          hasConflict: false,
+          message: "Horário disponível",
+          conflictType: undefined
+        });
+      }
     } catch (error) {
-      console.error('Error checking availability:', error);
+      console.error('Erro ao verificar disponibilidade:', error);
+      setAvailabilityConflict(null);
     } finally {
       setIsCheckingAvailability(false);
     }
-  };
+  }, [availabilityCheckHook]);
+
+  // Helper function to get professional name by ID
+  const getProfessionalNameById = React.useCallback((userId: string | number) => {
+    if (!userId) return null;
+    const user = clinicUsers.find((u: any) => (u.id || u.user_id)?.toString() === userId.toString());
+    return user?.name || null;
+  }, [clinicUsers]);
+
+  // Separate effect for professional selection - immediate response
+  useEffect(() => {
+    const professionalName = getProfessionalNameById(watchedProfessionalId);
+    
+    if (!watchedProfessionalId || !professionalName) {
+      setAvailabilityConflict({
+        hasConflict: true,
+        message: "Selecione um profissional antes de verificar disponibilidade",
+        conflictType: "no_professional"
+      });
+    } else {
+      // Professional selected - clear the warning immediately
+      if (availabilityConflict?.conflictType === "no_professional") {
+        setAvailabilityConflict(null);
+      }
+    }
+  }, [watchedProfessionalId]);
+
+  // Separate effect for date/time changes - with debounce
+  useEffect(() => {
+    if (!watchedProfessionalId) return;
+    
+    const professionalName = getProfessionalNameById(watchedProfessionalId);
+    if (!professionalName) return;
+
+    const timeoutId = setTimeout(() => {
+      if (watchedDate && watchedTime && watchedDuration) {
+        checkAvailability(watchedDate, watchedTime, watchedDuration, professionalName);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId]);
 
   // Handle form submission
-  const handleSubmit = (data: any) => {
-    createAppointmentMutation.mutate(data);
+  const handleSubmit = (data: AppointmentFormData) => {
+    const formattedData = {
+      ...data,
+      tag_id: data.tag_id ? parseInt(data.tag_id) : undefined,
+    };
+    createAppointmentMutation.mutate(formattedData);
   };
 
   // Handle new patient creation
@@ -230,6 +318,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
           </DialogHeader>
 
           <AppointmentForm
+            form={form}
             onSubmit={handleSubmit}
             isSubmitting={createAppointmentMutation.isPending}
             submitButtonText="Agendar Consulta"
@@ -239,13 +328,12 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
             showCancelButton={true}
             showFindTimeButton={true}
             onFindTimeClick={handleFindTimeClick}
+            patientForm={patientForm}
             setShowNewPatientDialog={setShowNewPatientDialog}
+            setFindTimeSlotsOpen={setFindTimeSlotsOpen}
             availabilityConflict={availabilityConflict}
             isCheckingAvailability={isCheckingAvailability}
             workingHoursWarning={workingHoursWarning}
-            onAvailabilityCheck={handleAvailabilityCheck}
-            contacts={contacts}
-            clinicUsers={clinicUsers}
           />
         </DialogContent>
       </Dialog>

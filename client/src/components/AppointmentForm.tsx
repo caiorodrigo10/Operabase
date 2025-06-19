@@ -31,6 +31,7 @@ const appointmentFormSchema = z.object({
 type AppointmentFormData = z.infer<typeof appointmentFormSchema>;
 
 interface AppointmentFormProps {
+  form?: any; // Optional form instance
   onSubmit: (data: AppointmentFormData) => void;
   isSubmitting?: boolean;
   submitButtonText?: string;
@@ -49,6 +50,7 @@ interface AppointmentFormProps {
 }
 
 export function AppointmentForm({
+  form: externalForm,
   onSubmit,
   isSubmitting = false,
   submitButtonText = "Agendar Consulta",
@@ -70,7 +72,8 @@ export function AppointmentForm({
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
 
-  const form = useForm<AppointmentFormData>({
+  // Use external form if provided, otherwise create internal form
+  const internalForm = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentFormSchema),
     defaultValues: {
       contact_id: "",
@@ -83,6 +86,8 @@ export function AppointmentForm({
       notes: "",
     },
   });
+
+  const form = externalForm || internalForm;
 
   const watchedDate = form.watch("scheduled_date");
   const watchedDuration = form.watch("duration");
