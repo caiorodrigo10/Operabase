@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from './db.js';
+import { PaginatedResponse, PaginationParams, calculatePagination, getPaginationOffset } from './shared/types/pagination.types.js';
 
 /**
  * Sistema de Otimização de Performance
@@ -49,7 +50,89 @@ class PerformanceOptimizer {
   }
 
   /**
-   * Busca otimizada de contatos com cache e índices
+   * Busca paginada e otimizada de contatos com cache
+   */
+  async getContactsPaginated(clinicId: number, pagination: PaginationParams, filters?: {
+    search?: string;
+    status?: string;
+  }): Promise<PaginatedResponse<any>> {
+    const { page = 1, limit = 25 } = pagination;
+    const offset = getPaginationOffset(page, limit);
+    
+    const cacheKey = this.getCacheKey('contacts_paginated', { 
+      clinicId, 
+      page, 
+      limit, 
+      ...filters 
+    });
+    const cached = this.getCache(cacheKey);
+    if (cached) return cached;
+
+    const { search, status } = filters || {};
+    
+    // First get total count
+    let countQuery = sql`
+      SELECT COUNT(*) as total
+      FROM contacts 
+      WHERE clinic_id = ${clinicId}
+    `;
+
+    const countConditions = [];
+    if (search && search.trim()) {
+      countConditions.push(sql`(
+        name ILIKE ${`%${search}%`} OR 
+        phone ILIKE ${`%${search}%`} OR 
+        email ILIKE ${`%${search}%`}
+      )`);
+    }
+
+    if (status && status !== 'all') {
+      countConditions.push(sql`status = ${status}`);
+    }
+
+    if (countConditions.length > 0) {
+      countQuery = sql`${countQuery} AND ${sql.join(countConditions, sql` AND `)}`;
+    }
+
+    const countResult = await db.execute(countQuery);
+    const totalItems = parseInt(countResult.rows[0]?.total || '0');
+
+    // Then get paginated data
+    let dataQuery = sql`
+      SELECT 
+        id, name, phone, email, status, last_interaction,
+        profession, created_at
+      FROM contacts 
+      WHERE clinic_id = ${clinicId}
+    `;
+
+    if (countConditions.length > 0) {
+      dataQuery = sql`${dataQuery} AND ${sql.join(countConditions, sql` AND `)}`;
+    }
+
+    dataQuery = sql`
+      ${dataQuery}
+      ORDER BY last_interaction DESC NULLS LAST
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const dataResult = await db.execute(dataQuery);
+    const pagination_meta = calculatePagination(page, limit, totalItems);
+
+    const result: PaginatedResponse<any> = {
+      data: dataResult.rows,
+      pagination: pagination_meta
+    };
+    
+    // Cache with shorter TTL for searches
+    const ttl = search ? this.SHORT_TTL : this.DEFAULT_TTL;
+    this.setCache(cacheKey, result, ttl);
+    
+    return result;
+  }
+
+  /**
+   * Legacy method - maintaining backward compatibility
    */
   async getContactsOptimized(clinicId: number, filters?: {
     search?: string;

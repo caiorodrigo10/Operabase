@@ -7,7 +7,39 @@ import { isAuthenticated } from './auth.js';
  */
 export function setupOptimizedRoutes(app: any) {
   
-  // Rota otimizada para contatos
+  // Rota otimizada para contatos com paginação
+  app.get('/api/contacts/paginated', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { clinic_id, search, status, page, limit } = req.query;
+      
+      if (!clinic_id) {
+        return res.status(400).json({ error: 'clinic_id é obrigatório' });
+      }
+
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 25,
+      };
+
+      const filters = {
+        search: search as string,
+        status: status as string,
+      };
+
+      const result = await performanceOptimizer.getContactsPaginated(
+        parseInt(clinic_id as string),
+        pagination,
+        filters
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error('Erro ao buscar contatos paginados:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
+  // Rota legacy otimizada para contatos (backward compatibility)
   app.get('/api/contacts/optimized', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { clinic_id, search, status, limit, offset } = req.query;
