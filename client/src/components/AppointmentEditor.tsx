@@ -381,97 +381,339 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
         </DialogContent>
       </Dialog>
 
-      {/* New Patient Dialog */}
+      {/* New Patient Dialog - Comprehensive Contact Form */}
       <Dialog open={showNewPatientDialog} onOpenChange={setShowNewPatientDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo Paciente</DialogTitle>
-            <DialogDescription>
-              Cadastre um novo paciente no sistema.
-            </DialogDescription>
+            <DialogTitle>Cadastrar novo paciente</DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={patientForm.handleSubmit(handleCreatePatient)} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Nome *</label>
-              <input
-                {...patientForm.register("name")}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Nome completo"
-              />
-              {patientForm.formState.errors.name && (
-                <p className="text-red-500 text-xs mt-1">{patientForm.formState.errors.name.message}</p>
-              )}
-            </div>
+          <Form {...patientForm}>
+            <form onSubmit={patientForm.handleSubmit(handleCreatePatient)} className="space-y-6">
+              <Tabs value={patientFormTab} onValueChange={setPatientFormTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic">Informações básicas</TabsTrigger>
+                  <TabsTrigger value="additional">Informações complementares</TabsTrigger>
+                  <TabsTrigger value="insurance">Convênio</TabsTrigger>
+                </TabsList>
 
-            <div>
-              <label className="text-sm font-medium">Telefone *</label>
-              <input
-                {...patientForm.register("phone")}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="(00) 00000-0000"
-              />
-              {patientForm.formState.errors.phone && (
-                <p className="text-red-500 text-xs mt-1">{patientForm.formState.errors.phone.message}</p>
-              )}
-            </div>
+                {/* Tab 1: Basic Information */}
+                <TabsContent value="basic" className="space-y-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>* Nome completo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Digite o nome completo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gênero</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecionar gênero" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="masculino">Masculino</SelectItem>
+                              <SelectItem value="feminino">Feminino</SelectItem>
+                              <SelectItem value="outro">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-            <div>
-              <label className="text-sm font-medium">Email</label>
-              <input
-                {...patientForm.register("email")}
-                type="email"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="email@exemplo.com"
-              />
-              {patientForm.formState.errors.email && (
-                <p className="text-red-500 text-xs mt-1">{patientForm.formState.errors.email.message}</p>
-              )}
-            </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="email@exemplo.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Celular</FormLabel>
+                          <FormControl>
+                            <Input placeholder="(11) 99999-9999" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Idade</label>
-                <input
-                  {...patientForm.register("age")}
-                  type="number"
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Idade"
-                />
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="cpf"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CPF</FormLabel>
+                          <FormControl>
+                            <Input placeholder="000.000.000-00" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="rg"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RG</FormLabel>
+                          <FormControl>
+                            <Input placeholder="00.000.000-0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="birth_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de nascimento</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div>
-                <label className="text-sm font-medium">Gênero</label>
-                <select
-                  {...patientForm.register("gender")}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="profession"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Profissão</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Digite a profissão" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="how_found_clinic"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Como conheceu a clínica?</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Referência, pesquisa, etc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Tab 2: Additional Information */}
+                <TabsContent value="additional" className="space-y-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="emergency_contact_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do contato de emergência</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome do responsável" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="emergency_contact_phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone do contato de emergência</FormLabel>
+                          <FormControl>
+                            <Input placeholder="(11) 99999-9999" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="zip_code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CEP</FormLabel>
+                          <FormControl>
+                            <Input placeholder="00000-000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cidade</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Digite a cidade" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado</FormLabel>
+                          <FormControl>
+                            <Input placeholder="SP" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={patientForm.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Endereço</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Rua, número" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={patientForm.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Observações</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Informações adicionais sobre o paciente..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+
+                {/* Tab 3: Insurance Information */}
+                <TabsContent value="insurance" className="space-y-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="insurance_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de convênio</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome do convênio" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={patientForm.control}
+                      name="insurance_number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número da carteirinha</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Número do convênio" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={patientForm.control}
+                    name="insurance_holder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Titular do convênio</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do titular" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+              </Tabs>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowNewPatientDialog(false)}
+                  disabled={createPatientMutation.isPending}
                 >
-                  <option value="">Selecione</option>
-                  <option value="masculino">Masculino</option>
-                  <option value="feminino">Feminino</option>
-                  <option value="outro">Outro</option>
-                </select>
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createPatientMutation.isPending}
+                >
+                  {createPatientMutation.isPending ? "Cadastrando..." : "Cadastrar Paciente"}
+                </Button>
               </div>
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowNewPatientDialog(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                disabled={createPatientMutation.isPending}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                disabled={createPatientMutation.isPending}
-              >
-                {createPatientMutation.isPending ? "Cadastrando..." : "Cadastrar"}
-              </button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
