@@ -8,10 +8,12 @@ import {
   MessageCircle, 
   RotateCcw, 
   Settings,
-  Stethoscope
+  Stethoscope,
+  Building
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/contexts/AdminContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -73,6 +75,7 @@ const iconButtons = [
 export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
   const [location] = useLocation();
   const { user, signOut } = useAuth();
+  const { isAdminView, toggleAdminView } = useAdmin();
   const { toast } = useToast();
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
