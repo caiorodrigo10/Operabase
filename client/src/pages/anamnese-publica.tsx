@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface AnamnesisQuestion {
   id: string;
@@ -25,9 +26,9 @@ interface AnamnesisData {
 }
 
 export default function AnamnesisPublica() {
-  const params = useParams();
   const { toast } = useToast();
-  const token = params.token;
+  // Extract token from URL directly since we're outside the routing context
+  const token = window.location.pathname.split('/').pop();
   
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [contactName, setContactName] = useState('');
@@ -225,51 +226,52 @@ export default function AnamnesisPublica() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Patient name header */}
-      <div className="bg-blue-600 text-white py-4">
-        <div className="max-w-3xl mx-auto px-6">
-          <h1 className="text-lg font-medium text-center">{contactName}</h1>
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Patient name header */}
+        <div className="bg-blue-600 text-white py-4">
+          <div className="max-w-3xl mx-auto px-6">
+            <h1 className="text-lg font-medium text-center">{contactName}</h1>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="max-w-3xl mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Anamnese</h2>
+              <p className="text-gray-600">
+                Olá, assim que você preencher a anamnese o profissional irá receber os dados.
+              </p>
+            </div>
+
+            {/* Questions */}
+            <div className="space-y-8">
+              {anamnesis.template_fields?.questions?.map((question, index) => (
+                <div key={question.id} className="bg-gray-50 rounded-lg p-6">
+                  <Label className="text-base font-medium text-gray-900 block mb-4">
+                    {question.text}
+                    {question.required && <span className="text-red-500 ml-1">*</span>}
+                  </Label>
+                  {renderQuestion(question)}
+                </div>
+              ))}
+            </div>
+
+            {/* Submit button */}
+            <div className="mt-8 flex justify-end">
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="bg-blue-600 hover:bg-blue-700 px-8"
+              >
+                {submitting ? 'Enviando...' : 'Enviar →'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Main content */}
-      <div className="max-w-3xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Anamnese</h2>
-            <p className="text-gray-600">
-              Olá, assim que você preencher a anamnese o profissional irá receber os dados.
-            </p>
-          </div>
-
-          {/* Questions */}
-          <div className="space-y-8">
-            {anamnesis.template_fields?.questions?.map((question, index) => (
-              <div key={question.id} className="bg-gray-50 rounded-lg p-6">
-                <Label className="text-base font-medium text-gray-900 block mb-4">
-                  {question.text}
-                  {question.required && <span className="text-red-500 ml-1">*</span>}
-                </Label>
-                {renderQuestion(question)}
-              </div>
-            ))}
-          </div>
-
-          {/* Submit button */}
-          <div className="mt-8 flex justify-end">
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="bg-blue-600 hover:bg-blue-700 px-8"
-            >
-              {submitting ? 'Enviando...' : 'Enviar →'}
-            </Button>
-          </div>
-
-
-        </div>
-      </div>
-    </div>
+      <Toaster />
+    </TooltipProvider>
   );
 }
