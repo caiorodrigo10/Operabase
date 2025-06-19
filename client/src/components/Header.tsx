@@ -189,6 +189,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   (item.key === "admin-dashboard" && location === "/admin") ||
                   (item.key === "contatos" && location.startsWith("/contatos")) ||
                   (item.key === "consultas" && location.startsWith("/consultas")) ||
+                  (item.key === "anamneses" && location.startsWith("/anamneses")) ||
                   (item.key === "admin-clinics" && location.startsWith("/admin/clinics")) ||
                   (item.key === "admin-users" && location.startsWith("/admin/users")) ||
                   (item.key === "admin-settings" && location.startsWith("/admin/settings"));
