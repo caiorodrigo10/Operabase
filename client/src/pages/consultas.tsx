@@ -779,11 +779,16 @@ export function Consultas() {
     const formattedDate = format(date, 'yyyy-MM-dd');
     const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     
-    // Pre-fill the form with selected date and time
+    // Pre-fill the form with selected date, time, and professional
     form.setValue("scheduled_date", formattedDate);
     form.setValue("scheduled_time", formattedTime);
     form.setValue("duration", "30"); // Default duration
     form.setValue("type", "consulta"); // Default type
+    
+    // Pre-fill the selected professional if one is selected
+    if (selectedProfessional) {
+      form.setValue("user_id", selectedProfessional.toString());
+    }
     
     setIsCreateDialogOpen(true);
   };
