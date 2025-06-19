@@ -1296,7 +1296,7 @@ export function Consultas() {
 
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6 pt-20">
       {/* Header Section */}
       <div className="mb-6 flex justify-between items-start">
         <div>
