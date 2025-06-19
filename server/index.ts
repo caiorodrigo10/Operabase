@@ -117,6 +117,10 @@ app.use((req, res, next) => {
   const { setupAnamnesisRoutes } = await import('./anamnesis-routes');
   setupAnamnesisRoutes(app, storage);
   
+  // Add Anamnesis Management routes
+  const { setupAnamnesisManagementRoutes } = await import('./anamneses-routes');
+  setupAnamnesisManagementRoutes(app, storage);
+  
   // Initialize anamnesis system
   try {
     const { initializeAnamnesisSystem } = await import('./anamnesis-setup');
