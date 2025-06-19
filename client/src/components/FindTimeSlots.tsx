@@ -315,7 +315,7 @@ export function FindTimeSlots({ selectedDate, duration, professionalName, onTime
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <DialogHeader className="mb-6">
-        <DialogTitle className="text-2xl">Procurar Horários Disponíveis</DialogTitle>
+        <DialogTitle className="text-2xl">Encontrar Horários Disponíveis</DialogTitle>
         <p className="text-slate-600">
           Selecione um horário para a consulta de {duration} minutos
         </p>

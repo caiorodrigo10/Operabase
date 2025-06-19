@@ -525,16 +525,19 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
           </DialogHeader>
           
           <FindTimeSlots
-            onClose={() => setFindTimeSlotsOpen(false)}
-            onTimeSelect={(date: string, time: string, duration: number, professionalId: number) => {
+            selectedDate={watchedDate || ''}
+            duration={parseInt(watchedDuration) || 30}
+            professionalName={getProfessionalNameById(watchedProfessionalId)}
+            onTimeSelect={(time, date) => {
               form.setValue("scheduled_time", time);
               form.setValue("scheduled_date", date);
               setFindTimeSlotsOpen(false);
               toast({
                 title: "Horário selecionado",
-                description: `${format(new Date(date), 'dd/MM/yyyy')} às ${time} - ${duration} minutos`,
+                description: `${format(new Date(date), 'dd/MM/yyyy')} às ${time}`,
               });
             }}
+            onClose={() => setFindTimeSlotsOpen(false)}
           />
         </DialogContent>
       </Dialog>
