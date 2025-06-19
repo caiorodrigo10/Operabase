@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +74,7 @@ export function ContatoDetalhes() {
   const params = useParams();
   const [, setLocation] = useLocation();
   const contactId = parseInt(params.id || '0');
+  const queryClient = useQueryClient();
 
   // Mara AI conversation state
   const [maraConversation, setMaraConversation] = useState<Array<{role: 'user' | 'assistant', content: string, timestamp: Date}>>([
@@ -583,7 +584,11 @@ export function ContatoDetalhes() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-semibold text-slate-900">Histórico de consultas</h2>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowAppointmentEditor(true)}
+                      >
                         <Plus className="w-4 h-4 mr-2" />
                         Adicionar
                       </Button>
@@ -827,6 +832,19 @@ export function ContatoDetalhes() {
           contactName={contact?.name || 'Paciente'}
           appointments={appointments}
           onClose={() => setShowEvolucaoEditor(false)}
+        />
+      )}
+
+      {/* Editor de Agendamento */}
+      {showAppointmentEditor && (
+        <AppointmentEditor
+          isOpen={showAppointmentEditor}
+          onClose={() => setShowAppointmentEditor(false)}
+          preselectedContact={contact}
+          onSave={() => {
+            // Refresh appointments data after saving
+            queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+          }}
         />
       )}
     </div>
