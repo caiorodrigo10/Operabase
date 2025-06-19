@@ -34,7 +34,7 @@ import { ContactAvatar } from "@/components/ContactAvatar";
 import EvolucaoEditor from "@/components/EvolucaoEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import ProntuarioMedico from "@/components/ProntuarioMedico";
-import { AppointmentEditor } from "@/components/AppointmentEditor";
+import { AppointmentForm } from "@/components/AppointmentForm";
 
 interface Contact {
   id: number;
@@ -837,7 +837,7 @@ export function ContatoDetalhes() {
 
       {/* Editor de Agendamento */}
       {showAppointmentEditor && (
-        <AppointmentEditor
+        <AppointmentForm
           isOpen={showAppointmentEditor}
           onClose={() => setShowAppointmentEditor(false)}
           preselectedContact={contact}
