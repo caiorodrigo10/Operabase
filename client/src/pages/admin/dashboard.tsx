@@ -14,8 +14,17 @@ interface BasicAdminMetrics {
 export function AdminDashboard() {
   const { user } = useAuth();
   
+  // Dados mockados para o dashboard admin
+  const mockMetrics: BasicAdminMetrics = {
+    totalClinics: 3,
+    totalUsers: 25,
+    totalContacts: 1247,
+    totalAppointments: 8362
+  };
+
   const { data: metrics, isLoading, error } = useQuery<BasicAdminMetrics>({
     queryKey: ['/api/admin/dashboard'],
+    queryFn: () => Promise.resolve(mockMetrics), // Usando dados mockados
     enabled: user?.role === 'super_admin' || user?.role === 'admin' || user?.id === '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4' || user?.email === 'cr@caiorodrigo.com.br',
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
