@@ -19,8 +19,6 @@ interface Question {
   text: string;
   type: 'sim_nao_nao_sei' | 'sim_nao_nao_sei_texto' | 'somente_texto';
   required: boolean;
-  showAlert?: boolean;
-  alertText?: string;
   hasAdditional?: boolean;
   active?: boolean;
 }
@@ -190,8 +188,6 @@ export default function EditarAnamnesePage() {
     setQuestionForm({
       pergunta: question.text,
       tipo: question.type,
-      showAlert: question.showAlert || false,
-      alertText: question.alertText || '',
       addToAllTemplates: false
     });
     setIsAddQuestionOpen(true);
