@@ -161,7 +161,7 @@ export function Configuracoes() {
   // Update clinic configuration mutation
   const updateClinicMutation = useMutation({
     mutationFn: async (data: Partial<InsertClinic>) => {
-      const res = await apiRequest("PUT", "/api/clinic/1/config", data);
+      const res = await apiRequest("/api/clinic/1/config", "PUT", data);
       return res.json();
     },
     onSuccess: () => {
@@ -271,7 +271,7 @@ export function Configuracoes() {
 
   const connectCalendarMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("GET", "/api/calendar/auth/google");
+      const response = await apiRequest("/api/calendar/auth/google", "GET");
       const data = await response.json();
       window.location.href = data.authUrl;
     },
@@ -282,7 +282,7 @@ export function Configuracoes() {
 
   const updateSyncPreferencesMutation = useMutation({
     mutationFn: async ({ integrationId, syncPreference }: { integrationId: number; syncPreference: string }) => {
-      const response = await apiRequest("PUT", `/api/calendar/integrations/${integrationId}/sync`, {
+      const response = await apiRequest(`/api/calendar/integrations/${integrationId}/sync`, "PUT", {
         sync_preference: syncPreference,
       });
       return response.json();
@@ -295,7 +295,7 @@ export function Configuracoes() {
 
   const deleteCalendarMutation = useMutation({
     mutationFn: async (integrationId: number) => {
-      await apiRequest("DELETE", `/api/calendar/integrations/${integrationId}`);
+      await apiRequest(`/api/calendar/integrations/${integrationId}`, "DELETE");
     },
     onSuccess: () => {
       refetchIntegrations();
@@ -325,7 +325,7 @@ export function Configuracoes() {
 
   const forceRefreshMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/calendar/force-refresh");
+      const response = await apiRequest("/api/calendar/force-refresh", "POST");
       return response.json();
     },
     onSuccess: (data) => {
@@ -354,7 +354,7 @@ export function Configuracoes() {
       linkedCalendarId: string; 
       addEventsToCalendar: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/calendar/integrations/${integrationId}/linked-calendar`, {
+      const response = await apiRequest(`/api/calendar/integrations/${integrationId}/linked-calendar`, "PUT", {
         linkedCalendarId: addEventsToCalendar === "google-account" ? linkedCalendarId : null,
         addEventsToCalendar: addEventsToCalendar
       });
