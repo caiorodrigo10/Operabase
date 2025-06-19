@@ -13,11 +13,7 @@ interface AdminProviderProps {
 }
 
 export function AdminProvider({ children }: AdminProviderProps) {
-  const [isAdminView, setIsAdminView] = useState<boolean>(() => {
-    // Recupera o estado do localStorage na inicialização
-    const saved = localStorage.getItem('taskmed-admin-view');
-    return saved ? JSON.parse(saved) : false;
-  });
+  const [isAdminView, setIsAdminView] = useState<boolean>(false); // Always start with user view
 
   // Persiste o estado no localStorage sempre que mudar
   useEffect(() => {
