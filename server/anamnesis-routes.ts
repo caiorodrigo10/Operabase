@@ -480,39 +480,129 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
 
       // Use direct SQL query to ensure proper joins
       const client = await pool.connect();
-      const result = await client.query(`
-        SELECT 
-          ar.id,
-          ar.contact_id,
-          ar.template_id,
-          ar.status,
-          ar.patient_name,
-          ar.expires_at,
-          at.name as template_name,
-          at.fields as template_fields
-        FROM anamnesis_responses ar
-        LEFT JOIN anamnesis_templates at ON ar.template_id = at.id
-        WHERE ar.share_token = $1 AND ar.expires_at > NOW()
-      `, [token]);
-      client.release();
+      
+      try {
+        const result = await client.query(`
+          SELECT 
+            ar.id,
+            ar.contact_id,
+            ar.template_id,
+            ar.status,
+            ar.patient_name,
+            ar.expires_at,
+            at.name as template_name,
+            at.fields as template_fields
+          FROM anamnesis_responses ar
+          LEFT JOIN anamnesis_templates at ON ar.template_id = at.id
+          WHERE ar.share_token = $1 AND ar.expires_at > NOW()
+        `, [token]);
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Anamnesis not found' });
+        if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'Anamnesis not found' });
+        }
+
+        let anamnesis = result.rows[0];
+
+        // Check if expired
+        if (anamnesis.expires_at && new Date() > new Date(anamnesis.expires_at)) {
+          return res.status(410).json({ error: 'Anamnesis expired' });
+        }
+
+        // Check if already completed
+        if (anamnesis.status === 'completed') {
+          return res.status(410).json({ error: 'Anamnesis already completed' });
+        }
+
+        // If template is missing or has no fields, try to get a default template
+        if (!anamnesis.template_fields || !anamnesis.template_name) {
+          console.log(`Template ${anamnesis.template_id} not found, looking for default template`);
+          
+          // Get the first available template as fallback
+          const defaultTemplateResult = await client.query(`
+            SELECT id, name, fields
+            FROM anamnesis_templates
+            WHERE clinic_id = (
+              SELECT c.clinic_id 
+              FROM contacts c 
+              WHERE c.id = $1
+            )
+            ORDER BY created_at ASC
+            LIMIT 1
+          `, [anamnesis.contact_id]);
+
+          if (defaultTemplateResult.rows.length > 0) {
+            const defaultTemplate = defaultTemplateResult.rows[0];
+            anamnesis.template_name = defaultTemplate.name;
+            anamnesis.template_fields = defaultTemplate.fields;
+            
+            // Update the anamnesis_response to use the correct template
+            await client.query(`
+              UPDATE anamnesis_responses 
+              SET template_id = $1 
+              WHERE id = $2
+            `, [defaultTemplate.id, anamnesis.id]);
+            
+            console.log(`Updated anamnesis ${anamnesis.id} to use template ${defaultTemplate.id}`);
+          } else {
+            console.log('No templates found, creating default template');
+            
+            // Create a basic default template if none exists
+            const defaultFields = {
+              questions: [
+                {
+                  id: "nome_completo",
+                  text: "Nome completo",
+                  type: "text",
+                  required: true
+                },
+                {
+                  id: "idade",
+                  text: "Idade",
+                  type: "text",
+                  required: true
+                },
+                {
+                  id: "queixa_principal",
+                  text: "Qual é a sua queixa principal?",
+                  type: "text",
+                  required: true
+                }
+              ]
+            };
+
+            const createTemplateResult = await client.query(`
+              INSERT INTO anamnesis_templates (clinic_id, name, fields, created_at, updated_at)
+              VALUES (
+                (SELECT c.clinic_id FROM contacts c WHERE c.id = $1),
+                'Template Padrão',
+                $2,
+                NOW(),
+                NOW()
+              )
+              RETURNING id, name, fields
+            `, [anamnesis.contact_id, JSON.stringify(defaultFields)]);
+
+            if (createTemplateResult.rows.length > 0) {
+              const newTemplate = createTemplateResult.rows[0];
+              anamnesis.template_name = newTemplate.name;
+              anamnesis.template_fields = newTemplate.fields;
+              
+              // Update the anamnesis_response to use the new template
+              await client.query(`
+                UPDATE anamnesis_responses 
+                SET template_id = $1 
+                WHERE id = $2
+              `, [newTemplate.id, anamnesis.id]);
+              
+              console.log(`Created and assigned new template ${newTemplate.id} to anamnesis ${anamnesis.id}`);
+            }
+          }
+        }
+
+        res.json(anamnesis);
+      } finally {
+        client.release();
       }
-
-      const anamnesis = result.rows[0];
-
-      // Check if expired
-      if (anamnesis.expires_at && new Date() > new Date(anamnesis.expires_at)) {
-        return res.status(410).json({ error: 'Anamnesis expired' });
-      }
-
-      // Check if already completed
-      if (anamnesis.status === 'completed') {
-        return res.status(410).json({ error: 'Anamnesis already completed' });
-      }
-
-      res.json(anamnesis);
     } catch (error) {
       console.error('Error fetching public anamnesis:', error);
       res.status(500).json({ error: 'Failed to fetch anamnesis' });
