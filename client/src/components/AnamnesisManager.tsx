@@ -29,7 +29,7 @@ interface AnamnesisManagerProps {
 }
 
 export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
-  const [showCreator, setShowCreator] = useState(false);
+  const [, setLocation] = useLocation();
   const [showViewer, setShowViewer] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedAnamnesis, setSelectedAnamnesis] = useState<AnamnesisResponse | null>(null);
@@ -79,7 +79,7 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
   }, []);
 
   const handleCreateAnamnesis = () => {
-    setShowCreator(true);
+    setLocation(`/contatos/${contactId}/preencher-anamnese`);
   };
 
   const handleViewAnamnesis = (anamnesis: AnamnesisResponse) => {
@@ -236,22 +236,7 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
         </div>
       )}
 
-      {/* Anamnesis Creator Dialog */}
-      <Dialog open={showCreator} onOpenChange={setShowCreator}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Preencher anamnese</DialogTitle>
-          </DialogHeader>
-          <AnamnesisCreator 
-            contactId={contactId}
-            onSuccess={() => {
-              setShowCreator(false);
-              queryClient.invalidateQueries({ queryKey: ['/api/contacts', contactId, 'anamnesis'] });
-            }}
-            onCancel={() => setShowCreator(false)}
-          />
-        </DialogContent>
-      </Dialog>
+
 
       {/* Anamnesis Viewer Dialog */}
       <Dialog open={showViewer} onOpenChange={setShowViewer}>

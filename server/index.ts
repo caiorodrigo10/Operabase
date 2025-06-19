@@ -117,6 +117,15 @@ app.use((req, res, next) => {
   const { setupAnamnesisRoutes } = await import('./anamnesis-routes');
   setupAnamnesisRoutes(app, storage);
   
+  // Initialize anamnesis system
+  try {
+    const { initializeAnamnesisSystem } = await import('./anamnesis-setup');
+    await initializeAnamnesisSystem();
+    console.log('✅ Anamnesis system initialized');
+  } catch (error) {
+    console.error('❌ Error initializing anamnesis system:', error);
+  }
+  
   // Add Phase 3 observability endpoints
   const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
   app.use('/api/observability', observabilityRoutes);
