@@ -272,6 +272,30 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                       <span>Perfil</span>
                     </Link>
                   </DropdownMenuItem>
+                  
+                  {/* Admin Panel Toggle - Only show for user ID 4 */}
+                  {user?.id === "4" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={toggleAdminView}
+                        className="flex items-center w-full"
+                      >
+                        {isAdminView ? (
+                          <>
+                            <Building className="mr-2 h-4 w-4" />
+                            <span>Painel Usuário</span>
+                          </>
+                        ) : (
+                          <>
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Painel Admin</span>
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={handleLogout}

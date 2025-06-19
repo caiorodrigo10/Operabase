@@ -6,10 +6,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "@/components/AuthProvider";
+import { AdminProvider, useAdmin } from "@/contexts/AdminContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useGleap } from "@/hooks/useGleap";
 import { LoginForm } from "@/components/LoginForm";
 import { Layout } from "./components/Layout";
+import { AdminLayout } from "./components/AdminLayout";
 import { Dashboard } from "./pages/dashboard";
 import { Conversas } from "./pages/conversas";
 import { Pipeline } from "./pages/pipeline";
@@ -32,6 +34,7 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const [location] = useLocation();
   const { user, loading } = useAuth();
+  const { isAdminView } = useAdmin();
   
   console.log('🔍 Router state:', { user: !!user, loading, location });
   
@@ -66,6 +69,22 @@ function Router() {
 
   console.log('✅ User authenticated - showing main app');
 
+  // If user is in admin view, show admin layout
+  if (isAdminView) {
+    return (
+      <AdminLayout>
+        <Switch>
+          <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/clinics" component={() => <div>Admin Clinics Page</div>} />
+          <Route path="/admin/users" component={() => <div>Admin Users Page</div>} />
+          <Route path="/admin/settings" component={() => <div>Admin Settings Page</div>} />
+          <Route component={() => <AdminDashboard />} />
+        </Switch>
+      </AdminLayout>
+    );
+  }
+
+  // Default user layout
   return (
     <Layout currentPage={getCurrentPage()}>
       <Switch>
@@ -82,7 +101,6 @@ function Router() {
         <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
-        <Route path="/admin" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -98,10 +116,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <GleapWrapper />
-        </TooltipProvider>
+        <AdminProvider>
+          <TooltipProvider>
+            <Toaster />
+            <GleapWrapper />
+          </TooltipProvider>
+        </AdminProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
