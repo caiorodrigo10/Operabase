@@ -71,6 +71,9 @@ app.use((req, res, next) => {
   // Setup authentication
   setupAuth(app, storage);
   
+  // Make storage available to all routes
+  app.set('storage', storage);
+  
   // Apply Phase 3 observability middleware chain to all API routes
   app.use('/api', performanceTrackingMiddleware);
   app.use('/api', auditLoggingMiddleware);
