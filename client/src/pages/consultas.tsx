@@ -167,7 +167,6 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export function Consultas() {
-  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -505,16 +504,16 @@ export function Consultas() {
     },
   });
 
-  // Fetch appointments with optimized caching
-  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
+  // Fetch appointments with optimized caching (same pattern as contacts)
+  const { data: appointments = [] } = useQuery({
     queryKey: ['/api/appointments', { clinic_id: 1 }],
     queryFn: async () => {
       const response = await fetch('/api/appointments?clinic_id=1');
       if (!response.ok) throw new Error('Failed to fetch appointments');
       return response.json();
     },
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes - same as contacts
+    gcTime: 10 * 60 * 1000, // 10 minutes - same as contacts
     refetchOnWindowFocus: false,
   });
 
@@ -936,11 +935,7 @@ export function Consultas() {
     return () => clearTimeout(timeoutId);
   }, [watchedDate, watchedTime, watchedDuration, watchedProfessionalId]);
 
-  useEffect(() => {
-    if (!appointmentsLoading) {
-      setIsLoading(false);
-    }
-  }, [appointmentsLoading]);
+
 
   // Helper functions
   const getPatientName = (contactId: number, appointment?: Appointment) => {
@@ -1292,16 +1287,7 @@ export function Consultas() {
     });
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="p-4 lg:p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-1/4"></div>
-          <div className="h-64 bg-slate-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+
 
   const calendarDays = getCalendarDays();
 
