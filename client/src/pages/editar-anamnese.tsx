@@ -174,10 +174,8 @@ export default function EditarAnamnesePage() {
       });
       if (!response.ok) throw new Error('Failed to reorder questions');
       return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/anamneses', templateId, 'editar'] });
     }
+    // No onSuccess needed - using optimistic updates instead
   });
 
   function handleDragEnd(event: DragEndEvent) {
@@ -191,7 +189,28 @@ export default function EditarAnamnesePage() {
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(questions, oldIndex, newIndex);
         const questionIds = newOrder.map((q: any) => q.id);
-        reorderQuestionsMutation.mutate(questionIds);
+        
+        // Optimistically update the cache immediately
+        queryClient.setQueryData(['/api/anamneses', templateId, 'editar'], (oldData: any) => {
+          if (oldData) {
+            return {
+              ...oldData,
+              fields: {
+                ...oldData.fields,
+                questions: newOrder
+              }
+            };
+          }
+          return oldData;
+        });
+        
+        // Then make the API call in the background
+        reorderQuestionsMutation.mutate(questionIds, {
+          onError: () => {
+            // Revert optimistic update on error
+            queryClient.invalidateQueries({ queryKey: ['/api/anamneses', templateId, 'editar'] });
+          }
+        });
       }
     }
   }
