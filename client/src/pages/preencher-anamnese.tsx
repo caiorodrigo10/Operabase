@@ -264,22 +264,20 @@ export default function PreencherAnamnese() {
 
       case 'sim_nao_nao_sei':
         return (
-          <div className="space-y-3">
-            <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)} className="flex space-x-6">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
-                <Label htmlFor={`${question.id}-sim`} className="text-sm font-normal">Sim</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Não" id={`${question.id}-nao`} />
-                <Label htmlFor={`${question.id}-nao`} className="text-sm font-normal">Não</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Não sei" id={`${question.id}-nao-sei`} />
-                <Label htmlFor={`${question.id}-nao-sei`} className="text-sm font-normal">Não sei</Label>
-              </div>
-            </RadioGroup>
-          </div>
+          <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)} className="flex space-x-6">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
+              <Label htmlFor={`${question.id}-sim`} className="text-sm font-normal">Sim</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Não" id={`${question.id}-nao`} />
+              <Label htmlFor={`${question.id}-nao`} className="text-sm font-normal">Não</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Não sei" id={`${question.id}-nao-sei`} />
+              <Label htmlFor={`${question.id}-nao-sei`} className="text-sm font-normal">Não sei</Label>
+            </div>
+          </RadioGroup>
         );
 
       case 'sim_nao_nao_sei_texto':
@@ -300,8 +298,8 @@ export default function PreencherAnamnese() {
               </div>
             </RadioGroup>
             
-            <div className="mt-3">
-              <Label className="text-sm text-gray-600 mb-2 block">Informações adicionais</Label>
+            <div>
+              <Label className="text-sm text-gray-600 mb-1 block">Informações adicionais</Label>
               <Input
                 value={additionalValue}
                 onChange={(e) => handleResponseChange(`${question.id}_additional`, e.target.value)}
@@ -334,91 +332,74 @@ export default function PreencherAnamnese() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
-      <div className="flex items-center mb-6">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          className="mr-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
-        <h1 className="text-2xl font-semibold text-slate-900">Preencher anamnese</h1>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            onClick={handleBack}
+            className="mr-3 p-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Voltar
+          </Button>
+          <h1 className="text-xl font-semibold text-slate-900">Preencher anamnese</h1>
+        </div>
       </div>
 
-      {/* Template Selection */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="w-5 h-5 mr-2" />
-            Selecionar Modelo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="template-select">Modelo de Anamnese</Label>
-              <Select value={selectedTemplateId?.toString() || ''} onValueChange={handleTemplateChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha um modelo de anamnese" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map(template => (
-                    <SelectItem key={template.id} value={template.id.toString()}>
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedTemplate && (
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">{selectedTemplate.description}</p>
-              </div>
-            )}
-
-            {selectedTemplateId && (
-              <Button 
-                onClick={() => setLocation(`/anamnese-publica/preview/${contactId}/${selectedTemplateId}`)}
-                variant="outline"
-                className="w-full"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Enviar para paciente responder
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Compact Template Selection */}
+      <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="flex-1">
+          <Select value={selectedTemplateId?.toString() || ''} onValueChange={handleTemplateChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Anamnese Padrão" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map(template => (
+                <SelectItem key={template.id} value={template.id.toString()}>
+                  {template.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {selectedTemplateId && (
+          <Button 
+            onClick={() => setLocation(`/anamnese-publica/preview/${contactId}/${selectedTemplateId}`)}
+            variant="outline"
+            size="sm"
+            className="whitespace-nowrap"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Enviar para paciente responder
+          </Button>
+        )}
+      </div>
 
 
 
       {/* Questions Form */}
       {selectedTemplate && (
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="space-y-8">
-              {selectedTemplate.fields.questions.map((question, index) => (
-                <div key={question.id} className="space-y-3">
-                  <Label className="text-base font-medium text-gray-900 block">
-                    {question.text}
-                    {question.required && <span className="text-red-500 ml-1">*</span>}
-                  </Label>
-                  {renderQuestion(question)}
-                </div>
-              ))}
+        <div className="space-y-6">
+          {selectedTemplate.fields.questions.map((question, index) => (
+            <div key={question.id} className="space-y-2">
+              <Label className="text-sm font-medium text-gray-900 block">
+                {question.text}
+                {question.required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              {renderQuestion(question)}
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       )}
 
       {/* Actions */}
       {selectedTemplate && (
-        <div className="flex justify-end space-x-4">
+        <div className="flex justify-end space-x-3 mt-8 pt-6 border-t">
           <Button
             variant="outline"
             onClick={handleBack}
+            size="sm"
           >
             Cancelar
           </Button>
@@ -426,13 +407,14 @@ export default function PreencherAnamnese() {
             onClick={handleSubmit}
             disabled={createAnamnesisMutation.isPending}
             className="bg-blue-600 hover:bg-blue-700"
+            size="sm"
           >
             {createAnamnesisMutation.isPending ? (
-              <>Criando...</>
+              <>Salvando...</>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Criar e compartilhar
+                Salvar anamnese
               </>
             )}
           </Button>
