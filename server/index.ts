@@ -113,6 +113,10 @@ app.use((req, res, next) => {
   const apiKeysRoutes = await import('./routes/api-keys.routes');
   app.use('/api', apiKeysRoutes.default);
   
+  // Add Anamnesis routes
+  const { setupAnamnesisRoutes } = await import('./anamnesis-routes');
+  setupAnamnesisRoutes(app, storage);
+  
   // Add Phase 3 observability endpoints
   const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
   app.use('/api/observability', observabilityRoutes);

@@ -158,6 +158,82 @@ export const insertAiTemplateSchema = createInsertSchema(ai_templates);
 
 export const insertPipelineStageSchema = createInsertSchema(pipeline_stages);
 
+// Anamnesis System Tables
+export const anamnesis_templates = pgTable("anamnesis_templates", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  fields: jsonb("fields").notNull(), // Structure: {questions: [{id, text, type, options, required}]}
+  is_default: boolean("is_default").default(false),
+  is_active: boolean("is_active").default(true),
+  created_by: integer("created_by"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_anamnesis_templates_clinic").on(table.clinic_id),
+  index("idx_anamnesis_templates_default").on(table.is_default),
+]);
+
+export const anamnesis_responses = pgTable("anamnesis_responses", {
+  id: serial("id").primaryKey(),
+  contact_id: integer("contact_id").notNull(),
+  clinic_id: integer("clinic_id").notNull(),
+  template_id: integer("template_id").notNull(),
+  responses: jsonb("responses").notNull(), // Patient responses: {questionId: value}
+  status: text("status").default("pending"), // pending, completed, expired
+  share_token: text("share_token").notNull(),
+  patient_name: text("patient_name"),
+  patient_email: text("patient_email"),
+  patient_phone: text("patient_phone"),
+  completed_at: timestamp("completed_at"),
+  expires_at: timestamp("expires_at"),
+  created_by: integer("created_by"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  unique("unique_share_token").on(table.share_token),
+  index("idx_anamnesis_responses_contact").on(table.contact_id),
+  index("idx_anamnesis_responses_clinic").on(table.clinic_id),
+  index("idx_anamnesis_responses_token").on(table.share_token),
+  index("idx_anamnesis_responses_status").on(table.status),
+]);
+
+// Anamnesis validation schemas
+export const insertAnamnesisTemplateSchema = createInsertSchema(anamnesis_templates).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  name: z.string().min(1, "Nome do template é obrigatório"),
+  fields: z.object({
+    questions: z.array(z.object({
+      id: z.string(),
+      text: z.string(),
+      type: z.enum(['text', 'radio', 'checkbox', 'textarea']),
+      options: z.array(z.string()).optional(),
+      required: z.boolean().default(false),
+      additionalInfo: z.boolean().default(false),
+    })),
+  }),
+});
+
+export const insertAnamnesisResponseSchema = createInsertSchema(anamnesis_responses).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  responses: z.record(z.any()),
+  patient_name: z.string().min(1, "Nome do paciente é obrigatório"),
+  patient_email: z.string().email("Email inválido").optional(),
+  patient_phone: z.string().optional(),
+});
+
+export type SelectAnamnesisTemplate = typeof anamnesis_templates.$inferSelect;
+export type InsertAnamnesisTemplate = z.infer<typeof insertAnamnesisTemplateSchema>;
+export type SelectAnamnesisResponse = typeof anamnesis_responses.$inferSelect;
+export type InsertAnamnesisResponse = z.infer<typeof insertAnamnesisResponseSchema>;
+
 export const insertPipelineOpportunitySchema = createInsertSchema(pipeline_opportunities);
 
 export const insertPipelineHistorySchema = createInsertSchema(pipeline_history);
