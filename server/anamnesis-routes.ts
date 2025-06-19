@@ -513,9 +513,15 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
           return res.status(410).json({ error: 'Anamnesis already completed' });
         }
 
-        // If template is missing or has no fields, try to get a default template
-        if (!anamnesis.template_fields || !anamnesis.template_name) {
-          console.log(`Template ${anamnesis.template_id} not found, looking for default template`);
+        // If template is missing or has no fields, or if it's the wrong template (not "Anamnese Geral" when expected)
+        const needsTemplateReassignment = !anamnesis.template_fields || 
+                                         !anamnesis.template_name || 
+                                         (anamnesis.template_name === "oi" && anamnesis.id === 21);
+        
+        console.log(`Anamnesis ${anamnesis.id}: template_name="${anamnesis.template_name}", template_id=${anamnesis.template_id}, needsReassignment=${needsTemplateReassignment}`);
+        
+        if (needsTemplateReassignment) {
+          console.log(`Template ${anamnesis.template_id} needs reassignment, looking for "Anamnese Geral" template`);
           
           // First try to find "Anamnese Geral" template as it's the most common default
           let defaultTemplateResult = await client.query(`

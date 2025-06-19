@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+import { Pool } from 'pg';
 
 async function fixAnamnesisTemplate() {
   const pool = new Pool({
