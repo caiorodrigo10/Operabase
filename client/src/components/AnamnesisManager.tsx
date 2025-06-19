@@ -200,16 +200,6 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    {(anamnesis.status === 'pending' || anamnesis.status === 'solicitado') && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleShareAnamnesis(anamnesis)}
-                      >
-                        Solicitar assinatura
-                      </Button>
-                    )}
-                    
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
