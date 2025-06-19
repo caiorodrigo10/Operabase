@@ -175,7 +175,10 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div>
-                      <h3 className="font-medium text-slate-900">
+                      <h3 
+                        className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer transition-colors"
+                        onClick={() => setLocation(`/anamneses/${anamnesis.template_id}/editar`)}
+                      >
                         {anamnesis.template_name}
                       </h3>
                       <div className="flex items-center space-x-4 mt-1">
