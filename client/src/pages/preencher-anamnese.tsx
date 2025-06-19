@@ -1,0 +1,393 @@
+import { useState, useEffect } from 'react';
+import { useParams, useLocation } from 'wouter';
+import { ArrowLeft, FileText, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+
+interface AnamnesisTemplate {
+  id: number;
+  name: string;
+  description: string;
+  fields: {
+    questions: Array<{
+      id: string;
+      text: string;
+      type: 'text' | 'textarea' | 'select' | 'radio' | 'date' | 'email' | 'phone';
+      options?: string[];
+      required: boolean;
+    }>;
+  };
+}
+
+interface Contact {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
+export default function PreencherAnamnese() {
+  const params = useParams();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const contactId = parseInt(params.contactId || '0');
+  
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [patientInfo, setPatientInfo] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
+
+  // Get contact info
+  const { data: contact } = useQuery<Contact>({
+    queryKey: ['/api/contacts', contactId],
+    enabled: !!contactId
+  });
+
+  // Get available templates
+  const { data: templates = [] } = useQuery<AnamnesisTemplate[]>({
+    queryKey: ['/api/anamnesis/templates']
+  });
+
+  // Get selected template details
+  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+
+  // Initialize patient info from contact
+  useEffect(() => {
+    if (contact) {
+      setPatientInfo({
+        name: contact.name || '',
+        email: contact.email || '',
+        phone: contact.phone || ''
+      });
+    }
+  }, [contact]);
+
+  // Create anamnesis mutation
+  const createAnamnesisMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch(`/api/contacts/${contactId}/anamnesis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao criar anamnese');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Anamnese criada com sucesso",
+        description: "O link foi gerado e está pronto para ser enviado ao paciente."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/contacts', contactId, 'anamnesis'] });
+      setLocation(`/contatos/${contactId}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao criar anamnese",
+        description: error.message || "Ocorreu um erro inesperado",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleBack = () => {
+    setLocation(`/contatos/${contactId}`);
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(parseInt(templateId));
+    setResponses({});
+  };
+
+  const handleResponseChange = (questionId: string, value: string) => {
+    setResponses(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
+  const handlePatientInfoChange = (field: string, value: string) => {
+    setPatientInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (!selectedTemplateId) {
+      toast({
+        title: "Selecione um modelo",
+        description: "Escolha um modelo de anamnese para continuar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedTemplate) return;
+
+    // Validate required fields
+    const requiredQuestions = selectedTemplate.fields.questions.filter(q => q.required);
+    const missingResponses = requiredQuestions.filter(q => !responses[q.id] || responses[q.id].trim() === '');
+    
+    if (missingResponses.length > 0) {
+      toast({
+        title: "Campos obrigatórios não preenchidos",
+        description: `Complete os campos: ${missingResponses.map(q => q.text).join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    createAnamnesisMutation.mutate({
+      template_id: selectedTemplateId,
+      patient_name: patientInfo.name,
+      patient_email: patientInfo.email,
+      patient_phone: patientInfo.phone,
+      responses: responses
+    });
+  };
+
+  const renderQuestion = (question: any) => {
+    const value = responses[question.id] || '';
+
+    switch (question.type) {
+      case 'text':
+      case 'email':
+      case 'phone':
+        return (
+          <Input
+            type={question.type}
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder="Digite sua resposta..."
+          />
+        );
+
+      case 'textarea':
+        return (
+          <Textarea
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder="Digite sua resposta..."
+            rows={3}
+          />
+        );
+
+      case 'date':
+        return (
+          <Input
+            type="date"
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+          />
+        );
+
+      case 'select':
+        return (
+          <Select value={value} onValueChange={(val) => handleResponseChange(question.id, val)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione uma opção" />
+            </SelectTrigger>
+            <SelectContent>
+              {question.options?.map((option: string) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+
+      case 'radio':
+        return (
+          <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)}>
+            {question.options?.map((option: string) => (
+              <div key={option} className="flex items-center space-x-2">
+                <RadioGroupItem value={option} id={`${question.id}-${option}`} />
+                <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  if (!contact) {
+    return <div>Carregando...</div>;
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      {/* Header */}
+      <div className="flex items-center mb-6">
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className="mr-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar
+        </Button>
+        <h1 className="text-2xl font-semibold text-slate-900">Preencher anamnese</h1>
+      </div>
+
+      {/* Template Selection */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="w-5 h-5 mr-2" />
+            Selecionar Modelo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="template-select">Modelo de Anamnese</Label>
+              <Select value={selectedTemplateId?.toString() || ''} onValueChange={handleTemplateChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um modelo de anamnese" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.id.toString()}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedTemplate && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">{selectedTemplate.description}</p>
+              </div>
+            )}
+
+            {selectedTemplateId && (
+              <Button 
+                onClick={() => setLocation(`/anamnese-publica/preview/${contactId}/${selectedTemplateId}`)}
+                variant="outline"
+                className="w-full"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Enviar para paciente responder
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Patient Information */}
+      {selectedTemplate && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Informações do Paciente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="patient-name">Nome completo *</Label>
+                <Input
+                  id="patient-name"
+                  value={patientInfo.name}
+                  onChange={(e) => handlePatientInfoChange('name', e.target.value)}
+                  placeholder="Nome do paciente"
+                />
+              </div>
+              <div>
+                <Label htmlFor="patient-email">Email</Label>
+                <Input
+                  id="patient-email"
+                  type="email"
+                  value={patientInfo.email}
+                  onChange={(e) => handlePatientInfoChange('email', e.target.value)}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="patient-phone">Telefone</Label>
+                <Input
+                  id="patient-phone"
+                  type="tel"
+                  value={patientInfo.phone}
+                  onChange={(e) => handlePatientInfoChange('phone', e.target.value)}
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Questions Form */}
+      {selectedTemplate && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Questionário</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {selectedTemplate.fields.questions.map((question, index) => (
+                <div key={question.id} className="space-y-2">
+                  <Label className="text-base font-medium">
+                    {index + 1}. {question.text}
+                    {question.required && <span className="text-red-500 ml-1">*</span>}
+                  </Label>
+                  {renderQuestion(question)}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Actions */}
+      {selectedTemplate && (
+        <div className="flex justify-end space-x-4">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={createAnamnesisMutation.isPending}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {createAnamnesisMutation.isPending ? (
+              <>Criando...</>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Criar e compartilhar
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

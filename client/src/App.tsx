@@ -30,6 +30,7 @@ import MCPTestPage from "./pages/mcp-test";
 import ApiKeysPage from "./pages/api-keys";
 import { AdminDashboard } from "./pages/admin/dashboard";
 import { AnamnesisPublica } from "./pages/anamnese-publica";
+import PreencherAnamnese from "./pages/preencher-anamnese";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -127,6 +128,7 @@ function Router() {
         <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
+        <Route path="/contatos/:contactId/preencher-anamnese" component={PreencherAnamnese} />
         {/* <Route path="/prontuario/:id?" component={Prontuario} /> */}
         <Route path="/configuracoes" component={Configuracoes} />
         <Route path="/livia-config" component={LiviaConfig} />
