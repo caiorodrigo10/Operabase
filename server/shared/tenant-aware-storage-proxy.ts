@@ -274,6 +274,33 @@ export class TenantAwareStorageProxy implements IStorage {
     return this.storage.getClinicInvitations(clinicId);
   }
 
+  // Appointment Tags methods
+  async getAppointmentTags(clinicId: number) {
+    const tenantClinicId = this.getClinicId();
+    if (clinicId !== tenantClinicId) {
+      throw new Error('Access denied: Cannot access appointment tags');
+    }
+    return this.storage.getAppointmentTags(clinicId);
+  }
+
+  async getAppointmentTag(id: number) {
+    return this.storage.getAppointmentTag(id);
+  }
+
+  async createAppointmentTag(tag: any) {
+    const clinicId = this.getClinicId();
+    const tagWithClinic = { ...tag, clinic_id: clinicId };
+    return this.storage.createAppointmentTag(tagWithClinic);
+  }
+
+  async updateAppointmentTag(id: number, updates: any) {
+    return this.storage.updateAppointmentTag(id, updates);
+  }
+
+  async deleteAppointmentTag(id: number) {
+    return this.storage.deleteAppointmentTag(id);
+  }
+
   // Pass through any additional methods without modification
   [key: string]: any;
 }

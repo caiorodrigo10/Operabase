@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -90,15 +90,9 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
   // Create new patient mutation
   const createPatientMutation = useMutation({
     mutationFn: async (patientData: any) => {
-      const response = await apiRequest('/api/contacts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...patientData,
-          clinic_id: 1,
-        }),
+      const response = await apiRequest('/api/contacts', 'POST', {
+        ...patientData,
+        clinic_id: 1,
       });
       
       if (!response.ok) {
@@ -142,13 +136,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
         tag_id: data.tag_id ? parseInt(data.tag_id) : null,
       };
 
-      const response = await apiRequest('/api/appointments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(appointmentData),
-      });
+      const response = await apiRequest('/api/appointments', 'POST', appointmentData);
 
       if (!response.ok) {
         throw new Error('Failed to create appointment');
@@ -205,7 +193,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
   // Handle availability check with useAvailabilityCheck hook
   const availabilityCheckHook = useAvailabilityCheck();
 
-  const handleAvailabilityCheck = React.useCallback(async (date: string, time: string, duration: string, professionalName?: string) => {
+  const handleAvailabilityCheck = useCallback(async (date: string, time: string, duration: string, professionalName?: string) => {
     if (!date || !time || !duration) {
       setAvailabilityConflict(null);
       setIsCheckingAvailability(false);
@@ -246,7 +234,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
   }, [availabilityCheckHook]);
 
   // Helper function to get professional name by ID
-  const getProfessionalNameById = React.useCallback((userId: string | number) => {
+  const getProfessionalNameById = useCallback((userId: string | number) => {
     if (!userId) return null;
     const user = clinicUsers.find((u: any) => (u.id || u.user_id)?.toString() === userId.toString());
     return user?.name || null;
