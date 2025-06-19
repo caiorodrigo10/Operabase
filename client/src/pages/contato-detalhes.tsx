@@ -227,7 +227,7 @@ export function ContatoDetalhes() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-16">
+    <div className="min-h-screen bg-slate-50">
       {/* Header with Patient Info */}
       <div className="bg-white border-b border-slate-200">
         <div className="container mx-auto px-6">
