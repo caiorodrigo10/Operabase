@@ -183,7 +183,7 @@ export function Consultas() {
         if (data.contact_email) contactUpdates.email = data.contact_email;
         
         if (Object.keys(contactUpdates).length > 0) {
-          await apiRequest("PUT", `/api/contacts/${data.contact_id}`, contactUpdates);
+          await apiRequest(`/api/contacts/${data.contact_id}`, "PUT", contactUpdates);
         }
       }
 
@@ -201,7 +201,7 @@ export function Consultas() {
         payment_amount: 0,
         session_notes: data.notes || null,
       };
-      const res = await apiRequest("POST", "/api/appointments", appointmentData);
+      const res = await apiRequest("/api/appointments", "POST", appointmentData);
       return await res.json();
     },
     onSuccess: () => {

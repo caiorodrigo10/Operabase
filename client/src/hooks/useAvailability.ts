@@ -1,6 +1,18 @@
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
+async function getAuthHeaders() {
+  const { supabase } = await import('@/lib/supabase');
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {};
+  
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+  
+  return headers;
+}
+
 interface AvailabilityRequest {
   user_id: number;
   scheduled_date: string;
@@ -37,16 +49,18 @@ export function useAvailabilityCheck() {
       const startDateTime = new Date(`${data.scheduled_date}T${data.scheduled_time}`);
       const endDateTime = new Date(startDateTime.getTime() + data.duration * 60000);
 
-      const response = await apiRequest('/api/availability/check', {
+      const response = await fetch('/api/availability/check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(await getAuthHeaders()),
         },
         body: JSON.stringify({
           startDateTime: startDateTime.toISOString(),
           endDateTime: endDateTime.toISOString(),
           excludeAppointmentId: data.appointment_id,
         }),
+        credentials: "include",
       });
 
       if (!response.ok) {

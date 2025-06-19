@@ -481,7 +481,7 @@ export function Consultas() {
         payment_amount: 0,
         session_notes: data.notes || null
       };
-      const res = await apiRequest("POST", "/api/appointments", appointmentData);
+      const res = await apiRequest("/api/appointments", "POST", appointmentData);
       return await res.json();
     },
     onSuccess: () => {
