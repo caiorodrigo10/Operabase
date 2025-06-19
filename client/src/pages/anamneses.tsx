@@ -54,9 +54,16 @@ export default function AnamnesisTemplatesPage() {
   // Mutation para criar modelo
   const createTemplateMutation = useMutation({
     mutationFn: async (data: any) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch('/api/anamneses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify(data)
       });
@@ -67,6 +74,14 @@ export default function AnamnesisTemplatesPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/anamneses'] });
       setIsCreateDialogOpen(false);
       setCreateForm({ name: '', copyFromId: '', createFromScratch: true });
+      // Force immediate refetch to show new template
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['/api/anamneses'] });
+      }, 100);
+    },
+    onError: (error) => {
+      console.error('Error creating template:', error);
+      // Show error to user if needed
     }
   });
 
@@ -209,9 +224,6 @@ export default function AnamnesisTemplatesPage() {
                       <CardTitle className="text-lg font-medium text-gray-900 mb-1">
                         {template.name}
                       </CardTitle>
-                      {template.description && (
-                        <p className="text-sm text-gray-600">{template.description}</p>
-                      )}
                     </div>
                   </div>
                 </CardHeader>
