@@ -205,7 +205,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
   // Handle availability check with useAvailabilityCheck hook
   const availabilityCheckHook = useAvailabilityCheck();
 
-  const checkAvailability = React.useCallback(async (date: string, time: string, duration: string, professionalName?: string) => {
+  const handleAvailabilityCheck = React.useCallback(async (date: string, time: string, duration: string, professionalName?: string) => {
     if (!date || !time || !duration) {
       setAvailabilityConflict(null);
       setIsCheckingAvailability(false);
@@ -279,7 +279,7 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
 
     const timeoutId = setTimeout(() => {
       if (watchedDate && watchedTime && watchedDuration) {
-        checkAvailability(watchedDate, watchedTime, watchedDuration, professionalName);
+        handleAvailabilityCheck(watchedDate, watchedTime, watchedDuration, professionalName);
       }
     }, 500);
 
