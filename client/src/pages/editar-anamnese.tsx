@@ -46,14 +46,10 @@ export default function EditarAnamnesePage() {
   const [questionForm, setQuestionForm] = useState<{
     pergunta: string;
     tipo: 'sim_nao_nao_sei' | 'sim_nao_nao_sei_texto' | 'somente_texto';
-    showAlert: boolean;
-    alertText: string;
     addToAllTemplates: boolean;
   }>({
     pergunta: '',
     tipo: 'somente_texto',
-    showAlert: false,
-    alertText: '',
     addToAllTemplates: false
   });
 
@@ -157,8 +153,6 @@ export default function EditarAnamnesePage() {
     setQuestionForm({
       pergunta: '',
       tipo: 'somente_texto',
-      showAlert: false,
-      alertText: '',
       addToAllTemplates: false
     });
   };
@@ -169,8 +163,6 @@ export default function EditarAnamnesePage() {
     addQuestionMutation.mutate({
       pergunta: questionForm.pergunta.trim(),
       tipo: questionForm.tipo,
-      showAlert: questionForm.showAlert,
-      alertText: questionForm.alertText,
       addToAllTemplates: questionForm.addToAllTemplates
     });
   };
@@ -182,9 +174,7 @@ export default function EditarAnamnesePage() {
       questionId: editingQuestion.id,
       data: {
         pergunta: questionForm.pergunta.trim(),
-        tipo: questionForm.tipo,
-        showAlert: questionForm.showAlert,
-        alertText: questionForm.alertText
+        tipo: questionForm.tipo
       }
     });
   };
@@ -304,27 +294,7 @@ export default function EditarAnamnesePage() {
                 </Select>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="show-alert"
-                  checked={questionForm.showAlert}
-                  onCheckedChange={(checked) => setQuestionForm(prev => ({ ...prev, showAlert: !!checked }))}
-                />
-                <Label htmlFor="show-alert">Exibir alerta no prontuário do paciente</Label>
-              </div>
 
-              {questionForm.showAlert && (
-                <div>
-                  <Label htmlFor="alert-text">Texto exibido no alerta</Label>
-                  <Textarea
-                    id="alert-text"
-                    value={questionForm.alertText}
-                    onChange={(e) => setQuestionForm(prev => ({ ...prev, alertText: e.target.value }))}
-                    placeholder="Texto que aparecerá no alerta..."
-                    className="mt-1"
-                  />
-                </div>
-              )}
 
               {!editingQuestion && (
                 <div className="flex items-center space-x-2">
