@@ -179,7 +179,9 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
                         className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer transition-colors"
                         onClick={() => setLocation(`/contatos/${contactId}/anamnese/${anamnesis.id}/editar`)}
                       >
-                        {anamnesis.template_name}
+                        <span className="text-xs text-slate-400 uppercase tracking-wide">Formulário:</span>
+                        <br />
+                        {anamnesis.template_name || 'Anamnese'}
                       </h3>
                       <div className="flex items-center space-x-4 mt-1">
                         <span className="text-sm text-slate-500">
