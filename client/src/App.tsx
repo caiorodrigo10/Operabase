@@ -43,6 +43,15 @@ function Router() {
   
   console.log('🔍 Router state:', { user: !!user, loading, location });
   
+  // Handle public routes first, completely outside auth system
+  if (location.startsWith('/public/anamnese/')) {
+    return <AnamnesisPublica />;
+  }
+  
+  if (location === '/reset-password') {
+    return <ResetPassword />;
+  }
+  
   const getCurrentPage = () => {
     if (location === "/") return "dashboard";
     return location.substring(1);
@@ -63,24 +72,6 @@ function Router() {
 
   if (!user) {
     console.log('🔑 No user - showing login form');
-    
-    // Check if this is a password reset page
-    if (location === '/reset-password') {
-      return <ResetPassword />;
-    }
-    
-    // Check if this is a public anamnesis page - no system menu needed
-    if (location.startsWith('/public/anamnese/')) {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <AnamnesisPublica />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-    
     return <LoginForm />;
   }
 

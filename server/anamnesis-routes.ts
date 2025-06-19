@@ -529,8 +529,8 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
           at.name as template_name,
           at.fields as template_fields
         FROM anamnesis_responses ar
-        LEFT JOIN anamnesis_templates at ON ar.template_id = at.id
-        WHERE ar.share_token = $1
+        INNER JOIN anamnesis_templates at ON ar.template_id = at.id
+        WHERE ar.share_token = $1 AND ar.expires_at > NOW()
       `, [token]);
       client.release();
 
