@@ -517,13 +517,6 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
       {/* Find Time Slots Dialog (igual ao de /consultas) */}
       <Dialog open={findTimeSlotsOpen} onOpenChange={setFindTimeSlotsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Encontrar Horários Disponíveis</DialogTitle>
-            <DialogDescription>
-              Visualize os horários disponíveis e selecione o melhor momento para a consulta.
-            </DialogDescription>
-          </DialogHeader>
-          
           <FindTimeSlots
             selectedDate={watchedDate || ''}
             duration={parseInt(watchedDuration) || 30}
