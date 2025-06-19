@@ -78,6 +78,9 @@ app.use((req, res, next) => {
   app.use('/api', tenantIsolationMiddleware as any);
   app.use('/api', cacheInvalidationMiddleware as any);
   
+  // Setup optimized routes first for better performance
+  setupOptimizedRoutes(app);
+  
   // Setup API routes
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);

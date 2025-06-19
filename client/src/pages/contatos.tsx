@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ContactAvatar } from "@/components/ContactAvatar";
+import { OptimizedContactCard } from "@/components/OptimizedContactCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
@@ -22,6 +22,7 @@ import { insertContactSchema } from "../../../server/domains/contacts/contacts.s
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { useDebounce } from "@/hooks/useDebounce";
 import { z } from "zod";
 import { 
   User, 
@@ -59,14 +60,29 @@ export function Contatos() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch contacts from API
+  // Debounce search term to reduce API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Optimized contacts query with filters
   const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ['/api/contacts', { clinic_id: 1 }],
+    queryKey: ['/api/contacts', { 
+      clinic_id: 1, 
+      search: debouncedSearchTerm || undefined,
+      status: statusFilter !== 'all' ? statusFilter : undefined
+    }],
     queryFn: async () => {
-      const response = await fetch('/api/contacts?clinic_id=1');
+      const params = new URLSearchParams({
+        clinic_id: '1',
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+      });
+      
+      const response = await fetch(`/api/contacts?${params}`);
       if (!response.ok) throw new Error('Erro ao carregar contatos');
       return response.json();
-    }
+    },
+    staleTime: debouncedSearchTerm ? 30 * 1000 : 5 * 60 * 1000, // Shorter cache for search
+    refetchOnWindowFocus: false,
   });
 
   // Form for adding new contact - complete patient form with minimal validation
