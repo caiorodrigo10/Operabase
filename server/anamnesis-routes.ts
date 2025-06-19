@@ -395,7 +395,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
     try {
       const contactId = parseInt(req.params.contactId);
       const userId = (req.user as any)?.id;
-      const { template_id } = req.body;
+      const { template_id, status } = req.body;
 
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
@@ -418,7 +418,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         clinic_id: clinicAccess.clinicId,
         template_id: parseInt(template_id),
         responses: {},
-        status: 'pending',
+        status: status || 'pending',
         share_token: shareToken,
         expires_at: expiresAt,
         created_by: userId

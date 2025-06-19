@@ -49,6 +49,7 @@ export default function PreencherAnamnese() {
     phone: ''
   });
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
 
   // Get contact info
   const { data: contact } = useQuery<Contact>({
@@ -133,8 +134,9 @@ export default function PreencherAnamnese() {
   };
 
   const generateShareableLink = () => {
+    if (!shareToken) return '';
     const baseUrl = window.location.origin;
-    return `${baseUrl}/anamnese-publica/${contactId}/${selectedTemplateId}`;
+    return `${baseUrl}/anamnese-publica/${shareToken}`;
   };
 
   const handleCopyLink = async () => {
@@ -163,6 +165,42 @@ export default function PreencherAnamnese() {
   const generateQRCode = () => {
     const link = generateShareableLink();
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`;
+  };
+
+  // Mutation to create anamnesis record
+  const createAnamnesisRecordMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/contacts/${contactId}/anamnesis`, {
+        method: 'POST',
+        body: {
+          template_id: selectedTemplateId,
+          status: 'solicitado'
+        }
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Link criado!",
+        description: "O link foi criado e a anamnese foi adicionada à lista.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao criar link",
+        description: error.message || "Não foi possível criar o link de compartilhamento.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleShareButtonClick = async () => {
+    if (!selectedTemplateId) return;
+    
+    // Create anamnesis record first
+    await createAnamnesisRecordMutation.mutateAsync();
+    
+    // Then open the modal
+    setShowShareModal(true);
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -400,13 +438,14 @@ export default function PreencherAnamnese() {
         
         {selectedTemplateId && (
           <Button 
-            onClick={() => setShowShareModal(true)}
+            onClick={handleShareButtonClick}
             variant="outline"
             size="sm"
             className="whitespace-nowrap"
+            disabled={createAnamnesisRecordMutation.isPending}
           >
             <Send className="w-4 h-4 mr-2" />
-            Enviar para paciente responder
+            {createAnamnesisRecordMutation.isPending ? 'Criando...' : 'Enviar para paciente responder'}
           </Button>
         )}
       </div>
