@@ -505,7 +505,7 @@ export function Consultas() {
   });
 
   // Fetch appointments with optimized caching (same pattern as contacts)
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
     queryKey: ['/api/appointments', { clinic_id: 1 }],
     queryFn: async () => {
       const response = await fetch('/api/appointments?clinic_id=1');
@@ -1522,12 +1522,17 @@ export function Consultas() {
                 const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
                 const paginatedAppointments = filteredAppointments.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-                if (filteredAppointments.length === 0) {
+                if (filteredAppointments.length === 0 && !appointmentsLoading) {
                   return (
                     <div className="text-center py-8 text-slate-500">
                       Nenhuma consulta encontrada
                     </div>
                   );
+                }
+
+                // Show nothing while loading to prevent flash of empty state
+                if (appointmentsLoading) {
+                  return <div></div>;
                 }
 
                 return (
