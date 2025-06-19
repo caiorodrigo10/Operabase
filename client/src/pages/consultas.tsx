@@ -18,6 +18,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Calendar, List, Clock, User, Stethoscope, CalendarDays, ChevronLeft, ChevronRight, Phone, MessageCircle, MapPin, Plus, Check, ChevronsUpDown, Edit, Trash2, X, Eye, MoreVertical, AlertTriangle, Search, Mail, CheckCircle, FileText } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
@@ -164,6 +172,10 @@ export function Consultas() {
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Pagination constants
+  const ITEMS_PER_PAGE = 10;
   
 
   
@@ -1496,154 +1508,188 @@ export function Consultas() {
           {viewMode === "list" ? (
             /* List View */
             <div className="space-y-4">
-              {appointments.filter((app: Appointment) => {
-                // FIRST: Filter out appointments from users not in this clinic
-                const validUserIds = [4, 5, 6]; // Valid professional IDs in this clinic
-                if (!app.google_calendar_event_id && !validUserIds.includes(app.user_id)) {
-                  return false; // Exclude orphaned appointments
+              {(() => {
+                // Filter appointments
+                const filteredAppointments = appointments.filter((app: Appointment) => {
+                  // FIRST: Filter out appointments from users not in this clinic
+                  const validUserIds = [4, 5, 6]; // Valid professional IDs in this clinic
+                  if (!app.google_calendar_event_id && !validUserIds.includes(app.user_id)) {
+                    return false; // Exclude orphaned appointments
+                  }
+                  
+                  // SECOND: Apply professional filter on valid appointments only
+                  if (selectedProfessional === null) return true;
+                  
+                  // For Google Calendar events, use current user matching
+                  if (app.google_calendar_event_id) {
+                    return true; // Handle separately if needed
+                  }
+                  
+                  // For regular appointments, filter by selected professional
+                  return app.user_id === selectedProfessional;
+                }).sort((a: Appointment, b: Appointment) => {
+                  return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
+                });
+
+                // Pagination logic
+                const totalPages = Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE);
+                const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+                const paginatedAppointments = filteredAppointments.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+                if (filteredAppointments.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-slate-500">
+                      Nenhuma consulta encontrada
+                    </div>
+                  );
                 }
-                
-                // SECOND: Apply professional filter on valid appointments only
-                if (selectedProfessional === null) return true;
-                
-                // For Google Calendar events, use current user matching
-                if (app.google_calendar_event_id) {
-                  return true; // Handle separately if needed
-                }
-                
-                // For regular appointments, filter by selected professional
-                return app.user_id === selectedProfessional;
-              }).length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  Nenhuma consulta encontrada
-                </div>
-              ) : (
-                appointments
-                  .filter((app: Appointment) => {
-                    // FIRST: Filter out appointments from users not in this clinic
-                    const validUserIds = [4, 5, 6]; // Valid professional IDs in this clinic
-                    if (!app.google_calendar_event_id && !validUserIds.includes(app.user_id)) {
-                      return false; // Exclude orphaned appointments
-                    }
-                    
-                    // SECOND: Apply professional filter on valid appointments only
-                    if (selectedProfessional === null) return true;
-                    
-                    // For Google Calendar events, use current user matching
-                    if (app.google_calendar_event_id) {
-                      return true; // Handle separately if needed
-                    }
-                    
-                    // For regular appointments, filter by selected professional
-                    return app.user_id === selectedProfessional;
-                  })
-                  .sort((a: Appointment, b: Appointment) => {
-                    return new Date(a.scheduled_date || 0).getTime() - new Date(b.scheduled_date || 0).getTime();
-                  })
-                  .map((appointment: Appointment) => {
-                    const patientName = getPatientName(appointment.contact_id, appointment);
-                    const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
-                    
-                    return (
-                      <Card key={appointment.id} className="border border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className={`w-3 h-3 ${colors.dot} rounded-full`}></div>
-                              <div>
-                                <h3 className="font-semibold text-slate-900">{patientName}</h3>
-                                <div className="flex items-center space-x-4 text-sm text-slate-600">
-                                  <span className="flex items-center">
-                                    <Clock className="w-4 h-4 mr-1" />
-                                    {appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não definida'}
-                                  </span>
-                                  {appointment.doctor_name && !appointment.google_calendar_event_id && (
+
+                return (
+                  <>
+                    {paginatedAppointments.map((appointment: Appointment) => {
+                      const patientName = getPatientName(appointment.contact_id, appointment);
+                      const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
+                      
+                      return (
+                        <Card key={appointment.id} className="border border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <div className={`w-3 h-3 ${colors.dot} rounded-full`}></div>
+                                <div>
+                                  <h3 className="font-semibold text-slate-900">{patientName}</h3>
+                                  <div className="flex items-center space-x-4 text-sm text-slate-600">
                                     <span className="flex items-center">
-                                      <Stethoscope className="w-4 h-4 mr-1" />
-                                      {appointment.doctor_name}
+                                      <Clock className="w-4 h-4 mr-1" />
+                                      {appointment.scheduled_date ? format(new Date(appointment.scheduled_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não definida'}
                                     </span>
-                                  )}
+                                    {appointment.doctor_name && !appointment.google_calendar_event_id && (
+                                      <span className="flex items-center">
+                                        <Stethoscope className="w-4 h-4 mr-1" />
+                                        {appointment.doctor_name}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {/* Clickable Status Badge with Dropdown */}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <div onClick={(e) => e.stopPropagation()}>
-                                    <Badge 
-                                      className={`${statusLabels[appointment.status]?.color || 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 hover:shadow-sm transition-all duration-200 border border-opacity-20`}
+                              <div className="flex items-center space-x-2">
+                                {/* Clickable Status Badge with Dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                      <Badge 
+                                        className={`${statusLabels[appointment.status]?.color || 'bg-gray-100 text-gray-800'} cursor-pointer hover:opacity-80 hover:shadow-sm transition-all duration-200 border border-opacity-20`}
+                                      >
+                                        {statusLabels[appointment.status]?.label || appointment.status}
+                                        <span className="ml-1 text-xs opacity-60">▼</span>
+                                      </Badge>
+                                    </div>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                    {/* Status Change Options */}
+                                    {mainStatusList
+                                      .filter((status) => status !== appointment.status)
+                                      .map((status) => {
+                                        const config = statusConfig[status];
+                                        return (
+                                          <DropdownMenuItem
+                                            key={status}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              updateStatusMutation.mutate({
+                                                appointmentId: appointment.id,
+                                                status: status
+                                              });
+                                            }}
+                                            disabled={updateStatusMutation.isPending}
+                                          >
+                                            <div className={`w-3 h-3 ${config.badgeColor} rounded-full mr-2`}></div>
+                                            Alterar para {config.label}
+                                          </DropdownMenuItem>
+                                        );
+                                      })}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                
+                                {/* Actions Menu */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
-                                      {statusLabels[appointment.status]?.label || appointment.status}
-                                      <span className="ml-1 text-xs opacity-60">▼</span>
-                                    </Badge>
-                                  </div>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                  {/* Status Change Options */}
-                                  {mainStatusList
-                                    .filter((status) => status !== appointment.status)
-                                    .map((status) => {
-                                      const config = statusConfig[status];
-                                      return (
-                                        <DropdownMenuItem
-                                          key={status}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            updateStatusMutation.mutate({
-                                              appointmentId: appointment.id,
-                                              status: status
-                                            });
-                                          }}
-                                          disabled={updateStatusMutation.isPending}
-                                        >
-                                          <div className={`w-3 h-3 ${config.badgeColor} rounded-full mr-2`}></div>
-                                          Alterar para {config.label}
-                                        </DropdownMenuItem>
-                                      );
-                                    })}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              
-                              {/* Actions Menu */}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <MoreVertical className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40">
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleAppointmentClick(appointment);
-                                    }}
-                                  >
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    Ver detalhes
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditAppointment(appointment.id);
-                                    }}
-                                  >
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    Editar consulta
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                                      <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-40">
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAppointmentClick(appointment);
+                                      }}
+                                    >
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      Ver detalhes
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditAppointment(appointment.id);
+                                      }}
+                                    >
+                                      <Edit className="w-4 h-4 mr-2" />
+                                      Editar consulta
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-              )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="mt-6 flex items-center justify-between">
+                        <div className="text-sm text-slate-600">
+                          Mostrando {startIndex + 1} a {Math.min(startIndex + ITEMS_PER_PAGE, filteredAppointments.length)} de {filteredAppointments.length} consultas
+                        </div>
+                        <Pagination>
+                          <PaginationContent>
+                            <PaginationItem>
+                              <PaginationPrevious 
+                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                              />
+                            </PaginationItem>
+                            
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                              <PaginationItem key={page}>
+                                <PaginationLink
+                                  onClick={() => setCurrentPage(page)}
+                                  isActive={currentPage === page}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            ))}
+                            
+                            <PaginationItem>
+                              <PaginationNext 
+                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                              />
+                            </PaginationItem>
+                          </PaginationContent>
+                        </Pagination>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           ) : (
             /* Calendar View */
