@@ -74,7 +74,7 @@ function Router() {
   if (isAdminView || location.startsWith('/admin')) {
     // Admin layout with admin routes
     return (
-      <AdminLayout currentPage={getCurrentPage()}>
+      <AdminLayout>
         <Switch>
           <Route path="/admin" component={() => (
             <AdminRouteGuard>

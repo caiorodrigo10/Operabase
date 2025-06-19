@@ -729,10 +729,6 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
               form.setValue("scheduled_time", time);
               form.setValue("scheduled_date", date);
               setFindTimeSlotsOpen(false);
-              toast({
-                title: "Horário selecionado",
-                description: `${format(new Date(date), 'dd/MM/yyyy')} às ${time}`,
-              });
             }}
             onClose={() => setFindTimeSlotsOpen(false)}
           />
