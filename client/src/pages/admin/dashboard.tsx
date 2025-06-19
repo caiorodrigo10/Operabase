@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Building, UserCheck, Calendar } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Users, Building, UserCheck, Calendar, AlertTriangle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BasicAdminMetrics {
   totalClinics: number;
@@ -10,16 +12,28 @@ interface BasicAdminMetrics {
 }
 
 export function AdminDashboard() {
-  const { data: metrics, isLoading } = useQuery<BasicAdminMetrics>({
+  const { user } = useAuth();
+  
+  const { data: metrics, isLoading, error } = useQuery<BasicAdminMetrics>({
     queryKey: ['/api/admin/dashboard'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/dashboard');
-      if (!response.ok) throw new Error('Failed to fetch admin metrics');
-      return response.json();
-    },
+    enabled: user?.role === 'super_admin',
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Check if user has super admin access
+  if (user?.role !== 'super_admin') {
+    return (
+      <div className="p-4 lg:p-6">
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Acesso negado. Você precisa de permissões de super administrador para acessar esta página.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -29,6 +43,19 @@ export function AdminDashboard() {
             <div className="h-96 bg-slate-200 rounded"></div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Erro ao carregar métricas do admin. Tente novamente.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
