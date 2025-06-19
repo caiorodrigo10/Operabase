@@ -15,7 +15,17 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
     try {
       // Check if user has admin role (works with existing auth system)
       const user = (req as any).user;
-      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+      console.log('Admin dashboard - User:', user);
+      if (!user) {
+        return res.status(401).json({ error: 'Acesso negado' });
+      }
+      
+      // Allow users with super_admin role or specific user ID to access admin panel
+      const hasAdminAccess = user.role === 'super_admin' || 
+                            user.role === 'admin' || 
+                            user.id === '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4';
+      
+      if (!hasAdminAccess) {
         return res.status(403).json({ error: 'Access denied. Admin role required.' });
       }
 

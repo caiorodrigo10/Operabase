@@ -273,8 +273,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     </Link>
                   </DropdownMenuItem>
                   
-                  {/* Admin Panel Toggle - Only show for user ID 4 */}
-                  {user?.id === "4" && (
+                  {/* Admin Panel Toggle - Only show for super_admin users */}
+                  {(user?.role === 'super_admin' || user?.id === '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4') && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
