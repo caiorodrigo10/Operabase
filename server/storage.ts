@@ -26,6 +26,7 @@ export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
 
@@ -45,6 +46,7 @@ export interface IStorage {
 
   // Clinics
   getClinic(id: number): Promise<Clinic | undefined>;
+  getClinics(): Promise<Clinic[]>;
   createClinic(clinic: InsertClinic): Promise<Clinic>;
   updateClinic(id: number, clinic: Partial<InsertClinic>): Promise<Clinic | undefined>;
 

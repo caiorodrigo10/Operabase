@@ -81,6 +81,10 @@ app.use((req, res, next) => {
   // Setup optimized routes first for better performance
   setupOptimizedRoutes(app);
   
+  // Setup admin routes
+  const { setupAdminRoutes } = await import('./admin-routes');
+  setupAdminRoutes(app, storage);
+  
   // Setup API routes
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
