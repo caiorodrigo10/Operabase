@@ -16,7 +16,7 @@ export function Layout({ children, currentPage }: LayoutProps) {
         onMenuClick={() => {}} // No longer needed but keeping for compatibility
         isMobile={isMobile}
       />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pt-20">
         {children}
       </main>
     </div>
