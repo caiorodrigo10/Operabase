@@ -595,7 +595,10 @@ export function ContatoDetalhes() {
                     </div>
                     
                     <div className="space-y-3">
-                      {appointments.slice(0, 2).map((appointment) => (
+                      {appointments
+                        .sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime())
+                        .slice(0, 4)
+                        .map((appointment) => (
                         <div key={appointment.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50">
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-medium text-slate-900">
@@ -617,6 +620,25 @@ export function ContatoDetalhes() {
                           </div>
                         </div>
                       ))}
+                      
+                      {appointments.length > 4 && (
+                        <div className="pt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => handleTabChange('evolucoes')}
+                          >
+                            Ver mais ({appointments.length - 4} consultas)
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {appointments.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-slate-500 text-sm">Nenhuma consulta registrada ainda</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
