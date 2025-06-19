@@ -233,4 +233,41 @@ export class AppointmentsController {
       res.status(500).json({ error: error.message || 'Failed to find available slots' });
     }
   }
+
+  async getAppointmentsPaginated(req: Request, res: Response) {
+    try {
+      const { clinic_id, page = 1, limit = 25, status, professional_id } = req.query;
+      
+      if (!clinic_id) {
+        return res.status(400).json({ error: 'clinic_id is required' });
+      }
+
+      const clinicId = parseInt(clinic_id as string);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: 'Invalid clinic ID' });
+      }
+
+      const paginationParams = {
+        page: parseInt(page as string),
+        limit: Math.min(parseInt(limit as string), 100),
+        offset: (parseInt(page as string) - 1) * parseInt(limit as string)
+      };
+
+      const filters = {
+        status: status as string,
+        professional_id: professional_id ? parseInt(professional_id as string) : undefined
+      };
+
+      const result = await this.service.getAppointmentsPaginated(
+        clinicId,
+        paginationParams,
+        filters
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error fetching paginated appointments:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch appointments' });
+    }
+  }
 }

@@ -35,6 +35,35 @@ export class AppointmentsService {
     }
   }
 
+  async getAppointmentsPaginated(
+    clinicId: number, 
+    pagination: { page: number; limit: number; offset: number },
+    filters: { status?: string; professional_id?: number } = {}
+  ) {
+    try {
+      // Get total count for pagination
+      const totalItems = await this.repository.countAppointments(clinicId, filters);
+      
+      // Get paginated data
+      const appointments = await this.repository.findPaginated(clinicId, pagination, filters);
+      
+      return {
+        data: appointments,
+        pagination: {
+          currentPage: pagination.page,
+          totalPages: Math.ceil(totalItems / pagination.limit),
+          totalItems,
+          itemsPerPage: pagination.limit,
+          hasNext: pagination.page < Math.ceil(totalItems / pagination.limit),
+          hasPrev: pagination.page > 1
+        }
+      };
+    } catch (error) {
+      console.error('Error in getAppointmentsPaginated:', error);
+      throw error;
+    }
+  }
+
   async getAppointmentById(id: number): Promise<Appointment | null> {
     return this.repository.findById(id);
   }

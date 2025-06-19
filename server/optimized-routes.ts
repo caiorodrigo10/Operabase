@@ -67,7 +67,41 @@ export function setupOptimizedRoutes(app: any) {
     }
   });
 
-  // Rota otimizada para agendamentos
+  // Rota otimizada para agendamentos com paginação
+  app.get('/api/appointments/paginated', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { clinic_id, start_date, end_date, status, user_id, page, limit } = req.query;
+      
+      if (!clinic_id) {
+        return res.status(400).json({ error: 'clinic_id é obrigatório' });
+      }
+
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 25,
+      };
+
+      const filters = {
+        startDate: start_date as string,
+        endDate: end_date as string,
+        status: status as string,
+        userId: user_id ? parseInt(user_id as string) : undefined,
+      };
+
+      const result = await performanceOptimizer.getAppointmentsPaginated(
+        parseInt(clinic_id as string),
+        pagination,
+        filters
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos paginados:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
+  // Rota legacy para agendamentos (backward compatibility)
   app.get('/api/appointments/optimized', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { clinic_id, start_date, end_date, status, user_id } = req.query;

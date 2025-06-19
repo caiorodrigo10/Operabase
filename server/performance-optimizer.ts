@@ -188,7 +188,91 @@ class PerformanceOptimizer {
   }
 
   /**
-   * Busca otimizada de consultas com agregações
+   * Busca paginada de agendamentos com otimizações
+   */
+  async getAppointmentsPaginated(clinicId: number, pagination: PaginationParams, filters?: {
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    userId?: number;
+  }): Promise<PaginatedResponse<any>> {
+    const { page = 1, limit = 25 } = pagination;
+    const offset = getPaginationOffset(page, limit);
+    
+    const cacheKey = this.getCacheKey('appointments_paginated', { 
+      clinicId, 
+      page, 
+      limit, 
+      ...filters 
+    });
+    const cached = this.getCache(cacheKey);
+    if (cached) return cached;
+
+    const { startDate, endDate, status, userId } = filters || {};
+    
+    // Count query
+    let countQuery = sql`
+      SELECT COUNT(*) as total
+      FROM appointments a
+      WHERE a.clinic_id = ${clinicId}
+    `;
+
+    const countConditions = [];
+    if (startDate) {
+      countConditions.push(sql`a.scheduled_date >= ${startDate}`);
+    }
+    if (endDate) {
+      countConditions.push(sql`a.scheduled_date <= ${endDate}`);
+    }
+    if (status && status !== 'all') {
+      countConditions.push(sql`a.status = ${status}`);
+    }
+    if (userId) {
+      countConditions.push(sql`a.user_id = ${userId}`);
+    }
+
+    if (countConditions.length > 0) {
+      countQuery = sql`${countQuery} AND ${sql.join(countConditions, sql` AND `)}`;
+    }
+
+    const countResult = await db.execute(countQuery);
+    const totalItems = parseInt(countResult.rows[0]?.total || '0');
+
+    // Data query
+    let dataQuery = sql`
+      SELECT 
+        a.id, a.contact_id, a.scheduled_date, a.status, a.duration_minutes,
+        a.appointment_type, a.user_id, a.doctor_name,
+        c.name as contact_name, c.phone as contact_phone
+      FROM appointments a
+      LEFT JOIN contacts c ON a.contact_id = c.id
+      WHERE a.clinic_id = ${clinicId}
+    `;
+
+    if (countConditions.length > 0) {
+      dataQuery = sql`${dataQuery} AND ${sql.join(countConditions, sql` AND `)}`;
+    }
+
+    dataQuery = sql`
+      ${dataQuery}
+      ORDER BY a.scheduled_date ASC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const dataResult = await db.execute(dataQuery);
+    const pagination_meta = calculatePagination(page, limit, totalItems);
+
+    const result: PaginatedResponse<any> = {
+      data: dataResult.rows,
+      pagination: pagination_meta
+    };
+    
+    this.setCache(cacheKey, result, this.DEFAULT_TTL);
+    return result;
+  }
+
+  /**
+   * Legacy: Busca otimizada de consultas com agregações
    */
   async getAppointmentsOptimized(clinicId: number, filters?: {
     startDate?: string;

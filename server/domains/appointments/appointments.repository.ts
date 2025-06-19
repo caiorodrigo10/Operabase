@@ -41,4 +41,25 @@ export class AppointmentsRepository {
   async updateStatus(id: number, status: string): Promise<Appointment | null> {
     return this.storage.updateAppointment(id, { status });
   }
+
+  async countAppointments(clinicId: number, filters: { status?: string; professional_id?: number } = {}): Promise<number> {
+    // For now, we'll use a simple count method - in production this would be optimized
+    const allAppointments = await this.storage.getAppointments(clinicId, filters);
+    return allAppointments.length;
+  }
+
+  async findPaginated(
+    clinicId: number, 
+    pagination: { page: number; limit: number; offset: number },
+    filters: { status?: string; professional_id?: number } = {}
+  ): Promise<Appointment[]> {
+    // Get all appointments with filters, then apply pagination
+    const allAppointments = await this.storage.getAppointments(clinicId, filters);
+    
+    // Apply pagination
+    const startIndex = pagination.offset;
+    const endIndex = startIndex + pagination.limit;
+    
+    return allAppointments.slice(startIndex, endIndex);
+  }
 }
