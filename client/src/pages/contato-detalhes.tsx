@@ -35,6 +35,7 @@ import EvolucaoEditor from "@/components/EvolucaoEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
 import ProntuarioMedico from "@/components/ProntuarioMedico";
 import { AppointmentEditor } from "@/components/AppointmentEditor";
+import { AnamnesisManager } from "@/components/AnamnesisManager";
 
 interface Contact {
   id: number;
@@ -667,14 +668,7 @@ export function ContatoDetalhes() {
           {/* Anamneses Tab */}
           {activeTab === 'anamneses' && (
             <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Anamneses</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-500">Funcionalidade de anamneses será implementada em breve.</p>
-                </CardContent>
-              </Card>
+              <AnamnesisManager contactId={contactId!} />
             </div>
           )}
 
