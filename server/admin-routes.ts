@@ -23,7 +23,7 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
       // Allow users with super_admin role or specific user ID to access admin panel
       const hasAdminAccess = user.role === 'super_admin' || 
                             user.role === 'admin' || 
-                            user.id === 4 || 
+                            user.id === '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4' || 
                             user.email === 'cr@caiorodrigo.com.br';
       
       if (!hasAdminAccess) {

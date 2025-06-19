@@ -16,13 +16,13 @@ export function AdminDashboard() {
   
   const { data: metrics, isLoading, error } = useQuery<BasicAdminMetrics>({
     queryKey: ['/api/admin/dashboard'],
-    enabled: user?.role === 'super_admin' || user?.role === 'admin' || user?.id === "4" || user?.email === 'cr@caiorodrigo.com.br',
+    enabled: user?.role === 'super_admin' || user?.role === 'admin' || user?.id === '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4' || user?.email === 'cr@caiorodrigo.com.br',
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Check if user has admin access (works with existing auth system)
-  const hasAdminAccess = user?.role === 'super_admin' || user?.role === 'admin' || user?.id === "4" || user?.email === 'cr@caiorodrigo.com.br';
+  const hasAdminAccess = user?.role === 'super_admin' || user?.role === 'admin' || user?.id === '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4' || user?.email === 'cr@caiorodrigo.com.br';
   if (!user || !hasAdminAccess) {
     return (
       <div className="p-4 lg:p-6">
