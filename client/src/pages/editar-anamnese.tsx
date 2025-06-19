@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Search } from 'lucide-react';
 import { useLocation, useRoute } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
+import { supabase } from '@/lib/supabase';
 
 interface Question {
   id: string;
@@ -60,7 +61,17 @@ export default function EditarAnamnesePage() {
   const { data: template, isLoading } = useQuery({
     queryKey: ['/api/anamneses', templateId, 'editar'],
     queryFn: async () => {
-      const response = await fetch(`/api/anamneses/${templateId}/editar`);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch(`/api/anamneses/${templateId}/editar`, {
+        headers,
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch template');
       return response.json();
     },
@@ -70,9 +81,17 @@ export default function EditarAnamnesePage() {
   // Mutation para adicionar pergunta
   const addQuestionMutation = useMutation({
     mutationFn: async (data: any) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch(`/api/anamneses/${templateId}/perguntas`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       if (!response.ok) throw new Error('Failed to add question');
@@ -88,9 +107,17 @@ export default function EditarAnamnesePage() {
   // Mutation para editar pergunta
   const editQuestionMutation = useMutation({
     mutationFn: async ({ questionId, data }: { questionId: string; data: any }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch(`/api/anamneses/${templateId}/perguntas/${questionId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       if (!response.ok) throw new Error('Failed to edit question');
@@ -106,8 +133,17 @@ export default function EditarAnamnesePage() {
   // Mutation para remover pergunta
   const removeQuestionMutation = useMutation({
     mutationFn: async (questionId: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch(`/api/anamneses/${templateId}/perguntas/${questionId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers,
+        credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to remove question');
       return response.json();
