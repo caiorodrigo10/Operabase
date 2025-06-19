@@ -9,6 +9,8 @@ import { performanceTrackingMiddleware, auditLoggingMiddleware, errorLoggingMidd
 import { performanceMonitor } from "./shared/performance-monitor";
 import { cacheService } from "./shared/redis-cache.service";
 import { tenantContext } from "./shared/tenant-context.provider";
+import { setupOptimizedRoutes } from "./optimized-routes.js";
+import { performanceOptimizer } from "./performance-optimizer.js";
 import http from "http";
 
 const app = express();
