@@ -136,7 +136,7 @@ export default function PreencherAnamnese() {
   const generateShareableLink = () => {
     if (!shareToken) return '';
     const baseUrl = window.location.origin;
-    return `${baseUrl}/anamnese-publica/${shareToken}`;
+    return `${baseUrl}/public/anamnese/${shareToken}`;
   };
 
   const handleCopyLink = async () => {

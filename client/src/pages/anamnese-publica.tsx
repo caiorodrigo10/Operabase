@@ -1,322 +1,274 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'wouter';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 
-interface AnamnesisForm {
-  id: number;
-  template_name: string;
-  template_fields: {
-    questions: Array<{
-      id: string;
-      text: string;
-      type: 'text' | 'radio' | 'checkbox' | 'textarea';
-      options?: string[];
-      required: boolean;
-      additionalInfo: boolean;
-    }>;
-  };
-  status: string;
-  patient_name?: string;
-  expires_at?: string;
+interface AnamnesisQuestion {
+  id: string;
+  text: string;
+  type: string;
+  required: boolean;
 }
 
-export function AnamnesisPublica() {
-  const { token } = useParams();
-  const [responses, setResponses] = useState<Record<string, any>>({});
-  const [patientInfo, setPatientInfo] = useState({
-    name: '',
-    email: '',
-    phone: ''
-  });
-  const [isSubmitted, setIsSubmitted] = useState(false);
+interface AnamnesisData {
+  id: number;
+  contact_id: number;
+  template_name: string;
+  template_fields: {
+    questions: AnamnesisQuestion[];
+  };
+  status: string;
+  expires_at: string;
+}
+
+export default function AnamnesisPublica() {
+  const params = useParams();
   const { toast } = useToast();
-
-  // Fetch anamnesis form by token
-  const { data: anamnesis, isLoading, error } = useQuery({
-    queryKey: ['/api/public/anamnesis', token],
-    queryFn: async () => {
-      const response = await fetch(`/api/public/anamnesis/${token}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch anamnesis');
-      }
-      return response.json();
-    },
-    enabled: !!token
-  });
-
-  // Submit anamnesis mutation
-  const submitMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch(`/api/public/anamnesis/${token}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit anamnesis');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      setIsSubmitted(true);
-      toast({
-        title: "Anamnese enviada com sucesso!",
-        description: "Suas respostas foram registradas.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao enviar anamnese",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
+  const token = params.token;
+  
+  const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
+  const [contactName, setContactName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (anamnesis?.patient_name) {
-      setPatientInfo(prev => ({
-        ...prev,
-        name: anamnesis.patient_name
-      }));
+    if (token) {
+      fetchAnamnesis();
     }
-  }, [anamnesis]);
+  }, [token]);
 
-  const handleResponseChange = (questionId: string, value: any) => {
+  const fetchAnamnesis = async () => {
+    try {
+      const response = await fetch(`/api/public/anamnesis/${token}`);
+      if (!response.ok) {
+        throw new Error('Anamnese não encontrada');
+      }
+      const data = await response.json();
+      setAnamnesis(data);
+      
+      // Fetch contact name
+      if (data.contact_id) {
+        fetchContactName(data.contact_id);
+      }
+    } catch (error) {
+      console.error('Error fetching anamnesis:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar a anamnese.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchContactName = async (contactId: number) => {
+    try {
+      const response = await fetch(`/api/public/contact/${contactId}/name`);
+      if (response.ok) {
+        const data = await response.json();
+        setContactName(data.name || 'Paciente');
+      }
+    } catch (error) {
+      console.error('Error fetching contact name:', error);
+      setContactName('Paciente');
+    }
+  };
+
+  const handleResponseChange = (questionId: string, value: string) => {
     setResponses(prev => ({
       ...prev,
       [questionId]: value
     }));
   };
 
-  const handleAdditionalInfoChange = (questionId: string, value: string) => {
-    setResponses(prev => ({
-      ...prev,
-      [`${questionId}_additional`]: value
-    }));
-  };
+  const handleSubmit = async () => {
+    if (!anamnesis) return;
 
-  const handleSubmit = () => {
-    // Validate required fields
-    const requiredQuestions = anamnesis?.template_fields?.questions?.filter((q: any) => q.required) || [];
-    const missingResponses = requiredQuestions.filter((q: any) => !responses[q.id]);
-    
-    if (missingResponses.length > 0) {
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/public/anamnesis/${token}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          responses,
+          patient_name: contactName,
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao enviar anamnese');
+      }
+
       toast({
-        title: "Campos obrigatórios não preenchidos",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        title: "Sucesso!",
+        description: "Anamnese enviada com sucesso.",
+      });
+
+      // Redirect to success page or show success message
+      setAnamnesis(null);
+    } catch (error) {
+      console.error('Error submitting anamnesis:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a anamnese.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setSubmitting(false);
     }
-
-    if (!patientInfo.name.trim()) {
-      toast({
-        title: "Nome obrigatório",
-        description: "Por favor, informe seu nome.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    submitMutation.mutate({
-      responses,
-      patient_name: patientInfo.name,
-      patient_email: patientInfo.email,
-      patient_phone: patientInfo.phone
-    });
   };
 
-  const renderQuestion = (question: any) => {
-    return (
-      <Card key={question.id} className="border border-slate-200">
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <h3 className="font-medium text-slate-900">
-              {question.text}
-              {question.required && <span className="text-red-500 ml-1">*</span>}
-            </h3>
-            
-            {question.type === 'radio' && question.options && (
-              <RadioGroup
-                value={responses[question.id] || ''}
-                onValueChange={(value) => handleResponseChange(question.id, value)}
-              >
-                <div className="space-y-3">
-                  {question.options.map((option: string) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <RadioGroupItem value={option} id={`${question.id}-${option}`} />
-                      <Label htmlFor={`${question.id}-${option}`} className="text-base">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </RadioGroup>
-            )}
+  const renderQuestion = (question: AnamnesisQuestion) => {
+    const value = responses[question.id] || '';
+    const additionalValue = responses[`${question.id}_additional`] || '';
 
-            {question.type === 'textarea' && (
-              <Textarea
-                placeholder="Digite sua resposta aqui..."
-                value={responses[question.id] || ''}
-                onChange={(e) => handleResponseChange(question.id, e.target.value)}
-                className="min-h-[120px]"
-                required={question.required}
-              />
-            )}
+    switch (question.type) {
+      case 'somente_texto':
+        return (
+          <Input
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder="Informações adicionais"
+            className="w-full"
+          />
+        );
 
-            {question.additionalInfo && (
-              <div className="space-y-2 pt-4 border-t border-slate-100">
-                <Label className="text-sm font-medium text-slate-700">
-                  Informações adicionais
-                </Label>
-                <Textarea
-                  placeholder="Digite aqui..."
-                  value={responses[`${question.id}_additional`] || ''}
-                  onChange={(e) => handleAdditionalInfoChange(question.id, e.target.value)}
-                  className="min-h-[80px]"
-                />
+      case 'sim_nao_nao_sei':
+        return (
+          <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)} className="flex space-x-6">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
+              <Label htmlFor={`${question.id}-sim`} className="text-sm font-normal">Sim</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Não" id={`${question.id}-nao`} />
+              <Label htmlFor={`${question.id}-nao`} className="text-sm font-normal">Não</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Não sei" id={`${question.id}-nao-sei`} />
+              <Label htmlFor={`${question.id}-nao-sei`} className="text-sm font-normal">Não sei</Label>
+            </div>
+          </RadioGroup>
+        );
+
+      case 'sim_nao_nao_sei_texto':
+        return (
+          <div className="space-y-3">
+            <RadioGroup value={value} onValueChange={(val) => handleResponseChange(question.id, val)} className="flex space-x-6">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
+                <Label htmlFor={`${question.id}-sim`} className="text-sm font-normal">Sim</Label>
               </div>
-            )}
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Não" id={`${question.id}-nao`} />
+                <Label htmlFor={`${question.id}-nao`} className="text-sm font-normal">Não</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Não sei" id={`${question.id}-nao-sei`} />
+                <Label htmlFor={`${question.id}-nao-sei`} className="text-sm font-normal">Não sei</Label>
+              </div>
+            </RadioGroup>
+            
+            <div>
+              <Label className="text-sm text-gray-600 mb-1 block">Informações adicionais</Label>
+              <Input
+                value={additionalValue}
+                onChange={(e) => handleResponseChange(`${question.id}_additional`, e.target.value)}
+                placeholder="Digite aqui..."
+                className="w-full"
+              />
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    );
+        );
+
+      default:
+        return (
+          <Input
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            placeholder="Digite sua resposta..."
+            className="w-full"
+          />
+        );
+    }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando anamnese...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando anamnese...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (!anamnesis) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card className="max-w-md w-full mx-4">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">
-              Anamnese não encontrada
-            </h2>
-            <p className="text-slate-600">
-              {(error as any)?.message || 'Este link pode ter expirado ou não existe.'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card className="max-w-md w-full mx-4">
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">
-              Anamnese enviada com sucesso!
-            </h2>
-            <p className="text-slate-600">
-              Suas respostas foram registradas e enviadas para o profissional.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Anamnese não encontrada</h1>
+          <p className="text-gray-600">A anamnese pode ter expirado ou o link pode estar incorreto.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            {anamnesis?.template_name}
-          </h1>
-          <p className="text-slate-600">
-            Por favor, preencha todos os campos com suas informações.
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with patient name */}
+      <div className="bg-blue-600 text-white py-4">
+        <div className="max-w-3xl mx-auto px-6">
+          <h1 className="text-lg font-medium text-center">{contactName}</h1>
         </div>
+      </div>
 
-        <div className="space-y-6">
-          {/* Patient Information */}
-          <Card className="border border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-lg">Suas informações</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="patient-name" className="text-sm font-medium text-slate-700">
-                  Nome completo <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="patient-name"
-                  value={patientInfo.name}
-                  onChange={(e) => setPatientInfo(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Digite seu nome completo"
-                  className="mt-1"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="patient-email" className="text-sm font-medium text-slate-700">
-                  Email (opcional)
-                </Label>
-                <Input
-                  id="patient-email"
-                  type="email"
-                  value={patientInfo.email}
-                  onChange={(e) => setPatientInfo(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="Digite seu email"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="patient-phone" className="text-sm font-medium text-slate-700">
-                  Telefone (opcional)
-                </Label>
-                <Input
-                  id="patient-phone"
-                  value={patientInfo.phone}
-                  onChange={(e) => setPatientInfo(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="Digite seu telefone"
-                  className="mt-1"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Questions */}
-          <div className="space-y-6">
-            {anamnesis?.template_fields?.questions?.map(renderQuestion)}
+      {/* Main content */}
+      <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Anamnese</h2>
+            <p className="text-gray-600">
+              Olá, assim que você preencher a anamnese o profissional irá receber os dados.
+            </p>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end pt-6">
+          {/* Questions */}
+          <div className="space-y-8">
+            {anamnesis.template_fields.questions.map((question, index) => (
+              <div key={question.id} className="bg-gray-50 rounded-lg p-6">
+                <Label className="text-base font-medium text-gray-900 block mb-4">
+                  {question.text}
+                  {question.required && <span className="text-red-500 ml-1">*</span>}
+                </Label>
+                {renderQuestion(question)}
+              </div>
+            ))}
+          </div>
+
+          {/* Submit button */}
+          <div className="mt-8 flex justify-end">
             <Button
               onClick={handleSubmit}
-              disabled={submitMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
+              disabled={submitting}
+              className="bg-blue-600 hover:bg-blue-700 px-8"
             >
-              {submitMutation.isPending ? 'Enviando...' : 'Enviar anamnese'}
+              {submitting ? 'Enviando...' : 'Enviar →'}
             </Button>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t text-center">
+            <p className="text-sm text-gray-500">Desenvolvido por</p>
+            <p className="text-sm font-medium text-blue-600">Codental</p>
           </div>
         </div>
       </div>

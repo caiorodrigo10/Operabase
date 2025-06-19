@@ -29,7 +29,7 @@ import ChatDeTeste from "./pages/chat-de-teste";
 import MCPTestPage from "./pages/mcp-test";
 import ApiKeysPage from "./pages/api-keys";
 import { AdminDashboard } from "./pages/admin/dashboard";
-import { AnamnesisPublica } from "./pages/anamnese-publica";
+import AnamnesisPublica from "./pages/anamnese-publica";
 import PreencherAnamnese from "./pages/preencher-anamnese";
 import AnamnesisTemplatesPage from "./pages/anamneses";
 import EditarAnamnesePage from "./pages/editar-anamnese";
@@ -70,7 +70,7 @@ function Router() {
     }
     
     // Check if this is a public anamnesis page
-    if (location.startsWith('/anamnese/')) {
+    if (location.startsWith('/public/anamnese/')) {
       return <AnamnesisPublica />;
     }
     
