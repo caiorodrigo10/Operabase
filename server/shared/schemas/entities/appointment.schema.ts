@@ -42,8 +42,11 @@ export const createAppointmentSchema = z.object({
   contact_id: z.number().int().positive(),
   user_id: z.union([z.string().uuid(), z.number().int().positive()]),
   clinic_id: z.number().int().positive(),
-  type: z.string().min(1, "Tipo da consulta é obrigatório"),
-  scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
+  type: z.string().min(1, "Tipo da consulta é obrigatório").optional(),
+  scheduled_date: z.union([
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
+    z.date().transform((date) => date.toISOString().split('T')[0])
+  ]),
   scheduled_time: z.string().regex(/^\d{2}:\d{2}$/, "Horário deve estar no formato HH:MM"),
   duration: z.number().int().min(15).max(480).default(60),
   status: z.enum(['agendada', 'confirmada', 'realizada', 'cancelada', 'reagendada']).default('agendada'),

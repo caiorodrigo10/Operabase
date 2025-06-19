@@ -84,7 +84,24 @@ export class AppointmentsController {
 
   async createAppointment(req: Request, res: Response) {
     try {
-      const validatedData = createAppointmentSchema.parse(req.body);
+      // Preprocess data to handle common issues
+      const preprocessedData = {
+        ...req.body,
+        // Ensure required fields are present
+        scheduled_date: req.body.scheduled_date || req.body.date,
+        scheduled_time: req.body.scheduled_time || req.body.time,
+        // Handle legacy field mappings
+        type: req.body.type || req.body.appointment_type || 'consulta',
+        duration: req.body.duration || req.body.duration_minutes || 60,
+        // Handle null/undefined values
+        tag_id: req.body.tag_id === null || req.body.tag_id === undefined ? null : req.body.tag_id,
+        notes: req.body.notes || req.body.session_notes || null,
+        payment_amount: req.body.payment_amount || req.body.price || null
+      };
+
+      console.log('🔍 Preprocessed appointment data:', preprocessedData);
+
+      const validatedData = createAppointmentSchema.parse(preprocessedData);
       
       // Transform validated data to match DTO interface
       const createData: CreateAppointmentDto = {
@@ -98,6 +115,7 @@ export class AppointmentsController {
       res.status(201).json(appointment);
     } catch (error: any) {
       if (error.name === 'ZodError') {
+        console.error('🚨 Validation error:', error.errors);
         return res.status(400).json({ error: "Invalid data", details: error.errors });
       }
       console.error("Error creating appointment:", error);

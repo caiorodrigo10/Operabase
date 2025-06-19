@@ -120,15 +120,20 @@ export const createAppointmentSchema = z.object({
   contact_id: z.number(),
   user_id: z.union([z.string(), z.number()]),
   clinic_id: z.number(),
-  doctor_name: z.string(),
+  doctor_name: z.string().optional(),
   specialty: z.union([z.string(), z.null()]).optional(),
-  appointment_type: z.string(),
+  appointment_type: z.string().optional(),
+  type: z.string().optional(),
   scheduled_date: z.union([z.date(), z.string()]),
+  scheduled_time: z.string().optional(),
   duration_minutes: z.number().default(60),
+  duration: z.number().optional(),
   status: z.string().default('agendada'),
   payment_status: z.string().default('pendente'),
   payment_amount: z.union([z.number(), z.null()]).optional(),
-  session_notes: z.union([z.string(), z.null()]).optional()
+  session_notes: z.union([z.string(), z.null()]).optional(),
+  notes: z.union([z.string(), z.null()]).optional(),
+  tag_id: z.union([z.number(), z.null()]).optional()
 });
 
 export const updateAppointmentSchema = createAppointmentSchema.partial();
