@@ -659,14 +659,9 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   });
 
   // Get individual anamnesis response for editing
-  app.get('/api/anamnesis/:responseId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/anamnesis/:responseId', async (req: Request, res: Response) => {
     try {
       const responseId = parseInt(req.params.responseId);
-      const userId = (req.user as any)?.id;
-      
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
 
       // For authenticated users, allow access to clinic 1
       const clinicAccess = { clinicId: 1, role: 'admin' };
@@ -704,15 +699,10 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   });
 
   // Update anamnesis response
-  app.put('/api/anamnesis/:responseId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/anamnesis/:responseId', async (req: Request, res: Response) => {
     try {
       const responseId = parseInt(req.params.responseId);
       const { responses, status } = req.body;
-      const userId = (req.user as any)?.id;
-
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
 
       // For authenticated users, allow access to clinic 1
       const clinicAccess = { clinicId: 1, role: 'admin' };
