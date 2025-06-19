@@ -70,9 +70,48 @@ function Router() {
 
   console.log('✅ User authenticated - showing main app');
 
+  // Conditional layout based on admin view state
+  if (isAdminView || location.startsWith('/admin')) {
+    // Admin layout with admin routes
+    return (
+      <AdminLayout currentPage={getCurrentPage()}>
+        <Switch>
+          <Route path="/admin" component={() => (
+            <AdminRouteGuard>
+              <AdminDashboard />
+            </AdminRouteGuard>
+          )} />
+          <Route path="/admin/clinics" component={() => (
+            <AdminRouteGuard>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Gestão de Clínicas</h1>
+                <p className="text-gray-600">Página em desenvolvimento...</p>
+              </div>
+            </AdminRouteGuard>
+          )} />
+          <Route path="/admin/users" component={() => (
+            <AdminRouteGuard>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Gestão de Usuários</h1>
+                <p className="text-gray-600">Página em desenvolvimento...</p>
+              </div>
+            </AdminRouteGuard>
+          )} />
+          <Route path="/admin/settings" component={() => (
+            <AdminRouteGuard>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">Configurações do Sistema</h1>
+                <p className="text-gray-600">Página em desenvolvimento...</p>
+              </div>
+            </AdminRouteGuard>
+          )} />
+          <Route component={NotFound} />
+        </Switch>
+      </AdminLayout>
+    );
+  }
 
-
-  // Default user layout with admin route protection
+  // Default user layout with user routes
   return (
     <Layout currentPage={getCurrentPage()}>
       <Switch>
@@ -89,44 +128,6 @@ function Router() {
         <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
-        {/* Protected Admin Routes */}
-        <Route path="/admin" component={() => (
-          <AdminRouteGuard>
-            <AdminLayout>
-              <AdminDashboard />
-            </AdminLayout>
-          </AdminRouteGuard>
-        )} />
-        <Route path="/admin/clinics" component={() => (
-          <AdminRouteGuard>
-            <AdminLayout>
-              <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">Gestão de Clínicas</h1>
-                <p className="text-gray-600">Página em desenvolvimento...</p>
-              </div>
-            </AdminLayout>
-          </AdminRouteGuard>
-        )} />
-        <Route path="/admin/users" component={() => (
-          <AdminRouteGuard>
-            <AdminLayout>
-              <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">Gestão de Usuários</h1>
-                <p className="text-gray-600">Página em desenvolvimento...</p>
-              </div>
-            </AdminLayout>
-          </AdminRouteGuard>
-        )} />
-        <Route path="/admin/settings" component={() => (
-          <AdminRouteGuard>
-            <AdminLayout>
-              <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">Configurações do Sistema</h1>
-                <p className="text-gray-600">Página em desenvolvimento...</p>
-              </div>
-            </AdminLayout>
-          </AdminRouteGuard>
-        )} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

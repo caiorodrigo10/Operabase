@@ -1,7 +1,5 @@
-import { ReactNode, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdmin } from '@/contexts/AdminContext';
 
 interface AdminRouteGuardProps {
   children: ReactNode;
@@ -9,29 +7,19 @@ interface AdminRouteGuardProps {
 
 export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   const { user } = useAuth();
-  const { setAdminView } = useAdmin();
-  const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    // Check if user has admin privileges
-    const hasAdminAccess = user?.role === 'super_admin' || user?.role === 'admin';
-    
-    if (!hasAdminAccess) {
-      // Redirect to dashboard if no admin access
-      setLocation('/');
-      setAdminView(false);
-      return;
-    }
-
-    // Ensure admin view is enabled for admin routes
-    setAdminView(true);
-  }, [user, setLocation, setAdminView]);
-
-  // Don't render children if user doesn't have admin access
+  // Check if user has admin privileges
   const hasAdminAccess = user?.role === 'super_admin' || user?.role === 'admin';
   
   if (!hasAdminAccess) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Acesso Negado</h1>
+          <p className="text-gray-600">Você não tem permissão para acessar esta área.</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
