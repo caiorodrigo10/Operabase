@@ -35,7 +35,8 @@ export default function AnamnesisTemplatesPage() {
     queryKey: ['/api/anamneses'],
     queryFn: async () => {
       const response = await fetch('/api/anamneses', {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch templates');
       return response.json();
@@ -48,6 +49,7 @@ export default function AnamnesisTemplatesPage() {
       const response = await fetch('/api/anamneses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       if (!response.ok) throw new Error('Failed to create template');
