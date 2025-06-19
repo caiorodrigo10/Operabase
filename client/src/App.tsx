@@ -69,9 +69,16 @@ function Router() {
       return <ResetPassword />;
     }
     
-    // Check if this is a public anamnesis page
+    // Check if this is a public anamnesis page - no system menu needed
     if (location.startsWith('/public/anamnese/')) {
-      return <AnamnesisPublica />;
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <AnamnesisPublica />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
     }
     
     return <LoginForm />;
