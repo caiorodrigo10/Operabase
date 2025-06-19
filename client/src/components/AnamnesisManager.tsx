@@ -104,19 +104,26 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
         return (
           <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
             <CheckCircle className="w-3 h-3 mr-1" />
-            Preenchida
+            Preenchido pelo paciente
+          </Badge>
+        );
+      case 'solicitado':
+        return (
+          <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200 font-medium">
+            <Clock className="w-3 h-3 mr-1" />
+            Preenchimento solicitado
           </Badge>
         );
       case 'pending':
         return (
-          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+          <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200 font-medium">
             <Clock className="w-3 h-3 mr-1" />
             Preenchimento solicitado
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline">
+          <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-200">
             {status}
           </Badge>
         );
@@ -193,7 +200,7 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    {anamnesis.status === 'pending' && (
+                    {(anamnesis.status === 'pending' || anamnesis.status === 'solicitado') && (
                       <Button 
                         variant="outline" 
                         size="sm"
