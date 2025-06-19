@@ -284,7 +284,7 @@ export default function AnamnesisPublica() {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t text-center">
             <p className="text-sm text-gray-500">Desenvolvido por</p>
-            <p className="text-sm font-medium text-blue-600">Codental</p>
+            <p className="text-sm font-medium text-blue-600">Taskmed</p>
           </div>
         </div>
       </div>
