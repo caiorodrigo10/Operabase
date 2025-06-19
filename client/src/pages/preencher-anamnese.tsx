@@ -517,19 +517,17 @@ export default function PreencherAnamnese() {
       )}
 
       {/* Share Modal */}
-      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+      <Dialog open={showShareModal} onOpenChange={(open) => {
+        setShowShareModal(open);
+        if (!open) {
+          // When modal closes, navigate back to contact page with anamnesis tab
+          queryClient.invalidateQueries({ queryKey: ['/api/contacts', contactId, 'anamnesis'] });
+          setLocation(`/contatos/${contactId}#anamnesis`);
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>Compartilhar link para preenchimento</DialogTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowShareModal(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle>Compartilhar link para preenchimento</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
