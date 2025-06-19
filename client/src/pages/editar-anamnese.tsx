@@ -185,12 +185,12 @@ export default function EditarAnamnesePage() {
 
     if (active.id !== over?.id) {
       const questions = template?.fields?.questions || [];
-      const oldIndex = questions.findIndex((q: Question) => q.id === active.id);
-      const newIndex = questions.findIndex((q: Question) => q.id === over?.id);
+      const oldIndex = questions.findIndex((q: any) => q.id === active.id);
+      const newIndex = questions.findIndex((q: any) => q.id === over?.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(questions, oldIndex, newIndex);
-        const questionIds = newOrder.map((q: Question) => q.id);
+        const questionIds = newOrder.map((q: any) => q.id);
         reorderQuestionsMutation.mutate(questionIds);
       }
     }
@@ -495,54 +495,27 @@ export default function EditarAnamnesePage() {
             )}
           </div>
         ) : (
-          filteredQuestions.map((question: Question) => (
-            <Card key={question.id} className="hover:shadow-sm transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-4">
-                  <GripVertical className="w-5 h-5 text-gray-400 cursor-move" />
-                  
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{question.text}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Tipo: {
-                        question.type === 'somente_texto' ? 'Somente texto' :
-                        question.type === 'sim_nao_nao_sei' ? 'Sim / Não / Não sei' :
-                        'Sim / Não / Não sei e Texto'
-                      }
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <Switch 
-                        checked={question.active !== false}
-                        onCheckedChange={() => {}}
-                      />
-                      <span className="text-sm text-gray-600">Ativo</span>
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openEditQuestion(question)}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleRemoveQuestion(question.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      Remover
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext 
+              items={filteredQuestions.map((q: any) => q.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-4">
+                {filteredQuestions.map((question: Question) => (
+                  <SortableQuestionItem
+                    key={question.id}
+                    question={question}
+                    onEdit={openEditQuestion}
+                    onRemove={handleRemoveQuestion}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>

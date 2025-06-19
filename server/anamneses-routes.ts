@@ -368,4 +368,48 @@ export function setupAnamnesisManagementRoutes(app: any, storage: IStorage) {
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   });
+
+  // POST /api/anamneses/:id/perguntas/reorder - Reordenar perguntas
+  app.post('/api/anamneses/:id/perguntas/reorder', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      const userClinicId = user.clinic_id || 1;
+      const { id } = req.params;
+      const { order } = req.body;
+
+      if (!order || !Array.isArray(order)) {
+        return res.status(400).json({ error: 'Order array is required' });
+      }
+
+      const template = await db.execute(sql`
+        SELECT fields FROM anamnesis_templates 
+        WHERE id = ${id} AND clinic_id = ${userClinicId} AND is_active = true
+      `);
+
+      if (template.rows.length === 0) {
+        return res.status(404).json({ error: 'Modelo de anamnese não encontrado' });
+      }
+
+      const fields = template.rows[0].fields as any;
+      const questions = fields.questions || [];
+
+      // Reorder questions based on the provided order
+      const reorderedQuestions = order.map((questionId: string) => {
+        return questions.find((q: any) => q.id === questionId);
+      }).filter(Boolean);
+
+      const updatedFields = { questions: reorderedQuestions };
+
+      await db.execute(sql`
+        UPDATE anamnesis_templates 
+        SET fields = ${JSON.stringify(updatedFields)}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id} AND clinic_id = ${userClinicId}
+      `);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('❌ Error reordering questions:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
 }
