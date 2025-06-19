@@ -170,15 +170,29 @@ export default function PreencherAnamnese() {
   // Mutation to create anamnesis record
   const createAnamnesisRecordMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/contacts/${contactId}/anamnesis`, {
+      const response = await fetch(`/api/contacts/${contactId}/anamnesis`, {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include session cookies
+        body: JSON.stringify({
           template_id: selectedTemplateId,
           status: 'solicitado'
-        }
+        })
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create anamnesis record');
+      }
+
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setShareToken(data.share_token);
+      // Invalidate anamnesis cache
+      queryClient.invalidateQueries({ queryKey: [`/api/contacts/${contactId}/anamnesis`] });
       toast({
         title: "Link criado!",
         description: "O link foi criado e a anamnese foi adicionada à lista.",
@@ -196,11 +210,15 @@ export default function PreencherAnamnese() {
   const handleShareButtonClick = async () => {
     if (!selectedTemplateId) return;
     
-    // Create anamnesis record first
-    await createAnamnesisRecordMutation.mutateAsync();
-    
-    // Then open the modal
-    setShowShareModal(true);
+    try {
+      // Create anamnesis record first
+      await createAnamnesisRecordMutation.mutateAsync();
+      
+      // Then open the modal
+      setShowShareModal(true);
+    } catch (error) {
+      console.error('Error creating anamnesis record:', error);
+    }
   };
 
   const handleTemplateChange = (templateId: string) => {
