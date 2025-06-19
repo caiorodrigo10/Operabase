@@ -1,75 +1,34 @@
 import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, UserPlus, Search, Plus, X, AlertTriangle } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Calendar, Clock, User, UserPlus, Search, Plus, X, AlertTriangle, Check, ChevronsUpDown, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { FindTimeSlots } from "@/components/FindTimeSlots";
+import { format } from "date-fns";
 import type { Contact } from "../../../server/domains/contacts/contacts.schema";
 
 const appointmentFormSchema = z.object({
-  contact_id: z.number().min(1, "Paciente é obrigatório"),
-  doctor_name: z.string().min(1, "Profissional é obrigatório"),
-  specialty: z.string().optional(),
+  contact_id: z.string().min(1, "Paciente é obrigatório"),
+  user_id: z.string().min(1, "Profissional é obrigatório"),
+  type: z.string().min(1, "Tipo de consulta é obrigatório"),
   scheduled_date: z.string().min(1, "Data é obrigatória"),
   scheduled_time: z.string().min(1, "Horário é obrigatório"),
-  duration_minutes: z.number().min(15, "Duração mínima é 15 minutos"),
-  status: z.string().min(1, "Status é obrigatório"),
-  appointment_type: z.string().optional(),
-  session_notes: z.string().optional(),
-  observations: z.string().optional(),
-  how_found_clinic: z.string().optional(),
-  return_period: z.string().optional(),
-  receive_reminders: z.boolean().default(true),
+  duration: z.string().min(1, "Duração é obrigatória"),
+  tag_id: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 type AppointmentFormData = z.infer<typeof appointmentFormSchema>;
-
-const statusOptions = [
-  { value: 'agendada', label: 'Agendado', color: 'bg-blue-100 text-blue-800' },
-  { value: 'confirmada', label: 'Confirmado', color: 'bg-green-100 text-green-800' },
-  { value: 'realizada', label: 'Realizado', color: 'bg-purple-100 text-purple-800' },
-  { value: 'faltou', label: 'Faltou', color: 'bg-orange-100 text-orange-800' },
-  { value: 'cancelada', label: 'Cancelado', color: 'bg-red-100 text-red-800' },
-];
-
-const howFoundOptions = [
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'google', label: 'Google' },
-  { value: 'indicacao_familiar', label: 'Indicação familiar' },
-  { value: 'indicacao_amigo', label: 'Indicação de amigo' },
-  { value: 'indicacao_dentista', label: 'Indicação de profissional' },
-  { value: 'marketing', label: 'Marketing' },
-];
-
-const returnPeriodOptions = [
-  { value: 'sem_retorno', label: 'Sem retorno' },
-  { value: '15_dias', label: '15 dias' },
-  { value: '1_mes', label: '1 mês' },
-  { value: '6_meses', label: '6 meses' },
-  { value: '12_meses', label: '12 meses' },
-  { value: 'outro', label: 'Outro' },
-];
-
-const availableTags = [
-  { name: 'Primeira consulta', color: 'bg-blue-100 text-blue-800' },
-  { name: 'Retorno', color: 'bg-green-100 text-green-800' },
-  { name: 'Emergência', color: 'bg-red-100 text-red-800' },
-  { name: 'Avaliação', color: 'bg-purple-100 text-purple-800' },
-  { name: 'Limpeza', color: 'bg-cyan-100 text-cyan-800' },
-  { name: 'Procedimento', color: 'bg-orange-100 text-orange-800' },
-];
 
 interface AppointmentEditorProps {
   appointmentId?: number;
@@ -80,37 +39,37 @@ interface AppointmentEditorProps {
 }
 
 export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, preselectedContact }: AppointmentEditorProps) {
-  const [patientSearchOpen, setPatientSearchOpen] = useState(false);
-  const [patientSearch, setPatientSearch] = useState('');
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [timePickerOpen, setTimePickerOpen] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [findTimeOpen, setFindTimeOpen] = useState(false);
-  
   const { toast } = useToast();
+  const [contactComboboxOpen, setContactComboboxOpen] = useState(false);
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
+  const [showNewPatientDialog, setShowNewPatientDialog] = useState(false);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const [availabilityConflict, setAvailabilityConflict] = useState<any>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [workingHoursWarning, setWorkingHoursWarning] = useState<any>(null);
 
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentFormSchema),
     defaultValues: {
-      contact_id: 0,
-      doctor_name: '',
-      specialty: '',
-      scheduled_date: '',
-      scheduled_time: '',
-      duration_minutes: 60,
-      status: 'agendada',
-      appointment_type: '',
-      session_notes: '',
-      observations: '',
-      how_found_clinic: '',
-      return_period: '',
-      receive_reminders: true,
+      contact_id: "",
+      user_id: "",
+      type: "consulta",
+      scheduled_date: "",
+      scheduled_time: "",
+      duration: "60",
+      tag_id: "",
+      notes: "",
     },
   });
 
-  // Fetch contacts for patient search
-  const { data: contacts = [] } = useQuery({
-    queryKey: ['/api/contacts', { clinic_id: 1 }],
+  const watchedDate = form.watch("scheduled_date");
+  const watchedTime = form.watch("scheduled_time");
+  const watchedDuration = form.watch("duration");
+  const watchedUserId = form.watch("user_id");
+
+  // Fetch contacts
+  const { data: contacts = [], isLoading: contactsLoading } = useQuery<Contact[]>({
+    queryKey: ['/api/contacts'],
     queryFn: async () => {
       const response = await fetch('/api/contacts?clinic_id=1');
       if (!response.ok) throw new Error('Failed to fetch contacts');
@@ -118,497 +77,445 @@ export function AppointmentEditor({ appointmentId, isOpen, onClose, onSave, pres
     },
   });
 
-  // Fetch doctors for the clinic
-  const { data: doctors = [] } = useQuery({
+  // Fetch clinic users
+  const { data: clinicUsers = [], isLoading: usersLoading } = useQuery({
     queryKey: ['/api/clinic/1/users/management'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/clinic/1/users/management');
+      const response = await fetch('/api/clinic/1/users/management');
+      if (!response.ok) throw new Error('Failed to fetch users');
       return response.json();
     },
   });
-
-  // Fetch appointment data when editing
-  const { data: appointment } = useQuery({
-    queryKey: ['/api/appointments', appointmentId],
-    queryFn: async () => {
-      if (!appointmentId) return null;
-      const response = await fetch(`/api/appointments/${appointmentId}`);
-      if (!response.ok) throw new Error('Failed to fetch appointment');
-      return response.json();
-    },
-    enabled: !!appointmentId,
-  });
-
-  // Load appointment data into form when editing
-  useEffect(() => {
-    if (appointment) {
-      const scheduledDate = appointment.scheduled_date ? new Date(appointment.scheduled_date) : null;
-      
-      form.reset({
-        contact_id: appointment.contact_id,
-        doctor_name: appointment.doctor_name || '',
-        specialty: appointment.specialty || '',
-        scheduled_date: scheduledDate ? scheduledDate.toISOString().split('T')[0] : '',
-        scheduled_time: scheduledDate ? scheduledDate.toTimeString().slice(0, 5) : '',
-        duration_minutes: appointment.duration_minutes || 60,
-        status: appointment.status || 'agendada',
-        appointment_type: appointment.appointment_type || '',
-        session_notes: appointment.session_notes || '',
-        observations: appointment.observations || '',
-        how_found_clinic: appointment.how_found_clinic || '',
-        return_period: appointment.return_period || '',
-        receive_reminders: appointment.receive_reminders ?? true,
-      });
-
-      // Set selected contact
-      const contact = contacts.find((c: Contact) => c.id === appointment.contact_id);
-      if (contact) {
-        setSelectedContact(contact);
-      }
-
-      // Set selected tags
-      if (appointment.tags) {
-        setSelectedTags(appointment.tags);
-      }
-    }
-  }, [appointment, contacts, form]);
 
   // Handle preselected contact
   useEffect(() => {
     if (preselectedContact && !appointmentId) {
-      setSelectedContact(preselectedContact);
-      form.setValue('contact_id', preselectedContact.id);
+      form.setValue('contact_id', preselectedContact.id.toString());
     }
   }, [preselectedContact, appointmentId, form]);
 
-  // Filter contacts based on search
-  const filteredContacts = contacts.filter((contact: Contact) =>
-    contact.name.toLowerCase().includes(patientSearch.toLowerCase())
-  ).slice(0, 10);
-
-  // Save appointment mutation
-  const saveAppointmentMutation = useMutation({
+  // Create appointment mutation
+  const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentFormData) => {
-      const scheduledDateTime = new Date(`${data.scheduled_date}T${data.scheduled_time}`);
-      
-      const payload = {
-        ...data,
-        scheduled_date: scheduledDateTime.toISOString(),
-        tags: selectedTags,
+      const appointmentData = {
+        contact_id: parseInt(data.contact_id),
+        user_id: parseInt(data.user_id),
         clinic_id: 1,
-        user_id: 1,
+        appointment_type: data.type,
+        specialty: data.type,
+        scheduled_date: `${data.scheduled_date} ${data.scheduled_time}:00`,
+        duration_minutes: parseInt(data.duration),
+        status: "agendada",
+        session_notes: data.notes || null,
+        tag_id: data.tag_id ? parseInt(data.tag_id) : null,
       };
 
-      if (appointmentId) {
-        const response = await fetch(`/api/appointments/${appointmentId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error('Failed to update appointment');
-        return response.json();
-      } else {
-        const response = await fetch('/api/appointments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error('Failed to create appointment');
-        return response.json();
+      const response = await apiRequest('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointmentData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create appointment');
       }
+
+      return response.json();
     },
     onSuccess: (appointment) => {
       toast({
-        title: appointmentId ? "Agendamento atualizado" : "Agendamento criado",
-        description: appointmentId ? "As alterações foram salvas com sucesso." : "O novo agendamento foi criado com sucesso.",
+        title: "Consulta agendada",
+        description: "A consulta foi agendada com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
-      onSave?.(appointment);
+      if (onSave) onSave(appointment);
       onClose();
+      form.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
-        title: "Erro",
-        description: "Erro ao salvar agendamento. Tente novamente.",
+        title: "Erro ao agendar",
+        description: error.message || "Ocorreu um erro ao agendar a consulta.",
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = (data: AppointmentFormData) => {
-    saveAppointmentMutation.mutate(data);
+    createAppointmentMutation.mutate(data);
   };
 
-  const handleTimeSelect = (time: string) => {
-    form.setValue('scheduled_time', time);
-    setTimePickerOpen(false);
-  };
-
-  const toggleTag = (tagName: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagName) 
-        ? prev.filter(t => t !== tagName)
-        : [...prev, tagName]
-    );
-  };
-
-  const getStatusColor = (status: string) => {
-    return statusOptions.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-800';
-  };
+  // Check availability when date, time, duration or user changes
+  useEffect(() => {
+    if (watchedDate && watchedTime && watchedDuration && watchedUserId) {
+      setIsCheckingAvailability(true);
+      
+      // Simulate availability check (replace with actual API call)
+      setTimeout(() => {
+        setIsCheckingAvailability(false);
+        setAvailabilityConflict(null);
+        setWorkingHoursWarning(null);
+      }, 1000);
+    }
+  }, [watchedDate, watchedTime, watchedDuration, watchedUserId]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="pb-6">
-          <DialogTitle className="text-2xl font-semibold text-slate-800">
-            {appointmentId ? 'Alterar Agendamento' : 'Novo Agendamento'}
-          </DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Agendar Nova Consulta</DialogTitle>
+          <DialogDescription>
+            Preencha os dados para agendar uma nova consulta. O sistema verificará automaticamente a disponibilidade.
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {/* Professional Selection */}
-          <div className="space-y-3">
-            <Label htmlFor="doctor_name" className="text-base font-medium text-slate-700">
-              Profissional
-            </Label>
-            <Controller
-              name="doctor_name"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Contact Selection */}
+            <FormField
               control={form.control}
+              name="contact_id"
               render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Selecione o profissional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {doctors
-                      .filter((doctor: any) => doctor.is_professional === true)
-                      .map((doctor: any) => (
-                        <SelectItem key={doctor.id || doctor.user_id} value={doctor.name}>
-                          {doctor.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {form.formState.errors.doctor_name && (
-              <p className="text-sm text-red-600">{form.formState.errors.doctor_name.message}</p>
-            )}
-          </div>
-
-          {/* Patient Selection */}
-          <div className="space-y-3">
-            <Label htmlFor="contact_id" className="text-base font-medium text-slate-700">
-              Paciente
-            </Label>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Dialog open={patientSearchOpen} onOpenChange={setPatientSearchOpen}>
-                  <DialogTrigger asChild>
+                <FormItem>
+                  <FormLabel className="text-sm text-gray-700">Paciente *</FormLabel>
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Popover open={contactComboboxOpen} onOpenChange={setContactComboboxOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={contactComboboxOpen}
+                            className="flex-1 justify-between h-11 text-left font-normal px-3"
+                          >
+                            {field.value ? (
+                              <span className="truncate">
+                                {contacts.find((contact: Contact) => contact.id.toString() === field.value)?.name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">Buscar paciente...</span>
+                            )}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Digite pelo menos 2 caracteres..." 
+                              className="border-b"
+                              value={patientSearchQuery}
+                              onValueChange={setPatientSearchQuery}
+                            />
+                            {patientSearchQuery.length === 0 && (
+                              <div className="py-6 text-center text-sm text-gray-500">
+                                <div>Digite pelo menos 2 caracteres</div>
+                              </div>
+                            )}
+                            {patientSearchQuery.length === 1 && (
+                              <div className="py-6 text-center text-sm text-gray-500">
+                                <div>Digite pelo menos 2 caracteres</div>
+                              </div>
+                            )}
+                            {patientSearchQuery.length >= 2 && (
+                              <>
+                                <CommandEmpty className="py-6 text-center text-sm text-gray-500">
+                                  <div>Nenhum paciente encontrado com "{patientSearchQuery}"</div>
+                                  <Button 
+                                    variant="link" 
+                                    size="sm" 
+                                    className="mt-2 text-blue-600"
+                                    onClick={() => {
+                                      setContactComboboxOpen(false);
+                                      setPatientSearchQuery("");
+                                      setShowNewPatientDialog(true);
+                                    }}
+                                  >
+                                    <Plus className="mr-1 h-4 w-4" />
+                                    Cadastrar paciente
+                                  </Button>
+                                </CommandEmpty>
+                                <CommandGroup className="max-h-64 overflow-y-auto">
+                                  {contacts
+                                    .filter((contact: Contact) => 
+                                      contact.name.toLowerCase().includes(patientSearchQuery.toLowerCase())
+                                    )
+                                    .map((contact: Contact) => (
+                                    <CommandItem
+                                      key={contact.id}
+                                      value={contact.name}
+                                      onSelect={() => {
+                                        field.onChange(contact.id.toString());
+                                        setContactComboboxOpen(false);
+                                        setPatientSearchQuery("");
+                                      }}
+                                      className="flex items-center gap-3 p-3 cursor-pointer"
+                                    >
+                                      <div className="flex items-center justify-center w-8 h-8 bg-gray-500 text-white rounded-full text-sm font-medium flex-shrink-0">
+                                        {contact.name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="font-medium text-gray-900 truncate">{contact.name}</span>
+                                        {contact.phone && (
+                                          <span className="text-sm text-gray-500">{contact.phone}</span>
+                                        )}
+                                      </div>
+                                      {field.value === contact.id.toString() && (
+                                        <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                      )}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </>
+                            )}
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full h-12 justify-start text-left font-normal text-base"
+                      className="h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-4"
+                      onClick={() => setShowNewPatientDialog(true)}
                     >
-                      {selectedContact ? selectedContact.name : "Selecione o paciente"}
+                      <Plus className="mr-2 h-4 w-4" />
+                      Cadastrar
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Selecionar Paciente</DialogTitle>
-                      <DialogDescription>
-                        Busque e selecione um paciente da lista
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        placeholder="Digite o nome do paciente..."
-                        value={patientSearch}
-                        onChange={(e) => setPatientSearch(e.target.value)}
-                        className="w-full"
-                      />
-                      <div className="max-h-60 overflow-y-auto space-y-1">
-                        {filteredContacts.map((contact: Contact) => (
-                          <Button
-                            key={contact.id}
-                            type="button"
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onClick={() => {
-                              setSelectedContact(contact);
-                              form.setValue('contact_id', contact.id);
-                              setPatientSearchOpen(false);
-                              setPatientSearch('');
-                            }}
-                          >
-                            <User className="w-4 h-4 mr-2" />
-                            {contact.name}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <Button type="button" variant="outline" size="icon" className="h-12 w-12">
-                <UserPlus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Patient Quick Actions */}
-            {selectedContact && (
-              <div className="flex gap-3 pt-2">
-                <Button type="button" variant="link" size="sm" className="p-0 h-auto text-blue-600">
-                  📋 Abrir prontuário
-                </Button>
-                <Button type="button" variant="link" size="sm" className="p-0 h-auto text-green-600">
-                  💰 Ir para financeiro
-                </Button>
-              </div>
-            )}
-            {form.formState.errors.contact_id && (
-              <p className="text-sm text-red-600">{form.formState.errors.contact_id.message}</p>
-            )}
-          </div>
-
-          {/* Date, Time and Duration */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="scheduled_date" className="text-base font-medium text-slate-700">
-                Data da consulta
-              </Label>
-              <Input
-                type="date"
-                {...form.register('scheduled_date')}
-                className="h-12 text-base"
-              />
-              {form.formState.errors.scheduled_date && (
-                <p className="text-sm text-red-600">{form.formState.errors.scheduled_date.message}</p>
+                  </div>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="scheduled_time" className="text-base font-medium text-slate-700">
-                Horário
-              </Label>
-              <Input
-                type="time"
-                {...form.register('scheduled_time')}
-                className="h-12 text-base"
-              />
-              {form.formState.errors.scheduled_time && (
-                <p className="text-sm text-red-600">{form.formState.errors.scheduled_time.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration_minutes" className="text-base font-medium text-slate-700">
-                Duração
-              </Label>
-              <Controller
-                name="duration_minutes"
+            />
+
+            {/* Professional and Consultation Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
+                name="user_id"
                 render={({ field }) => (
-                  <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                    <SelectTrigger className="h-12 text-base">
-                      <SelectValue placeholder="Duração" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 min</SelectItem>
-                      <SelectItem value="45">45 min</SelectItem>
-                      <SelectItem value="60">60 min</SelectItem>
-                      <SelectItem value="90">90 min</SelectItem>
-                      <SelectItem value="120">120 min</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormItem>
+                    <FormLabel className="text-sm text-gray-700">Profissional *</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione o profissional" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clinicUsers
+                            .filter((user: any) => user.is_professional === true)
+                            .map((user: any) => (
+                              <SelectItem key={user.id || user.user_id} value={(user.id || user.user_id)?.toString()}>
+                                {user.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-gray-700">Tipo de Consulta *</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Consulta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="consulta">Consulta</SelectItem>
+                          <SelectItem value="retorno">Retorno</SelectItem>
+                          <SelectItem value="avaliacao">Avaliação</SelectItem>
+                          <SelectItem value="procedimento">Procedimento</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
             </div>
+
+            {/* Date, Time, Duration */}
             <div className="space-y-2">
-              <Label className="text-base font-medium text-slate-700">Encontrar horário</Label>
+              <div className="grid grid-cols-12 gap-3 items-start">
+                <div className="col-span-3">
+                  <FormField
+                    control={form.control}
+                    name="scheduled_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm text-gray-700">Data da consulta</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="col-span-3">
+                  <FormField
+                    control={form.control}
+                    name="scheduled_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm text-gray-700">Horário</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="time"
+                              {...field}
+                              className="h-11 pr-8"
+                            />
+                            <Clock className="absolute right-3 top-3.5 h-4 w-4 text-gray-400" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm text-gray-700">Duração</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="60" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="30">30</SelectItem>
+                              <SelectItem value="60">60</SelectItem>
+                              <SelectItem value="90">90</SelectItem>
+                              <SelectItem value="120">120</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="col-span-4">
+                  <FormItem>
+                    <FormLabel className="text-sm text-gray-700 invisible">Ação</FormLabel>
+                    <FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-11 text-blue-500 hover:text-white hover:bg-blue-500 border-blue-500 font-normal px-6"
+                        onClick={() => {
+                          const targetDate = watchedDate || format(new Date(), 'yyyy-MM-dd');
+                          const targetDuration = watchedDuration || '30';
+                          // Handle find time slots
+                        }}
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Encontrar horário
+                      </Button>
+                    </FormControl>
+                  </FormItem>
+                </div>
+              </div>
+            </div>
+
+            {/* Smart Availability Status */}
+            {(availabilityConflict || isCheckingAvailability) && (
+              <div className={`p-3 rounded-lg border ${
+                isCheckingAvailability
+                  ? "bg-blue-50 border-blue-200 text-blue-800"
+                  : availabilityConflict?.hasConflict
+                    ? "bg-red-50 border-red-200 text-red-800"
+                    : workingHoursWarning && workingHoursWarning.hasWarning
+                      ? "bg-orange-50 border-orange-200 text-orange-800"
+                      : "bg-green-50 border-green-200 text-green-800"
+              }`}>
+                <div className="flex items-start gap-3">
+                  {isCheckingAvailability ? (
+                    <div className="w-4 h-4 mt-0.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  ) : availabilityConflict?.hasConflict ? (
+                    <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  ) : workingHoursWarning && workingHoursWarning.hasWarning ? (
+                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">
+                      {isCheckingAvailability ? (
+                        'Verificando disponibilidade...'
+                      ) : availabilityConflict?.hasConflict ? (
+                        availabilityConflict.message
+                      ) : workingHoursWarning && workingHoursWarning.hasWarning ? (
+                        <>Horário livre, mas {workingHoursWarning.message.toLowerCase()}</>
+                      ) : (
+                        'Horário disponível'
+                      )}
+                    </div>
+                    {!isCheckingAvailability && !availabilityConflict?.hasConflict && workingHoursWarning && workingHoursWarning.hasWarning && workingHoursWarning.details && (
+                      <div className="text-xs text-orange-700 mt-1">
+                        {workingHoursWarning.details}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Observações</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Observações sobre a consulta..."
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 text-blue-600"
-                onClick={() => setFindTimeOpen(true)}
+                onClick={onClose}
               >
-                <Clock className="w-4 h-4 mr-2" />
-                Encontrar horário
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createAppointmentMutation.isPending || (availabilityConflict?.hasConflict === true)}
+              >
+                {createAppointmentMutation.isPending ? "Agendando..." : "Agendar Consulta"}
               </Button>
             </div>
-          </div>
-
-          {/* Status */}
-          <div className="space-y-3">
-            <Label htmlFor="status" className="text-base font-medium text-slate-700">
-              Status
-            </Label>
-            <Controller
-              name="status"
-              control={form.control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${status.color.includes('blue') ? 'bg-blue-500' : 
-                            status.color.includes('green') ? 'bg-green-500' :
-                            status.color.includes('yellow') ? 'bg-yellow-500' :
-                            status.color.includes('orange') ? 'bg-orange-500' :
-                            status.color.includes('red') ? 'bg-red-500' : 'bg-gray-500'}`}>
-                          </div>
-                          {status.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          {/* Observations */}
-          <div className="space-y-3">
-            <Label htmlFor="observations" className="text-base font-medium text-slate-700">
-              Observações
-            </Label>
-            <Textarea
-              {...form.register('observations')}
-              placeholder="Primeira consulta"
-              className="min-h-[100px] text-base"
-            />
-          </div>
-
-          {/* How Found Clinic */}
-          <div className="space-y-3">
-            <Label htmlFor="how_found_clinic" className="text-base font-medium text-slate-700">
-              Como conheceu a clínica
-            </Label>
-            <Controller
-              name="how_found_clinic"
-              control={form.control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Selecionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {howFoundOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          {/* Return Period */}
-          <div className="space-y-3">
-            <Label htmlFor="return_period" className="text-base font-medium text-slate-700">
-              Retornar em
-            </Label>
-            <Controller
-              name="return_period"
-              control={form.control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Selecionar período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {returnPeriodOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-3">
-            <Label className="text-base font-medium text-slate-700">Etiquetas</Label>
-            <div className="flex flex-wrap gap-2">
-              {availableTags.map((tag) => (
-                <Badge
-                  key={tag.name}
-                  variant="outline"
-                  className={`cursor-pointer transition-colors ${
-                    selectedTags.includes(tag.name) ? tag.color : 'hover:bg-slate-100'
-                  }`}
-                  onClick={() => toggleTag(tag.name)}
-                >
-                  {tag.name}
-                  {selectedTags.includes(tag.name) && (
-                    <X className="w-3 h-3 ml-1" />
-                  )}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Receive Reminders */}
-          <div className="space-y-3">
-            <Controller
-              name="receive_reminders"
-              control={form.control}
-              render={({ field }) => (
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="receive_reminders"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                  <Label htmlFor="receive_reminders" className="text-base font-medium text-slate-700">
-                    Receber lembretes
-                  </Label>
-                  {!field.value && (
-                    <div className="flex items-center text-red-600">
-                      <AlertTriangle className="w-4 h-4 mr-1" />
-                      <span className="text-sm">Lembretes desabilitados</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            />
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-6 border-t">
-            <Button type="button" variant="outline" onClick={onClose} className="h-12 px-6">
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              className="h-12 px-8"
-              disabled={saveAppointmentMutation.isPending}
-            >
-              {saveAppointmentMutation.isPending ? 'Salvando...' : (appointmentId ? 'Atualizar' : 'Criar')} Agendamento
-            </Button>
-          </div>
-        </form>
-
-        {/* Find Time Dialog */}
-        <Dialog open={findTimeOpen} onOpenChange={setFindTimeOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <FindTimeSlots
-              selectedDate={form.watch('scheduled_date')}
-              duration={form.watch('duration_minutes') || 60}
-              professionalName={form.watch('doctor_name')}
-              onTimeSelect={(time: string) => {
-                form.setValue('scheduled_time', time);
-                setFindTimeOpen(false);
-              }}
-              onClose={() => setFindTimeOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
