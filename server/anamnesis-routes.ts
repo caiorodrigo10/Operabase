@@ -491,9 +491,13 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
             ar.patient_name,
             ar.expires_at,
             at.name as template_name,
-            at.fields as template_fields
+            at.fields as template_fields,
+            cl.name as clinic_name,
+            cl.phone as clinic_phone
           FROM anamnesis_responses ar
           LEFT JOIN anamnesis_templates at ON ar.template_id = at.id
+          LEFT JOIN contacts c ON ar.contact_id = c.id
+          LEFT JOIN clinics cl ON c.clinic_id = cl.id
           WHERE ar.share_token = $1 AND ar.expires_at > NOW()
         `, [token]);
 

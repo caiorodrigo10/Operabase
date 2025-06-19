@@ -34,6 +34,7 @@ export default function AnamnesisPublica() {
   
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [clinicName, setClinicName] = useState('');
+  const [clinicPhone, setClinicPhone] = useState('');
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -56,6 +57,7 @@ export default function AnamnesisPublica() {
         if (response.status === 410) {
           if (errorData.error === 'Anamnesis already completed') {
             setShowSuccessScreen(true);
+            // For completed anamnesis, we still need clinic info, so make another API call or use fallback
             setClinicName('Clínica');
             return;
           } else if (errorData.error === 'Anamnesis expired') {
@@ -83,8 +85,9 @@ export default function AnamnesisPublica() {
       const data = await response.json();
       setAnamnesis(data);
       
-      // Set clinic name - since this is an external form, show clinic name
-      setClinicName('Clínica');
+      // Set clinic name and phone from API response
+      setClinicName(data.clinic_name || 'Clínica');
+      setClinicPhone(data.clinic_phone || '');
     } catch (error) {
       console.error('Error fetching anamnesis:', error);
       toast({
@@ -253,8 +256,8 @@ export default function AnamnesisPublica() {
             <p className="text-blue-100 mb-8">Caso necessário entre em contato</p>
             
             <div className="bg-white bg-opacity-10 rounded-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-2">Apfelbaum</h2>
-              <p className="text-blue-100">(11) 96586-0124</p>
+              <h2 className="text-lg font-semibold mb-2">{clinicName}</h2>
+              {clinicPhone && <p className="text-blue-100">{clinicPhone}</p>}
             </div>
           </div>
         </div>
