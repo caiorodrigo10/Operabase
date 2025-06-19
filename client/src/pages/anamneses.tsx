@@ -70,14 +70,12 @@ export default function AnamnesisTemplatesPage() {
       if (!response.ok) throw new Error('Failed to create template');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newTemplate) => {
       queryClient.invalidateQueries({ queryKey: ['/api/anamneses'] });
       setIsCreateDialogOpen(false);
       setCreateForm({ name: '', copyFromId: '', createFromScratch: true });
-      // Force immediate refetch to show new template
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ['/api/anamneses'] });
-      }, 100);
+      // Navigate to the edit page of the newly created template
+      setLocation(`/anamneses/${newTemplate.id}/editar`);
     },
     onError: (error) => {
       console.error('Error creating template:', error);
