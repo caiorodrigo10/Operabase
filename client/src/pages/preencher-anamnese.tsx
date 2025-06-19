@@ -494,14 +494,6 @@ export default function PreencherAnamnese() {
                 <Copy className="h-4 w-4 mr-1" />
                 Copiar
               </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleWhatsAppShare}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Enviar pelo WhatsApp
-              </Button>
             </div>
 
             {/* QR Code Section */}
