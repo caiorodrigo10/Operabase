@@ -202,11 +202,10 @@ export default function PreencherAnamnese() {
 
       case 'textarea':
         return (
-          <Textarea
+          <Input
             value={value}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            placeholder="Informações adicionais"
-            rows={3}
+            placeholder="Digite sua resposta..."
             className="w-full"
           />
         );
@@ -303,11 +302,10 @@ export default function PreencherAnamnese() {
             
             <div className="mt-3">
               <Label className="text-sm text-gray-600 mb-2 block">Informações adicionais</Label>
-              <Textarea
+              <Input
                 value={additionalValue}
                 onChange={(e) => handleResponseChange(`${question.id}_additional`, e.target.value)}
                 placeholder="Digite aqui..."
-                rows={2}
                 className="w-full"
               />
             </div>
