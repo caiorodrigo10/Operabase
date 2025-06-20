@@ -1229,13 +1229,19 @@ export class PostgreSQLStorage implements IStorage {
 
   // ============ MEDICAL RECORDS ============
 
-  async getMedicalRecords(contactId: number): Promise<MedicalRecord[]> {
+  async getMedicalRecords(contactId: number, clinicId?: number): Promise<MedicalRecord[]> {
+    let conditions = [
+      eq(medical_records.contact_id, contactId),
+      eq(medical_records.is_active, true)
+    ];
+    
+    if (clinicId) {
+      conditions.push(eq(medical_records.clinic_id, clinicId));
+    }
+    
     return await db.select()
       .from(medical_records)
-      .where(and(
-        eq(medical_records.contact_id, contactId),
-        eq(medical_records.is_active, true)
-      ))
+      .where(and(...conditions))
       .orderBy(desc(medical_records.created_at));
   }
 

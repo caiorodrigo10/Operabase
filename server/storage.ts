@@ -144,7 +144,7 @@ export interface IStorage {
   }): Promise<{ success: boolean; user?: any; error?: string }>;
 
   // Medical Records
-  getMedicalRecords(contactId: number): Promise<MedicalRecord[]>;
+  getMedicalRecords(contactId: number, clinicId?: number): Promise<MedicalRecord[]>;
   getMedicalRecord(id: number): Promise<MedicalRecord | undefined>;
   getMedicalRecordByAppointment(appointmentId: number): Promise<MedicalRecord | undefined>;
   createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord>;
