@@ -33,8 +33,10 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
   // Enable polling when there are connecting instances, disable when all connected/disconnected
   useEffect(() => {
     const hasConnectingInstances = whatsappNumbers.some(number => number.status === 'connecting');
-    setPollingEnabled(hasConnectingInstances);
-  }, [whatsappNumbers]);
+    const shouldPoll = hasConnectingInstances || selectedQR !== null;
+    console.log('🔄 Polling enabled:', shouldPoll, { hasConnectingInstances, hasSelectedQR: selectedQR !== null });
+    setPollingEnabled(shouldPoll);
+  }, [whatsappNumbers, selectedQR]);
 
   // Auto-close QR dialog when instance becomes connected
   useEffect(() => {
