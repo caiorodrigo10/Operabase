@@ -1797,9 +1797,9 @@ export class PostgreSQLStorage implements IStorage {
         values.push(updates.connected_at);
       }
       
-      if (updates.professional_id !== undefined) {
-        setParts.push(`professional_id = $${paramIndex++}`);
-        values.push(updates.professional_id);
+      if (updates.user_id !== undefined) {
+        setParts.push(`user_id = $${paramIndex++}`);
+        values.push(updates.user_id);
       }
       
       // Always update the timestamp
