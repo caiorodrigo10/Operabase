@@ -293,6 +293,3 @@ export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
 
 export type PipelineActivity = typeof pipeline_activities.$inferSelect;
 export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;
-
-export type WhatsAppNumber = typeof whatsapp_numbers.$inferSelect;
-export type InsertWhatsAppNumber = z.infer<typeof insertWhatsAppNumberSchema>;

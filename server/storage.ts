@@ -1061,6 +1061,44 @@ export class MemStorage implements IStorage {
   async deleteGoogleCalendarEvents(userId: string | number, calendarId?: string): Promise<number> {
     return 0;
   }
+
+  // WhatsApp Numbers - stub implementations for MemStorage
+  async getWhatsAppNumbers(clinicId: number): Promise<WhatsAppNumber[]> {
+    return [];
+  }
+
+  async getWhatsAppNumber(id: number): Promise<WhatsAppNumber | undefined> {
+    return undefined;
+  }
+
+  async getWhatsAppNumberByPhone(phone: string, clinicId: number): Promise<WhatsAppNumber | undefined> {
+    return undefined;
+  }
+
+  async getWhatsAppNumberByInstance(instanceName: string): Promise<WhatsAppNumber | undefined> {
+    return undefined;
+  }
+
+  async createWhatsAppNumber(whatsappNumber: InsertWhatsAppNumber): Promise<WhatsAppNumber> {
+    throw new Error("MemStorage does not support WhatsApp numbers");
+  }
+
+  async updateWhatsAppNumber(id: number, updates: Partial<InsertWhatsAppNumber>): Promise<WhatsAppNumber | undefined> {
+    return undefined;
+  }
+
+  async updateWhatsAppNumberStatus(id: number, status: string, connectedAt?: Date): Promise<WhatsAppNumber | undefined> {
+    return undefined;
+  }
+
+  async updateWhatsAppConnectionFromWebhook(instanceName: string, updateData: any): Promise<boolean> {
+    console.log(`📝 MemStorage stub: webhook update for ${instanceName}`);
+    return false;
+  }
+
+  async deleteWhatsAppNumber(id: number): Promise<boolean> {
+    return false;
+  }
 }
 
 import { postgresStorage } from "./postgres-storage";
