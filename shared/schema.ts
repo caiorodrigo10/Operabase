@@ -19,8 +19,7 @@ export const sessions = pgTable(
 export const whatsapp_numbers = pgTable("whatsapp_numbers", {
   id: serial("id").primaryKey(),
   clinic_id: integer("clinic_id").notNull(),
-  user_id: text("user_id").notNull(), // ID do usuário que conectou o número
-  professional_id: integer("professional_id"), // ID do profissional responsável pelo número
+  user_id: integer("user_id").notNull(), // ID do usuário responsável pelo número
   phone_number: text("phone_number").notNull(),
   instance_name: text("instance_name").notNull(), // Nome única da instância na Evolution API
   status: text("status").notNull().default("disconnected"), // connected, disconnected, connecting, error
