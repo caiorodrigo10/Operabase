@@ -301,6 +301,47 @@ export class TenantAwareStorageProxy implements IStorage {
     return this.storage.deleteAppointmentTag(id);
   }
 
+  // WhatsApp webhook methods - pass through without tenant filtering
+  async updateWhatsAppConnectionFromWebhook(instanceName: string, updateData: any): Promise<boolean> {
+    return this.storage.updateWhatsAppConnectionFromWebhook(instanceName, updateData);
+  }
+
+  async getWhatsAppNumbers(clinicId?: number) {
+    const tenantClinicId = this.getClinicId();
+    return this.storage.getWhatsAppNumbers(clinicId || tenantClinicId);
+  }
+
+  async getWhatsAppNumber(id: number) {
+    return this.storage.getWhatsAppNumber(id);
+  }
+
+  async getWhatsAppNumberByPhone(phone: string, clinicId?: number) {
+    const tenantClinicId = this.getClinicId();
+    return this.storage.getWhatsAppNumberByPhone(phone, clinicId || tenantClinicId);
+  }
+
+  async getWhatsAppNumberByInstance(instanceName: string) {
+    return this.storage.getWhatsAppNumberByInstance(instanceName);
+  }
+
+  async createWhatsAppNumber(whatsappNumber: any) {
+    const clinicId = this.getClinicId();
+    const numberWithClinic = { ...whatsappNumber, clinic_id: clinicId };
+    return this.storage.createWhatsAppNumber(numberWithClinic);
+  }
+
+  async updateWhatsAppNumber(id: number, updates: any) {
+    return this.storage.updateWhatsAppNumber(id, updates);
+  }
+
+  async updateWhatsAppNumberStatus(id: number, status: string, connectedAt?: Date) {
+    return this.storage.updateWhatsAppNumberStatus(id, status, connectedAt);
+  }
+
+  async deleteWhatsAppNumber(id: number) {
+    return this.storage.deleteWhatsAppNumber(id);
+  }
+
   // Pass through any additional methods without modification
   [key: string]: any;
 }
