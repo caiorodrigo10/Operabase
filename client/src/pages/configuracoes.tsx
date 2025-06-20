@@ -881,6 +881,87 @@ export function Configuracoes() {
           </TabsContent>
 
           <TabsContent value="integrations" className="space-y-6">
+            {/* WhatsApp Evolution API Configuration */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-green-600" />
+                      WhatsApp Business - Evolution API
+                    </CardTitle>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Configure a API Key da Evolution para integração com WhatsApp Business
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-green-600 border-green-200">
+                    Pronto para configurar
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <Info className="w-5 h-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-green-800">Como obter sua API Key da Evolution</p>
+                      <p className="text-sm text-green-700 mt-1">
+                        1. Acesse seu painel da Evolution API<br/>
+                        2. Vá em Configurações → API Keys<br/>
+                        3. Copie sua chave de acesso
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="evolution-api-key">API Key da Evolution</Label>
+                  <Input
+                    id="evolution-api-key"
+                    type="password"
+                    placeholder="Digite sua API Key da Evolution..."
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Sua API Key será armazenada de forma segura e criptografada
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="evolution-base-url">URL Base da API (opcional)</Label>
+                  <Input
+                    id="evolution-base-url"
+                    type="url"
+                    placeholder="https://sua-evolution-api.com"
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Deixe em branco para usar a URL padrão da Evolution
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span className="text-sm font-medium">Status da Conexão</span>
+                  </div>
+                  <Badge variant="secondary">
+                    Não configurado
+                  </Badge>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button variant="outline">
+                    Testar Conexão
+                  </Button>
+                  <Button className="bg-green-600 hover:bg-green-700">
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar Configuração
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
