@@ -92,7 +92,7 @@ export class EvolutionApiService {
   /**
    * Generate a unique instance name based on clinic and user IDs
    */
-  generateInstanceName(clinicId: number, userId: string): string {
+  generateInstanceName(clinicId: number, userId: number | string): string {
     const timestamp = Date.now();
     return `clinic_${clinicId}_user_${userId}_${timestamp}`;
   }
@@ -150,7 +150,7 @@ export class EvolutionApiService {
   /**
    * Start the connection process for a new WhatsApp number
    */
-  async startConnection(clinicId: number, userId: string): Promise<{
+  async startConnection(clinicId: number, userId: number | string): Promise<{
     success: boolean;
     instanceName?: string;
     qrCode?: string;

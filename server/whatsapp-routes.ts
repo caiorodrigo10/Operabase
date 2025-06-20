@@ -37,8 +37,15 @@ router.post('/api/whatsapp/connect', async (req, res) => {
       return res.status(400).json({ error: 'Clinic ID and User ID are required' });
     }
 
+    // Convert userId to integer if it's a string (for compatibility)
+    const parsedUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+    
+    if (isNaN(parsedUserId)) {
+      return res.status(400).json({ error: 'Invalid User ID format' });
+    }
+
     // Start the connection process with Evolution API
-    const result = await evolutionApi.startConnection(clinicId, userId);
+    const result = await evolutionApi.startConnection(clinicId, parsedUserId);
     
     if (!result.success) {
       return res.status(500).json({ error: result.error });
@@ -48,7 +55,7 @@ router.post('/api/whatsapp/connect', async (req, res) => {
     const storage = await getStorage();
     const whatsappNumber = await storage.createWhatsAppNumber({
       clinic_id: clinicId,
-      user_id: userId,
+      user_id: parsedUserId,
       phone_number: '', // Will be updated when connection is confirmed
       instance_name: result.instanceName!,
       status: 'connecting'
