@@ -7,6 +7,10 @@ import {
 } from "./domains/auth/auth.schema";
 
 import { 
+  whatsapp_numbers
+} from "../shared/schema";
+
+import { 
   clinics, clinic_users, clinic_invitations, professional_status_audit,
   type Clinic, type InsertClinic,
   type ClinicUser, type InsertClinicUser,
@@ -1773,34 +1777,45 @@ export class PostgreSQLStorage implements IStorage {
 
   async updateWhatsAppNumber(id: number, updates: Partial<InsertWhatsAppNumber>): Promise<WhatsAppNumber | undefined> {
     try {
+      // Build SET clause dynamically
       const setParts = [];
       const values: any[] = [];
+      let paramIndex = 1;
       
       if (updates.phone_number !== undefined) {
-        setParts.push(`phone_number = $${setParts.length + 1}`);
+        setParts.push(`phone_number = $${paramIndex++}`);
         values.push(updates.phone_number);
       }
       
       if (updates.status !== undefined) {
-        setParts.push(`status = $${setParts.length + 1}`);
+        setParts.push(`status = $${paramIndex++}`);
         values.push(updates.status);
       }
       
       if (updates.connected_at !== undefined) {
-        setParts.push(`connected_at = $${setParts.length + 1}`);
+        setParts.push(`connected_at = $${paramIndex++}`);
         values.push(updates.connected_at);
       }
       
+      if (updates.professional_id !== undefined) {
+        setParts.push(`professional_id = $${paramIndex++}`);
+        values.push(updates.professional_id);
+      }
+      
+      // Always update the timestamp
       setParts.push(`updated_at = NOW()`);
+      
+      // Add WHERE clause parameter
       values.push(id);
       
-      const result = await db.execute(sql`
+      const query = `
         UPDATE whatsapp_numbers 
-        SET ${sql.raw(setParts.join(', '))}
-        WHERE id = $${values.length}
+        SET ${setParts.join(', ')}
+        WHERE id = $${paramIndex}
         RETURNING *
-      `);
+      `;
       
+      const result = await pool.query(query, values);
       return result.rows[0] as WhatsAppNumber | undefined;
     } catch (error) {
       console.error('❌ Error updating WhatsApp number:', error);
