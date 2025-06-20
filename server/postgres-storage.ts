@@ -1858,6 +1858,32 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`📝 Atualizando WhatsApp via webhook: ${instanceName}`);
       
+      // First, check if the instance exists
+      const checkResult = await db.execute(sql`
+        SELECT id, instance_name, status, is_connected 
+        FROM whatsapp_numbers 
+        WHERE instance_name = ${instanceName}
+      `);
+      
+      console.log(`🔍 Verificando instância ${instanceName}:`, {
+        found: checkResult.rows.length > 0,
+        rows: checkResult.rows
+      });
+      
+      if (checkResult.rows.length === 0) {
+        // List all existing instances for debugging
+        const allInstances = await db.execute(sql`
+          SELECT id, instance_name, status, is_connected, phone_number 
+          FROM whatsapp_numbers 
+          ORDER BY created_at DESC 
+          LIMIT 10
+        `);
+        
+        console.log(`❌ Instância ${instanceName} não encontrada no banco de dados`);
+        console.log('📋 Instâncias existentes no banco:', allInstances.rows);
+        return false;
+      }
+      
       // Build update object dynamically
       const updateObj: any = {};
       
@@ -1901,20 +1927,30 @@ export class PostgreSQLStorage implements IStorage {
         return false;
       }
       
-      // Use raw SQL for the update since we're dealing with a custom table structure
-      const setClause = Object.keys(updateObj).map(key => `${key} = $${Object.keys(updateObj).indexOf(key) + 1}`).join(', ');
-      const values = Object.values(updateObj);
-      values.push(instanceName); // Add instance name for WHERE clause
+      console.log('📦 Dados para atualizar:', updateObj);
       
-      const result = await this.pool.query(
-        `UPDATE whatsapp_numbers SET ${setClause} WHERE instance_name = $${values.length}`,
-        values
-      );
+      // Use Drizzle for the update
+      const result = await db.execute(sql`
+        UPDATE whatsapp_numbers 
+        SET 
+          status = ${updateObj.status || sql`status`},
+          is_connected = ${updateObj.is_connected !== undefined ? updateObj.is_connected : sql`is_connected`},
+          phone_number = ${updateObj.phone_number || sql`phone_number`},
+          profile_name = ${updateObj.profile_name || sql`profile_name`},
+          profile_picture_url = ${updateObj.profile_picture_url || sql`profile_picture_url`},
+          owner_jid = ${updateObj.owner_jid || sql`owner_jid`},
+          connected_at = ${updateObj.connected_at || sql`connected_at`},
+          last_seen = ${updateObj.last_seen || sql`last_seen`},
+          updated_at = NOW()
+        WHERE instance_name = ${instanceName}
+        RETURNING *
+      `);
       
       const updated = result.rowCount && result.rowCount > 0;
       
       if (updated) {
         console.log(`✅ WhatsApp ${instanceName} atualizado com sucesso`);
+        console.log('📊 Dados atualizados:', result.rows[0]);
         if (updateData.phone_number) {
           console.log(`📞 Número: ${updateData.phone_number}`);
         }
