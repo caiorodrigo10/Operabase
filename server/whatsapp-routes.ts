@@ -170,12 +170,25 @@ router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
       return res.status(404).json({ error: 'WhatsApp number not found' });
     }
 
-    // Delete instance from Evolution API
-    await evolutionApi.deleteInstance(whatsappNumber.instance_name);
+    console.log(`🗑️ Deleting WhatsApp number ${id} with instance: ${whatsappNumber.instance_name}`);
+
+    // Try to delete instance from Evolution API (don't fail if instance doesn't exist)
+    try {
+      await evolutionApi.deleteInstance(whatsappNumber.instance_name);
+      console.log(`✅ Evolution API instance deleted: ${whatsappNumber.instance_name}`);
+    } catch (apiError: any) {
+      console.log(`⚠️ Evolution API deletion failed (continuing): ${apiError.message}`);
+      // Continue with database deletion even if API deletion fails
+    }
 
     // Delete from database
-    await storage.deleteWhatsAppNumber(id);
+    const deleted = await storage.deleteWhatsAppNumber(id);
+    
+    if (!deleted) {
+      return res.status(500).json({ error: 'Failed to delete from database' });
+    }
 
+    console.log(`✅ WhatsApp number ${id} deleted from database`);
     res.json({ success: true, message: 'WhatsApp number deleted successfully' });
   } catch (error) {
     console.error('Error deleting WhatsApp number:', error);
