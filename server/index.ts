@@ -147,6 +147,13 @@ app.use((req, res, next) => {
       const { db } = await import('./db');
       const { sql } = await import('drizzle-orm');
       
+      // First cleanup any old inactive integrations for this user
+      await db.execute(sql`
+        DELETE FROM calendar_integrations 
+        WHERE email = ${userEmail} 
+        AND is_active = false
+      `);
+      
       const result = await db.execute(sql`
         SELECT * FROM calendar_integrations 
         WHERE email = ${userEmail} 
