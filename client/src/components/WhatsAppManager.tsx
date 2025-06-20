@@ -6,10 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { WhatsAppNumber } from '@shared/schema';
-import { MessageCircle, Plus, QrCode, Smartphone, Trash2, Power, PowerOff } from 'lucide-react';
+import { MessageCircle, Plus, QrCode, Smartphone, Trash2, Power, PowerOff, User } from 'lucide-react';
 
 interface WhatsAppManagerProps {
   clinicId: number;

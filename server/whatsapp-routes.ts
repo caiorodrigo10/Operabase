@@ -160,6 +160,70 @@ router.post('/api/whatsapp/disconnect/:id', async (req, res) => {
   }
 });
 
+// Get clinic professionals for WhatsApp assignment
+router.get('/api/clinic/:clinicId/professionals', async (req, res) => {
+  try {
+    const clinicId = parseInt(req.params.clinicId);
+    if (isNaN(clinicId)) {
+      return res.status(400).json({ error: 'Invalid clinic ID' });
+    }
+
+    const storage = await getStorage();
+    
+    // Get all users from the clinic with professional role
+    const professionals = await storage.getClinicUsers(clinicId);
+    
+    // Filter for professionals only and format response
+    const formattedProfessionals = professionals
+      .filter(user => user.is_professional === true)
+      .map(user => ({
+        id: user.id,
+        name: user.name || user.email,
+        email: user.email,
+        role: user.role
+      }));
+
+    res.json(formattedProfessionals);
+  } catch (error) {
+    console.error('Error fetching clinic professionals:', error);
+    res.status(500).json({ error: 'Failed to fetch professionals' });
+  }
+});
+
+// Update WhatsApp professional assignment
+router.put('/api/whatsapp/numbers/:id/professional', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { professionalId } = req.body;
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
+    }
+
+    const storage = await getStorage();
+    const whatsappNumber = await storage.getWhatsAppNumber(id);
+    
+    if (!whatsappNumber) {
+      return res.status(404).json({ error: 'WhatsApp number not found' });
+    }
+
+    // Update professional assignment
+    const updated = await storage.updateWhatsAppNumber(id, { 
+      professional_id: professionalId || null 
+    });
+    
+    if (!updated) {
+      return res.status(500).json({ error: 'Failed to update professional assignment' });
+    }
+
+    console.log(`✅ WhatsApp number ${id} assigned to professional ${professionalId || 'none'}`);
+    res.json({ success: true, whatsappNumber: updated });
+  } catch (error) {
+    console.error('Error updating WhatsApp professional assignment:', error);
+    res.status(500).json({ error: 'Failed to update professional assignment' });
+  }
+});
+
 // Delete WhatsApp number
 router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
   try {
