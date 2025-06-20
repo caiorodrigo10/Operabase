@@ -50,8 +50,8 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
     if (selectedQR && whatsappNumbers.length > 0) {
       // Check by instance name if numberId is not available
       const connectedNumber = selectedQR.numberId 
-        ? whatsappNumbers.find(number => number.id === selectedQR.numberId && number.status === 'connected')
-        : whatsappNumbers.find(number => number.instance_name === selectedQR.instanceName && number.status === 'connected');
+        ? whatsappNumbers.find(number => number.id === selectedQR.numberId && number.status === 'open')
+        : whatsappNumbers.find(number => number.instance_name === selectedQR.instanceName && number.status === 'open');
       
       console.log('🔍 Found connected number:', connectedNumber);
       
@@ -147,10 +147,11 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'connected':
+      case 'open':
         return <Badge variant="default" className="bg-green-500"><Power className="w-3 h-3 mr-1" />Conectado</Badge>;
       case 'connecting':
         return <Badge variant="secondary"><QrCode className="w-3 h-3 mr-1" />Conectando</Badge>;
+      case 'close':
       case 'disconnected':
         return <Badge variant="destructive"><PowerOff className="w-3 h-3 mr-1" />Desconectado</Badge>;
       default:

@@ -47,12 +47,12 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
         
         switch (webhookData.connectionStatus) {
           case 'open':
-            status = 'connected';
+            status = 'open';
             isConnected = true;
             console.log('✅ WhatsApp conectado com sucesso!');
             break;
           case 'close':
-            status = 'disconnected';
+            status = 'close';
             console.log('❌ WhatsApp desconectado');
             break;
           case 'connecting':
