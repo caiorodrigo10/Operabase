@@ -37,8 +37,9 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
       console.log(`📞 Número: ${webhookData.phoneNumber || 'Não identificado'}`);
       console.log(`👤 Nome do perfil: ${webhookData.profileName || 'Não disponível'}`);
 
-      // Processar apenas eventos de CONNECTION_UPDATE
-      if (webhookData.event === 'CONNECTION_UPDATE') {
+      // Processar apenas eventos de connection.update
+      console.log(`🔍 Comparing event: "${webhookData.event}" === "connection.update" => ${webhookData.event === 'connection.update'}`);
+      if (webhookData.event === 'connection.update') {
         
         // Determinar status baseado na resposta da Evolution API
         let status = 'disconnected';
