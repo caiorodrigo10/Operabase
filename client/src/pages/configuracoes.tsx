@@ -477,6 +477,33 @@ export function Configuracoes() {
     deleteCalendarMutation.mutate(integrationId);
   };
 
+  const handleSyncCalendar = (integrationId: number) => {
+    syncCalendarMutation.mutate(integrationId);
+  };
+
+  const syncCalendarMutation = useMutation({
+    mutationFn: async (integrationId: number) => {
+      const response = await apiRequest(`/api/calendar/integrations/${integrationId}/sync`, "POST");
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchIntegrations();
+      toast({
+        title: "Sincronização concluída",
+        description: "Eventos do calendário foram sincronizados com sucesso.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Error syncing calendar:", error);
+      toast({
+        title: "Erro na sincronização",
+        description: "Não foi possível sincronizar os eventos do calendário.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const renderSkeletonCard = () => (
     <div className="animate-pulse">
       <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>

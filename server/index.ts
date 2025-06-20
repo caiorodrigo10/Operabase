@@ -173,12 +173,16 @@ app.use((req, res, next) => {
         email: integration.email,
         calendarId: integration.calendar_id,
         calendarName: integration.calendar_name,
+        calendar_id: integration.calendar_id,
+        calendar_name: integration.calendar_name,
         syncEnabled: integration.sync_enabled,
-        syncAppointments: integration.sync_appointments,
-        syncEvents: integration.sync_events,
+        sync_enabled: integration.sync_enabled,
+        is_active: integration.is_active,
         isActive: integration.is_active,
         lastSyncAt: integration.last_sync_at,
-        createdAt: integration.created_at
+        last_sync_at: integration.last_sync_at,
+        createdAt: integration.created_at,
+        created_at: integration.created_at
       }));
       
       console.log('✅ Calendar integrations formatted:', formattedIntegrations.length);
@@ -186,6 +190,31 @@ app.use((req, res, next) => {
     } catch (error) {
       console.error('Error fetching calendar integrations:', error);
       res.status(500).json({ error: 'Failed to fetch calendar integrations' });
+    }
+  });
+
+  // Manual sync endpoint
+  app.post('/api/calendar/integrations/:id/sync', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const integrationId = parseInt(req.params.id);
+      const userId = req.user.id;
+      
+      console.log(`🔄 Iniciando sincronização manual para integração ${integrationId}, usuário ${userId}`);
+      
+      // Import and call sync function
+      const calendarRoutes = await import('./calendar-routes');
+      const syncFunction = (calendarRoutes as any).syncCalendarEventsToSystem;
+      
+      if (syncFunction) {
+        await syncFunction(userId, integrationId);
+        console.log(`✅ Sincronização manual concluída para integração ${integrationId}`);
+        res.json({ success: true, message: 'Sincronização concluída com sucesso' });
+      } else {
+        throw new Error('Função de sincronização não encontrada');
+      }
+    } catch (error: any) {
+      console.error('❌ Erro na sincronização manual:', error);
+      res.status(500).json({ error: 'Erro na sincronização manual', details: error?.message || 'Erro desconhecido' });
     }
   });
 
