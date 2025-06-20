@@ -71,9 +71,17 @@ export interface IStorage {
   getAnalyticsMetrics(clinicId: number, metricType?: string, dateRange?: { start: Date; end: Date }): Promise<AnalyticsMetric[]>;
 
   // Settings
-  getClinicSettings(clinicId: number): Promise<ClinicSetting[]>;
+  getClinicSettings(clinicId: number, keys?: string[]): Promise<ClinicSetting[] | Record<string, string>>;
   getClinicSetting(clinicId: number, key: string): Promise<ClinicSetting | undefined>;
-  setClinicSetting(setting: InsertClinicSetting): Promise<ClinicSetting>;
+  setClinicSetting(clinicId: number, key: string, value: string, type: string): Promise<ClinicSetting>;
+  
+  // User Profiles
+  getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined>;
+  
+  // WhatsApp Integration
+  logWhatsAppMessage(message: any): Promise<any>;
+  findContactByPhone(phone: string, clinicId: number): Promise<any>;
+  createContact(contact: any): Promise<any>;
 
   // AI Templates
   getAiTemplates(clinicId: number, templateType?: string): Promise<AiTemplate[]>;
@@ -584,31 +592,96 @@ export class MemStorage implements IStorage {
   }
 
   // Settings
-  async getClinicSettings(clinicId: number): Promise<ClinicSetting[]> {
-    return Array.from(this.clinicSettings.values())
+  async getClinicSettings(clinicId: number, keys?: string[]): Promise<ClinicSetting[] | Record<string, string>> {
+    const settings = Array.from(this.clinicSettings.values())
       .filter(setting => setting.clinic_id === clinicId);
+
+    if (keys) {
+      const result: Record<string, string> = {};
+      keys.forEach(key => {
+        const setting = settings.find(s => s.setting_key === key);
+        if (setting) {
+          result[key] = setting.setting_value;
+        }
+      });
+      return result;
+    }
+
+    return settings;
   }
 
   async getClinicSetting(clinicId: number, key: string): Promise<ClinicSetting | undefined> {
     return this.clinicSettings.get(`${clinicId}-${key}`);
   }
 
-  async setClinicSetting(insertSetting: InsertClinicSetting): Promise<ClinicSetting> {
+  async setClinicSetting(clinicId: number, key: string, value: string, type: string): Promise<ClinicSetting> {
     const id = this.currentId++;
-    const key = `${insertSetting.clinic_id}-${insertSetting.setting_key}`;
+    const settingKey = `${clinicId}-${key}`;
     
     const setting: ClinicSetting = { 
       id,
-      clinic_id: insertSetting.clinic_id ?? null,
-      setting_key: insertSetting.setting_key,
-      setting_value: insertSetting.setting_value,
-      setting_type: insertSetting.setting_type,
-      description: insertSetting.description || null,
+      clinic_id: clinicId,
+      setting_key: key,
+      setting_value: value,
+      setting_type: type,
+      description: null,
       updated_at: new Date()
     };
     
-    this.clinicSettings.set(key, setting);
+    this.clinicSettings.set(settingKey, setting);
     return setting;
+  }
+
+  // User Profiles
+  async getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined> {
+    // For demo purposes, return clinic 1 for all users
+    // In real implementation, this would query user's associated clinic
+    return { clinic_id: 1 };
+  }
+
+  // WhatsApp Integration
+  async logWhatsAppMessage(message: any): Promise<any> {
+    // Store WhatsApp message log
+    const id = this.currentId++;
+    const messageLog = {
+      id,
+      ...message,
+      created_at: new Date()
+    };
+    // Store in memory or database
+    return messageLog;
+  }
+
+  async findContactByPhone(phone: string, clinicId: number): Promise<any> {
+    // Find contact by phone number
+    const contacts = Array.from(this.contacts.values())
+      .filter(contact => contact.clinic_id === clinicId && contact.phone === phone);
+    
+    return contacts.length > 0 ? contacts[0] : null;
+  }
+
+  async createContact(contact: any): Promise<any> {
+    const id = this.currentId++;
+    const now = new Date();
+    const newContact: Contact = {
+      id,
+      clinic_id: contact.clinic_id,
+      name: contact.name,
+      phone: contact.phone,
+      email: contact.email || null,
+      birth_date: contact.birth_date || null,
+      cpf: contact.cpf || null,
+      status: contact.status || 'novo',
+      notes: contact.notes || null,
+      last_contact: contact.last_contact || null,
+      source: contact.source || null,
+      tags: contact.tags || null,
+      created_at: now,
+      updated_at: now
+    };
+    
+    this.contacts.set(id, newContact);
+    return newContact;
   }
 
   // AI Templates
