@@ -1858,9 +1858,19 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`📝 Atualizando WhatsApp via webhook: ${instanceName}`);
       
+      // First, check the schema and list all instances
+      console.log('🔍 Checking whatsapp_numbers schema...');
+      const schemaCheck = await db.execute(sql`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'whatsapp_numbers'
+        ORDER BY ordinal_position
+      `);
+      console.log('📋 Available columns:', schemaCheck.rows);
+
       // First, check if the instance exists
       const checkResult = await db.execute(sql`
-        SELECT id, instance_name, status, connected 
+        SELECT id, instance_name, status 
         FROM whatsapp_numbers 
         WHERE instance_name = ${instanceName}
       `);
@@ -1873,7 +1883,7 @@ export class PostgreSQLStorage implements IStorage {
       if (checkResult.rows.length === 0) {
         // List all existing instances for debugging
         const allInstances = await db.execute(sql`
-          SELECT id, instance_name, status, connected, phone_number 
+          SELECT id, instance_name, status, phone_number 
           FROM whatsapp_numbers 
           ORDER BY created_at DESC 
           LIMIT 10
@@ -1891,8 +1901,8 @@ export class PostgreSQLStorage implements IStorage {
         updateObj.status = updateData.status;
       }
       
-      if (updateData.is_connected !== undefined) {
-        updateObj.connected = updateData.is_connected;
+      if (updateData.connected !== undefined) {
+        updateObj.connected = updateData.connected;
       }
       
       if (updateData.phone_number !== undefined) {

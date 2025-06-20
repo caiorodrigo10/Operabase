@@ -71,7 +71,7 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
         // Preparar dados para atualização
         const updateData = {
           status,
-          is_connected: isConnected,
+          connected: isConnected,
           phone_number: webhookData.phoneNumber || null,
           profile_name: webhookData.profileName || null,
           profile_picture_url: webhookData.profilePicUrl || null,
