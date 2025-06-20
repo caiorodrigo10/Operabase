@@ -136,6 +136,40 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error('❌ Error initializing anamnesis system:', error);
   }
+
+  // Initialize WhatsApp table
+  try {
+    const storage = await getStorage() as any;
+    if (storage.pool) {
+      await storage.pool.query(`
+        CREATE TABLE IF NOT EXISTS whatsapp_numbers (
+          id SERIAL PRIMARY KEY,
+          clinic_id INTEGER NOT NULL REFERENCES public.profiles(id),
+          user_id TEXT NOT NULL,
+          phone_number TEXT NOT NULL DEFAULT '',
+          instance_name TEXT NOT NULL UNIQUE,
+          status TEXT NOT NULL DEFAULT 'pending',
+          connected_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+      
+      await storage.pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_numbers_clinic_id 
+        ON whatsapp_numbers(clinic_id);
+      `);
+      
+      await storage.pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_numbers_instance_name 
+        ON whatsapp_numbers(instance_name);
+      `);
+      
+      console.log('✅ WhatsApp numbers table initialized');
+    }
+  } catch (error) {
+    console.error('❌ Error initializing WhatsApp table:', error);
+  }
   
   // Add Phase 3 observability endpoints
   const { observabilityRoutes } = await import('./api/v1/observability/observability.routes.js');
