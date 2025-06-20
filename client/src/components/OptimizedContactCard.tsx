@@ -46,7 +46,7 @@ export const OptimizedContactCard = memo(function OptimizedContactCard({
 
   return (
     <Card 
-      className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-blue-500"
+      className="cursor-pointer hover:shadow-md transition-shadow"
       onClick={handleClick}
     >
       <CardContent className="p-4">
