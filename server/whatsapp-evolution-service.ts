@@ -26,17 +26,34 @@ export class EvolutionApiService {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
+    this.baseUrl = process.env.EVOLUTION_API_URL || '';
     this.apiKey = process.env.EVOLUTION_API_KEY || '';
     
+    console.log(`🔧 Evolution API Configuration:`);
+    console.log(`📍 Base URL: ${this.baseUrl || 'NOT SET'}`);
+    console.log(`🔑 API Key: ${this.apiKey ? 'SET' : 'NOT SET'}`);
+    
     if (!this.apiKey) {
+      console.error('❌ EVOLUTION_API_KEY environment variable is required');
       throw new Error('EVOLUTION_API_KEY environment variable is required');
+    }
+    
+    if (!this.baseUrl) {
+      console.error('❌ EVOLUTION_API_URL environment variable is required');
+      throw new Error('EVOLUTION_API_URL environment variable is required');
     }
   }
 
   private async makeRequest(endpoint: string, method: string = 'GET', data?: any): Promise<EvolutionApiResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const url = `${this.baseUrl}${endpoint}`;
+      console.log(`🌐 Making request to: ${method} ${url}`);
+      
+      if (data) {
+        console.log(`📤 Request body:`, JSON.stringify(data, null, 2));
+      }
+
+      const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -45,12 +62,22 @@ export class EvolutionApiService {
         body: data ? JSON.stringify(data) : undefined,
       });
 
-      const result = await response.json();
+      console.log(`📥 Response status: ${response.status} ${response.statusText}`);
+
+      let result;
+      try {
+        result = await response.json();
+        console.log(`📄 Response body:`, JSON.stringify(result, null, 2));
+      } catch (parseError) {
+        const textResult = await response.text();
+        console.log(`📄 Response text:`, textResult);
+        throw new Error(`Failed to parse JSON response: ${textResult}`);
+      }
       
       if (!response.ok) {
         return {
           success: false,
-          error: result.message || `HTTP ${response.status}: ${response.statusText}`
+          error: result.message || result.error || `HTTP ${response.status}: ${response.statusText}`
         };
       }
 
@@ -59,6 +86,7 @@ export class EvolutionApiService {
         data: result
       };
     } catch (error) {
+      console.error(`❌ Request failed:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
