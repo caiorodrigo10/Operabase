@@ -10,16 +10,407 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save, Phone, Users } from "lucide-react";
+import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save, Phone, Users, Timer, QrCode } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Clinic, InsertClinic } from "@shared/schema";
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
 import countries from 'world-countries';
 import { UserManagement } from '@/components/UserManagement';
+
+// WhatsApp Integration Component
+const WhatsAppIntegration = () => {
+  const [whatsappConfig, setWhatsappConfig] = useState({
+    api_key: '',
+    base_url: '',
+    instance_name: ''
+  });
+  const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, qr-active, qr-expired, connected, error
+  const [qrCode, setQrCode] = useState('');
+  const [qrTimer, setQrTimer] = useState(30);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const { toast } = useToast();
+
+  // Timer effect for QR Code
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTimerActive && qrTimer > 0) {
+      interval = setInterval(() => {
+        setQrTimer(prev => {
+          if (prev <= 1) {
+            setIsTimerActive(false);
+            setConnectionStatus('qr-expired');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerActive, qrTimer]);
+
+  // Save WhatsApp configuration
+  const saveConfigMutation = useMutation({
+    mutationFn: async (config: typeof whatsappConfig) => {
+      const response = await apiRequest('/api/whatsapp/config', 'POST', config);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Configuração salva",
+        description: "As configurações do WhatsApp foram salvas com sucesso",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as configurações do WhatsApp",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Create WhatsApp instance and get QR Code
+  const connectWhatsAppMutation = useMutation({
+    mutationFn: async () => {
+      setConnectionStatus('connecting');
+      const response = await apiRequest('/api/whatsapp/create-instance', 'POST');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data?.qrcode) {
+        // Extract base64 from data:image/png;base64,... format as specified in the plan
+        const base64Data = data.data.qrcode.split(',')[1];
+        setQrCode(`data:image/png;base64,${base64Data}`);
+        setConnectionStatus('qr-active');
+        setQrTimer(30);
+        setIsTimerActive(true);
+      } else {
+        setConnectionStatus('error');
+        toast({
+          title: "Erro na conexão",
+          description: "Não foi possível gerar o QR Code",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: () => {
+      setConnectionStatus('error');
+      toast({
+        title: "Erro na conexão",
+        description: "Falha ao conectar com a Evolution API",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Regenerate QR Code
+  const regenerateQRMutation = useMutation({
+    mutationFn: async () => {
+      setConnectionStatus('connecting');
+      const response = await apiRequest('/api/whatsapp/qr-code', 'GET');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data?.qrcode) {
+        // Extract base64 from data:image/png;base64,... format
+        const base64Data = data.data.qrcode.split(',')[1];
+        setQrCode(`data:image/png;base64,${base64Data}`);
+        setConnectionStatus('qr-active');
+        setQrTimer(30);
+        setIsTimerActive(true);
+      } else {
+        setConnectionStatus('error');
+      }
+    },
+    onError: () => {
+      setConnectionStatus('error');
+    }
+  });
+
+  // Test connection
+  const testConnectionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('/api/whatsapp/test-connection', 'POST');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        setConnectionStatus('connected');
+        toast({
+          title: "Conexão bem-sucedida",
+          description: "WhatsApp conectado com sucesso",
+        });
+      } else {
+        toast({
+          title: "Falha na conexão",
+          description: data.message || "Não foi possível conectar",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Erro no teste",
+        description: "Falha ao testar a conexão",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSaveConfig = () => {
+    if (!whatsappConfig.api_key) {
+      toast({
+        title: "API Key obrigatória",
+        description: "Por favor, insira sua API Key da Evolution",
+        variant: "destructive",
+      });
+      return;
+    }
+    saveConfigMutation.mutate(whatsappConfig);
+  };
+
+  const handleConnectWhatsApp = () => {
+    connectWhatsAppMutation.mutate();
+  };
+
+  const handleRegenerateQR = () => {
+    regenerateQRMutation.mutate();
+  };
+
+  const getStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'bg-green-500';
+      case 'qr-active': return 'bg-yellow-500';
+      case 'connecting': return 'bg-blue-500';
+      case 'error': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'Conectado';
+      case 'qr-active': return 'Aguardando leitura do QR Code';
+      case 'qr-expired': return 'QR Code expirado';
+      case 'connecting': return 'Conectando...';
+      case 'error': return 'Erro na conexão';
+      default: return 'Desconectado';
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-green-600" />
+              WhatsApp Business - Evolution API
+            </CardTitle>
+            <p className="text-sm text-slate-600 mt-1">
+              Configure sua integração com WhatsApp através da Evolution API
+            </p>
+          </div>
+          <Badge variant="outline" className={`${connectionStatus === 'connected' ? 'text-green-600 border-green-200' : 'text-slate-600 border-slate-200'}`}>
+            {getStatusText()}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        
+        {/* Configuration Section */}
+        <div className="space-y-4">
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <Info className="w-5 h-5 text-green-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-green-800">Configuração da Evolution API</p>
+                <p className="text-sm text-green-700 mt-1">
+                  URL: https://n8n-evolution-api.4gmy9o.easypanel.host<br/>
+                  Webhook: Configurado automaticamente para receber mensagens
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp-api-key">API Key da Evolution</Label>
+              <Input
+                id="whatsapp-api-key"
+                type="password"
+                value={whatsappConfig.api_key}
+                onChange={(e) => setWhatsappConfig({...whatsappConfig, api_key: e.target.value})}
+                placeholder="Digite sua API Key..."
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp-instance">Nome da Instância (opcional)</Label>
+              <Input
+                id="whatsapp-instance"
+                value={whatsappConfig.instance_name}
+                onChange={(e) => setWhatsappConfig({...whatsappConfig, instance_name: e.target.value})}
+                placeholder="taskmed_clinic_1"
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={() => testConnectionMutation.mutate()}
+              disabled={testConnectionMutation.isPending || !whatsappConfig.api_key}
+            >
+              {testConnectionMutation.isPending ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Settings className="w-4 h-4 mr-2" />
+              )}
+              Testar Conexão
+            </Button>
+            <Button 
+              onClick={handleSaveConfig}
+              disabled={saveConfigMutation.isPending || !whatsappConfig.api_key}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {saveConfigMutation.isPending ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Salvar Configuração
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Connection Status Section */}
+        <div className="space-y-4">
+          <h3 className="font-medium text-slate-800">Status da Conexão WhatsApp</h3>
+          
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className={`w-3 h-3 rounded-full ${getStatusColor()}`}></div>
+              <span className="font-medium">{getStatusText()}</span>
+            </div>
+            
+            {connectionStatus === 'disconnected' && whatsappConfig.api_key && (
+              <Button 
+                onClick={handleConnectWhatsApp}
+                disabled={connectWhatsAppMutation.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {connectWhatsAppMutation.isPending ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                )}
+                Conectar WhatsApp
+              </Button>
+            )}
+          </div>
+
+          {/* QR Code Section */}
+          {(connectionStatus === 'qr-active' || connectionStatus === 'qr-expired') && qrCode && (
+            <div className="border rounded-lg p-6 text-center space-y-4">
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <QrCode className="w-5 h-5 text-slate-600" />
+                <h4 className="font-medium text-slate-800">
+                  {connectionStatus === 'qr-active' ? 'Escaneie o QR Code com seu WhatsApp' : 'QR Code Expirado'}
+                </h4>
+              </div>
+              
+              <div className={`inline-block p-4 bg-white border-2 rounded-lg ${connectionStatus === 'qr-expired' ? 'opacity-50 grayscale' : ''}`}>
+                <img 
+                  src={qrCode} 
+                  alt="QR Code WhatsApp" 
+                  className="w-64 h-64 mx-auto"
+                />
+              </div>
+              
+              {connectionStatus === 'qr-active' && (
+                <div className="flex items-center justify-center space-x-2 text-sm text-slate-600">
+                  <Timer className="w-4 h-4" />
+                  <span>Expira em: {qrTimer}s</span>
+                </div>
+              )}
+              
+              {connectionStatus === 'qr-expired' && (
+                <div className="space-y-2">
+                  <p className="text-sm text-red-600">Este QR Code expirou</p>
+                  <Button 
+                    onClick={handleRegenerateQR}
+                    disabled={regenerateQRMutation.isPending}
+                    variant="outline"
+                  >
+                    {regenerateQRMutation.isPending ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Gerar novo QR Code
+                  </Button>
+                </div>
+              )}
+              
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                1. Abra o WhatsApp no seu celular<br/>
+                2. Toque em Menu ou Configurações<br/>
+                3. Toque em Aparelhos conectados<br/>
+                4. Toque em Conectar um aparelho<br/>
+                5. Aponte seu celular para esta tela para capturar o código
+              </p>
+            </div>
+          )}
+
+          {connectionStatus === 'connected' && (
+            <div className="border border-green-200 bg-green-50 rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800">WhatsApp Conectado com Sucesso!</p>
+                  <p className="text-sm text-green-700">
+                    Seu WhatsApp está pronto para enviar e receber mensagens automaticamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {connectionStatus === 'error' && (
+            <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <div>
+                  <p className="font-medium text-red-800">Erro na Conexão</p>
+                  <p className="text-sm text-red-700">
+                    Verifique sua API Key e tente novamente.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setConnectionStatus('disconnected')}
+                variant="outline"
+                size="sm"
+                className="mt-3"
+              >
+                Tentar Novamente
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 // Country selector component
 const CountrySelector = ({ value, onChange, placeholder = "Selecione um país" }: {
@@ -882,85 +1273,7 @@ export function Configuracoes() {
 
           <TabsContent value="integrations" className="space-y-6">
             {/* WhatsApp Evolution API Configuration */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-green-600" />
-                      WhatsApp Business - Evolution API
-                    </CardTitle>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Configure a API Key da Evolution para integração com WhatsApp Business
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-green-600 border-green-200">
-                    Pronto para configurar
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-start space-x-3">
-                    <Info className="w-5 h-5 text-green-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-green-800">Como obter sua API Key da Evolution</p>
-                      <p className="text-sm text-green-700 mt-1">
-                        1. Acesse seu painel da Evolution API<br/>
-                        2. Vá em Configurações → API Keys<br/>
-                        3. Copie sua chave de acesso
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="evolution-api-key">API Key da Evolution</Label>
-                  <Input
-                    id="evolution-api-key"
-                    type="password"
-                    placeholder="Digite sua API Key da Evolution..."
-                    className="font-mono text-sm"
-                  />
-                  <p className="text-xs text-slate-500">
-                    Sua API Key será armazenada de forma segura e criptografada
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="evolution-base-url">URL Base da API (opcional)</Label>
-                  <Input
-                    id="evolution-base-url"
-                    type="url"
-                    placeholder="https://sua-evolution-api.com"
-                    className="font-mono text-sm"
-                  />
-                  <p className="text-xs text-slate-500">
-                    Deixe em branco para usar a URL padrão da Evolution
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-sm font-medium">Status da Conexão</span>
-                  </div>
-                  <Badge variant="secondary">
-                    Não configurado
-                  </Badge>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button variant="outline">
-                    Testar Conexão
-                  </Button>
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    <Save className="w-4 h-4 mr-2" />
-                    Salvar Configuração
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <WhatsAppIntegration />
 
             <Card>
               <CardHeader>

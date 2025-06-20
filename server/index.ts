@@ -124,6 +124,10 @@ app.use((req, res, next) => {
   const { setupAnamnesisManagementRoutes } = await import('./anamneses-routes');
   setupAnamnesisManagementRoutes(app, storage);
   
+  // Add WhatsApp routes
+  const { setupWhatsAppRoutes } = await import('./whatsapp-routes');
+  setupWhatsAppRoutes(app, storage);
+  
   // Initialize anamnesis system
   try {
     const { initializeAnamnesisSystem } = await import('./anamnesis-setup');

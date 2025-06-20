@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { isAuthenticated } from './auth';
 import { IStorage } from './storage';
-import { WhatsAppEvolutionService } from './whatsapp-evolution-service';
+import { WhatsAppEvolutionService } from './whatsapp-evolution-service.js';
 
 export function setupWhatsAppRoutes(app: any, storage: IStorage) {
   const whatsappService = new WhatsAppEvolutionService(storage);
