@@ -59,7 +59,7 @@ export interface IStorage {
   updateContactStatus(id: number, status: string): Promise<Contact | undefined>;
 
   // Appointments
-  getAppointments(clinicId: number, filters?: { status?: string; date?: Date }): Promise<Appointment[]>;
+  getAppointments(clinicId: number, filters?: { status?: string; date?: Date; contact_id?: number }): Promise<Appointment[]>;
   getAppointment(id: number): Promise<Appointment | undefined>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment | undefined>;
@@ -481,7 +481,7 @@ export class MemStorage implements IStorage {
   }
 
   // Appointments
-  async getAppointments(clinicId: number, filters?: { status?: string; date?: Date }): Promise<Appointment[]> {
+  async getAppointments(clinicId: number, filters?: { status?: string; date?: Date; contact_id?: number }): Promise<Appointment[]> {
     const allAppointments = Array.from(this.appointments.values())
       .filter(appointment => appointment.clinic_id === clinicId);
 
@@ -498,6 +498,10 @@ export class MemStorage implements IStorage {
         const appointmentDate = new Date(appointment.scheduled_date);
         return appointmentDate.toDateString() === targetDate.toDateString();
       });
+    }
+
+    if (filters?.contact_id) {
+      filteredAppointments = filteredAppointments.filter(appointment => appointment.contact_id === filters.contact_id);
     }
 
     return filteredAppointments.sort((a, b) => {

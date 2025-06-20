@@ -24,7 +24,7 @@ export class AppointmentsController {
   async getAppointments(req: Request, res: Response) {
     try {
       console.log('🚀 Appointments API called');
-      const { clinic_id, status, date } = req.query;
+      const { clinic_id, status, date, contact_id } = req.query;
 
       if (!clinic_id) {
         return res.status(400).json({ error: "clinic_id is required" });
@@ -38,6 +38,12 @@ export class AppointmentsController {
       const filters: any = {};
       if (status) filters.status = status as string;
       if (date) filters.date = new Date(date as string);
+      if (contact_id) {
+        const contactIdNum = parseInt(contact_id as string);
+        if (!isNaN(contactIdNum)) {
+          filters.contact_id = contactIdNum;
+        }
+      }
 
       const appointments = await this.service.getAppointments(clinicId, filters);
       console.log('📊 Total appointments:', appointments.length);
