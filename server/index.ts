@@ -124,13 +124,13 @@ app.use((req, res, next) => {
   const { setupAnamnesisManagementRoutes } = await import('./anamneses-routes');
   setupAnamnesisManagementRoutes(app, storage);
   
+  // Add WhatsApp Webhook routes first (to avoid conflicts)
+  const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
+  setupWhatsAppWebhookRoutes(app, storage);
+  
   // Add WhatsApp routes
   const whatsappRoutes = await import('./whatsapp-routes');
   app.use(whatsappRoutes.default);
-  
-  // Add WhatsApp Webhook routes
-  const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
-  setupWhatsAppWebhookRoutes(app, storage);
   
   // Initialize anamnesis system
   try {

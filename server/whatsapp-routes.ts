@@ -121,49 +121,7 @@ router.get('/api/whatsapp/status/:instanceName', async (req, res) => {
   }
 });
 
-// Webhook endpoint for Evolution API status updates
-router.post('/api/whatsapp/webhook/:instanceName', async (req, res) => {
-  try {
-    const instanceName = req.params.instanceName;
-    const { event, data } = req.body;
-
-    console.log(`WhatsApp webhook for ${instanceName}:`, event, data);
-
-    const storage = await getStorage();
-    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
-    
-    if (!whatsappNumber) {
-      return res.status(404).json({ error: 'WhatsApp number not found' });
-    }
-
-    // Handle different webhook events
-    switch (event) {
-      case 'connection.update':
-        if (data.state === 'open' && data.phoneNumber) {
-          await storage.updateWhatsAppNumber(whatsappNumber.id, {
-            phone_number: data.phoneNumber,
-            status: 'connected',
-            connected_at: new Date()
-          });
-        } else if (data.state === 'close') {
-          await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'disconnected');
-        }
-        break;
-      
-      case 'qr.update':
-        // QR code updated, status remains connecting
-        break;
-        
-      default:
-        console.log('Unhandled webhook event:', event);
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).json({ error: 'Failed to process webhook' });
-  }
-});
+// Old webhook endpoint removed - now handled by whatsapp-webhook-routes.ts
 
 // Disconnect WhatsApp number
 router.post('/api/whatsapp/disconnect/:id', async (req, res) => {
