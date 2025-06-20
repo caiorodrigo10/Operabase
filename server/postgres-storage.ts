@@ -497,7 +497,7 @@ export class PostgreSQLStorage implements IStorage {
 
   // ============ APPOINTMENTS ============
   
-  async getAppointments(clinicId: number, filters?: { status?: string; date?: Date }): Promise<Appointment[]> {
+  async getAppointments(clinicId: number, filters?: { status?: string; date?: Date; contact_id?: number }): Promise<Appointment[]> {
     try {
       let conditions = [`a.clinic_id = ${clinicId}`];
 
@@ -508,6 +508,11 @@ export class PostgreSQLStorage implements IStorage {
       if (filters?.date) {
         const dateStr = filters.date.toISOString().split('T')[0];
         conditions.push(`DATE(a.scheduled_date) = '${dateStr}'`);
+      }
+
+      if (filters?.contact_id) {
+        conditions.push(`a.contact_id = ${filters.contact_id}`);
+        console.log('🔍 PostgreSQL: Added contact_id filter:', filters.contact_id);
       }
 
       const whereClause = conditions.join(' AND ');

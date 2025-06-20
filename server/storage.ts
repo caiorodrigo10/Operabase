@@ -501,7 +501,10 @@ export class MemStorage implements IStorage {
     }
 
     if (filters?.contact_id) {
+      console.log('🔍 Filtering by contact_id:', filters.contact_id);
+      console.log('📊 Before filter, appointments count:', filteredAppointments.length);
       filteredAppointments = filteredAppointments.filter(appointment => appointment.contact_id === filters.contact_id);
+      console.log('📊 After filter, appointments count:', filteredAppointments.length);
     }
 
     return filteredAppointments.sort((a, b) => {
