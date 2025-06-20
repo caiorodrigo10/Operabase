@@ -1299,6 +1299,14 @@ export class PostgreSQLStorage implements IStorage {
     return result[0];
   }
 
+  async deleteMedicalRecord(id: number): Promise<boolean> {
+    const result = await db.update(medical_records)
+      .set({ is_active: false, updated_at: new Date() })
+      .where(eq(medical_records.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
   // ============ PASSWORD RESET TOKENS ============
 
   async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {

@@ -114,6 +114,33 @@ export class TenantAwareStorageProxy implements IStorage {
     return this.storage.getAppointmentsByDateRange(startDate, endDate);
   }
 
+  // Medical Records methods - auto-filter by clinic_id
+  async getMedicalRecords(contactId: number, clinicId?: number) {
+    const tenantClinicId = this.getClinicId();
+    return this.storage.getMedicalRecords(contactId, clinicId || tenantClinicId);
+  }
+
+  async getMedicalRecord(id: number) {
+    return this.storage.getMedicalRecord(id);
+  }
+
+  async getMedicalRecordByAppointment(appointmentId: number) {
+    return this.storage.getMedicalRecordByAppointment(appointmentId);
+  }
+
+  async createMedicalRecord(record: any) {
+    const clinicId = this.getClinicId();
+    return this.storage.createMedicalRecord({ ...record, clinic_id: clinicId });
+  }
+
+  async updateMedicalRecord(id: number, updates: any) {
+    return this.storage.updateMedicalRecord(id, updates);
+  }
+
+  async deleteMedicalRecord(id: number) {
+    return this.storage.deleteMedicalRecord(id);
+  }
+
   // Analytics methods - auto-filter by clinic_id
   async createAnalyticsMetric(metric: any) {
     const clinicId = this.getClinicId();
