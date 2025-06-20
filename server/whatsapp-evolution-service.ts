@@ -26,21 +26,16 @@ export class EvolutionApiService {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.EVOLUTION_API_URL || '';
+    this.baseUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
     this.apiKey = process.env.EVOLUTION_API_KEY || '';
     
     console.log(`🔧 Evolution API Configuration:`);
-    console.log(`📍 Base URL: ${this.baseUrl || 'NOT SET'}`);
+    console.log(`📍 Base URL: ${this.baseUrl}`);
     console.log(`🔑 API Key: ${this.apiKey ? 'SET' : 'NOT SET'}`);
     
     if (!this.apiKey) {
       console.error('❌ EVOLUTION_API_KEY environment variable is required');
       throw new Error('EVOLUTION_API_KEY environment variable is required');
-    }
-    
-    if (!this.baseUrl) {
-      console.error('❌ EVOLUTION_API_URL environment variable is required');
-      throw new Error('EVOLUTION_API_URL environment variable is required');
     }
   }
 
@@ -108,10 +103,9 @@ export class EvolutionApiService {
   async createInstance(instanceName: string): Promise<EvolutionApiResponse> {
     const data = {
       instanceName,
+      integration: "WHATSAPP-BAILEYS",
       token: this.apiKey,
-      qrcode: true,
-      webhook_by_events: false,
-      events: []
+      qrcode: true
     };
 
     return this.makeRequest('/instance/create', 'POST', data);
