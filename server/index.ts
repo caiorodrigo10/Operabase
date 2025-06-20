@@ -145,7 +145,7 @@ app.use((req, res, next) => {
       await pgStorage.pool.query(`
         CREATE TABLE IF NOT EXISTS whatsapp_numbers (
           id SERIAL PRIMARY KEY,
-          clinic_id INTEGER NOT NULL,
+          clinic_id INTEGER NOT NULL REFERENCES public.profiles(id),
           user_id TEXT NOT NULL,
           phone_number TEXT NOT NULL DEFAULT '',
           instance_name TEXT NOT NULL UNIQUE,
