@@ -168,20 +168,37 @@ router.get('/api/clinic/:clinicId/professionals', async (req, res) => {
       return res.status(400).json({ error: 'Invalid clinic ID' });
     }
 
-    const storage = await getStorage();
+    // Direct database query to get professionals with user data
+    const { db } = await import('../db.js');
+    const { sql } = await import('drizzle-orm');
     
-    // Get all users from the clinic with professional role
-    const professionals = await storage.getClinicUsers(clinicId);
+    const result = await db.execute(sql`
+      SELECT 
+        cu.user_id,
+        cu.clinic_id,
+        cu.role,
+        cu.is_professional,
+        cu.is_active,
+        cu.joined_at,
+        u.id as user_id,
+        u.name as user_name,
+        u.email as user_email,
+        u.created_at as user_created_at,
+        u.updated_at as user_updated_at
+      FROM clinic_users cu
+      JOIN users u ON cu.user_id = u.id
+      WHERE cu.clinic_id = ${clinicId} 
+        AND cu.is_professional = true
+        AND cu.is_active = true
+      ORDER BY u.name ASC
+    `);
     
-    // Filter for professionals only and format response
-    const formattedProfessionals = professionals
-      .filter(user => user.is_professional === true)
-      .map(user => ({
-        id: user.id,
-        name: user.name || user.email,
-        email: user.email,
-        role: user.role
-      }));
+    const formattedProfessionals = result.rows.map((row: any) => ({
+      id: row.user_id,
+      name: row.user_name || row.user_email,
+      email: row.user_email,
+      role: row.role
+    }));
 
     res.json(formattedProfessionals);
   } catch (error) {

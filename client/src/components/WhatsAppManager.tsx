@@ -334,10 +334,12 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Nenhum profissional</SelectItem>
-                      {professionals.map((professional: any) => (
-                        <SelectItem key={professional.id} value={professional.id.toString()}>
-                          {professional.name}
-                        </SelectItem>
+                      {professionals && professionals.map((professional: any) => (
+                        professional.id ? (
+                          <SelectItem key={professional.id} value={professional.id.toString()}>
+                            {professional.name || professional.email || 'Profissional'}
+                          </SelectItem>
+                        ) : null
                       ))}
                     </SelectContent>
                   </Select>
