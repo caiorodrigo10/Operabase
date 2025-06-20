@@ -998,6 +998,15 @@ export function Configuracoes() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => handleSyncCalendar(integration.id)}
+                                disabled={syncCalendarMutation.isPending}
+                              >
+                                <RefreshCw className={`w-4 h-4 mr-2 ${syncCalendarMutation.isPending ? 'animate-spin' : ''}`} />
+                                Sincronizar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => handleEditSyncPreferences(integration.id, integration.sync_preference)}
                               >
                                 <Settings className="w-4 h-4 mr-2" />
