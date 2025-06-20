@@ -20,12 +20,38 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedQR, setSelectedQR] = useState<{ qrCode: string; instanceName: string; numberId?: number } | null>(null);
+  const [pollingEnabled, setPollingEnabled] = useState(false);
 
-  // Query to fetch WhatsApp numbers
+  // Query to fetch WhatsApp numbers with conditional polling
   const { data: whatsappNumbers = [], isLoading } = useQuery({
     queryKey: ['/api/whatsapp/numbers', clinicId],
-    queryFn: () => fetch(`/api/whatsapp/numbers/${clinicId}`).then(res => res.json()) as Promise<WhatsAppNumber[]>
+    queryFn: () => fetch(`/api/whatsapp/numbers/${clinicId}`).then(res => res.json()) as Promise<WhatsAppNumber[]>,
+    refetchInterval: pollingEnabled ? 3000 : false, // Poll every 3 seconds when enabled
+    refetchIntervalInBackground: false
   });
+
+  // Enable polling when there are connecting instances, disable when all connected/disconnected
+  useEffect(() => {
+    const hasConnectingInstances = whatsappNumbers.some(number => number.status === 'connecting');
+    setPollingEnabled(hasConnectingInstances);
+  }, [whatsappNumbers]);
+
+  // Auto-close QR dialog when instance becomes connected
+  useEffect(() => {
+    if (selectedQR?.numberId && whatsappNumbers.length > 0) {
+      const connectedNumber = whatsappNumbers.find(
+        number => number.id === selectedQR.numberId && number.status === 'connected'
+      );
+      
+      if (connectedNumber) {
+        setSelectedQR(null);
+        toast({
+          title: "WhatsApp conectado!",
+          description: `Número ${connectedNumber.phone_number} conectado com sucesso`,
+        });
+      }
+    }
+  }, [whatsappNumbers, selectedQR, toast]);
 
   // Mutation to start connection
   const startConnectionMutation = useMutation({
