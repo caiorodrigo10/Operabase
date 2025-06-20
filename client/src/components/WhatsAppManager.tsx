@@ -319,9 +319,9 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                     <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
                   </div>
                   <Select
-                    value={number.professional_id?.toString() || ""}
+                    value={number.professional_id?.toString() || "none"}
                     onValueChange={(value) => {
-                      const professionalId = value === "" ? null : parseInt(value);
+                      const professionalId = value === "none" ? null : parseInt(value);
                       updateProfessionalMutation.mutate({ 
                         numberId: number.id, 
                         professionalId 
@@ -333,7 +333,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                       <SelectValue placeholder="Selecionar profissional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum profissional</SelectItem>
+                      <SelectItem value="none">Nenhum profissional</SelectItem>
                       {professionals.map((professional: any) => (
                         <SelectItem key={professional.id} value={professional.id.toString()}>
                           {professional.name}
