@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { MessageSquare, Plus, QrCode, Trash2, RefreshCw, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { apiRequest } from '@/lib/queryClient';
-import { WhatsAppNumber } from '@shared/schema';
-import { MessageCircle, Plus, QrCode, Smartphone, Trash2, Power, PowerOff } from 'lucide-react';
+
+interface WhatsAppNumber {
+  id: number;
+  phone_number: string;
+  instance_name: string;
+  status: 'connecting' | 'connected' | 'disconnected';
+}
 
 interface WhatsAppManagerProps {
   clinicId: number;
@@ -17,248 +21,179 @@ interface WhatsAppManagerProps {
 }
 
 export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [currentQRCode, setCurrentQRCode] = useState<string>('');
+  const [currentInstanceName, setCurrentInstanceName] = useState<string>('');
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [selectedQR, setSelectedQR] = useState<{ qrCode: string; instanceName: string } | null>(null);
 
-  // Query to fetch WhatsApp numbers
-  const { data: whatsappNumbers = [], isLoading } = useQuery({
-    queryKey: ['/api/whatsapp/numbers', clinicId],
-    queryFn: () => fetch(`/api/whatsapp/numbers/${clinicId}`).then(res => res.json()) as Promise<WhatsAppNumber[]>
+  // Fetch connected WhatsApp numbers
+  const { data: whatsappNumbers = [], refetch } = useQuery({
+    queryKey: [`/api/whatsapp/numbers/${clinicId}`],
+    refetchInterval: 5000,
   });
 
-  // Mutation to start connection
-  const startConnectionMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/whatsapp/connect`, {
-      method: 'POST',
-      body: { clinicId, userId }
-    }),
+  // Add new WhatsApp number - opens QR popup
+  const addNumberMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(`/api/whatsapp/numbers`, 'POST', { clinicId, userId });
+      const data = await response.json();
+      
+      if (data.qrCode) {
+        setCurrentQRCode(data.qrCode);
+        setCurrentInstanceName(data.instanceName);
+        setShowQRDialog(true);
+      }
+      
+      return data;
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao conectar",
+        description: "Não foi possível gerar o QR Code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Check connection status - auto-closes dialog when connected
+  const checkConnectionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(`/api/whatsapp/status/${currentInstanceName}`, 'GET');
+      return response.json();
+    },
     onSuccess: (data) => {
-      toast({
-        title: "Conexão iniciada",
-        description: "Escaneie o QR Code para conectar seu WhatsApp"
-      });
-      
-      // Show QR code dialog
-      setSelectedQR({
-        qrCode: data.qrCode,
-        instanceName: data.instanceName
-      });
-      
-      // Refresh list
-      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
+      if (data.status === 'connected') {
+        setShowQRDialog(false); // Auto-close popup
+        refetch();
+        toast({
+          title: "WhatsApp conectado!",
+          description: "Número conectado com sucesso",
+        });
+      }
     },
-    onError: (error: any) => {
-      toast({
-        title: "Erro na conexão",
-        description: error.message || "Não foi possível iniciar a conexão",
-        variant: "destructive"
-      });
-    }
   });
 
-  // Mutation to disconnect number
-  const disconnectMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/whatsapp/disconnect/${id}`, {
-      method: 'POST'
-    }),
-    onSuccess: () => {
-      toast({
-        title: "WhatsApp desconectado",
-        description: "Número desconectado com sucesso"
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
+  // Remove WhatsApp number
+  const removeNumberMutation = useMutation({
+    mutationFn: async (numberId: number) => {
+      await apiRequest(`/api/whatsapp/numbers/${numberId}`, 'DELETE');
     },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao desconectar",
-        description: error.message || "Não foi possível desconectar o número",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Mutation to delete number
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/whatsapp/numbers/${id}`, {
-      method: 'DELETE'
-    }),
     onSuccess: () => {
+      refetch();
       toast({
         title: "Número removido",
-        description: "Número WhatsApp removido com sucesso"
+        description: "Número WhatsApp desconectado",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao remover",
-        description: error.message || "Não foi possível remover o número",
-        variant: "destructive"
-      });
-    }
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'connected':
-        return <Badge variant="default" className="bg-green-500"><Power className="w-3 h-3 mr-1" />Conectado</Badge>;
-      case 'connecting':
-        return <Badge variant="secondary"><QrCode className="w-3 h-3 mr-1" />Conectando</Badge>;
-      case 'disconnected':
-        return <Badge variant="destructive"><PowerOff className="w-3 h-3 mr-1" />Desconectado</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  // Auto-check connection every 3 seconds when QR dialog is open
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (showQRDialog && currentInstanceName) {
+      interval = setInterval(() => {
+        checkConnectionMutation.mutate();
+      }, 3000);
     }
-  };
-
-  const formatPhoneNumber = (phone: string) => {
-    if (!phone) return 'Não identificado';
-    return phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-  };
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showQRDialog, currentInstanceName]);
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              WhatsApp Business
-            </CardTitle>
-            <CardDescription>
-              Gerencie seus números WhatsApp conectados à clínica
-            </CardDescription>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-green-600" />
+            WhatsApp Business
+          </CardTitle>
           <Button 
-            onClick={() => startConnectionMutation.mutate()}
-            disabled={startConnectionMutation.isPending}
-            className="flex items-center gap-2"
+            onClick={() => addNumberMutation.mutate()}
+            disabled={addNumberMutation.isPending}
+            className="bg-green-600 hover:bg-green-700"
           >
-            <Plus className="w-4 h-4" />
+            {addNumberMutation.isPending ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}
             Adicionar Número
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading && (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {whatsappNumbers.length === 0 ? (
+          <div className="text-center py-6 text-gray-500">
+            <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-50" />
+            <p className="font-medium">Nenhum número conectado</p>
+            <p className="text-sm">Conecte seu WhatsApp para começar</p>
           </div>
-        )}
-
-        {!isLoading && whatsappNumbers.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">Nenhum número conectado</p>
-            <p className="text-sm">Clique em "Adicionar Número" para conectar seu WhatsApp</p>
-          </div>
-        )}
-
-        {whatsappNumbers.length > 0 && (
-          <div className="space-y-4">
-            {whatsappNumbers.map((number) => (
-              <div key={number.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  <Smartphone className="w-8 h-8 text-green-600" />
+        ) : (
+          <div className="space-y-3">
+            {whatsappNumbers.map((number: WhatsAppNumber) => (
+              <div key={number.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
+                <div className="flex items-center space-x-3">
+                  <MessageSquare className="w-5 h-5 text-green-600" />
                   <div>
-                    <p className="font-medium">{formatPhoneNumber(number.phone_number)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Conectado em: {number.connected_at 
-                        ? new Date(number.connected_at).toLocaleString() 
-                        : 'Não conectado'}
+                    <p className="font-medium text-green-800">
+                      {number.phone_number || 'WhatsApp Business'}
                     </p>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-100 text-green-700">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Conectado
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(number.status)}
-                  
-                  {number.status === 'connected' && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <PowerOff className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Desconectar WhatsApp</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja desconectar este número? Você precisará escanear o QR Code novamente para reconectar.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => disconnectMutation.mutate(number.id)}
-                            disabled={disconnectMutation.isPending}
-                          >
-                            Desconectar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remover número</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tem certeza que deseja remover este número WhatsApp? Esta ação não pode ser desfeita.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => deleteMutation.mutate(number.id)}
-                          disabled={deleteMutation.isPending}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Remover
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeNumberMutation.mutate(number.id)}
+                  disabled={removeNumberMutation.isPending}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             ))}
           </div>
         )}
 
-        {/* QR Code Dialog */}
-        <Dialog open={!!selectedQR} onOpenChange={() => setSelectedQR(null)}>
+        {/* QR Code Dialog - Simple and auto-closes */}
+        <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Conectar WhatsApp</DialogTitle>
-              <DialogDescription>
-                Escaneie o QR Code com seu WhatsApp para conectar
-              </DialogDescription>
+              <DialogTitle className="flex items-center gap-2 justify-center">
+                <QrCode className="w-5 h-5 text-green-600" />
+                Conectar WhatsApp
+              </DialogTitle>
             </DialogHeader>
-            
-            {selectedQR && (
-              <div className="flex flex-col items-center space-y-4">
-                <div className="p-4 bg-white rounded-lg">
+            <div className="flex flex-col items-center space-y-4">
+              {currentQRCode && (
+                <div className="p-4 bg-white border-2 border-green-200 rounded-lg">
                   <img 
-                    src={selectedQR.qrCode} 
+                    src={currentQRCode} 
                     alt="QR Code WhatsApp" 
-                    className="w-64 h-64"
+                    className="w-56 h-56"
                   />
                 </div>
-                <div className="text-center text-sm text-muted-foreground">
-                  <p>1. Abra o WhatsApp no seu celular</p>
-                  <p>2. Toque em Menu → Dispositivos conectados</p>
-                  <p>3. Toque em "Conectar um dispositivo"</p>
-                  <p>4. Aponte seu celular para esta tela para capturar o código</p>
+              )}
+              <div className="text-center space-y-2">
+                <p className="font-medium">Escaneie com seu WhatsApp</p>
+                <div className="text-sm text-gray-600">
+                  <p>Abra o WhatsApp → Menu → Aparelhos conectados</p>
+                  <p>Toque em "Conectar um aparelho" e escaneie</p>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-sm text-green-600 mt-3">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Aguardando conexão...
                 </div>
               </div>
-            )}
+            </div>
           </DialogContent>
         </Dialog>
       </CardContent>
