@@ -151,7 +151,9 @@ app.use((req, res, next) => {
         SELECT * FROM calendar_integrations 
         WHERE email = ${userEmail} 
         AND is_active = true
+        AND provider = 'google'
         ORDER BY created_at DESC
+        LIMIT 1
       `);
       
       const integrations = result.rows;

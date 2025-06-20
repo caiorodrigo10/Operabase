@@ -108,43 +108,40 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
     const userCalendars = await googleCalendarService.getUserCalendars();
     const primaryCalendar = userCalendars.find(cal => cal.primary) || userCalendars[0];
 
-    // Check if integration already exists by email for Supabase users
+    // Desativar todas as integrações Google existentes do usuário
     const existingIntegrations = await storage.getCalendarIntegrationsByEmail(userEmail);
-    const existingIntegration = existingIntegrations.find(integration => 
-      integration.provider === 'google' && integration.email === calendarInfo.email
+    const googleIntegrations = existingIntegrations.filter(integration => 
+      integration.provider === 'google'
     );
 
-    if (existingIntegration) {
-      // Update existing integration with primary calendar
-      await storage.updateCalendarIntegration(existingIntegration.id, {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        token_expires_at: new Date(tokens.expiry_date),
-        calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
-        calendar_name: primaryCalendar?.summary || 'Calendário Principal',
-        is_active: true,
-        sync_enabled: true,
-        last_sync_at: new Date(),
-        sync_errors: null,
+    console.log(`🔄 Encontradas ${googleIntegrations.length} integrações Google existentes para ${userEmail}`);
+
+    // Desativar todas as integrações existentes (permitir apenas 1 ativa)
+    for (const integration of googleIntegrations) {
+      await storage.updateCalendarIntegration(integration.id, {
+        is_active: false,
+        sync_enabled: false
       });
-    } else {
-      // Create new integration with primary calendar linked
-      await storage.createCalendarIntegration({
-        user_id: userId, // Now accepts both UUIDs and integers as text
-        clinic_id: clinicId,
-        provider: 'google',
-        provider_user_id: calendarInfo.email,
-        email: userEmail, // Use the user's authenticated email
-        calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
-        calendar_name: primaryCalendar?.summary || 'Calendário Principal',
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        token_expires_at: new Date(tokens.expiry_date),
-        is_active: true,
-        sync_enabled: true,
-        last_sync_at: new Date(),
-      });
+      console.log(`❌ Desativada integração ${integration.id}`);
     }
+
+    // Criar nova integração ativa com calendário principal
+    console.log(`✅ Criando nova integração ativa para ${userEmail}`);
+    await storage.createCalendarIntegration({
+      user_id: userId,
+      clinic_id: clinicId,
+      provider: 'google',
+      provider_user_id: calendarInfo.email,
+      email: userEmail,
+      calendar_id: primaryCalendar?.id || calendarInfo.calendarId,
+      calendar_name: primaryCalendar?.summary || 'Calendário Principal',
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      token_expires_at: new Date(tokens.expiry_date),
+      is_active: true,
+      sync_enabled: true,
+      last_sync_at: new Date(),
+    });
 
     // Redirect to settings page with success
     res.redirect('/configuracoes?calendar=connected');
