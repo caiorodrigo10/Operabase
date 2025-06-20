@@ -202,9 +202,9 @@ router.get('/api/clinic/:clinicId/professionals', async (req, res) => {
 router.put('/api/whatsapp/numbers/:id/professional', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { professional_id } = req.body;
+    const { user_id } = req.body;
     
-    console.log('🔍 Professional assignment request:', { id, professional_id, body: req.body });
+    console.log('🔍 User assignment request:', { id, user_id, body: req.body });
     
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
@@ -217,16 +217,16 @@ router.put('/api/whatsapp/numbers/:id/professional', async (req, res) => {
       return res.status(404).json({ error: 'WhatsApp number not found' });
     }
 
-    // Update professional assignment
+    // Update user assignment
     const updated = await storage.updateWhatsAppNumber(id, { 
-      professional_id: professional_id || null 
+      professional_id: user_id || null 
     });
     
     if (!updated) {
-      return res.status(500).json({ error: 'Failed to update professional assignment' });
+      return res.status(500).json({ error: 'Failed to update user assignment' });
     }
 
-    console.log(`✅ WhatsApp number ${id} assigned to professional ${professional_id || 'none'}`);
+    console.log(`✅ WhatsApp number ${id} assigned to user ${user_id || 'none'}`);
     res.json({ success: true, whatsappNumber: updated });
   } catch (error) {
     console.error('Error updating WhatsApp professional assignment:', error);

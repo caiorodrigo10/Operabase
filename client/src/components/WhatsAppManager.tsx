@@ -38,8 +38,8 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
 
   // Mutation to update professional assignment
   const updateProfessionalMutation = useMutation({
-    mutationFn: ({ numberId, professionalId }: { numberId: number; professionalId: number | null }) =>
-      apiRequest(`/api/whatsapp/numbers/${numberId}/professional`, 'PUT', { professionalId }),
+    mutationFn: ({ numberId, userId }: { numberId: number; userId: number | null }) =>
+      apiRequest(`/api/whatsapp/numbers/${numberId}/professional`, 'PUT', { user_id: userId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
       toast({
@@ -321,10 +321,10 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                   <Select
                     value={number.professional_id?.toString() || "none"}
                     onValueChange={(value) => {
-                      const professionalId = value === "none" ? null : parseInt(value);
+                      const userId = value === "none" ? null : parseInt(value);
                       updateProfessionalMutation.mutate({ 
                         numberId: number.id, 
-                        professionalId 
+                        userId 
                       });
                     }}
                     disabled={updateProfessionalMutation.isPending}
