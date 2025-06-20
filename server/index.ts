@@ -149,7 +149,7 @@ app.use((req, res, next) => {
       
       const result = await db.execute(sql`
         SELECT * FROM calendar_integrations 
-        WHERE user_email = ${userEmail} 
+        WHERE email = ${userEmail} 
         AND is_active = true
         ORDER BY created_at DESC
       `);
@@ -161,7 +161,7 @@ app.use((req, res, next) => {
       const formattedIntegrations = integrations.map((integration: any) => ({
         id: integration.id,
         provider: integration.provider,
-        email: integration.user_email,
+        email: integration.email,
         calendarId: integration.calendar_id,
         calendarName: integration.calendar_name,
         syncEnabled: integration.sync_enabled,
