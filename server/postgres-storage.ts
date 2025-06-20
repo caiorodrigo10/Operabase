@@ -1858,16 +1858,6 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`📝 Atualizando WhatsApp via webhook: ${instanceName}`);
       
-      // First, check the schema and list all instances
-      console.log('🔍 Checking whatsapp_numbers schema...');
-      const schemaCheck = await db.execute(sql`
-        SELECT column_name, data_type 
-        FROM information_schema.columns 
-        WHERE table_name = 'whatsapp_numbers'
-        ORDER BY ordinal_position
-      `);
-      console.log('📋 Available columns:', schemaCheck.rows);
-
       // First, check if the instance exists
       const checkResult = await db.execute(sql`
         SELECT id, instance_name, status 
@@ -1901,24 +1891,8 @@ export class PostgreSQLStorage implements IStorage {
         updateObj.status = updateData.status;
       }
       
-      if (updateData.connected !== undefined) {
-        updateObj.connected = updateData.connected;
-      }
-      
       if (updateData.phone_number !== undefined) {
         updateObj.phone_number = updateData.phone_number;
-      }
-      
-      if (updateData.profile_name !== undefined) {
-        updateObj.profile_name = updateData.profile_name;
-      }
-      
-      if (updateData.profile_picture_url !== undefined) {
-        updateObj.profile_picture_url = updateData.profile_picture_url;
-      }
-      
-      if (updateData.owner_jid !== undefined) {
-        updateObj.owner_jid = updateData.owner_jid;
       }
       
       if (updateData.connected_at !== undefined) {
@@ -1938,17 +1912,14 @@ export class PostgreSQLStorage implements IStorage {
       }
       
       console.log('📦 Dados para atualizar:', updateObj);
+      console.log('📦 Dados recebidos originalmente:', updateData);
       
       // Use Drizzle for the update
       const result = await db.execute(sql`
         UPDATE whatsapp_numbers 
         SET 
           status = ${updateObj.status || sql`status`},
-          connected = ${updateObj.connected !== undefined ? updateObj.connected : sql`connected`},
           phone_number = ${updateObj.phone_number || sql`phone_number`},
-          profile_name = ${updateObj.profile_name || sql`profile_name`},
-          profile_picture_url = ${updateObj.profile_picture_url || sql`profile_picture_url`},
-          owner_jid = ${updateObj.owner_jid || sql`owner_jid`},
           connected_at = ${updateObj.connected_at || sql`connected_at`},
           last_seen = ${updateObj.last_seen || sql`last_seen`},
           updated_at = NOW()
