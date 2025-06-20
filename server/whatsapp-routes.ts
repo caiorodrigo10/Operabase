@@ -196,4 +196,50 @@ router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
   }
 });
 
+// Cleanup unclaimed instance
+router.delete('/api/whatsapp/cleanup/:instanceName', async (req, res) => {
+  try {
+    const instanceName = req.params.instanceName;
+    
+    const storage = await getStorage();
+    
+    console.log(`🧹 Attempting to cleanup unclaimed instance: ${instanceName}`);
+    
+    // Find the unclaimed instance (status should be 'qr_code' or 'disconnected')
+    const whatsappNumbers = await storage.getWhatsAppNumbers(); // Get all numbers
+    const unclaimedInstance = whatsappNumbers.find(num => 
+      num.instance_name === instanceName && 
+      (num.status === 'qr_code' || num.status === 'disconnected')
+    );
+    
+    if (!unclaimedInstance) {
+      console.log(`⚠️ No unclaimed instance found with name: ${instanceName}`);
+      return res.status(404).json({ error: 'Instance not found or already claimed' });
+    }
+
+    console.log(`🗑️ Cleaning up unclaimed instance ID ${unclaimedInstance.id} (${instanceName})`);
+
+    // Try to delete instance from Evolution API (don't fail if instance doesn't exist)
+    try {
+      await evolutionApi.deleteInstance(instanceName);
+      console.log(`✅ Evolution API instance deleted: ${instanceName}`);
+    } catch (apiError: any) {
+      console.log(`⚠️ Evolution API deletion failed (continuing): ${apiError.message}`);
+    }
+
+    // Delete from database
+    const deleted = await storage.deleteWhatsAppNumber(unclaimedInstance.id);
+    
+    if (!deleted) {
+      return res.status(500).json({ error: 'Failed to delete from database' });
+    }
+
+    console.log(`✅ Unclaimed instance ${instanceName} cleaned up successfully`);
+    res.json({ success: true, message: 'Unclaimed instance cleaned up successfully' });
+  } catch (error) {
+    console.error('Error cleaning up unclaimed instance:', error);
+    res.status(500).json({ error: 'Failed to cleanup unclaimed instance' });
+  }
+});
+
 export default router;

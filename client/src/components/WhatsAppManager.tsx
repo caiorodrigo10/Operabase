@@ -19,7 +19,7 @@ interface WhatsAppManagerProps {
 export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedQR, setSelectedQR] = useState<{ qrCode: string; instanceName: string } | null>(null);
+  const [selectedQR, setSelectedQR] = useState<{ qrCode: string; instanceName: string; numberId?: number } | null>(null);
 
   // Query to fetch WhatsApp numbers
   const { data: whatsappNumbers = [], isLoading } = useQuery({
@@ -40,7 +40,8 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
       // Show QR code dialog
       setSelectedQR({
         qrCode: data.qrCode,
-        instanceName: data.instanceName
+        instanceName: data.instanceName,
+        numberId: data.id
       });
       
       // Refresh list
@@ -90,6 +91,18 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         description: error.message || "Não foi possível remover o número",
         variant: "destructive"
       });
+    }
+  });
+
+  // Mutation to cleanup unclaimed instances
+  const cleanupUnclaimedMutation = useMutation({
+    mutationFn: (instanceName: string) => apiRequest(`/api/whatsapp/cleanup/${instanceName}`, 'DELETE'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
+    },
+    onError: (error: any) => {
+      console.error('Failed to cleanup unclaimed instance:', error);
+      // Don't show error toast for cleanup failures
     }
   });
 
@@ -227,7 +240,22 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         )}
 
         {/* QR Code Dialog */}
-        <Dialog open={!!selectedQR} onOpenChange={() => setSelectedQR(null)}>
+        <Dialog open={!!selectedQR} onOpenChange={(open) => {
+          if (!open && selectedQR) {
+            // Check if this instance was never connected, and if so, clean it up
+            setTimeout(() => {
+              const wasConnected = whatsappNumbers.some(num => 
+                num.instance_name === selectedQR.instanceName && num.status === 'connected'
+              );
+              
+              if (!wasConnected) {
+                console.log('🧹 Cleaning up unclaimed QR instance:', selectedQR.instanceName);
+                cleanupUnclaimedMutation.mutate(selectedQR.instanceName);
+              }
+            }, 1000); // Give a second for any pending webhook updates
+          }
+          setSelectedQR(null);
+        }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Conectar WhatsApp</DialogTitle>
