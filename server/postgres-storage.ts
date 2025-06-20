@@ -1860,7 +1860,7 @@ export class PostgreSQLStorage implements IStorage {
       
       // First, check if the instance exists
       const checkResult = await db.execute(sql`
-        SELECT id, instance_name, status, is_connected 
+        SELECT id, instance_name, status, connected 
         FROM whatsapp_numbers 
         WHERE instance_name = ${instanceName}
       `);
@@ -1873,7 +1873,7 @@ export class PostgreSQLStorage implements IStorage {
       if (checkResult.rows.length === 0) {
         // List all existing instances for debugging
         const allInstances = await db.execute(sql`
-          SELECT id, instance_name, status, is_connected, phone_number 
+          SELECT id, instance_name, status, connected, phone_number 
           FROM whatsapp_numbers 
           ORDER BY created_at DESC 
           LIMIT 10
@@ -1892,7 +1892,7 @@ export class PostgreSQLStorage implements IStorage {
       }
       
       if (updateData.is_connected !== undefined) {
-        updateObj.is_connected = updateData.is_connected;
+        updateObj.connected = updateData.is_connected;
       }
       
       if (updateData.phone_number !== undefined) {
@@ -1934,7 +1934,7 @@ export class PostgreSQLStorage implements IStorage {
         UPDATE whatsapp_numbers 
         SET 
           status = ${updateObj.status || sql`status`},
-          is_connected = ${updateObj.is_connected !== undefined ? updateObj.is_connected : sql`is_connected`},
+          connected = ${updateObj.connected !== undefined ? updateObj.connected : sql`connected`},
           phone_number = ${updateObj.phone_number || sql`phone_number`},
           profile_name = ${updateObj.profile_name || sql`profile_name`},
           profile_picture_url = ${updateObj.profile_picture_url || sql`profile_picture_url`},
