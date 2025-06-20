@@ -168,37 +168,28 @@ router.get('/api/clinic/:clinicId/professionals', async (req, res) => {
       return res.status(400).json({ error: 'Invalid clinic ID' });
     }
 
-    // Direct database query to get professionals with user data
-    const { db } = await import('../db.js');
-    const { sql } = await import('drizzle-orm');
+    const storage = await getStorage();
     
-    const result = await db.execute(sql`
-      SELECT 
-        cu.user_id,
-        cu.clinic_id,
-        cu.role,
-        cu.is_professional,
-        cu.is_active,
-        cu.joined_at,
-        u.id as user_id,
-        u.name as user_name,
-        u.email as user_email,
-        u.created_at as user_created_at,
-        u.updated_at as user_updated_at
-      FROM clinic_users cu
-      JOIN users u ON cu.user_id = u.id
-      WHERE cu.clinic_id = ${clinicId} 
-        AND cu.is_professional = true
-        AND cu.is_active = true
-      ORDER BY u.name ASC
-    `);
+    // Get professionals by accessing the base storage directly
+    let baseStorage = storage;
+    if ((storage as any).baseStorage) {
+      baseStorage = (storage as any).baseStorage;
+    }
+    if ((baseStorage as any).storage) {
+      baseStorage = (baseStorage as any).storage;
+    }
     
-    const formattedProfessionals = result.rows.map((row: any) => ({
-      id: row.user_id,
-      name: row.user_name || row.user_email,
-      email: row.user_email,
-      role: row.role
-    }));
+    const professionals = await baseStorage.getClinicUsers(clinicId);
+    
+    // Filter and format for professionals only
+    const formattedProfessionals = professionals
+      .filter((user: any) => user.is_professional === true)
+      .map((user: any) => ({
+        id: user.user?.id || user.user_id || user.id,
+        name: user.user?.name || user.name || user.user?.email || user.email || 'Professional',
+        email: user.user?.email || user.email || '',
+        role: user.role || 'professional'
+      }));
 
     res.json(formattedProfessionals);
   } catch (error) {
