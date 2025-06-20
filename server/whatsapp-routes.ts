@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { storage } from './storage';
+import { getStorage } from './storage';
 import { evolutionApi } from './whatsapp-evolution-service';
 import { insertWhatsAppNumberSchema } from '@shared/schema';
 
@@ -14,6 +14,7 @@ router.get('/api/whatsapp/numbers/:clinicId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid clinic ID' });
     }
 
+    const storage = await getStorage();
     const numbers = await storage.getWhatsAppNumbers(clinicId);
     res.json(numbers);
   } catch (error) {
@@ -39,6 +40,7 @@ router.post('/api/whatsapp/connect', async (req, res) => {
     }
 
     // Create a temporary record in database with connecting status
+    const storage = await getStorage();
     const whatsappNumber = await storage.createWhatsAppNumber({
       clinic_id: clinicId,
       user_id: userId,
@@ -59,61 +61,121 @@ router.post('/api/whatsapp/connect', async (req, res) => {
   }
 });
 
-// Check connection status and update database
-router.post('/api/whatsapp/check-connection/:id', async (req, res) => {
+// Get QR code for instance connection
+router.get('/api/whatsapp/qr/:instanceName', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
-    }
-
-    const whatsappNumber = await storage.getWhatsAppNumber(id);
-    if (!whatsappNumber) {
-      return res.status(404).json({ error: 'WhatsApp number not found' });
-    }
-
-    // Check connection status with Evolution API
-    const connectionResult = await evolutionApi.checkConnection(whatsappNumber.instance_name);
+    const instanceName = req.params.instanceName;
     
-    if (!connectionResult.success) {
-      return res.status(500).json({ error: connectionResult.error });
+    // Get QR code from Evolution API
+    const qrResult = await evolutionApi.getQRCode(instanceName);
+    
+    if (!qrResult.success) {
+      return res.status(404).json({ error: qrResult.error });
     }
 
-    // Update database based on connection status
-    if (connectionResult.connected && connectionResult.phoneNumber) {
-      const updatedNumber = await storage.updateWhatsAppNumber(id, {
-        phone_number: connectionResult.phoneNumber,
-        status: 'connected',
-        connected_at: new Date(),
-        last_seen: new Date()
-      });
-
-      res.json({
-        connected: true,
-        phoneNumber: connectionResult.phoneNumber,
-        whatsappNumber: updatedNumber
-      });
-    } else {
-      res.json({
-        connected: false,
-        status: whatsappNumber.status
-      });
+    // Update database status to connecting
+    const storage = await getStorage();
+    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+    if (whatsappNumber) {
+      await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'connecting');
     }
+
+    res.json({ qrCode: qrResult.qrCode });
   } catch (error) {
-    console.error('Error checking WhatsApp connection:', error);
+    console.error('Error getting QR code:', error);
+    res.status(500).json({ error: 'Failed to get QR code' });
+  }
+});
+
+// Check connection status
+router.get('/api/whatsapp/status/:instanceName', async (req, res) => {
+  try {
+    const instanceName = req.params.instanceName;
+    
+    // Check status with Evolution API
+    const statusResult = await evolutionApi.getConnectionStatus(instanceName);
+    
+    if (!statusResult.success) {
+      return res.status(404).json({ error: statusResult.error });
+    }
+
+    // Update database if connected
+    const storage = await getStorage();
+    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+    if (whatsappNumber && statusResult.connected && statusResult.phoneNumber) {
+      await storage.updateWhatsAppNumber(whatsappNumber.id, {
+        phone_number: statusResult.phoneNumber,
+        status: 'connected',
+        connected_at: new Date()
+      });
+    }
+
+    res.json({
+      connected: statusResult.connected,
+      phoneNumber: statusResult.phoneNumber,
+      status: statusResult.connected ? 'connected' : 'disconnected'
+    });
+  } catch (error) {
+    console.error('Error checking connection status:', error);
     res.status(500).json({ error: 'Failed to check connection status' });
   }
 });
 
-// Disconnect and remove WhatsApp number
-router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
+// Webhook endpoint for Evolution API status updates
+router.post('/api/whatsapp/webhook/:instanceName', async (req, res) => {
+  try {
+    const instanceName = req.params.instanceName;
+    const { event, data } = req.body;
+
+    console.log(`WhatsApp webhook for ${instanceName}:`, event, data);
+
+    const storage = await getStorage();
+    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+    
+    if (!whatsappNumber) {
+      return res.status(404).json({ error: 'WhatsApp number not found' });
+    }
+
+    // Handle different webhook events
+    switch (event) {
+      case 'connection.update':
+        if (data.state === 'open' && data.phoneNumber) {
+          await storage.updateWhatsAppNumber(whatsappNumber.id, {
+            phone_number: data.phoneNumber,
+            status: 'connected',
+            connected_at: new Date()
+          });
+        } else if (data.state === 'close') {
+          await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'disconnected');
+        }
+        break;
+      
+      case 'qr.update':
+        // QR code updated, status remains connecting
+        break;
+        
+      default:
+        console.log('Unhandled webhook event:', event);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    res.status(500).json({ error: 'Failed to process webhook' });
+  }
+});
+
+// Disconnect WhatsApp number
+router.post('/api/whatsapp/disconnect/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
     }
 
+    const storage = await getStorage();
     const whatsappNumber = await storage.getWhatsAppNumber(id);
+    
     if (!whatsappNumber) {
       return res.status(404).json({ error: 'WhatsApp number not found' });
     }
@@ -121,92 +183,45 @@ router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
     // Disconnect from Evolution API
     const disconnectResult = await evolutionApi.disconnectInstance(whatsappNumber.instance_name);
     
-    // Remove from database regardless of API result (for cleanup)
-    const deleted = await storage.deleteWhatsAppNumber(id);
-    
-    if (!deleted) {
-      return res.status(500).json({ error: 'Failed to remove WhatsApp number from database' });
+    if (!disconnectResult.success) {
+      return res.status(500).json({ error: disconnectResult.error });
     }
 
-    res.json({
-      success: true,
-      apiDisconnected: disconnectResult.success,
-      message: 'WhatsApp number removed successfully'
-    });
+    // Update status in database
+    await storage.updateWhatsAppNumberStatus(id, 'disconnected');
+
+    res.json({ success: true, message: 'WhatsApp disconnected successfully' });
   } catch (error) {
-    console.error('Error removing WhatsApp number:', error);
-    res.status(500).json({ error: 'Failed to remove WhatsApp number' });
+    console.error('Error disconnecting WhatsApp:', error);
+    res.status(500).json({ error: 'Failed to disconnect WhatsApp' });
   }
 });
 
-// Send test message
-router.post('/api/whatsapp/test-message/:id', async (req, res) => {
+// Delete WhatsApp number
+router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
     }
 
+    const storage = await getStorage();
     const whatsappNumber = await storage.getWhatsAppNumber(id);
+    
     if (!whatsappNumber) {
       return res.status(404).json({ error: 'WhatsApp number not found' });
     }
 
-    if (whatsappNumber.status !== 'connected') {
-      return res.status(400).json({ error: 'WhatsApp number is not connected' });
-    }
+    // Delete instance from Evolution API
+    await evolutionApi.deleteInstance(whatsappNumber.instance_name);
 
-    // Send test message
-    const result = await evolutionApi.sendTestMessage(
-      whatsappNumber.instance_name, 
-      whatsappNumber.phone_number
-    );
+    // Delete from database
+    await storage.deleteWhatsAppNumber(id);
 
-    if (!result.success) {
-      return res.status(500).json({ error: result.error });
-    }
-
-    // Update last_seen
-    await storage.updateWhatsAppNumber(id, {
-      last_seen: new Date()
-    });
-
-    res.json({
-      success: true,
-      message: 'Test message sent successfully'
-    });
+    res.json({ success: true, message: 'WhatsApp number deleted successfully' });
   } catch (error) {
-    console.error('Error sending test message:', error);
-    res.status(500).json({ error: 'Failed to send test message' });
-  }
-});
-
-// Update WhatsApp number status (for periodic health checks)
-router.patch('/api/whatsapp/numbers/:id/status', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
-    }
-
-    const { status } = req.body;
-    if (!['connected', 'disconnected', 'error'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status value' });
-    }
-
-    const updatedNumber = await storage.updateWhatsAppNumber(id, {
-      status,
-      last_seen: new Date()
-    });
-
-    if (!updatedNumber) {
-      return res.status(404).json({ error: 'WhatsApp number not found' });
-    }
-
-    res.json(updatedNumber);
-  } catch (error) {
-    console.error('Error updating WhatsApp number status:', error);
-    res.status(500).json({ error: 'Failed to update status' });
+    console.error('Error deleting WhatsApp number:', error);
+    res.status(500).json({ error: 'Failed to delete WhatsApp number' });
   }
 });
 
