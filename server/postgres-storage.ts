@@ -1858,62 +1858,58 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`📝 Atualizando WhatsApp via webhook: ${instanceName}`);
       
-      const setParts = [];
-      const values: any[] = [];
+      // Build update object dynamically
+      const updateObj: any = {};
       
       if (updateData.status !== undefined) {
-        setParts.push(`status = $${setParts.length + 1}`);
-        values.push(updateData.status);
+        updateObj.status = updateData.status;
       }
       
       if (updateData.is_connected !== undefined) {
-        setParts.push(`is_connected = $${setParts.length + 1}`);
-        values.push(updateData.is_connected);
+        updateObj.is_connected = updateData.is_connected;
       }
       
       if (updateData.phone_number !== undefined) {
-        setParts.push(`phone_number = $${setParts.length + 1}`);
-        values.push(updateData.phone_number);
+        updateObj.phone_number = updateData.phone_number;
       }
       
       if (updateData.profile_name !== undefined) {
-        setParts.push(`profile_name = $${setParts.length + 1}`);
-        values.push(updateData.profile_name);
+        updateObj.profile_name = updateData.profile_name;
       }
       
       if (updateData.profile_picture_url !== undefined) {
-        setParts.push(`profile_picture_url = $${setParts.length + 1}`);
-        values.push(updateData.profile_picture_url);
+        updateObj.profile_picture_url = updateData.profile_picture_url;
       }
       
       if (updateData.owner_jid !== undefined) {
-        setParts.push(`owner_jid = $${setParts.length + 1}`);
-        values.push(updateData.owner_jid);
+        updateObj.owner_jid = updateData.owner_jid;
       }
       
       if (updateData.connected_at !== undefined) {
-        setParts.push(`connected_at = $${setParts.length + 1}`);
-        values.push(updateData.connected_at);
+        updateObj.connected_at = updateData.connected_at;
       }
       
       if (updateData.last_seen !== undefined) {
-        setParts.push(`last_seen = $${setParts.length + 1}`);
-        values.push(updateData.last_seen);
+        updateObj.last_seen = updateData.last_seen;
       }
       
-      setParts.push(`updated_at = NOW()`);
-      values.push(instanceName);
+      // Always update the timestamp
+      updateObj.updated_at = new Date();
       
-      if (setParts.length === 1) {
+      if (Object.keys(updateObj).length === 1) { // Only updated_at
         console.log('⚠️ Nenhum dado para atualizar');
         return false;
       }
       
-      const result = await db.execute(sql`
-        UPDATE whatsapp_numbers 
-        SET ${sql.raw(setParts.join(', '))}
-        WHERE instance_name = $${values.length}
-      `);
+      // Use raw SQL for the update since we're dealing with a custom table structure
+      const setClause = Object.keys(updateObj).map(key => `${key} = $${Object.keys(updateObj).indexOf(key) + 1}`).join(', ');
+      const values = Object.values(updateObj);
+      values.push(instanceName); // Add instance name for WHERE clause
+      
+      const result = await this.pool.query(
+        `UPDATE whatsapp_numbers SET ${setClause} WHERE instance_name = $${values.length}`,
+        values
+      );
       
       const updated = result.rowCount && result.rowCount > 0;
       
