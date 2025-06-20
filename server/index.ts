@@ -127,16 +127,52 @@ app.use((req, res, next) => {
   
   // Add Google Calendar authentication routes with professional validation
   const { isAuthenticated } = await import('./auth');
-  const { getUserCalendarIntegrations, updateCalendarSyncPreferences, deleteCalendarIntegration } = await import('./calendar-routes');
   const { createRequireProfessional } = await import('./middleware/professional-validation');
   
   const requireProfessional = createRequireProfessional(storage);
   
+  // Create calendar routes with storage access
+  const createCalendarRoutesWithStorage = (storage: any) => ({
+    async getUserCalendarIntegrations(req: any, res: any) {
+      try {
+        const userId = req.user.id;
+        const userEmail = req.user.email;
+        
+        console.log('🔍 Getting calendar integrations for user:', { userId, userEmail });
+        
+        const integrations = await storage.getCalendarIntegrationsByEmail(userEmail);
+        
+        console.log('📊 Integrations retrieved:', integrations.length);
+        console.log('📋 Raw integrations:', integrations);
+        
+        const formattedIntegrations = integrations.map((integration: any) => ({
+          id: integration.id,
+          provider: integration.provider,
+          email: integration.user_email,
+          calendarId: integration.calendar_id,
+          calendarName: integration.calendar_name,
+          syncEnabled: integration.sync_enabled,
+          syncAppointments: integration.sync_appointments,
+          syncEvents: integration.sync_events,
+          isActive: integration.is_active,
+          lastSyncAt: integration.last_sync_at,
+          createdAt: integration.created_at
+        }));
+        
+        console.log('✅ Calendar integrations found:', formattedIntegrations.length);
+        res.json(formattedIntegrations);
+      } catch (error) {
+        console.error('Error fetching calendar integrations:', error);
+        res.status(500).json({ error: 'Failed to fetch calendar integrations' });
+      }
+    }
+  });
+  
+  const calendarRoutes = createCalendarRoutesWithStorage(storage);
+  
   app.get('/api/calendar/auth/google', isAuthenticated, requireProfessional, initGoogleCalendarAuth);
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
-  app.get('/api/calendar/integrations', isAuthenticated, getUserCalendarIntegrations);
-  app.put('/api/calendar/integrations/:integrationId/sync', isAuthenticated, requireProfessional, updateCalendarSyncPreferences);
-  app.delete('/api/calendar/integrations/:integrationId', isAuthenticated, requireProfessional, deleteCalendarIntegration);
+  app.get('/api/calendar/integrations', isAuthenticated, calendarRoutes.getUserCalendarIntegrations);
   
   // Add WhatsApp Webhook routes first (to avoid conflicts)
   const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');

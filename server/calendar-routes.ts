@@ -413,11 +413,9 @@ export async function getUserCalendarIntegrations(req: any, res: Response) {
     
     console.log('🔍 Getting calendar integrations for user:', { userId, userEmail });
     
-    // Import storage dynamically to avoid circular dependencies
-    const { storage } = await import('./index');
-    if (!storage) {
-      return res.status(500).json({ error: 'Storage not available' });
-    }
+    // Import storage directly from storage factory
+    const { createStorage } = await import('./storage-factory');
+    const storage = await createStorage();
     
     // For Supabase users, filter by email since we don't have user_id in calendar_integrations
     const integrations = await storage.getCalendarIntegrationsByEmail(userEmail);
