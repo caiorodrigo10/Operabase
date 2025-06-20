@@ -658,7 +658,7 @@ export function ContatoDetalhes() {
                           </p>
                           <Button 
                             size="sm" 
-                            variant="outline"
+                            className="bg-medical-blue hover:bg-blue-700"
                             onClick={() => setShowAppointmentEditor(true)}
                           >
                             <Plus className="w-4 h-4 mr-2" />
