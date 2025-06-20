@@ -127,8 +127,13 @@ app.use((req, res, next) => {
   
   // Add Google Calendar authentication routes
   const { isAuthenticated } = await import('./auth');
+  const { getUserCalendarIntegrations, updateCalendarSyncPreferences, deleteCalendarIntegration } = await import('./calendar-routes');
+  
   app.get('/api/calendar/auth/google', isAuthenticated, initGoogleCalendarAuth);
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
+  app.get('/api/calendar/integrations', isAuthenticated, getUserCalendarIntegrations);
+  app.put('/api/calendar/integrations/:integrationId/sync', isAuthenticated, updateCalendarSyncPreferences);
+  app.delete('/api/calendar/integrations/:integrationId', isAuthenticated, deleteCalendarIntegration);
   
   // Add WhatsApp Webhook routes first (to avoid conflicts)
   const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
