@@ -19,6 +19,7 @@ import 'react-phone-number-input/style.css';
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
 import countries from 'world-countries';
 import { UserManagement } from '@/components/UserManagement';
+import { WhatsAppManager } from '@/components/WhatsAppManager';
 
 // WhatsApp Integration Component
 const WhatsAppIntegration = () => {
