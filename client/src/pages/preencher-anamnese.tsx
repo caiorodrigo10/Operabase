@@ -225,6 +225,10 @@ export default function PreencherAnamnese() {
   };
 
   const handleTemplateChange = (templateId: string) => {
+    if (templateId === 'create-new') {
+      setLocation('/anamneses');
+      return;
+    }
     setSelectedTemplateId(parseInt(templateId));
     setResponses({});
   };
@@ -441,6 +445,9 @@ export default function PreencherAnamnese() {
                   {template.name}
                 </SelectItem>
               ))}
+              <SelectItem value="create-new" className="text-blue-600 font-medium">
+                Criar novo modelo
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
