@@ -38,16 +38,27 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
 
   // Auto-close QR dialog when instance becomes connected
   useEffect(() => {
-    if (selectedQR?.numberId && whatsappNumbers.length > 0) {
-      const connectedNumber = whatsappNumbers.find(
-        number => number.id === selectedQR.numberId && number.status === 'connected'
-      );
+    console.log('🔍 Checking for connected instances:', {
+      selectedQR,
+      whatsappNumbers,
+      hasSelectedQR: !!selectedQR,
+      numbersCount: whatsappNumbers.length
+    });
+    
+    if (selectedQR && whatsappNumbers.length > 0) {
+      // Check by instance name if numberId is not available
+      const connectedNumber = selectedQR.numberId 
+        ? whatsappNumbers.find(number => number.id === selectedQR.numberId && number.status === 'connected')
+        : whatsappNumbers.find(number => number.instance_name === selectedQR.instanceName && number.status === 'connected');
+      
+      console.log('🔍 Found connected number:', connectedNumber);
       
       if (connectedNumber) {
+        console.log('✅ Closing QR dialog - WhatsApp connected!');
         setSelectedQR(null);
         toast({
           title: "WhatsApp conectado!",
-          description: `Número ${connectedNumber.phone_number} conectado com sucesso`,
+          description: `Número ${connectedNumber.phone_number || 'conectado'} conectado com sucesso`,
         });
       }
     }
