@@ -29,11 +29,9 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
 
   // Mutation to start connection
   const startConnectionMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/whatsapp/connect`, {
-      method: 'POST',
-      body: { clinicId, userId }
-    }),
-    onSuccess: (data) => {
+    mutationFn: () => apiRequest(`/api/whatsapp/connect`, 'POST', { clinicId, userId }),
+    onSuccess: async (response) => {
+      const data = await response.json();
       toast({
         title: "Conexão iniciada",
         description: "Escaneie o QR Code para conectar seu WhatsApp"
@@ -59,9 +57,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
 
   // Mutation to disconnect number
   const disconnectMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/whatsapp/disconnect/${id}`, {
-      method: 'POST'
-    }),
+    mutationFn: (id: number) => apiRequest(`/api/whatsapp/disconnect/${id}`, 'POST'),
     onSuccess: () => {
       toast({
         title: "WhatsApp desconectado",
@@ -80,9 +76,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
 
   // Mutation to delete number
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/whatsapp/numbers/${id}`, {
-      method: 'DELETE'
-    }),
+    mutationFn: (id: number) => apiRequest(`/api/whatsapp/numbers/${id}`, 'DELETE'),
     onSuccess: () => {
       toast({
         title: "Número removido",
