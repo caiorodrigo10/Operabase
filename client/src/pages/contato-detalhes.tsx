@@ -646,8 +646,24 @@ export function ContatoDetalhes() {
                       )}
                       
                       {appointments.length === 0 && (
-                        <div className="text-center py-8">
-                          <p className="text-slate-500 text-sm">Nenhuma consulta registrada ainda</p>
+                        <div className="text-center py-12">
+                          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Calendar className="w-8 h-8 text-blue-500" />
+                          </div>
+                          <p className="text-slate-500 mb-2">
+                            Nenhuma consulta registrada ainda
+                          </p>
+                          <p className="text-slate-400 text-sm mb-4">
+                            Agende a primeira consulta deste paciente
+                          </p>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setShowAppointmentEditor(true)}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Agendar consulta
+                          </Button>
                         </div>
                       )}
                     </div>
