@@ -31,6 +31,32 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
     refetchIntervalInBackground: false
   });
 
+  // Query to fetch clinic professionals
+  const { data: professionals = [] } = useQuery({
+    queryKey: [`/api/clinic/${clinicId}/professionals`],
+  });
+
+  // Mutation to update professional assignment
+  const updateProfessionalMutation = useMutation({
+    mutationFn: ({ numberId, professionalId }: { numberId: number; professionalId: number | null }) =>
+      apiRequest(`/api/whatsapp/numbers/${numberId}/professional`, 'PUT', { professionalId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
+      toast({
+        title: "Profissional atualizado",
+        description: "Atribuição do profissional foi atualizada com sucesso",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating professional assignment:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a atribuição do profissional",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Enable polling when there are connecting instances, disable when all connected/disconnected
   useEffect(() => {
     const hasConnectingInstances = whatsappNumbers.some(number => number.status === 'connecting');
@@ -214,74 +240,107 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         {whatsappNumbers.length > 0 && (
           <div className="space-y-4">
             {whatsappNumbers.map((number) => (
-              <div key={number.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  <Smartphone className="w-8 h-8 text-green-600" />
-                  <div>
-                    <p className="font-medium">{formatPhoneNumber(number.phone_number)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Conectado em: {number.connected_at 
-                        ? new Date(number.connected_at).toLocaleString() 
-                        : 'Não conectado'}
-                    </p>
+              <div key={number.id} className="p-4 border rounded-lg space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Smartphone className="w-8 h-8 text-green-600" />
+                    <div>
+                      <p className="font-medium">{formatPhoneNumber(number.phone_number)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Conectado em: {number.connected_at 
+                          ? new Date(number.connected_at).toLocaleString() 
+                          : 'Não conectado'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(number.status)}
                   
-                  {number.status === 'open' && (
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(number.status)}
+                    
+                    {number.status === 'open' && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <PowerOff className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Desconectar WhatsApp</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja desconectar este número? Você precisará escanear o QR Code novamente para reconectar.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => disconnectMutation.mutate(number.id)}
+                              disabled={disconnectMutation.isPending}
+                            >
+                              Desconectar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <PowerOff className="w-4 h-4" />
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Desconectar WhatsApp</AlertDialogTitle>
+                          <AlertDialogTitle>Remover número</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Tem certeza que deseja desconectar este número? Você precisará escanear o QR Code novamente para reconectar.
+                            Tem certeza que deseja remover este número WhatsApp? Esta ação não pode ser desfeita.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction 
-                            onClick={() => disconnectMutation.mutate(number.id)}
-                            disabled={disconnectMutation.isPending}
+                            onClick={() => deleteMutation.mutate(number.id)}
+                            disabled={deleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700"
                           >
-                            Desconectar
+                            Remover
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  )}
+                  </div>
+                </div>
 
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remover número</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tem certeza que deseja remover este número WhatsApp? Esta ação não pode ser desfeita.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => deleteMutation.mutate(number.id)}
-                          disabled={deleteMutation.isPending}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Remover
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                {/* Professional Assignment Section */}
+                <div className="flex items-center gap-3 pt-2 border-t">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
+                  </div>
+                  <Select
+                    value={number.professional_id?.toString() || ""}
+                    onValueChange={(value) => {
+                      const professionalId = value === "" ? null : parseInt(value);
+                      updateProfessionalMutation.mutate({ 
+                        numberId: number.id, 
+                        professionalId 
+                      });
+                    }}
+                    disabled={updateProfessionalMutation.isPending}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Selecionar profissional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum profissional</SelectItem>
+                      {professionals.map((professional: any) => (
+                        <SelectItem key={professional.id} value={professional.id.toString()}>
+                          {professional.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             ))}
