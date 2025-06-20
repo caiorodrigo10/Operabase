@@ -15,8 +15,13 @@ router.get('/api/whatsapp/numbers/:clinicId', async (req, res) => {
     }
 
     const storage = await getStorage();
-    const numbers = await storage.getWhatsAppNumbers(clinicId);
-    res.json(numbers);
+    const allNumbers = await storage.getWhatsAppNumbers(clinicId);
+    
+    // Only return numbers that are connected (validated via webhook)
+    const connectedNumbers = allNumbers.filter(number => number.status === 'connected');
+    
+    console.log(`📱 WhatsApp numbers for clinic ${clinicId}: ${allNumbers.length} total, ${connectedNumbers.length} connected`);
+    res.json(connectedNumbers);
   } catch (error) {
     console.error('Error fetching WhatsApp numbers:', error);
     res.status(500).json({ error: 'Failed to fetch WhatsApp numbers' });
@@ -205,11 +210,11 @@ router.delete('/api/whatsapp/cleanup/:instanceName', async (req, res) => {
     
     console.log(`🧹 Attempting to cleanup unclaimed instance: ${instanceName}`);
     
-    // Find the unclaimed instance (status should be 'qr_code' or 'disconnected')
-    const whatsappNumbers = await storage.getWhatsAppNumbers(); // Get all numbers
+    // Find the unclaimed instance (status should be 'connecting' or 'disconnected')
+    const whatsappNumbers = await storage.getWhatsAppNumbers(1); // Get numbers for clinic 1
     const unclaimedInstance = whatsappNumbers.find(num => 
       num.instance_name === instanceName && 
-      (num.status === 'qr_code' || num.status === 'disconnected')
+      (num.status === 'connecting' || num.status === 'disconnected')
     );
     
     if (!unclaimedInstance) {
