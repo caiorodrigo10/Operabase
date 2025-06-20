@@ -319,7 +319,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                     <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
                   </div>
                   <Select
-                    value={number.professional_id?.toString() || "none"}
+                    value={number.user_id?.toString() || "none"}
                     onValueChange={(value) => {
                       const userId = value === "none" ? null : parseInt(value);
                       updateProfessionalMutation.mutate({ 
