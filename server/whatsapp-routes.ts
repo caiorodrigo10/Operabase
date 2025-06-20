@@ -1,243 +1,213 @@
-import { Request, Response } from 'express';
-import { isAuthenticated } from './auth';
-import { IStorage } from './storage';
-import { WhatsAppEvolutionService } from './whatsapp-evolution-service.js';
+import { Router } from 'express';
+import { z } from 'zod';
+import { storage } from './storage';
+import { evolutionApi } from './whatsapp-evolution-service';
+import { insertWhatsAppNumberSchema } from '@shared/schema';
 
-export function setupWhatsAppRoutes(app: any, storage: IStorage) {
-  const whatsappService = new WhatsAppEvolutionService(storage);
+const router = Router();
 
-  // Get WhatsApp configuration
-  app.get('/api/whatsapp/config', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
-
-      // Get user's clinic
-      const userProfile = await storage.getUserProfile(userId);
-      if (!userProfile?.clinic_id) {
-        return res.status(404).json({ error: 'User clinic not found' });
-      }
-
-      const config = await storage.getClinicSettings(userProfile.clinic_id, [
-        'whatsapp_evolution_api_key',
-        'whatsapp_evolution_base_url',
-        'whatsapp_instance_name',
-        'whatsapp_status'
-      ]) as Record<string, string>;
-
-      // Don't expose the actual API key, just indicate if it's configured
-      const response = {
-        configured: !!config.whatsapp_evolution_api_key,
-        base_url: config.whatsapp_evolution_base_url || '',
-        instance_name: config.whatsapp_instance_name || '',
-        status: config.whatsapp_status || 'disconnected'
-      };
-
-      res.json(response);
-    } catch (error) {
-      console.error('❌ Error getting WhatsApp config:', error);
-      res.status(500).json({ error: 'Failed to get WhatsApp configuration' });
+// Get all WhatsApp numbers for a clinic
+router.get('/api/whatsapp/numbers/:clinicId', async (req, res) => {
+  try {
+    const clinicId = parseInt(req.params.clinicId);
+    if (isNaN(clinicId)) {
+      return res.status(400).json({ error: 'Invalid clinic ID' });
     }
-  });
 
-  // Save WhatsApp configuration
-  app.post('/api/whatsapp/config', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
+    const numbers = await storage.getWhatsAppNumbers(clinicId);
+    res.json(numbers);
+  } catch (error) {
+    console.error('Error fetching WhatsApp numbers:', error);
+    res.status(500).json({ error: 'Failed to fetch WhatsApp numbers' });
+  }
+});
 
-      const { api_key, base_url, instance_name } = req.body;
-
-      if (!api_key) {
-        return res.status(400).json({ error: 'API Key is required' });
-      }
-
-      // Get user's clinic
-      const userProfile = await storage.getUserProfile(userId);
-      if (!userProfile?.clinic_id) {
-        return res.status(404).json({ error: 'User clinic not found' });
-      }
-
-      // Save configuration
-      await storage.setClinicSetting(userProfile.clinic_id, 'whatsapp_evolution_api_key', api_key, 'string');
-      
-      if (base_url) {
-        await storage.setClinicSetting(userProfile.clinic_id, 'whatsapp_evolution_base_url', base_url, 'string');
-      }
-      
-      if (instance_name) {
-        await storage.setClinicSetting(userProfile.clinic_id, 'whatsapp_instance_name', instance_name, 'string');
-      }
-
-      await storage.setClinicSetting(userProfile.clinic_id, 'whatsapp_status', 'configured', 'string');
-
-      res.json({ success: true, message: 'WhatsApp configuration saved successfully' });
-    } catch (error) {
-      console.error('❌ Error saving WhatsApp config:', error);
-      res.status(500).json({ error: 'Failed to save WhatsApp configuration' });
+// Start WhatsApp connection process
+router.post('/api/whatsapp/connect', async (req, res) => {
+  try {
+    const { clinicId, userId } = req.body;
+    
+    if (!clinicId || !userId) {
+      return res.status(400).json({ error: 'Clinic ID and User ID are required' });
     }
-  });
 
-  // Test WhatsApp connection
-  app.post('/api/whatsapp/test-connection', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
-
-      // Get user's clinic
-      const userProfile = await storage.getUserProfile(userId);
-      if (!userProfile?.clinic_id) {
-        return res.status(404).json({ error: 'User clinic not found' });
-      }
-
-      const result = await whatsappService.testConnection(userProfile.clinic_id);
-      
-      if (result.success) {
-        await storage.setClinicSetting(userProfile.clinic_id, 'whatsapp_status', 'connected', 'string');
-      } else {
-        await storage.setClinicSetting(userProfile.clinic_id, 'whatsapp_status', 'error', 'string');
-      }
-
-      res.json(result);
-    } catch (error) {
-      console.error('❌ Error testing WhatsApp connection:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to test connection',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+    // Start the connection process with Evolution API
+    const result = await evolutionApi.startConnection(clinicId, userId);
+    
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
     }
-  });
 
-  // Get WhatsApp instance status
-  app.get('/api/whatsapp/status', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
+    // Create a temporary record in database with connecting status
+    const whatsappNumber = await storage.createWhatsAppNumber({
+      clinic_id: clinicId,
+      user_id: userId,
+      phone_number: '', // Will be updated when connection is confirmed
+      instance_name: result.instanceName!,
+      status: 'connecting'
+    });
 
-      // Get user's clinic
-      const userProfile = await storage.getUserProfile(userId);
-      if (!userProfile?.clinic_id) {
-        return res.status(404).json({ error: 'User clinic not found' });
-      }
+    res.json({
+      id: whatsappNumber.id,
+      instanceName: result.instanceName,
+      qrCode: result.qrCode,
+      status: 'connecting'
+    });
+  } catch (error) {
+    console.error('Error starting WhatsApp connection:', error);
+    res.status(500).json({ error: 'Failed to start WhatsApp connection' });
+  }
+});
 
-      const status = await whatsappService.getInstanceStatus(userProfile.clinic_id);
-      res.json(status);
-    } catch (error) {
-      console.error('❌ Error getting WhatsApp status:', error);
-      res.status(500).json({ error: 'Failed to get WhatsApp status' });
+// Check connection status and update database
+router.post('/api/whatsapp/check-connection/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
     }
-  });
 
-  // Create WhatsApp instance
-  app.post('/api/whatsapp/create-instance', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
-
-      // Get user's clinic
-      const userProfile = await storage.getUserProfile(userId);
-      if (!userProfile?.clinic_id) {
-        return res.status(404).json({ error: 'User clinic not found' });
-      }
-
-      const result = await whatsappService.createInstance(userProfile.clinic_id);
-      res.json(result);
-    } catch (error) {
-      console.error('❌ Error creating WhatsApp instance:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to create instance',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+    const whatsappNumber = await storage.getWhatsAppNumber(id);
+    if (!whatsappNumber) {
+      return res.status(404).json({ error: 'WhatsApp number not found' });
     }
-  });
 
-  // Generate QR Code for WhatsApp connection
-  app.get('/api/whatsapp/qr-code', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
-
-      // Get user's clinic
-      const userProfile = await storage.getUserProfile(userId);
-      if (!userProfile?.clinic_id) {
-        return res.status(404).json({ error: 'User clinic not found' });
-      }
-
-      const qrCode = await whatsappService.getQRCode(userProfile.clinic_id);
-      res.json(qrCode);
-    } catch (error) {
-      console.error('❌ Error getting QR code:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to get QR code',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+    // Check connection status with Evolution API
+    const connectionResult = await evolutionApi.checkConnection(whatsappNumber.instance_name);
+    
+    if (!connectionResult.success) {
+      return res.status(500).json({ error: connectionResult.error });
     }
-  });
 
-  // Send WhatsApp message
-  app.post('/api/whatsapp/send-message', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
-
-      const { phone, message, contact_id } = req.body;
-
-      if (!phone || !message) {
-        return res.status(400).json({ error: 'Phone and message are required' });
-      }
-
-      // Get user's clinic
-      const userProfile = await storage.getUserProfile(userId);
-      if (!userProfile?.clinic_id) {
-        return res.status(404).json({ error: 'User clinic not found' });
-      }
-
-      const result = await whatsappService.sendMessage(userProfile.clinic_id, {
-        phone,
-        message,
-        contact_id
+    // Update database based on connection status
+    if (connectionResult.connected && connectionResult.phoneNumber) {
+      const updatedNumber = await storage.updateWhatsAppNumber(id, {
+        phone_number: connectionResult.phoneNumber,
+        status: 'connected',
+        connected_at: new Date(),
+        last_seen: new Date()
       });
 
-      res.json(result);
-    } catch (error) {
-      console.error('❌ Error sending WhatsApp message:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to send message',
-        message: error instanceof Error ? error.message : 'Unknown error'
+      res.json({
+        connected: true,
+        phoneNumber: connectionResult.phoneNumber,
+        whatsappNumber: updatedNumber
+      });
+    } else {
+      res.json({
+        connected: false,
+        status: whatsappNumber.status
       });
     }
-  });
+  } catch (error) {
+    console.error('Error checking WhatsApp connection:', error);
+    res.status(500).json({ error: 'Failed to check connection status' });
+  }
+});
 
-  // Webhook endpoint for receiving WhatsApp messages
-  app.post('/api/whatsapp/webhook', async (req: Request, res: Response) => {
-    try {
-      console.log('📱 WhatsApp webhook received:', req.body);
-      
-      // Process the webhook
-      await whatsappService.processWebhook(req.body);
-      
-      res.status(200).json({ success: true });
-    } catch (error) {
-      console.error('❌ Error processing WhatsApp webhook:', error);
-      res.status(500).json({ error: 'Failed to process webhook' });
+// Disconnect and remove WhatsApp number
+router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
     }
-  });
-}
+
+    const whatsappNumber = await storage.getWhatsAppNumber(id);
+    if (!whatsappNumber) {
+      return res.status(404).json({ error: 'WhatsApp number not found' });
+    }
+
+    // Disconnect from Evolution API
+    const disconnectResult = await evolutionApi.disconnectInstance(whatsappNumber.instance_name);
+    
+    // Remove from database regardless of API result (for cleanup)
+    const deleted = await storage.deleteWhatsAppNumber(id);
+    
+    if (!deleted) {
+      return res.status(500).json({ error: 'Failed to remove WhatsApp number from database' });
+    }
+
+    res.json({
+      success: true,
+      apiDisconnected: disconnectResult.success,
+      message: 'WhatsApp number removed successfully'
+    });
+  } catch (error) {
+    console.error('Error removing WhatsApp number:', error);
+    res.status(500).json({ error: 'Failed to remove WhatsApp number' });
+  }
+});
+
+// Send test message
+router.post('/api/whatsapp/test-message/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
+    }
+
+    const whatsappNumber = await storage.getWhatsAppNumber(id);
+    if (!whatsappNumber) {
+      return res.status(404).json({ error: 'WhatsApp number not found' });
+    }
+
+    if (whatsappNumber.status !== 'connected') {
+      return res.status(400).json({ error: 'WhatsApp number is not connected' });
+    }
+
+    // Send test message
+    const result = await evolutionApi.sendTestMessage(
+      whatsappNumber.instance_name, 
+      whatsappNumber.phone_number
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    // Update last_seen
+    await storage.updateWhatsAppNumber(id, {
+      last_seen: new Date()
+    });
+
+    res.json({
+      success: true,
+      message: 'Test message sent successfully'
+    });
+  } catch (error) {
+    console.error('Error sending test message:', error);
+    res.status(500).json({ error: 'Failed to send test message' });
+  }
+});
+
+// Update WhatsApp number status (for periodic health checks)
+router.patch('/api/whatsapp/numbers/:id/status', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
+    }
+
+    const { status } = req.body;
+    if (!['connected', 'disconnected', 'error'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+
+    const updatedNumber = await storage.updateWhatsAppNumber(id, {
+      status,
+      last_seen: new Date()
+    });
+
+    if (!updatedNumber) {
+      return res.status(404).json({ error: 'WhatsApp number not found' });
+    }
+
+    res.json(updatedNumber);
+  } catch (error) {
+    console.error('Error updating WhatsApp number status:', error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+export default router;

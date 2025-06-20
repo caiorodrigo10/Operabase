@@ -1,328 +1,238 @@
-import { IStorage } from './storage';
+import { WhatsAppNumber, InsertWhatsAppNumber } from "@shared/schema";
 
-interface WhatsAppMessage {
-  phone: string;
-  message: string;
-  contact_id?: number;
-}
-
-interface WhatsAppResponse {
+interface EvolutionApiResponse {
   success: boolean;
   data?: any;
   error?: string;
-  message?: string;
 }
 
-interface InstanceConfig {
-  instanceName: string;
-  qrcode: boolean;
-  integration: string;
-  webhook_url?: string;
+interface QRCodeResponse {
+  base64: string;
+  code: string;
 }
 
-export class WhatsAppEvolutionService {
-  private storage: IStorage;
+interface InstanceInfo {
+  instance: {
+    instanceName: string;
+    status: string;
+  };
+  hash?: {
+    apikey: string;
+  };
+}
+
+export class EvolutionApiService {
   private baseUrl: string;
   private apiKey: string;
 
-  constructor(storage: IStorage) {
-    this.storage = storage;
-    this.baseUrl = 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+  constructor() {
+    this.baseUrl = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
     this.apiKey = process.env.EVOLUTION_API_KEY || '';
-  }
-
-  private async getClinicConfig(clinicId: number) {
-    const config = await this.storage.getClinicSettings(clinicId, [
-      'whatsapp_evolution_api_key',
-      'whatsapp_evolution_base_url',
-      'whatsapp_instance_name'
-    ]) as Record<string, string>;
-
-    return {
-      apiKey: config.whatsapp_evolution_api_key || this.apiKey,
-      baseUrl: config.whatsapp_evolution_base_url || 'https://n8n-evolution-api.4gmy9o.easypanel.host',
-      instanceName: config.whatsapp_instance_name || `taskmed_clinic_${clinicId}`
-    };
-  }
-
-  private async makeRequest(
-    clinicId: number,
-    endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-    data?: any
-  ): Promise<any> {
-    const config = await this.getClinicConfig(clinicId);
     
-    const url = `${config.baseUrl}${endpoint}`;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'apikey': config.apiKey
-    };
+    if (!this.apiKey) {
+      throw new Error('EVOLUTION_API_KEY environment variable is required');
+    }
+  }
 
-    console.log(`🔄 Making ${method} request to Evolution API:`, url);
-
+  private async makeRequest(endpoint: string, method: string = 'GET', data?: any): Promise<EvolutionApiResponse> {
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method,
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': this.apiKey,
+        },
         body: data ? JSON.stringify(data) : undefined,
       });
 
-      const responseData = await response.json();
-
+      const result = await response.json();
+      
       if (!response.ok) {
-        console.error('❌ Evolution API error:', responseData);
-        throw new Error(responseData.message || `HTTP ${response.status}`);
-      }
-
-      console.log('✅ Evolution API response:', responseData);
-      return responseData;
-    } catch (error) {
-      console.error('❌ Evolution API request failed:', error);
-      throw error;
-    }
-  }
-
-  async testConnection(clinicId: number): Promise<WhatsAppResponse> {
-    try {
-      const config = await this.getClinicConfig(clinicId);
-      
-      // Test API connection by getting manager info
-      const response = await this.makeRequest(clinicId, '/manager/fetchInstances');
-      
-      return {
-        success: true,
-        data: response,
-        message: 'Connection successful'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Connection failed',
-        message: 'Unable to connect to Evolution API'
-      };
-    }
-  }
-
-  async createInstance(clinicId: number): Promise<WhatsAppResponse> {
-    try {
-      const config = await this.getClinicConfig(clinicId);
-      const webhookUrl = `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/api/whatsapp/webhook`;
-
-      const instanceConfig: InstanceConfig = {
-        instanceName: config.instanceName,
-        qrcode: true,
-        integration: 'WHATSAPP-BAILEYS',
-        webhook_url: webhookUrl
-      };
-
-      const response = await this.makeRequest(
-        clinicId,
-        '/manager/create',
-        'POST',
-        instanceConfig
-      );
-
-      // Save instance name in settings
-      await this.storage.setClinicSetting(
-        clinicId, 
-        'whatsapp_instance_name', 
-        config.instanceName, 
-        'string'
-      );
-
-      return {
-        success: true,
-        data: response,
-        message: 'Instance created successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to create instance',
-        message: 'Unable to create WhatsApp instance'
-      };
-    }
-  }
-
-  async getInstanceStatus(clinicId: number): Promise<WhatsAppResponse> {
-    try {
-      const config = await this.getClinicConfig(clinicId);
-      
-      const response = await this.makeRequest(
-        clinicId,
-        `/manager/fetchInstances/${config.instanceName}`
-      );
-
-      return {
-        success: true,
-        data: response,
-        message: 'Status retrieved successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get status',
-        message: 'Unable to get instance status'
-      };
-    }
-  }
-
-  async getQRCode(clinicId: number): Promise<WhatsAppResponse> {
-    try {
-      const config = await this.getClinicConfig(clinicId);
-      
-      const response = await this.makeRequest(
-        clinicId,
-        `/manager/fetchInstances/${config.instanceName}/connect`
-      );
-
-      return {
-        success: true,
-        data: response,
-        message: 'QR Code generated successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get QR code',
-        message: 'Unable to generate QR code'
-      };
-    }
-  }
-
-  async sendMessage(clinicId: number, messageData: WhatsAppMessage): Promise<WhatsAppResponse> {
-    try {
-      const config = await this.getClinicConfig(clinicId);
-      
-      // Format phone number for WhatsApp (remove special characters, add country code if needed)
-      let formattedPhone = messageData.phone.replace(/\D/g, '');
-      if (!formattedPhone.startsWith('55') && formattedPhone.length === 11) {
-        formattedPhone = '55' + formattedPhone;
-      }
-
-      const payload = {
-        number: formattedPhone,
-        text: messageData.message
-      };
-
-      const response = await this.makeRequest(
-        clinicId,
-        `/message/sendText/${config.instanceName}`,
-        'POST',
-        payload
-      );
-
-      // Log message in database if contact_id is provided
-      if (messageData.contact_id) {
-        try {
-          await this.storage.logWhatsAppMessage({
-            contact_id: messageData.contact_id,
-            clinic_id: clinicId,
-            phone: messageData.phone,
-            message: messageData.message,
-            direction: 'outbound',
-            status: 'sent',
-            evolution_message_id: response.key?.id || null
-          });
-        } catch (logError) {
-          console.error('❌ Failed to log WhatsApp message:', logError);
-        }
+        return {
+          success: false,
+          error: result.message || `HTTP ${response.status}: ${response.statusText}`
+        };
       }
 
       return {
         success: true,
-        data: response,
-        message: 'Message sent successfully'
+        data: result
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send message',
-        message: 'Unable to send WhatsApp message'
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       };
     }
   }
 
-  async processWebhook(webhookData: any): Promise<void> {
-    try {
-      console.log('📱 Processing WhatsApp webhook:', webhookData);
-
-      // Extract message data from webhook
-      const { data, instance, event } = webhookData;
-
-      if (event === 'messages.upsert' && data?.message) {
-        const message = data.message;
-        const remoteJid = data.key.remoteJid;
-        
-        // Extract phone number from remoteJid (format: 5511999999999@s.whatsapp.net)
-        const phone = remoteJid.split('@')[0];
-        
-        // Skip if it's our own message
-        if (data.key.fromMe) {
-          return;
-        }
-
-        // Get message text
-        let messageText = '';
-        if (message.conversation) {
-          messageText = message.conversation;
-        } else if (message.extendedTextMessage?.text) {
-          messageText = message.extendedTextMessage.text;
-        }
-
-        if (messageText) {
-          // Find or create contact based on phone number
-          const contact = await this.findOrCreateContact(phone, instance);
-          
-          if (contact) {
-            // Log incoming message
-            await this.storage.logWhatsAppMessage({
-              contact_id: contact.id,
-              clinic_id: contact.clinic_id,
-              phone: phone,
-              message: messageText,
-              direction: 'inbound',
-              status: 'received',
-              evolution_message_id: data.key.id || null
-            });
-
-            console.log('✅ WhatsApp message logged successfully');
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error processing WhatsApp webhook:', error);
-      throw error;
-    }
+  /**
+   * Generate a unique instance name based on clinic and user IDs
+   */
+  generateInstanceName(clinicId: number, userId: string): string {
+    const timestamp = Date.now();
+    return `clinic_${clinicId}_user_${userId}_${timestamp}`;
   }
 
-  private async findOrCreateContact(phone: string, instanceName: string): Promise<any> {
-    try {
-      // Extract clinic ID from instance name (assuming format: clinic_X)
-      const clinicIdMatch = instanceName.match(/clinic_(\d+)/);
-      const clinicId = clinicIdMatch ? parseInt(clinicIdMatch[1]) : 1;
+  /**
+   * Create a new WhatsApp instance
+   */
+  async createInstance(instanceName: string): Promise<EvolutionApiResponse> {
+    const data = {
+      instanceName,
+      token: this.apiKey,
+      qrcode: true,
+      webhook_by_events: false,
+      events: []
+    };
 
-      // Try to find existing contact by phone
-      const existingContact = await this.storage.findContactByPhone(phone, clinicId);
-      
-      if (existingContact) {
-        return existingContact;
-      }
+    return this.makeRequest('/instance/create', 'POST', data);
+  }
 
-      // Create new contact if not found
-      const newContact = await this.storage.createContact({
-        clinic_id: clinicId,
-        name: `WhatsApp ${phone}`,
-        phone: phone,
-        source: 'whatsapp'
-      });
+  /**
+   * Get QR Code for instance connection
+   */
+  async getQRCode(instanceName: string): Promise<EvolutionApiResponse> {
+    return this.makeRequest(`/instance/connect/${instanceName}`);
+  }
 
-      console.log('✅ New contact created from WhatsApp:', newContact);
-      return newContact;
-    } catch (error) {
-      console.error('❌ Error finding/creating contact:', error);
-      return null;
+  /**
+   * Check instance connection status
+   */
+  async getInstanceStatus(instanceName: string): Promise<EvolutionApiResponse> {
+    return this.makeRequest(`/instance/connectionState/${instanceName}`);
+  }
+
+  /**
+   * Get instance information including phone number
+   */
+  async getInstanceInfo(instanceName: string): Promise<EvolutionApiResponse> {
+    return this.makeRequest(`/instance/fetchInstances?instanceName=${instanceName}`);
+  }
+
+  /**
+   * Delete an instance
+   */
+  async deleteInstance(instanceName: string): Promise<EvolutionApiResponse> {
+    return this.makeRequest(`/instance/delete/${instanceName}`, 'DELETE');
+  }
+
+  /**
+   * Start the connection process for a new WhatsApp number
+   */
+  async startConnection(clinicId: number, userId: string): Promise<{
+    success: boolean;
+    instanceName?: string;
+    qrCode?: string;
+    error?: string;
+  }> {
+    const instanceName = this.generateInstanceName(clinicId, userId);
+    
+    // Create the instance
+    const createResult = await this.createInstance(instanceName);
+    if (!createResult.success) {
+      return {
+        success: false,
+        error: `Failed to create instance: ${createResult.error}`
+      };
     }
+
+    // Get QR Code
+    const qrResult = await this.getQRCode(instanceName);
+    if (!qrResult.success) {
+      // Clean up the created instance
+      await this.deleteInstance(instanceName);
+      return {
+        success: false,
+        error: `Failed to get QR code: ${qrResult.error}`
+      };
+    }
+
+    return {
+      success: true,
+      instanceName,
+      qrCode: qrResult.data?.base64 || qrResult.data?.code
+    };
+  }
+
+  /**
+   * Check if an instance is connected and get phone number
+   */
+  async checkConnection(instanceName: string): Promise<{
+    success: boolean;
+    connected: boolean;
+    phoneNumber?: string;
+    error?: string;
+  }> {
+    const statusResult = await this.getInstanceStatus(instanceName);
+    if (!statusResult.success) {
+      return {
+        success: false,
+        connected: false,
+        error: statusResult.error
+      };
+    }
+
+    const isConnected = statusResult.data?.instance?.state === 'open';
+    
+    if (!isConnected) {
+      return {
+        success: true,
+        connected: false
+      };
+    }
+
+    // Get instance info to retrieve phone number
+    const infoResult = await this.getInstanceInfo(instanceName);
+    if (!infoResult.success) {
+      return {
+        success: true,
+        connected: true,
+        error: 'Connected but could not retrieve phone number'
+      };
+    }
+
+    const phoneNumber = infoResult.data?.[0]?.instance?.owner?.user || 
+                       infoResult.data?.instance?.owner?.user;
+
+    return {
+      success: true,
+      connected: true,
+      phoneNumber: phoneNumber ? phoneNumber.replace('@c.us', '') : undefined
+    };
+  }
+
+  /**
+   * Send a test message to verify connection
+   */
+  async sendTestMessage(instanceName: string, phoneNumber: string): Promise<EvolutionApiResponse> {
+    const data = {
+      number: phoneNumber,
+      text: "✅ WhatsApp conectado com sucesso! Este é um teste de conexão."
+    };
+
+    return this.makeRequest(`/message/sendText/${instanceName}`, 'POST', data);
+  }
+
+  /**
+   * Disconnect and clean up an instance
+   */
+  async disconnectInstance(instanceName: string): Promise<EvolutionApiResponse> {
+    // First try to logout the session
+    const logoutResult = await this.makeRequest(`/instance/logout/${instanceName}`, 'DELETE');
+    
+    // Then delete the instance
+    const deleteResult = await this.deleteInstance(instanceName);
+    
+    if (!deleteResult.success) {
+      return deleteResult;
+    }
+
+    return {
+      success: true,
+      data: { logout: logoutResult.success, delete: deleteResult.success }
+    };
   }
 }
+
+export const evolutionApi = new EvolutionApiService();

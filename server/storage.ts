@@ -161,6 +161,16 @@ export interface IStorage {
   createAppointmentTag(tag: InsertAppointmentTag): Promise<AppointmentTag>;
   updateAppointmentTag(id: number, updates: Partial<InsertAppointmentTag>): Promise<AppointmentTag | undefined>;
   deleteAppointmentTag(id: number): Promise<boolean>;
+
+  // WhatsApp Numbers
+  getWhatsAppNumbers(clinicId: number): Promise<WhatsAppNumber[]>;
+  getWhatsAppNumber(id: number): Promise<WhatsAppNumber | undefined>;
+  getWhatsAppNumberByPhone(phone: string, clinicId: number): Promise<WhatsAppNumber | undefined>;
+  getWhatsAppNumberByInstance(instanceName: string): Promise<WhatsAppNumber | undefined>;
+  createWhatsAppNumber(whatsappNumber: InsertWhatsAppNumber): Promise<WhatsAppNumber>;
+  updateWhatsAppNumber(id: number, updates: Partial<InsertWhatsAppNumber>): Promise<WhatsAppNumber | undefined>;
+  updateWhatsAppNumberStatus(id: number, status: string, connectedAt?: Date): Promise<WhatsAppNumber | undefined>;
+  deleteWhatsAppNumber(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

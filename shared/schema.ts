@@ -15,6 +15,25 @@ export const sessions = pgTable(
 
 // Remaining schemas for features that haven't been fully modularized yet
 
+// Tabela para números do WhatsApp conectados
+export const whatsapp_numbers = pgTable("whatsapp_numbers", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  user_id: text("user_id").notNull(), // ID do usuário que conectou o número
+  phone_number: text("phone_number").notNull(),
+  instance_name: text("instance_name").notNull(), // Nome único da instância na Evolution API
+  status: text("status").notNull().default("disconnected"), // connected, disconnected, connecting, error
+  connected_at: timestamp("connected_at"),
+  last_seen: timestamp("last_seen"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_whatsapp_numbers_clinic").on(table.clinic_id),
+  index("idx_whatsapp_numbers_user").on(table.user_id),
+  unique("unique_phone_clinic").on(table.phone_number, table.clinic_id),
+  unique("unique_instance_name").on(table.instance_name),
+]);
+
 // Tabela para etiquetas de consultas (appointment tags)
 export const appointment_tags = pgTable("appointment_tags", {
   id: serial("id").primaryKey(),
@@ -141,6 +160,16 @@ export const insertAppointmentTagSchema = createInsertSchema(appointment_tags).e
 
 export const insertAnalyticsMetricSchema = createInsertSchema(analytics_metrics);
 
+export const insertWhatsAppNumberSchema = createInsertSchema(whatsapp_numbers).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  phone_number: z.string().min(1, "Número do telefone é obrigatório"),
+  instance_name: z.string().min(1, "Nome da instância é obrigatório"),
+  status: z.enum(['connected', 'disconnected', 'connecting', 'error']).default('disconnected'),
+});
+
 export const insertApiKeySchema = createInsertSchema(api_keys).omit({
   id: true,
   api_key: true,
@@ -261,3 +290,6 @@ export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
 
 export type PipelineActivity = typeof pipeline_activities.$inferSelect;
 export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;
+
+export type WhatsAppNumber = typeof whatsapp_numbers.$inferSelect;
+export type InsertWhatsAppNumber = z.infer<typeof insertWhatsAppNumberSchema>;
