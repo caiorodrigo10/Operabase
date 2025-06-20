@@ -1667,6 +1667,174 @@ export class PostgreSQLStorage implements IStorage {
       return [];
     }
   }
+
+  // WhatsApp Numbers methods
+  async getWhatsAppNumbers(clinicId: number): Promise<WhatsAppNumber[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM whatsapp_numbers 
+        WHERE clinic_id = ${clinicId}
+        ORDER BY created_at DESC
+      `);
+      
+      return result.rows as WhatsAppNumber[];
+    } catch (error) {
+      console.error('❌ Error getting WhatsApp numbers:', error);
+      return [];
+    }
+  }
+
+  async getWhatsAppNumber(id: number): Promise<WhatsAppNumber | undefined> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM whatsapp_numbers WHERE id = ${id}
+      `);
+      
+      return result.rows[0] as WhatsAppNumber | undefined;
+    } catch (error) {
+      console.error('❌ Error getting WhatsApp number:', error);
+      return undefined;
+    }
+  }
+
+  async getWhatsAppNumberByPhone(phone: string, clinicId: number): Promise<WhatsAppNumber | undefined> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM whatsapp_numbers 
+        WHERE phone_number = ${phone} AND clinic_id = ${clinicId}
+      `);
+      
+      return result.rows[0] as WhatsAppNumber | undefined;
+    } catch (error) {
+      console.error('❌ Error getting WhatsApp number by phone:', error);
+      return undefined;
+    }
+  }
+
+  async getWhatsAppNumberByInstance(instanceName: string): Promise<WhatsAppNumber | undefined> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM whatsapp_numbers WHERE instance_name = ${instanceName}
+      `);
+      
+      return result.rows[0] as WhatsAppNumber | undefined;
+    } catch (error) {
+      console.error('❌ Error getting WhatsApp number by instance:', error);
+      return undefined;
+    }
+  }
+
+  async createWhatsAppNumber(whatsappNumber: InsertWhatsAppNumber): Promise<WhatsAppNumber> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO whatsapp_numbers (clinic_id, user_id, phone_number, instance_name, status, connected_at)
+        VALUES (${whatsappNumber.clinic_id}, ${whatsappNumber.user_id}, ${whatsappNumber.phone_number || ''}, 
+                ${whatsappNumber.instance_name}, ${whatsappNumber.status || 'pending'}, ${whatsappNumber.connected_at || null})
+        RETURNING *
+      `);
+      
+      return result.rows[0] as WhatsAppNumber;
+    } catch (error) {
+      console.error('❌ Error creating WhatsApp number:', error);
+      throw error;
+    }
+  }
+
+  async updateWhatsAppNumber(id: number, updates: Partial<InsertWhatsAppNumber>): Promise<WhatsAppNumber | undefined> {
+    try {
+      const setParts = [];
+      const values: any[] = [];
+      
+      if (updates.phone_number !== undefined) {
+        setParts.push(`phone_number = $${setParts.length + 1}`);
+        values.push(updates.phone_number);
+      }
+      
+      if (updates.status !== undefined) {
+        setParts.push(`status = $${setParts.length + 1}`);
+        values.push(updates.status);
+      }
+      
+      if (updates.connected_at !== undefined) {
+        setParts.push(`connected_at = $${setParts.length + 1}`);
+        values.push(updates.connected_at);
+      }
+      
+      setParts.push(`updated_at = NOW()`);
+      values.push(id);
+      
+      const result = await db.execute(sql`
+        UPDATE whatsapp_numbers 
+        SET ${sql.raw(setParts.join(', '))}
+        WHERE id = $${values.length}
+        RETURNING *
+      `);
+      
+      return result.rows[0] as WhatsAppNumber | undefined;
+    } catch (error) {
+      console.error('❌ Error updating WhatsApp number:', error);
+      return undefined;
+    }
+  }
+
+  async updateWhatsAppNumberByInstance(instanceName: string, updates: { status?: string; phone_number?: string; connected_at?: Date }): Promise<void> {
+    try {
+      const setParts = [];
+      
+      if (updates.status) {
+        setParts.push(`status = '${updates.status}'`);
+      }
+      
+      if (updates.phone_number) {
+        setParts.push(`phone_number = '${updates.phone_number}'`);
+      }
+      
+      if (updates.connected_at) {
+        setParts.push(`connected_at = '${updates.connected_at.toISOString()}'`);
+      }
+      
+      setParts.push(`updated_at = NOW()`);
+      
+      await db.execute(sql`
+        UPDATE whatsapp_numbers 
+        SET ${sql.raw(setParts.join(', '))}
+        WHERE instance_name = ${instanceName}
+      `);
+    } catch (error) {
+      console.error('❌ Error updating WhatsApp number by instance:', error);
+    }
+  }
+
+  async updateWhatsAppNumberStatus(id: number, status: string, connectedAt?: Date): Promise<WhatsAppNumber | undefined> {
+    try {
+      const result = await db.execute(sql`
+        UPDATE whatsapp_numbers 
+        SET status = ${status}, 
+            connected_at = ${connectedAt || null},
+            updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `);
+      
+      return result.rows[0] as WhatsAppNumber | undefined;
+    } catch (error) {
+      console.error('❌ Error updating WhatsApp number status:', error);
+      return undefined;
+    }
+  }
+
+  async deleteWhatsAppNumber(id: number): Promise<boolean> {
+    try {
+      const result = await db.execute(sql`
+        DELETE FROM whatsapp_numbers WHERE id = ${id}
+      `);
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('❌ Error deleting WhatsApp number:', error);
+      return false;
+    }
+  }
 }
 
 export const postgresStorage = new PostgreSQLStorage();
