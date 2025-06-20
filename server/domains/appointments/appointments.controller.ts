@@ -25,6 +25,7 @@ export class AppointmentsController {
     try {
       console.log('🚀 Appointments API called');
       const { clinic_id, status, date, contact_id } = req.query;
+      console.log('📋 Query parameters:', { clinic_id, status, date, contact_id });
 
       if (!clinic_id) {
         return res.status(400).json({ error: "clinic_id is required" });
@@ -42,11 +43,13 @@ export class AppointmentsController {
         const contactIdNum = parseInt(contact_id as string);
         if (!isNaN(contactIdNum)) {
           filters.contact_id = contactIdNum;
+          console.log('✅ Added contact_id filter:', contactIdNum);
         }
       }
 
+      console.log('🔍 Applied filters:', filters);
       const appointments = await this.service.getAppointments(clinicId, filters);
-      console.log('📊 Total appointments:', appointments.length);
+      console.log('📊 Total appointments found:', appointments.length);
       res.json(appointments);
     } catch (error: any) {
       console.error('Error fetching appointments:', error);
