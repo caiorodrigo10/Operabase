@@ -21,6 +21,18 @@ const VALID_APPOINTMENT_STATUSES = [
 const VALID_PAYMENT_STATUSES = ['pendente', 'pago', 'cancelado'] as const;
 import { apiKeyAuth, requireWritePermission, requireReadPermission, ApiKeyRequest } from '../middleware/api-key-auth.middleware';
 
+// Helper to convert string to number for flexible validation
+const stringToNumber = z.union([z.string(), z.number()]).transform((val) => {
+  if (typeof val === 'string') {
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed)) {
+      throw new Error(`Cannot convert "${val}" to number`);
+    }
+    return parsed;
+  }
+  return val;
+});
+
 const router = Router();
 
 // Apply API Key authentication to all MCP routes
@@ -60,42 +72,56 @@ const validateRequest = (schema: z.ZodSchema) => {
   };
 };
 
-// Schema definitions for n8n integration
+// Schema definitions for n8n integration with flexible number/string conversion
 const CreateAppointmentRequestSchema = z.object({
-  contact_id: z.number().int().positive(),
-  clinic_id: z.number().int().positive(),
-  user_id: z.number().int().positive(),
+  contact_id: stringToNumber.pipe(z.number().int().positive()),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
+  user_id: stringToNumber.pipe(z.number().int().positive()),
   scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  duration_minutes: z.number().int().min(15).max(480),
+  duration_minutes: stringToNumber.pipe(z.number().int().min(15).max(480)),
   status: z.enum(VALID_APPOINTMENT_STATUSES).optional().default('agendada'),
   doctor_name: z.string().nullable().optional(),
   specialty: z.string().nullable().optional(),
   appointment_type: z.string().nullable().optional(),
   session_notes: z.string().nullable().optional(),
   payment_status: z.enum(VALID_PAYMENT_STATUSES).optional().default('pendente'),
-  payment_amount: z.number().int().nullable().optional(),
-  tag_id: z.number().int().nullable().optional()
+  payment_amount: z.union([z.string(), z.number(), z.null()]).transform((val) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') {
+      const parsed = parseInt(val, 10);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return val;
+  }).nullable().optional(),
+  tag_id: z.union([z.string(), z.number(), z.null()]).transform((val) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') {
+      const parsed = parseInt(val, 10);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return val;
+  }).nullable().optional()
 });
 
 const UpdateStatusRequestSchema = z.object({
-  appointment_id: z.number().int().positive(),
-  clinic_id: z.number().int().positive(),
+  appointment_id: stringToNumber.pipe(z.number().int().positive()),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
   status: z.enum(VALID_APPOINTMENT_STATUSES),
   session_notes: z.string().nullable().optional()
 });
 
 const RescheduleRequestSchema = z.object({
-  appointment_id: z.number().int().positive(),
-  clinic_id: z.number().int().positive(),
+  appointment_id: stringToNumber.pipe(z.number().int().positive()),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
   scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  duration_minutes: z.number().int().min(15).max(480).optional()
+  duration_minutes: stringToNumber.pipe(z.number().int().min(15).max(480)).optional()
 });
 
 const CancelRequestSchema = z.object({
-  appointment_id: z.number().int().positive(),
-  clinic_id: z.number().int().positive(),
+  appointment_id: stringToNumber.pipe(z.number().int().positive()),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
   cancelled_by: z.enum(['paciente', 'dentista']),
   reason: z.string().optional()
 });
@@ -104,39 +130,53 @@ const UpdateAppointmentSchema = z.object({
   // Campos opcionais para atualização flexível
   scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  duration_minutes: z.number().int().min(15).max(480).optional(),
+  duration_minutes: stringToNumber.pipe(z.number().int().min(15).max(480)).optional(),
   status: z.enum(VALID_APPOINTMENT_STATUSES).optional(),
   doctor_name: z.string().nullable().optional(),
   specialty: z.string().nullable().optional(),
   appointment_type: z.string().nullable().optional(),
   session_notes: z.string().nullable().optional(),
   payment_status: z.enum(VALID_PAYMENT_STATUSES).optional(),
-  payment_amount: z.number().int().nullable().optional(),
+  payment_amount: z.union([z.string(), z.number(), z.null()]).transform((val) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') {
+      const parsed = parseInt(val, 10);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return val;
+  }).nullable().optional(),
   cancellation_reason: z.string().nullable().optional(),
-  tag_id: z.number().int().nullable().optional()
+  tag_id: z.union([z.string(), z.number(), z.null()]).transform((val) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') {
+      const parsed = parseInt(val, 10);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return val;
+  }).nullable().optional()
 });
 
 const AvailabilityRequestSchema = z.object({
-  user_id: z.number().int().positive(),
+  user_id: stringToNumber.pipe(z.number().int().positive()),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  duration_minutes: z.number().int().min(15).max(480).optional().default(60),
+  duration_minutes: stringToNumber.pipe(z.number().int().min(15).max(480)).optional().default(60),
   working_hours_start: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional().default('08:00'),
   working_hours_end: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional().default('18:00')
 });
 
 const ListAppointmentsRequestSchema = z.object({
-  clinic_id: z.number().int().positive(),
-  user_id: z.number().int().positive().optional(),
-  contact_id: z.number().int().positive().optional(),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
+  user_id: stringToNumber.pipe(z.number().int().positive()).optional(),
+  contact_id: stringToNumber.pipe(z.number().int().positive()).optional(),
   status: z.enum(VALID_APPOINTMENT_STATUSES).optional(),
   date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  limit: z.number().int().min(1).max(100).optional().default(50),
-  offset: z.number().int().min(0).optional().default(0)
+  limit: stringToNumber.pipe(z.number().int().min(1).max(100)).optional().default(50),
+  offset: stringToNumber.pipe(z.number().int().min(0)).optional().default(0)
 });
 
 const CreateContactRequestSchema = z.object({
-  clinic_id: z.number().int().positive(),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
   name: z.string().min(2).max(100),
   phone: z.string().min(10).max(20),
   email: z.string().email().optional(),

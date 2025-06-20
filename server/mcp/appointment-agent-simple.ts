@@ -21,44 +21,70 @@ export const VALID_APPOINTMENT_STATUSES = [
 
 export const VALID_PAYMENT_STATUSES = ['pendente', 'pago', 'cancelado'] as const;
 
-// Zod schemas for validation
+// Helper to convert string to number
+const stringToNumber = z.union([z.string(), z.number()]).transform((val) => {
+  if (typeof val === 'string') {
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed)) {
+      throw new Error(`Cannot convert "${val}" to number`);
+    }
+    return parsed;
+  }
+  return val;
+});
+
+// Zod schemas for validation with flexible number/string conversion
 const CreateAppointmentSchema = z.object({
-  contact_id: z.number().int().positive(),
-  clinic_id: z.number().int().positive(),
-  user_id: z.number().int().positive(),
+  contact_id: stringToNumber.pipe(z.number().int().positive()),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
+  user_id: stringToNumber.pipe(z.number().int().positive()),
   scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  duration_minutes: z.number().int().min(15).max(480),
+  duration_minutes: stringToNumber.pipe(z.number().int().min(15).max(480)),
   status: z.enum(VALID_APPOINTMENT_STATUSES).default('agendada'),
   doctor_name: z.string().nullable().optional(),
   specialty: z.string().nullable().optional(),
   appointment_type: z.string().nullable().optional(),
   session_notes: z.string().nullable().optional(),
   payment_status: z.enum(VALID_PAYMENT_STATUSES).default('pendente'),
-  payment_amount: z.number().int().nullable().optional(),
-  tag_id: z.number().int().nullable().optional()
+  payment_amount: z.union([z.string(), z.number(), z.null()]).transform((val) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') {
+      const parsed = parseInt(val, 10);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return val;
+  }).nullable().optional(),
+  tag_id: z.union([z.string(), z.number(), z.null()]).transform((val) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') {
+      const parsed = parseInt(val, 10);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return val;
+  }).nullable().optional()
 });
 
 const UpdateStatusSchema = z.object({
-  appointment_id: z.number().int().positive(),
-  clinic_id: z.number().int().positive(),
+  appointment_id: stringToNumber.pipe(z.number().int().positive()),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
   status: z.enum(VALID_APPOINTMENT_STATUSES),
   session_notes: z.string().nullable().optional()
 });
 
 const RescheduleSchema = z.object({
-  appointment_id: z.number().int().positive(),
-  clinic_id: z.number().int().positive(),
+  appointment_id: stringToNumber.pipe(z.number().int().positive()),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
   scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  duration_minutes: z.number().int().min(15).max(480).optional()
+  duration_minutes: stringToNumber.pipe(z.number().int().min(15).max(480)).optional()
 });
 
 const AvailabilitySchema = z.object({
-  clinic_id: z.number().int().positive(),
-  user_id: z.number().int().positive(),
+  clinic_id: stringToNumber.pipe(z.number().int().positive()),
+  user_id: stringToNumber.pipe(z.number().int().positive()),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  duration_minutes: z.number().int().min(15).max(480),
+  duration_minutes: stringToNumber.pipe(z.number().int().min(15).max(480)),
   working_hours_start: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).default('08:00'),
   working_hours_end: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).default('18:00')
 });
