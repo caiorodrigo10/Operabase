@@ -1102,8 +1102,8 @@ export class PostgreSQLStorage implements IStorage {
       integration.access_token,
       integration.refresh_token,
       integration.token_expires_at,
-      integration.is_active !== false,
-      integration.sync_enabled !== false,
+      integration.is_active ?? true, // Default to true if not specified
+      integration.sync_enabled ?? true, // Default to true if not specified
       integration.last_sync_at,
       integration.sync_errors
     ]);

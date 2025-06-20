@@ -127,7 +127,7 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
 
     // Criar nova integração ativa com calendário principal
     console.log(`✅ Criando nova integração ativa para ${userEmail}`);
-    await storage.createCalendarIntegration({
+    const newIntegration = await storage.createCalendarIntegration({
       user_id: userId,
       clinic_id: clinicId,
       provider: 'google',
@@ -142,6 +142,15 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
       sync_enabled: true,
       last_sync_at: new Date(),
     });
+
+    // Imediatamente sincronizar eventos do Google Calendar para o sistema
+    console.log(`🔄 Iniciando sincronização de eventos para integração ${newIntegration.id}`);
+    try {
+      await syncCalendarEventsToSystem(parseInt(userId), newIntegration.id);
+      console.log(`✅ Sincronização de eventos concluída para ${userEmail}`);
+    } catch (syncError) {
+      console.error('❌ Erro na sincronização inicial de eventos:', syncError);
+    }
 
     // Redirect to settings page with success
     res.redirect('/configuracoes?calendar=connected');
@@ -236,22 +245,27 @@ async function syncCalendarEventsToSystem(userId: number, integrationId: number)
           });
         }
 
+        // Get user info for doctor name
+        const user = await storage.getUser(userId);
+        
         // Create appointment
         await storage.createAppointment({
           clinic_id: primaryClinic.id,
           user_id: userId,
           contact_id: contact.id,
-          doctor_name: integration.email || 'Sistema',
-          specialty: 'Consulta',
-          appointment_type: 'Consulta',
+          doctor_name: user?.name || integration.calendar_name || 'Sistema',
+          specialty: 'consulta',
+          appointment_type: 'consulta',
           scheduled_date: startDate,
           duration_minutes: durationMinutes || 60,
-          status: startDate > new Date() ? 'scheduled' : 'completed',
-          payment_status: 'pending',
+          status: startDate > new Date() ? 'agendada' : 'realizada',
+          payment_status: 'pendente',
           payment_amount: 0,
-          description: event.description || '',
+          session_notes: event.description || null,
           google_calendar_event_id: event.id,
         });
+        
+        console.log(`✅ Agendamento criado do Google Calendar: ${event.summary} - ${startDate.toLocaleString('pt-BR')}`);
       }
     }
   } catch (error) {
