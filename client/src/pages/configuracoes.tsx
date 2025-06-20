@@ -20,6 +20,7 @@ import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
 import countries from 'world-countries';
 import { UserManagement } from '@/components/UserManagement';
 import { WhatsAppManager } from '@/components/WhatsAppManager';
+// import { useUser } from '@/lib/auth';
 
 // WhatsApp Integration Component
 const WhatsAppIntegration = () => {
@@ -496,6 +497,7 @@ const systemStatus = [
 
 export function Configuracoes() {
   const { toast } = useToast();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
   const [syncPreference, setSyncPreference] = useState("one-way");
   const [showSyncDialog, setShowSyncDialog] = useState(false);
@@ -1275,6 +1277,9 @@ export function Configuracoes() {
           <TabsContent value="integrations" className="space-y-6">
             {/* WhatsApp Evolution API Configuration */}
             <WhatsAppIntegration />
+            
+            {/* WhatsApp Number Management */}
+            <WhatsAppManager clinicId={1} userId={user?.id || ''} />
 
             <Card>
               <CardHeader>

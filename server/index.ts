@@ -139,9 +139,10 @@ app.use((req, res, next) => {
 
   // Initialize WhatsApp table
   try {
-    const storage = await getStorage() as any;
-    if (storage.pool) {
-      await storage.pool.query(`
+    const storage = await getStorage();
+    if (storage && 'pool' in storage) {
+      const pgStorage = storage as any;
+      await pgStorage.pool.query(`
         CREATE TABLE IF NOT EXISTS whatsapp_numbers (
           id SERIAL PRIMARY KEY,
           clinic_id INTEGER NOT NULL REFERENCES public.profiles(id),
@@ -155,12 +156,12 @@ app.use((req, res, next) => {
         );
       `);
       
-      await storage.pool.query(`
+      await pgStorage.pool.query(`
         CREATE INDEX IF NOT EXISTS idx_whatsapp_numbers_clinic_id 
         ON whatsapp_numbers(clinic_id);
       `);
       
-      await storage.pool.query(`
+      await pgStorage.pool.query(`
         CREATE INDEX IF NOT EXISTS idx_whatsapp_numbers_instance_name 
         ON whatsapp_numbers(instance_name);
       `);
