@@ -39,33 +39,62 @@ class GoogleCalendarService {
   private calendar: any;
 
   constructor() {
+    console.log('🔧 Inicializando GoogleCalendarService...');
+    
     // Determine the redirect URI based on environment
     const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_DOMAINS;
     const redirectUri = isProduction 
       ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/api/calendar/callback/google`
       : 'http://localhost:5000/api/calendar/callback/google';
 
-    this.oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || redirectUri
-    );
-    
-    this.calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
+    console.log('🔗 Configuração OAuth:', {
+      isProduction,
+      redirectUri,
+      customRedirectUri: process.env.GOOGLE_REDIRECT_URI,
+      finalRedirectUri: process.env.GOOGLE_REDIRECT_URI || redirectUri,
+      clientIdSet: !!process.env.GOOGLE_CLIENT_ID,
+      clientSecretSet: !!process.env.GOOGLE_CLIENT_SECRET
+    });
+
+    try {
+      this.oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URI || redirectUri
+      );
+      
+      this.calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
+      console.log('✅ GoogleCalendarService inicializado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao inicializar GoogleCalendarService:', error);
+      throw error;
+    }
   }
 
   generateAuthUrl(): string {
+    console.log('🔗 Gerando URL de autenticação...');
+    
     const scopes = [
       'https://www.googleapis.com/auth/calendar',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile'
     ];
 
-    return this.oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: scopes,
-      prompt: 'consent'
-    });
+    console.log('📋 Scopes configurados:', scopes);
+
+    try {
+      const authUrl = this.oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: scopes,
+        prompt: 'consent'
+      });
+      
+      console.log('✅ URL de autenticação gerada:', authUrl);
+      return authUrl;
+    } catch (error) {
+      console.error('❌ Erro ao gerar URL de autenticação:', error);
+      throw error;
+    }
   }
 
   async getTokensFromCode(code: string): Promise<TokenResponse> {

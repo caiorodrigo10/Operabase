@@ -8,16 +8,42 @@ import { supabaseAdmin } from './supabase-client';
 // Google Calendar OAuth initialization
 export async function initGoogleCalendarAuth(req: any, res: Response) {
   try {
+    console.log('🔍 Iniciando autenticação Google Calendar...');
+    
     // Store user ID in session for callback
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    console.log('👤 User ID:', userId);
+    
+    if (!userId) {
+      console.error('❌ User ID não encontrado na requisição');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     req.session.oauthUserId = userId;
+    console.log('💾 User ID armazenado na sessão:', req.session.oauthUserId);
+    
+    // Verificar variáveis de ambiente
+    console.log('🔍 Verificando credenciais Google...');
+    console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET');
+    console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
+    
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      console.error('❌ Credenciais Google não configuradas');
+      return res.status(500).json({ error: 'Google credentials not configured' });
+    }
     
     const authUrl = googleCalendarService.generateAuthUrl();
-    console.log('🔗 Generated OAuth URL for user:', userId);
+    console.log('🔗 URL OAuth gerada com sucesso:', authUrl);
+    console.log('✅ Respondendo com authUrl para usuário:', userId);
+    
     res.json({ authUrl });
   } catch (error) {
-    console.error('Error generating auth URL:', error);
-    res.status(500).json({ error: 'Failed to generate authorization URL' });
+    console.error('❌ Erro detalhado ao gerar URL de autenticação:', error);
+    console.error('Stack trace:', (error as Error)?.stack);
+    res.status(500).json({ 
+      error: 'Failed to generate authorization URL', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 }
 

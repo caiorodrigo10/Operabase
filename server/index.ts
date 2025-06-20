@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
 import { createApiRouter } from "./api/v1";
 import { createStorage } from "./storage-factory";
-import { setupAuth } from "./auth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { tenantIsolationMiddleware } from "./shared/tenant-isolation.middleware";
 import { cacheInterceptorMiddleware, cacheInvalidationMiddleware } from "./shared/cache-interceptor.middleware";
 import { performanceTrackingMiddleware, auditLoggingMiddleware, errorLoggingMiddleware } from "./shared/observability-middleware.js";
@@ -126,7 +126,8 @@ app.use((req, res, next) => {
   setupAnamnesisManagementRoutes(app, storage);
   
   // Add Google Calendar authentication routes
-  app.get('/api/calendar/auth/google', initGoogleCalendarAuth);
+  const { isAuthenticated } = await import('./auth');
+  app.get('/api/calendar/auth/google', isAuthenticated, initGoogleCalendarAuth);
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
   
   // Add WhatsApp Webhook routes first (to avoid conflicts)
