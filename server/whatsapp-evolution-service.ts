@@ -104,8 +104,16 @@ export class EvolutionApiService {
     const data = {
       instanceName,
       integration: "WHATSAPP-BAILEYS",
-      token: this.apiKey,
-      qrcode: true
+      qrcode: true,
+      rejectCall: true,
+      groupsIgnore: true,
+      webhook: {
+        url: "https://digibrandsflowsn8n.4gmy9o.easypanel.host/webhook/4acb17e9-5fbf-4aad-a722-0339338c5be8",
+        events: [
+          "MESSAGES_UPSERT",
+          "CONNECTION_UPDATE"
+        ]
+      }
     };
 
     return this.makeRequest('/instance/create', 'POST', data);

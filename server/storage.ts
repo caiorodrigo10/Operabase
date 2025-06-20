@@ -170,6 +170,7 @@ export interface IStorage {
   createWhatsAppNumber(whatsappNumber: InsertWhatsAppNumber): Promise<WhatsAppNumber>;
   updateWhatsAppNumber(id: number, updates: Partial<InsertWhatsAppNumber>): Promise<WhatsAppNumber | undefined>;
   updateWhatsAppNumberStatus(id: number, status: string, connectedAt?: Date): Promise<WhatsAppNumber | undefined>;
+  updateWhatsAppConnectionFromWebhook(instanceName: string, updateData: any): Promise<boolean>;
   deleteWhatsAppNumber(id: number): Promise<boolean>;
 }
 

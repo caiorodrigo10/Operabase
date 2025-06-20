@@ -1823,6 +1823,88 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  async updateWhatsAppConnectionFromWebhook(instanceName: string, updateData: any): Promise<boolean> {
+    try {
+      console.log(`📝 Atualizando WhatsApp via webhook: ${instanceName}`);
+      
+      const setParts = [];
+      const values: any[] = [];
+      
+      if (updateData.status !== undefined) {
+        setParts.push(`status = $${setParts.length + 1}`);
+        values.push(updateData.status);
+      }
+      
+      if (updateData.is_connected !== undefined) {
+        setParts.push(`is_connected = $${setParts.length + 1}`);
+        values.push(updateData.is_connected);
+      }
+      
+      if (updateData.phone_number !== undefined) {
+        setParts.push(`phone_number = $${setParts.length + 1}`);
+        values.push(updateData.phone_number);
+      }
+      
+      if (updateData.profile_name !== undefined) {
+        setParts.push(`profile_name = $${setParts.length + 1}`);
+        values.push(updateData.profile_name);
+      }
+      
+      if (updateData.profile_picture_url !== undefined) {
+        setParts.push(`profile_picture_url = $${setParts.length + 1}`);
+        values.push(updateData.profile_picture_url);
+      }
+      
+      if (updateData.owner_jid !== undefined) {
+        setParts.push(`owner_jid = $${setParts.length + 1}`);
+        values.push(updateData.owner_jid);
+      }
+      
+      if (updateData.connected_at !== undefined) {
+        setParts.push(`connected_at = $${setParts.length + 1}`);
+        values.push(updateData.connected_at);
+      }
+      
+      if (updateData.last_seen !== undefined) {
+        setParts.push(`last_seen = $${setParts.length + 1}`);
+        values.push(updateData.last_seen);
+      }
+      
+      setParts.push(`updated_at = NOW()`);
+      values.push(instanceName);
+      
+      if (setParts.length === 1) {
+        console.log('⚠️ Nenhum dado para atualizar');
+        return false;
+      }
+      
+      const result = await db.execute(sql`
+        UPDATE whatsapp_numbers 
+        SET ${sql.raw(setParts.join(', '))}
+        WHERE instance_name = $${values.length}
+      `);
+      
+      const updated = result.rowCount && result.rowCount > 0;
+      
+      if (updated) {
+        console.log(`✅ WhatsApp ${instanceName} atualizado com sucesso`);
+        if (updateData.phone_number) {
+          console.log(`📞 Número: ${updateData.phone_number}`);
+        }
+        if (updateData.profile_name) {
+          console.log(`👤 Perfil: ${updateData.profile_name}`);
+        }
+      } else {
+        console.log(`⚠️ Nenhuma linha atualizada para ${instanceName}`);
+      }
+      
+      return updated;
+    } catch (error) {
+      console.error('❌ Error updating WhatsApp connection from webhook:', error);
+      return false;
+    }
+  }
+
   async deleteWhatsAppNumber(id: number): Promise<boolean> {
     try {
       const result = await db.execute(sql`
