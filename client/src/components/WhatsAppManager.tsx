@@ -57,11 +57,19 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
       
       if (connectedNumber) {
         console.log('✅ Closing QR dialog - WhatsApp connected!');
-        setSelectedQR(null);
+        
+        // Force refetch to update the UI immediately
+        queryClient.invalidateQueries({ queryKey: [`/api/whatsapp/numbers/${clinicId}`] });
+        
         toast({
           title: "WhatsApp conectado!",
           description: `Número ${connectedNumber.phone_number || 'conectado'} conectado com sucesso`,
         });
+        
+        // Close dialog after brief delay to show success message
+        setTimeout(() => {
+          setSelectedQR(null);
+        }, 1500);
       }
     }
   }, [whatsappNumbers, selectedQR, toast]);
@@ -306,6 +314,33 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
             
             {selectedQR && (
               <div className="flex flex-col items-center space-y-4">
+                {/* Connection Status Indicator */}
+                {(() => {
+                  const connectedNumber = selectedQR.numberId 
+                    ? whatsappNumbers.find(number => number.id === selectedQR.numberId && number.status === 'open')
+                    : whatsappNumbers.find(number => number.instance_name === selectedQR.instanceName && number.status === 'open');
+                  
+                  if (connectedNumber) {
+                    return (
+                      <div className="flex items-center space-x-2 p-4 bg-green-50 border border-green-200 rounded-lg w-full">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <div className="text-green-700 font-medium">
+                          Conectado! Número: {connectedNumber.phone_number}
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="flex items-center space-x-2 p-4 bg-blue-50 border border-blue-200 rounded-lg w-full">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                        <div className="text-blue-700 font-medium">
+                          Aguardando conexão...
+                        </div>
+                      </div>
+                    );
+                  }
+                })()}
+
                 <div className="p-4 bg-white rounded-lg">
                   <img 
                     src={selectedQR.qrCode} 
