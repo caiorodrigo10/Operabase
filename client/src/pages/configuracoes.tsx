@@ -298,10 +298,26 @@ export function Configuracoes() {
 
   const deleteCalendarMutation = useMutation({
     mutationFn: async (integrationId: number) => {
-      await apiRequest(`/api/calendar/integrations/${integrationId}`, "DELETE");
+      const response = await apiRequest(`/api/calendar/integrations/${integrationId}`, "DELETE");
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate and refetch the calendar integrations
+      queryClient.invalidateQueries({ queryKey: ['/api/calendar/integrations'] });
       refetchIntegrations();
+      
+      toast({
+        title: "Integração removida",
+        description: data.message || "Integração do Google Calendar removida com sucesso",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao remover integração",
+        description: "Não foi possível remover a integração do calendário",
+        variant: "destructive",
+      });
     },
   });
 
