@@ -11,6 +11,7 @@ import { cacheService } from "./shared/redis-cache.service";
 import { tenantContext } from "./shared/tenant-context.provider";
 import { setupOptimizedRoutes } from "./optimized-routes.js";
 import { performanceOptimizer } from "./performance-optimizer.js";
+import { initGoogleCalendarAuth, handleGoogleCalendarCallback } from './calendar-routes';
 import http from "http";
 
 const app = express();
@@ -123,6 +124,10 @@ app.use((req, res, next) => {
   // Add Anamnesis Management routes
   const { setupAnamnesisManagementRoutes } = await import('./anamneses-routes');
   setupAnamnesisManagementRoutes(app, storage);
+  
+  // Add Google Calendar authentication routes
+  app.get('/api/calendar/auth/google', initGoogleCalendarAuth);
+  app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
   
   // Add WhatsApp Webhook routes first (to avoid conflicts)
   const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
