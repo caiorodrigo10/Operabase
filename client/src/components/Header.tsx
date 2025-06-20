@@ -35,7 +35,6 @@ const navigationItems = [
   { name: "Painel", href: "/", key: "dashboard" },
   { name: "Agenda", href: "/consultas", key: "consultas" },
   { name: "Pacientes", href: "/contatos", key: "contatos" },
-  { name: "Anamneses", href: "/anamneses", key: "anamneses" },
 ];
 
 // Admin navigation items
