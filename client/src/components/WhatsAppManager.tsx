@@ -229,7 +229,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                 <div className="flex items-center gap-2">
                   {getStatusBadge(number.status)}
                   
-                  {number.status === 'connected' && (
+                  {number.status === 'open' && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="sm">

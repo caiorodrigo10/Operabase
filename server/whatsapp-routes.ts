@@ -18,7 +18,7 @@ router.get('/api/whatsapp/numbers/:clinicId', async (req, res) => {
     const allNumbers = await storage.getWhatsAppNumbers(clinicId);
     
     // Only return numbers that are connected (validated via webhook)
-    const connectedNumbers = allNumbers.filter(number => number.status === 'connected');
+    const connectedNumbers = allNumbers.filter(number => number.status === 'open');
     
     console.log(`📱 WhatsApp numbers for clinic ${clinicId}: ${allNumbers.length} total, ${connectedNumbers.length} connected`);
     res.json(connectedNumbers);
