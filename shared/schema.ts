@@ -270,6 +270,9 @@ export const insertPipelineHistorySchema = createInsertSchema(pipeline_history);
 export const insertPipelineActivitySchema = createInsertSchema(pipeline_activities);
 
 // Type definitions
+export type WhatsAppNumber = typeof whatsapp_numbers.$inferSelect;
+export type InsertWhatsAppNumber = z.infer<typeof insertWhatsAppNumberSchema>;
+
 export type AppointmentTag = typeof appointment_tags.$inferSelect;
 export type InsertAppointmentTag = z.infer<typeof insertAppointmentTagSchema>;
 

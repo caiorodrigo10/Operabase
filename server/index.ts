@@ -139,8 +139,8 @@ app.use((req, res, next) => {
 
   // Initialize WhatsApp table
   try {
-    if (postgresStorage && 'pool' in postgresStorage) {
-      const pgStorage = postgresStorage as any;
+    if (storage && 'pool' in storage) {
+      const pgStorage = storage as any;
       await pgStorage.pool.query(`
         CREATE TABLE IF NOT EXISTS whatsapp_numbers (
           id SERIAL PRIMARY KEY,
