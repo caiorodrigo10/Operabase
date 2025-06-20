@@ -1042,10 +1042,10 @@ export class PostgreSQLStorage implements IStorage {
     console.log('🔍 Searching calendar integrations for email:', userEmail);
     
     try {
-      // Direct search by email - simpler and more reliable
+      // Direct search by email - using user_email column
       const pool = (db as any)._.session.client;
       const result = await pool.query(
-        'SELECT * FROM calendar_integrations WHERE email = $1 ORDER BY created_at DESC',
+        'SELECT * FROM calendar_integrations WHERE user_email = $1 ORDER BY created_at DESC',
         [userEmail]
       );
       

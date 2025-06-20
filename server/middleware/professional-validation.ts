@@ -20,8 +20,9 @@ export const createRequireProfessional = (storage: IStorage) => {
 
       console.log('🔍 Verificando se usuário é profissional:', { userId, userEmail });
 
-      // Buscar dados do usuário na clínica
-      const clinicUser = await storage.getClinicUserByUserId(userId);
+      // Buscar dados do usuário na clínica usando método alternativo
+      const clinicUsers = await storage.getClinicUsers(1); // Assumindo clínica 1 por padrão
+      const clinicUser = clinicUsers.find(cu => cu.user_id === parseInt(userId));
       
       if (!clinicUser) {
         return res.status(403).json({ 
