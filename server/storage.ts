@@ -33,6 +33,7 @@ export interface IStorage {
   // Clinic Users & Access Control
   getUserClinics(userId: number): Promise<(ClinicUser & { clinic: Clinic })[]>;
   getClinicUsers(clinicId: number): Promise<(ClinicUser & { user: User })[]>;
+  getClinicUserByUserId(userId: number): Promise<ClinicUser | undefined>;
   addUserToClinic(clinicUser: InsertClinicUser): Promise<ClinicUser>;
   updateClinicUserRole(clinicId: number, userId: number, role: string, permissions?: any): Promise<ClinicUser | undefined>;
   removeUserFromClinic(clinicId: number, userId: number): Promise<boolean>;

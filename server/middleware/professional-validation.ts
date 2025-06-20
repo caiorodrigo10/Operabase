@@ -1,59 +1,53 @@
 import { Request, Response, NextFunction } from 'express';
-import { storage } from '../storage';
+import type { IStorage } from '../storage';
 
 /**
- * Middleware para validar se o usuário é um profissional
- * Restringe acesso a integrações de calendário apenas para usuários com is_professional = true
+ * Middleware para validar se usuário é profissional
+ * Aplica-se APENAS às rotas do Google Calendar
  */
-export const requireProfessional = async (req: any, res: Response, next: NextFunction) => {
-  try {
-    const userId = req.user?.id;
-    const userEmail = req.user?.email;
+export const createRequireProfessional = (storage: IStorage) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user?.id;
+      const userEmail = (req as any).user?.email;
+      
+      if (!userId || !userEmail) {
+        return res.status(401).json({ 
+          error: 'Usuário não autenticado',
+          code: 'UNAUTHORIZED' 
+        });
+      }
 
-    if (!userId || !userEmail) {
-      return res.status(401).json({ 
-        error: 'Usuário não autenticado',
-        code: 'USER_NOT_AUTHENTICATED'
+      console.log('🔍 Verificando se usuário é profissional:', { userId, userEmail });
+
+      // Buscar dados do usuário na clínica
+      const clinicUser = await storage.getClinicUserByUserId(userId);
+      
+      if (!clinicUser) {
+        return res.status(403).json({ 
+          error: 'Usuário não encontrado na clínica',
+          code: 'USER_NOT_FOUND' 
+        });
+      }
+
+      if (!clinicUser.is_professional) {
+        console.log('❌ Usuário não é profissional:', { userId, is_professional: clinicUser.is_professional });
+        return res.status(403).json({ 
+          error: 'Apenas profissionais podem integrar calendários externos',
+          code: 'PROFESSIONAL_REQUIRED',
+          details: 'Esta funcionalidade está disponível apenas para usuários marcados como profissionais'
+        });
+      }
+
+      console.log('✅ Usuário é profissional, permitindo acesso:', { userId, is_professional: clinicUser.is_professional });
+      next();
+
+    } catch (error) {
+      console.error('❌ Erro na validação de profissional:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        code: 'INTERNAL_ERROR' 
       });
     }
-
-    // Buscar dados do usuário na clínica
-    // Assumindo clinic_id = 1 por enquanto (pode ser parametrizado)
-    const clinicId = 1;
-    
-    console.log('🔍 Verificando se usuário é profissional:', { userId, userEmail, clinicId });
-
-    const clinicUsers = await storage.getClinicUsers(clinicId);
-    const clinicUser = clinicUsers.find(cu => 
-      cu.user?.email === userEmail || cu.user_id === userId
-    );
-
-    console.log('👤 Dados do usuário na clínica:', clinicUser);
-
-    if (!clinicUser) {
-      return res.status(403).json({ 
-        error: 'Usuário não encontrado na clínica',
-        code: 'USER_NOT_IN_CLINIC'
-      });
-    }
-
-    if (!clinicUser.is_professional) {
-      console.log('❌ Usuário não é profissional - acesso negado');
-      return res.status(403).json({ 
-        error: 'Apenas profissionais podem integrar calendários externos',
-        code: 'PROFESSIONAL_REQUIRED',
-        message: 'Esta funcionalidade está disponível apenas para usuários marcados como profissionais.'
-      });
-    }
-
-    console.log('✅ Usuário é profissional - acesso autorizado');
-    next();
-
-  } catch (error) {
-    console.error('❌ Erro na validação de profissional:', error);
-    res.status(500).json({ 
-      error: 'Erro interno na validação de permissões',
-      code: 'VALIDATION_ERROR'
-    });
-  }
+  };
 };

@@ -294,6 +294,37 @@ export class PostgreSQLStorage implements IStorage {
     }));
   }
 
+  async getClinicUserByUserId(userId: number): Promise<ClinicUser | undefined> {
+    console.log('🔍 Buscando dados do usuário na clínica:', { userId });
+    
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM clinic_users 
+        WHERE user_id = ${userId} 
+        AND is_active = true
+        LIMIT 1
+      `);
+      
+      if (result.rows.length === 0) {
+        console.log('❌ Usuário não encontrado na clínica:', { userId });
+        return undefined;
+      }
+
+      const clinicUser = result.rows[0] as ClinicUser;
+      console.log('✅ Dados do usuário encontrados:', { 
+        userId: clinicUser.user_id, 
+        clinicId: clinicUser.clinic_id,
+        role: clinicUser.role,
+        is_professional: clinicUser.is_professional 
+      });
+      
+      return clinicUser;
+    } catch (error) {
+      console.error('❌ Erro ao buscar usuário na clínica:', error);
+      return undefined;
+    }
+  }
+
   // ============ CLINIC INVITATIONS ============
 
   async createClinicInvitation(invitation: InsertClinicInvitation): Promise<ClinicInvitation> {

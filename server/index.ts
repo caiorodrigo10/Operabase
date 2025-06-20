@@ -125,15 +125,18 @@ app.use((req, res, next) => {
   const { setupAnamnesisManagementRoutes } = await import('./anamneses-routes');
   setupAnamnesisManagementRoutes(app, storage);
   
-  // Add Google Calendar authentication routes
+  // Add Google Calendar authentication routes with professional validation
   const { isAuthenticated } = await import('./auth');
   const { getUserCalendarIntegrations, updateCalendarSyncPreferences, deleteCalendarIntegration } = await import('./calendar-routes');
+  const { createRequireProfessional } = await import('./middleware/professional-validation');
   
-  app.get('/api/calendar/auth/google', isAuthenticated, initGoogleCalendarAuth);
+  const requireProfessional = createRequireProfessional(storage);
+  
+  app.get('/api/calendar/auth/google', isAuthenticated, requireProfessional, initGoogleCalendarAuth);
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
   app.get('/api/calendar/integrations', isAuthenticated, getUserCalendarIntegrations);
-  app.put('/api/calendar/integrations/:integrationId/sync', isAuthenticated, updateCalendarSyncPreferences);
-  app.delete('/api/calendar/integrations/:integrationId', isAuthenticated, deleteCalendarIntegration);
+  app.put('/api/calendar/integrations/:integrationId/sync', isAuthenticated, requireProfessional, updateCalendarSyncPreferences);
+  app.delete('/api/calendar/integrations/:integrationId', isAuthenticated, requireProfessional, deleteCalendarIntegration);
   
   // Add WhatsApp Webhook routes first (to avoid conflicts)
   const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
