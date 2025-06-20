@@ -125,8 +125,8 @@ app.use((req, res, next) => {
   setupAnamnesisManagementRoutes(app, storage);
   
   // Add WhatsApp routes
-  const { setupWhatsAppRoutes } = await import('./whatsapp-routes');
-  setupWhatsAppRoutes(app, storage);
+  const whatsappRoutes = await import('./whatsapp-routes');
+  app.use(whatsappRoutes.default);
   
   // Initialize anamnesis system
   try {

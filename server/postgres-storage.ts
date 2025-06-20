@@ -35,14 +35,16 @@ import {
 import { 
   sessions,
   analytics_metrics, ai_templates, pipeline_stages, pipeline_opportunities, 
-  pipeline_history, pipeline_activities, appointment_tags,
+  pipeline_history, pipeline_activities, appointment_tags, whatsapp_numbers,
   type AnalyticsMetric,
   type AiTemplate,
   type PipelineStage,
   type PipelineOpportunity,
   type PipelineHistory,
   type PipelineActivity,
-  type AppointmentTag
+  type AppointmentTag,
+  type WhatsAppNumber,
+  type InsertWhatsAppNumber
 } from "../shared/schema";
 import type { IStorage } from "./storage";
 
@@ -1531,6 +1533,69 @@ export class PostgreSQLStorage implements IStorage {
       .where(eq(appointment_tags.id, id))
       .returning();
     return result.length > 0;
+  }
+
+  // ============ WHATSAPP NUMBERS ============
+
+  async getWhatsAppNumbers(clinicId: number): Promise<WhatsAppNumber[]> {
+    return db.select().from(whatsapp_numbers)
+      .where(eq(whatsapp_numbers.clinic_id, clinicId))
+      .orderBy(desc(whatsapp_numbers.created_at));
+  }
+
+  async getWhatsAppNumber(id: number): Promise<WhatsAppNumber | undefined> {
+    const result = await db.select().from(whatsapp_numbers)
+      .where(eq(whatsapp_numbers.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getWhatsAppNumberByPhone(phone: string, clinicId: number): Promise<WhatsAppNumber | undefined> {
+    const result = await db.select().from(whatsapp_numbers)
+      .where(and(
+        eq(whatsapp_numbers.phone_number, phone),
+        eq(whatsapp_numbers.clinic_id, clinicId)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async getWhatsAppNumberByInstance(instanceName: string): Promise<WhatsAppNumber | undefined> {
+    const result = await db.select().from(whatsapp_numbers)
+      .where(eq(whatsapp_numbers.instance_name, instanceName))
+      .limit(1);
+    return result[0];
+  }
+
+  async createWhatsAppNumber(whatsappNumber: InsertWhatsAppNumber): Promise<WhatsAppNumber> {
+    const result = await db.insert(whatsapp_numbers).values(whatsappNumber).returning();
+    return result[0];
+  }
+
+  async updateWhatsAppNumber(id: number, updates: Partial<InsertWhatsAppNumber>): Promise<WhatsAppNumber | undefined> {
+    const result = await db.update(whatsapp_numbers)
+      .set({ ...updates, updated_at: new Date() })
+      .where(eq(whatsapp_numbers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateWhatsAppNumberStatus(id: number, status: string, connectedAt?: Date): Promise<WhatsAppNumber | undefined> {
+    const updateData: any = { status, updated_at: new Date() };
+    if (connectedAt) {
+      updateData.connected_at = connectedAt;
+    }
+    
+    const result = await db.update(whatsapp_numbers)
+      .set(updateData)
+      .where(eq(whatsapp_numbers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteWhatsAppNumber(id: number): Promise<boolean> {
+    const result = await db.delete(whatsapp_numbers).where(eq(whatsapp_numbers.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async deleteGoogleCalendarEvents(userId: string | number, calendarId?: string, eventId?: string): Promise<number> {
