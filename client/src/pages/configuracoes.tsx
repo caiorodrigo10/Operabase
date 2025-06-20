@@ -497,7 +497,6 @@ const systemStatus = [
 
 export function Configuracoes() {
   const { toast } = useToast();
-  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
   const [syncPreference, setSyncPreference] = useState("one-way");
   const [showSyncDialog, setShowSyncDialog] = useState(false);
@@ -1279,7 +1278,7 @@ export function Configuracoes() {
             <WhatsAppIntegration />
             
             {/* WhatsApp Number Management */}
-            <WhatsAppManager clinicId={1} userId={user?.id || ''} />
+            <WhatsAppManager clinicId={1} userId="default-user-id" />
 
             <Card>
               <CardHeader>
