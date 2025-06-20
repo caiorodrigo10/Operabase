@@ -219,7 +219,7 @@ router.put('/api/whatsapp/numbers/:id/professional', async (req, res) => {
 
     // Update professional assignment
     const updated = await storage.updateWhatsAppNumber(id, { 
-      user_id: user_id || 1 
+      user_id: user_id 
     });
     
     if (!updated) {
