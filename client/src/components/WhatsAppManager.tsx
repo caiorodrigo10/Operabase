@@ -103,7 +103,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
 
   // Mutation to start connection
   const startConnectionMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/whatsapp/connect`, 'POST', { clinicId, userId }),
+    mutationFn: () => apiRequest(`/api/whatsapp/connect`, 'POST', { clinicId, userId: parseInt(userId) }),
     onSuccess: async (response) => {
       const data = await response.json();
       toast({
