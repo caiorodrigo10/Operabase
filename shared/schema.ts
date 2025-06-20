@@ -279,6 +279,24 @@ export type InsertAnalyticsMetric = z.infer<typeof insertAnalyticsMetricSchema>;
 export type AiTemplate = typeof ai_templates.$inferSelect;
 export type InsertAiTemplate = z.infer<typeof insertAiTemplateSchema>;
 
+export type WhatsAppNumber = typeof whatsapp_numbers.$inferSelect;
+export type InsertWhatsAppNumber = z.infer<typeof insertWhatsAppNumberSchema>;
+
+export type ApiKey = typeof api_keys.$inferSelect;
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+
+export type PipelineStage = typeof pipeline_stages.$inferSelect;
+export type InsertPipelineStage = z.infer<typeof insertPipelineStageSchema>;
+
+export type PipelineOpportunity = typeof pipeline_opportunities.$inferSelect;
+export type InsertPipelineOpportunity = z.infer<typeof insertPipelineOpportunitySchema>;
+
+export type PipelineHistory = typeof pipeline_history.$inferSelect;
+export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
+
+export type PipelineActivity = typeof pipeline_activities.$inferSelect;
+export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;
+
 export type PipelineStage = typeof pipeline_stages.$inferSelect;
 export type InsertPipelineStage = z.infer<typeof insertPipelineStageSchema>;
 
