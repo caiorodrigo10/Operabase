@@ -131,48 +131,54 @@ app.use((req, res, next) => {
   
   const requireProfessional = createRequireProfessional(storage);
   
-  // Create calendar routes with storage access
-  const createCalendarRoutesWithStorage = (storage: any) => ({
-    async getUserCalendarIntegrations(req: any, res: any) {
-      try {
-        const userId = req.user.id;
-        const userEmail = req.user.email;
-        
-        console.log('🔍 Getting calendar integrations for user:', { userId, userEmail });
-        
-        const integrations = await storage.getCalendarIntegrationsByEmail(userEmail);
-        
-        console.log('📊 Integrations retrieved:', integrations.length);
-        console.log('📋 Raw integrations:', integrations);
-        
-        const formattedIntegrations = integrations.map((integration: any) => ({
-          id: integration.id,
-          provider: integration.provider,
-          email: integration.user_email,
-          calendarId: integration.calendar_id,
-          calendarName: integration.calendar_name,
-          syncEnabled: integration.sync_enabled,
-          syncAppointments: integration.sync_appointments,
-          syncEvents: integration.sync_events,
-          isActive: integration.is_active,
-          lastSyncAt: integration.last_sync_at,
-          createdAt: integration.created_at
-        }));
-        
-        console.log('✅ Calendar integrations found:', formattedIntegrations.length);
-        res.json(formattedIntegrations);
-      } catch (error) {
-        console.error('Error fetching calendar integrations:', error);
-        res.status(500).json({ error: 'Failed to fetch calendar integrations' });
-      }
-    }
-  });
-  
-  const calendarRoutes = createCalendarRoutesWithStorage(storage);
-  
+  // Add Google Calendar routes with corrected storage access
   app.get('/api/calendar/auth/google', isAuthenticated, requireProfessional, initGoogleCalendarAuth);
   app.get('/api/calendar/callback/google', handleGoogleCalendarCallback);
-  app.get('/api/calendar/integrations', isAuthenticated, calendarRoutes.getUserCalendarIntegrations);
+  
+  // Direct implementation of getUserCalendarIntegrations to fix storage issues
+  app.get('/api/calendar/integrations', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const userId = req.user.id;
+      const userEmail = req.user.email;
+      
+      console.log('🔍 Getting calendar integrations for user:', { userId, userEmail });
+      
+      // Direct database query to avoid storage method issues
+      const { db } = await import('./db');
+      const { sql } = await import('drizzle-orm');
+      
+      const result = await db.execute(sql`
+        SELECT * FROM calendar_integrations 
+        WHERE user_email = ${userEmail} 
+        AND is_active = true
+        ORDER BY created_at DESC
+      `);
+      
+      const integrations = result.rows;
+      console.log('📊 Direct query integrations found:', integrations.length);
+      console.log('📋 Integration data:', integrations);
+      
+      const formattedIntegrations = integrations.map((integration: any) => ({
+        id: integration.id,
+        provider: integration.provider,
+        email: integration.user_email,
+        calendarId: integration.calendar_id,
+        calendarName: integration.calendar_name,
+        syncEnabled: integration.sync_enabled,
+        syncAppointments: integration.sync_appointments,
+        syncEvents: integration.sync_events,
+        isActive: integration.is_active,
+        lastSyncAt: integration.last_sync_at,
+        createdAt: integration.created_at
+      }));
+      
+      console.log('✅ Calendar integrations formatted:', formattedIntegrations.length);
+      res.json(formattedIntegrations);
+    } catch (error) {
+      console.error('Error fetching calendar integrations:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar integrations' });
+    }
+  });
   
   // Add WhatsApp Webhook routes first (to avoid conflicts)
   const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
