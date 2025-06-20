@@ -181,6 +181,52 @@ app.use((req, res, next) => {
       res.status(500).json({ error: 'Failed to fetch calendar integrations' });
     }
   });
+
+  // Delete calendar integration route
+  app.delete('/api/calendar/integrations/:integrationId', isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { integrationId } = req.params;
+      const userId = req.user.id;
+      const userEmail = req.user.email;
+
+      console.log('🗑️ Deleting calendar integration:', { integrationId, userId, userEmail });
+
+      // Direct database query to verify and delete
+      const { db } = await import('./db');
+      const { sql } = await import('drizzle-orm');
+
+      // First verify the integration belongs to the user
+      const checkResult = await db.execute(sql`
+        SELECT * FROM calendar_integrations 
+        WHERE id = ${parseInt(integrationId)} 
+        AND email = ${userEmail}
+      `);
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Integration not found or access denied' });
+      }
+
+      // Delete the integration
+      const deleteResult = await db.execute(sql`
+        DELETE FROM calendar_integrations 
+        WHERE id = ${parseInt(integrationId)} 
+        AND email = ${userEmail}
+      `);
+
+      if (deleteResult.rowCount && deleteResult.rowCount > 0) {
+        console.log('✅ Calendar integration deleted successfully');
+        res.json({ 
+          success: true, 
+          message: 'Integração removida com sucesso'
+        });
+      } else {
+        res.status(500).json({ error: 'Failed to delete integration' });
+      }
+    } catch (error) {
+      console.error('Error deleting calendar integration:', error);
+      res.status(500).json({ error: 'Failed to delete calendar integration' });
+    }
+  });
   
   // Add WhatsApp Webhook routes first (to avoid conflicts)
   const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
