@@ -1830,6 +1830,11 @@ export function Consultas() {
                                         }
                                       }}
                                     >
+                                      {/* Quarter hour border */}
+                                      {minute > 0 && (
+                                        <div className="absolute top-0 left-0 right-0 border-t border-slate-100" />
+                                      )}
+                                      
                                       {/* Time indicator on hover */}
                                       {isSlotAvailable && (
                                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -1881,22 +1886,23 @@ export function Consultas() {
                           const layout = layoutMap.get(appointment.id.toString()) || { width: 100, left: 0, group: 0 };
                           
                           // Calculate left position based on day column and collision layout
-                          const timeColumnWidth = 12.5; // 1/8 = 12.5% for time column
-                          const dayColumnWidth = 12.5; // 1/8 = 12.5% for each day column
-                          const baseDayPosition = timeColumnWidth + (dayIndex * dayColumnWidth);
+                          const timeColumnWidth = 48; // w-12 = 48px for time column
+                          const containerWidth = `calc(100% - ${timeColumnWidth}px)`;
+                          const dayColumnWidthPercent = 100 / 7; // Each day takes 1/7 of remaining width
+                          const baseDayPosition = `calc(${timeColumnWidth}px + (${containerWidth} * ${dayIndex} / 7))`;
                           
                           // Apply collision layout within the day column
-                          const eventWidth = (dayColumnWidth * layout.width) / 100;
-                          const eventLeftOffset = (dayColumnWidth * layout.left) / 100;
-                          const finalLeftPosition = baseDayPosition + eventLeftOffset;
+                          const eventWidth = `calc((${containerWidth} / 7) * ${layout.width / 100})`;
+                          const eventLeftOffset = `calc((${containerWidth} / 7) * ${layout.left / 100})`;
+                          const finalLeftPosition = `calc(${baseDayPosition} + ${eventLeftOffset})`;
                           
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                               <div
                                 style={{ 
                                   top: `${topPosition}px`,
-                                  left: `calc(${finalLeftPosition}% + 2px)`,
-                                  width: `calc(${eventWidth}% - 4px)`,
+                                  left: `calc(${finalLeftPosition} + 2px)`,
+                                  width: `calc(${eventWidth} - 4px)`,
                                   height: `${height}px`,
                                   zIndex: 10 + layout.group
                                 }}
@@ -1975,6 +1981,11 @@ export function Consultas() {
                                       }
                                     }}
                                   >
+                                    {/* Quarter hour border */}
+                                    {minute > 0 && (
+                                      <div className="absolute top-0 left-0 right-0 border-t border-slate-100" />
+                                    )}
+                                    
                                     {/* Time indicator on hover */}
                                     {isSlotAvailable && (
                                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
