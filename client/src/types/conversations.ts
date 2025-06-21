@@ -13,7 +13,7 @@ export interface Conversation {
 export interface Message {
   id: number;
   conversation_id: number;
-  type: 'received' | 'sent_system' | 'sent_ai' | 'sent_whatsapp' | 'sent_user';
+  type: 'received' | 'sent_system' | 'sent_ai' | 'sent_whatsapp' | 'sent_user' | 'note';
   content: string;
   timestamp: string;
   sender_name?: string;
