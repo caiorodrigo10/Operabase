@@ -31,6 +31,13 @@ export function ConversasLayout() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
+  // Auto-select first conversation on load
+  useEffect(() => {
+    if (mockConversations.length > 0 && !selectedConversationId) {
+      handleConversationSelect(mockConversations[0].id);
+    }
+  }, []);
+
   const handleConversationSelect = (conversationId: number) => {
     setSelectedConversationId(conversationId);
     
