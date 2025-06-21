@@ -17,6 +17,7 @@ import { Dashboard } from "./pages/dashboard";
 import { Pipeline } from "./pages/pipeline";
 import { Consultas } from "./pages/consultas";
 import { Contatos } from "./pages/contatos";
+import ConversasPage from "./pages/conversas";
 import { Configuracoes } from "./pages/configuracoes";
 import { LiviaConfig } from "./pages/livia-config";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
@@ -126,6 +127,7 @@ function Router() {
         <Route path="/pipeline" component={Pipeline} />
         <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />
+        <Route path="/conversas" component={ConversasPage} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
         <Route path="/contatos/:contactId/preencher-anamnese" component={PreencherAnamnese} />
         <Route path="/contatos/:contactId/anamnese/:anamnesisId/editar" component={EditarAnamneseResposta} />

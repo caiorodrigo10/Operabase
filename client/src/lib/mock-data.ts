@@ -192,3 +192,77 @@ export const conversationFilters = [
   { type: 'ai_active' as const, label: 'IA ativa' },
   { type: 'manual' as const, label: 'Manual' }
 ];
+
+// Dashboard mock data exports to fix the missing imports
+export const mockMetrics = {
+  totalContacts: 150,
+  monthlyAppointments: 45,
+  completedAppointments: 38,
+  pendingAppointments: 7
+};
+
+export const mockActivities = [
+  { id: 1, type: 'appointment', description: 'Nova consulta agendada', time: '10 min' },
+  { id: 2, type: 'contact', description: 'Novo contato adicionado', time: '25 min' },
+  { id: 3, type: 'ai', description: 'IA respondeu automaticamente', time: '1h' }
+];
+
+export const weeklyPerformanceData = [
+  { name: 'Seg', appointments: 8, contacts: 12 },
+  { name: 'Ter', appointments: 12, contacts: 15 },
+  { name: 'Qua', appointments: 15, contacts: 18 },
+  { name: 'Qui', appointments: 10, contacts: 14 },
+  { name: 'Sex', appointments: 14, contacts: 20 },
+  { name: 'Sáb', appointments: 6, contacts: 8 },
+  { name: 'Dom', appointments: 3, contacts: 5 }
+];
+
+export const conversionData = [
+  { name: 'Novos Contatos', value: 45, color: '#3b82f6' },
+  { name: 'Agendamentos', value: 30, color: '#10b981' },
+  { name: 'Consultas Realizadas', value: 25, color: '#f59e0b' }
+];
+
+export const hourlyActivityData = [
+  { hour: '8h', activity: 5 },
+  { hour: '9h', activity: 12 },
+  { hour: '10h', activity: 18 },
+  { hour: '11h', activity: 22 },
+  { hour: '12h', activity: 15 },
+  { hour: '13h', activity: 8 },
+  { hour: '14h', activity: 25 },
+  { hour: '15h', activity: 28 },
+  { hour: '16h', activity: 20 },
+  { hour: '17h', activity: 15 },
+  { hour: '18h', activity: 10 }
+];
+
+export const mockPipelineData = [
+  {
+    id: 1,
+    name: "Maria Silva",
+    phone: "(11) 99999-9999",
+    email: "maria@email.com",
+    stage: "novo",
+    last_interaction: "2025-01-20T14:30:00Z",
+    source: "whatsapp"
+  },
+  {
+    id: 2,
+    name: "João Santos",
+    phone: "(11) 88888-8888",
+    email: "joao@email.com",
+    stage: "em_conversa",
+    last_interaction: "2025-01-20T12:15:00Z",
+    source: "telefone"
+  },
+  {
+    id: 3,
+    name: "Ana Costa",
+    phone: "(11) 77777-7777",
+    email: "ana@email.com",
+    stage: "agendado",
+    last_interaction: "2025-01-20T10:45:00Z",
+    source: "site"
+  }
+];

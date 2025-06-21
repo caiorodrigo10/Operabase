@@ -7,7 +7,8 @@ import {
   Stethoscope,
   X,
   Calendar,
-  Bot
+  Bot,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Pipeline", href: "/pipeline", icon: GitBranch, route: "pipeline" },
   { name: "Consultas", href: "/consultas", icon: Calendar, route: "consultas" },
   { name: "Contatos", href: "/contatos", icon: Users, route: "contatos" },
+  { name: "Conversas", href: "/conversas", icon: MessageSquare, route: "conversas" },
   { name: "Configurações", href: "/configuracoes", icon: Settings, route: "configuracoes" },
 ];
 
