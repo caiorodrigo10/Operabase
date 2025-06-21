@@ -12,12 +12,16 @@ interface MainConversationAreaProps {
   timelineItems: TimelineItem[];
   patientInfo?: PatientInfo;
   onSendMessage?: (message: string) => void;
+  showInfoButton?: boolean;
+  onInfoClick?: () => void;
 }
 
 export function MainConversationArea({
   timelineItems,
   patientInfo,
-  onSendMessage
+  onSendMessage,
+  showInfoButton = false,
+  onInfoClick
 }: MainConversationAreaProps) {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -69,9 +73,16 @@ export function MainConversationArea({
           </div>
         </div>
         
-        <Button variant="ghost" size="sm">
-          <MoreVertical className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center space-x-2">
+          {showInfoButton && onInfoClick && (
+            <Button variant="ghost" size="sm" onClick={onInfoClick}>
+              <Info className="w-4 h-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="sm">
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Timeline */}
