@@ -1931,26 +1931,15 @@ export function Consultas() {
                   <div className="bg-slate-200 rounded-lg overflow-hidden">
                     <div className="flex">
                       {/* Time column */}
-                      <div className="w-24 bg-slate-50">
+                      <div className="w-12 bg-slate-50">
                         <div className="p-2 text-center font-medium border-b">Hora</div>
                         {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                           <div 
                             key={hour} 
-                            className="p-2 text-sm text-slate-600 border-b flex items-start justify-center relative"
+                            className="p-1 text-sm text-slate-600 border-b border-slate-300 flex items-start justify-center relative"
                             style={{ height: `${PIXELS_PER_HOUR}px` }}
                           >
-                            <span className="font-medium">{hour.toString().padStart(2, '0')}h</span>
-                            
-                            {/* 15-minute grid lines for time column */}
-                            <div className="absolute inset-x-0 top-0 h-full">
-                              {[1, 2, 3].map((quarter) => (
-                                <div 
-                                  key={quarter}
-                                  className="absolute left-0 right-0 border-t border-slate-200"
-                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
-                                />
-                              ))}
-                            </div>
+                            <span className="font-medium text-xs">{hour.toString().padStart(2, '0')}h</span>
                           </div>
                         ))}
                       </div>
@@ -1964,7 +1953,7 @@ export function Consultas() {
                           {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                             <div 
                               key={hour} 
-                              className={`border-b border-slate-100 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
+                              className={`border-b border-slate-300 relative ${getCalendarCellBackgroundClass(currentDate, hour)}`}
                               style={{ height: `${PIXELS_PER_HOUR}px` }}
                             >
                               {/* 15-minute clickable slots */}
@@ -1986,9 +1975,6 @@ export function Consultas() {
                                       }
                                     }}
                                   >
-                                    {/* Quarter hour border */}
-                                    <div className="absolute top-0 left-0 right-0 border-t border-slate-100" />
-                                    
                                     {/* Time indicator on hover */}
                                     {isSlotAvailable && (
                                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -2000,9 +1986,6 @@ export function Consultas() {
                                   </div>
                                 );
                               })}
-                              
-                              {/* Hour boundary line */}
-                              <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200"></div>
                               
                               {/* Lunch time highlighting */}
                               {hour === 12 && clinicConfig?.has_lunch_break && (
