@@ -61,7 +61,6 @@ export function ConversasLayout() {
             conversations={mockConversations}
             selectedConversationId={selectedConversationId}
             onConversationSelect={handleConversationSelect}
-            filters={conversationFilters}
           />
         ) : (
           // Mobile: Show conversation view
@@ -122,7 +121,6 @@ export function ConversasLayout() {
             conversations={mockConversations}
             selectedConversationId={selectedConversationId}
             onConversationSelect={handleConversationSelect}
-            filters={conversationFilters}
           />
         </div>
 
@@ -153,7 +151,6 @@ export function ConversasLayout() {
             conversations={mockConversations}
             selectedConversationId={selectedConversationId}
             onConversationSelect={handleConversationSelect}
-            filters={conversationFilters}
           />
         </div>
 

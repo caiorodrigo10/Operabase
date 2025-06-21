@@ -10,25 +10,17 @@ interface ConversationsSidebarProps {
   conversations: Conversation[];
   selectedConversationId?: number;
   onConversationSelect: (conversationId: number) => void;
-  filters: ConversationFilter[];
 }
 
 export function ConversationsSidebar({
   conversations,
   selectedConversationId,
-  onConversationSelect,
-  filters
+  onConversationSelect
 }: ConversationsSidebarProps) {
-  const [activeFilter, setActiveFilter] = useState<ConversationFilter['type']>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredConversations = conversations.filter(conversation => {
-    // Apply filter
-    if (activeFilter === 'unread' && conversation.unread_count === 0) return false;
-    if (activeFilter === 'ai_active' && !conversation.ai_active) return false;
-    if (activeFilter === 'manual' && conversation.ai_active) return false;
-
-    // Apply search
+    // Apply search only
     if (searchQuery && !conversation.patient_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
@@ -53,23 +45,7 @@ export function ConversationsSidebar({
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          {filters.map((filter) => (
-            <button
-              key={filter.type}
-              onClick={() => setActiveFilter(filter.type)}
-              className={cn(
-                "px-3 py-1 rounded-full text-sm font-medium transition-colors",
-                activeFilter === filter.type
-                  ? "bg-blue-100 text-blue-700 border border-blue-200"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              )}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
+
       </div>
 
       {/* Conversations List */}
