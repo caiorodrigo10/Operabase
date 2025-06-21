@@ -10,7 +10,7 @@ import {
   Settings,
   Stethoscope,
   Building,
-  Grid3X3,
+  LayoutGrid,
   Filter,
   Bot,
   Megaphone,
@@ -226,18 +226,18 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                       size="sm"
                       className="h-9 w-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100 data-[state=open]:bg-slate-100"
                     >
-                      <Grid3X3 className="h-4 w-4" />
+                      <LayoutGrid className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     className="w-80 p-4" 
-                    align="start"
+                    align="center"
                     side="bottom"
                     sideOffset={8}
                   >
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-4">
                       <div 
-                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"
                         onClick={() => {
                           setIsAppsDropdownOpen(false);
                           toast({
@@ -250,11 +250,11 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
                           <Filter className="h-5 w-5 text-blue-600" />
                         </div>
-                        <span className="text-sm font-medium text-slate-900">Funis</span>
+                        <span className="text-sm font-medium text-slate-900 text-center">Funis</span>
                       </div>
 
                       <div 
-                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"
                         onClick={() => {
                           setIsAppsDropdownOpen(false);
                           toast({
@@ -267,11 +267,11 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                         <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-2">
                           <Bot className="h-5 w-5 text-green-600" />
                         </div>
-                        <span className="text-sm font-medium text-slate-900">Trabalhadores Digitais</span>
+                        <span className="text-sm font-medium text-slate-900 text-center">Trabalhadores Digitais</span>
                       </div>
 
                       <div 
-                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"
                         onClick={() => {
                           setIsAppsDropdownOpen(false);
                           toast({
@@ -284,11 +284,11 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                         <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-2">
                           <Megaphone className="h-5 w-5 text-purple-600" />
                         </div>
-                        <span className="text-sm font-medium text-slate-900">Campanhas Automáticas</span>
+                        <span className="text-sm font-medium text-slate-900 text-center">Campanhas Automáticas</span>
                       </div>
 
                       <div 
-                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"
                         onClick={() => {
                           setIsAppsDropdownOpen(false);
                           toast({
@@ -301,7 +301,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                         <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-2">
                           <BarChart3 className="h-5 w-5 text-orange-600" />
                         </div>
-                        <span className="text-sm font-medium text-slate-900">Relatórios</span>
+                        <span className="text-sm font-medium text-slate-900 text-center">Relatórios</span>
                       </div>
                     </div>
                   </DropdownMenuContent>
