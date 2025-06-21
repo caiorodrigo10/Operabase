@@ -122,8 +122,8 @@ export function ConversasLayout() {
   if (!isMobile && !isTablet) {
     return (
       <div className="h-full flex bg-gray-50">
-        {/* Conversations Sidebar - 20% */}
-        <div className="w-1/5 min-w-[240px] border-r border-gray-200">
+        {/* Conversations Sidebar - 25% */}
+        <div className="w-1/4 min-w-[300px] border-r border-gray-200">
           <ConversationsSidebar
             conversations={mockConversations}
             selectedConversationId={selectedConversationId}
@@ -131,8 +131,8 @@ export function ConversasLayout() {
           />
         </div>
 
-        {/* Main Conversation Area - 55% */}
-        <div className="w-[55%] min-w-0 border-r border-gray-200 h-full">
+        {/* Main Conversation Area - 50% */}
+        <div className="w-1/2 min-w-0 border-r border-gray-200 h-full">
           <MainConversationArea
             timelineItems={timelineItems}
             patientInfo={currentPatientInfo}
@@ -152,8 +152,8 @@ export function ConversasLayout() {
   if (isTablet) {
     return (
       <div className="h-full flex bg-gray-50">
-        {/* Conversations Sidebar - 25% */}
-        <div className="w-1/4 min-w-[240px] border-r border-gray-200">
+        {/* Conversations Sidebar - 30% */}
+        <div className="w-[30%] min-w-[280px] border-r border-gray-200">
           <ConversationsSidebar
             conversations={mockConversations}
             selectedConversationId={selectedConversationId}
@@ -161,7 +161,7 @@ export function ConversasLayout() {
           />
         </div>
 
-        {/* Main Conversation Area - 75% with Info Button */}
+        {/* Main Conversation Area - 70% with Info Button */}
         <div className="flex-1 min-w-0 relative h-full">
           <MainConversationArea
             timelineItems={timelineItems}
