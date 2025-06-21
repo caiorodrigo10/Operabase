@@ -1930,10 +1930,6 @@ export function Consultas() {
 
               {calendarView === "day" && (
                 <div className="space-y-4">
-                  <div className="text-center text-lg font-semibold">
-                    {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                  </div>
-                  
                   <div className="bg-slate-200 rounded-lg overflow-hidden">
                     <div className="flex">
                       {/* Time column */}
