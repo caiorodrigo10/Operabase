@@ -1765,19 +1765,21 @@ export function Consultas() {
               {calendarView === "week" && (
                 <div className="bg-slate-200 rounded-lg overflow-hidden">
                   {/* Headers */}
-                  <div className="grid grid-cols-8 gap-px">
+                  <div className="flex gap-px">
                     {/* Time column header */}
-                    <div className="bg-slate-50 p-2 text-center font-medium">Hora</div>
+                    <div className="w-12 bg-slate-50 p-2 text-center font-medium">Hora</div>
                     
                     {/* Day headers */}
-                    {calendarDays.slice(0, 7).map((day) => (
-                      <div key={day.toISOString()} className="bg-slate-50 p-2 text-center">
-                        <div className="text-sm font-medium">{format(day, 'EEE', { locale: ptBR })}</div>
-                        <div className={`text-lg ${isSameDay(day, today) ? 'text-blue-600 font-bold' : ''}`}>
-                          {format(day, 'd')}
+                    <div className="flex-1 grid grid-cols-7 gap-px">
+                      {calendarDays.slice(0, 7).map((day) => (
+                        <div key={day.toISOString()} className="bg-slate-50 p-2 text-center">
+                          <div className="text-sm font-medium">{format(day, 'EEE', { locale: ptBR })}</div>
+                          <div className={`text-lg ${isSameDay(day, today) ? 'text-blue-600 font-bold' : ''}`}>
+                            {format(day, 'd')}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                   
                   {/* Calendar body with absolute positioned appointments */}
@@ -1785,77 +1787,70 @@ export function Consultas() {
                     className="relative calendar-container"
                   >
                     {/* Background grid without appointments */}
-                    <div className="grid grid-cols-8 gap-px">
-                      {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
-                        <div key={hour} className="contents">
-                          {/* Time label */}
-                          <div className="bg-white p-2 text-sm text-slate-600 border-r flex items-start justify-center relative" style={{ height: `${PIXELS_PER_HOUR}px` }}>
-                            <span className="font-medium">{hour.toString().padStart(2, '0')}h</span>
-                            
-                            {/* 15-minute grid lines */}
-                            <div className="absolute inset-x-0 top-0 h-full">
-                              {[1, 2, 3].map((quarter) => (
-                                <div 
-                                  key={quarter}
-                                  className="absolute left-0 right-0 border-t border-slate-100"
-                                  style={{ top: `${quarter * PIXELS_PER_QUARTER}px` }}
-                                />
-                              ))}
-                            </div>
+                    <div className="flex gap-px">
+                      {/* Time column */}
+                      <div className="w-12">
+                        {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
+                          <div 
+                            key={hour} 
+                            className="bg-white p-1 text-sm text-slate-600 border-b border-slate-300 flex items-start justify-center relative" 
+                            style={{ height: `${PIXELS_PER_HOUR}px` }}
+                          >
+                            <span className="font-medium text-xs">{hour.toString().padStart(2, '0')}h</span>
                           </div>
-                          
-                          {/* Day columns with only clickable slots */}
-                          {calendarDays.slice(0, 7).map((day, dayIndex) => (
-                            <div 
-                              key={`${day.toISOString()}-${hour}`} 
-                              className={`${getCalendarCellBackgroundClass(day, hour)} border-r relative`}
-                              style={{ height: `${PIXELS_PER_HOUR}px` }}
-                            >
-                              {/* 15-minute clickable slots */}
-                              {[0, 15, 30, 45].map((minute) => {
-                                const isSlotAvailable = isTimeSlotAvailable(day, hour, minute);
-                                const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                                
-                                return (
-                                  <div
-                                    key={`${minute}`}
-                                    className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
-                                    style={{ 
-                                      top: `${(minute / 60) * PIXELS_PER_HOUR}px`, 
-                                      height: `${PIXELS_PER_QUARTER}px` 
-                                    }}
-                                    onClick={() => {
-                                      if (isSlotAvailable) {
-                                        handleQuickCreateAppointment(day, hour, minute);
-                                      }
-                                    }}
-                                  >
-                                    {/* Quarter hour border */}
-                                    <div className="absolute top-0 left-0 right-0 border-t border-slate-100" />
-                                    
-                                    {/* Time indicator on hover */}
-                                    {isSlotAvailable && (
-                                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                                        <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
-                                          {timeLabel}
+                        ))}
+                      </div>
+                      
+                      {/* Days grid */}
+                      <div className="flex-1 grid grid-cols-7 gap-px">
+                        {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
+                          <div key={hour} className="contents">
+                            {calendarDays.slice(0, 7).map((day, dayIndex) => (
+                              <div 
+                                key={`${day.toISOString()}-${hour}`} 
+                                className={`${getCalendarCellBackgroundClass(day, hour)} border-b border-slate-300 relative`}
+                                style={{ height: `${PIXELS_PER_HOUR}px` }}
+                              >
+                                {/* 15-minute clickable slots */}
+                                {[0, 15, 30, 45].map((minute) => {
+                                  const isSlotAvailable = isTimeSlotAvailable(day, hour, minute);
+                                  const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                                  
+                                  return (
+                                    <div
+                                      key={`${minute}`}
+                                      className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
+                                      style={{ 
+                                        top: `${(minute / 60) * PIXELS_PER_HOUR}px`, 
+                                        height: `${PIXELS_PER_QUARTER}px` 
+                                      }}
+                                      onClick={() => {
+                                        if (isSlotAvailable) {
+                                          handleQuickCreateAppointment(day, hour, minute);
+                                        }
+                                      }}
+                                    >
+                                      {/* Time indicator on hover */}
+                                      {isSlotAvailable && (
+                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                          <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
+                                            {timeLabel}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                              
-                              {/* Hour boundary line */}
-                              <div className="absolute top-0 left-0 right-0 border-t-2 border-slate-200" />
-                              
-                              {/* Lunch time highlighting */}
-                              {hour === 12 && clinicConfig?.has_lunch_break && (
-                                <div className="absolute inset-0 bg-slate-50 opacity-30 pointer-events-none" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ))}
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                                
+                                {/* Lunch time highlighting */}
+                                {hour === 12 && clinicConfig?.has_lunch_break && (
+                                  <div className="absolute inset-0 bg-slate-50 opacity-30 pointer-events-none" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Absolutely positioned appointments overlay */}
