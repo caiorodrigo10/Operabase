@@ -1787,13 +1787,13 @@ export function Consultas() {
                     className="relative calendar-container"
                   >
                     {/* Background grid without appointments */}
-                    <div className="flex gap-px">
+                    <div className="flex">
                       {/* Time column */}
-                      <div className="w-12">
+                      <div className="w-12 bg-slate-200">
                         {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                           <div 
                             key={hour} 
-                            className="bg-white p-1 text-sm text-slate-600 border-b border-slate-300 flex items-start justify-center relative" 
+                            className="bg-white p-1 text-sm text-slate-600 border-b border-slate-300 border-r border-slate-300 flex items-start justify-center relative" 
                             style={{ height: `${PIXELS_PER_HOUR}px` }}
                           >
                             <span className="font-medium text-xs">{hour.toString().padStart(2, '0')}h</span>
@@ -1802,13 +1802,13 @@ export function Consultas() {
                       </div>
                       
                       {/* Days grid */}
-                      <div className="flex-1 grid grid-cols-7 gap-px">
+                      <div className="flex-1 grid grid-cols-7">
                         {Array.from({ length: 15 }, (_, i) => i + 7).map((hour) => (
                           <div key={hour} className="contents">
                             {calendarDays.slice(0, 7).map((day, dayIndex) => (
                               <div 
                                 key={`${day.toISOString()}-${hour}`} 
-                                className={`${getCalendarCellBackgroundClass(day, hour)} border-b border-slate-300 relative`}
+                                className={`${getCalendarCellBackgroundClass(day, hour)} border-b border-slate-300 ${dayIndex < 6 ? 'border-r border-slate-300' : ''} relative`}
                                 style={{ height: `${PIXELS_PER_HOUR}px` }}
                               >
                                 {/* 15-minute clickable slots */}
