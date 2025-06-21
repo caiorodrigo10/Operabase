@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +25,15 @@ export function MainConversationArea({
 }: MainConversationAreaProps) {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current && timelineItems.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [timelineItems]);
 
   const handleSendMessage = () => {
     if (message.trim() && onSendMessage) {
@@ -55,44 +64,51 @@ export function MainConversationArea({
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      {/* Timeline */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+    <div className="flex-1 flex flex-col h-full bg-white overflow-hidden">
+      {/* Messages Timeline - Scrollable */}
+      <div 
+        ref={timelineRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden p-5 scroll-smooth"
+      >
         {timelineItems.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             <p>Nenhuma mensagem ainda</p>
           </div>
         ) : (
-          timelineItems.map((item) => (
-            <div key={item.id}>
-              {item.type === 'message' ? (
-                <MessageBubble message={item.data as any} />
-              ) : (
-                <EventMarker event={item.data as any} />
-              )}
-            </div>
-          ))
+          <>
+            {timelineItems.map((item) => (
+              <div key={item.id}>
+                {item.type === 'message' ? (
+                  <MessageBubble message={item.data as any} />
+                ) : (
+                  <EventMarker event={item.data as any} />
+                )}
+              </div>
+            ))}
+            {/* Scroll anchor - invisible element at the end */}
+            <div ref={messagesEndRef} />
+          </>
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-end space-x-2">
+      {/* Input Area - Fixed at Bottom */}
+      <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+        <div className="flex items-end space-x-3">
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10"
           >
             <Paperclip className="w-4 h-4" />
           </Button>
 
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Digite sua mensagem..."
-              className="min-h-[40px] max-h-[120px] resize-none"
+              className="min-h-[40px] max-h-[100px] resize-none border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               rows={1}
             />
           </div>
@@ -101,8 +117,8 @@ export function MainConversationArea({
             variant="ghost"
             size="sm"
             className={cn(
-              "text-gray-500 hover:text-gray-700",
-              isRecording && "text-red-500"
+              "text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10",
+              isRecording && "text-red-500 bg-red-50"
             )}
             onClick={() => setIsRecording(!isRecording)}
           >
@@ -113,13 +129,14 @@ export function MainConversationArea({
             onClick={handleSendMessage}
             disabled={!message.trim()}
             size="sm"
+            className="flex-shrink-0 w-10 h-10 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
 
         {isRecording && (
-          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
               <span className="text-sm text-red-700">Gravando áudio...</span>
