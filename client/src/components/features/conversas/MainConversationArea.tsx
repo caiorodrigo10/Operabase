@@ -5,13 +5,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
-import { Send, Paperclip, Mic, MoreVertical, Info } from "lucide-react";
+import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MainConversationAreaProps {
   timelineItems: TimelineItem[];
   patientInfo?: PatientInfo;
-  onSendMessage?: (message: string) => void;
+  onSendMessage?: (message: string, isNote?: boolean) => void;
   showInfoButton?: boolean;
   onInfoClick?: () => void;
 }
@@ -25,6 +25,7 @@ export function MainConversationArea({
 }: MainConversationAreaProps) {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [isNoteMode, setIsNoteMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -37,8 +38,9 @@ export function MainConversationArea({
 
   const handleSendMessage = () => {
     if (message.trim() && onSendMessage) {
-      onSendMessage(message.trim());
+      onSendMessage(message.trim(), isNoteMode);
       setMessage("");
+      // Keep note mode active after sending
     }
   };
 
@@ -93,6 +95,39 @@ export function MainConversationArea({
 
       {/* Input Area - Fixed at Bottom */}
       <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+        {/* Reply/Note Toggle Buttons */}
+        <div className="flex mb-3 space-x-2">
+          <Button
+            variant={!isNoteMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setIsNoteMode(false)}
+            className={cn(
+              "flex items-center space-x-2 transition-all",
+              !isNoteMode 
+                ? "bg-blue-500 text-white hover:bg-blue-600" 
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            )}
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Reply</span>
+          </Button>
+          
+          <Button
+            variant={isNoteMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setIsNoteMode(true)}
+            className={cn(
+              "flex items-center space-x-2 transition-all",
+              isNoteMode 
+                ? "bg-amber-500 text-white hover:bg-amber-600" 
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            )}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Note</span>
+          </Button>
+        </div>
+
         <div className="flex items-end space-x-3">
           <Button
             variant="ghost"
@@ -107,8 +142,13 @@ export function MainConversationArea({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Digite sua mensagem..."
-              className="min-h-[40px] max-h-[100px] resize-none border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              placeholder={isNoteMode ? "Digite uma nota interna..." : "Digite sua mensagem..."}
+              className={cn(
+                "min-h-[40px] max-h-[100px] resize-none rounded-lg focus:ring-1 transition-all",
+                isNoteMode 
+                  ? "bg-amber-50 border-amber-300 focus:border-amber-500 focus:ring-amber-500 text-amber-900 placeholder:text-amber-600" 
+                  : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              )}
               rows={1}
             />
           </div>

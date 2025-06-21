@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message } from "@/types/conversations";
-import { Bot, Settings } from "lucide-react";
+import { Bot, Settings, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
@@ -13,6 +13,8 @@ function getMessageTypeIcon(type: Message['type']) {
       return <Bot className="w-3 h-3 text-blue-600" />;
     case 'sent_system':
       return <Settings className="w-3 h-3 text-gray-600" />;
+    case 'note':
+      return <FileText className="w-3 h-3 text-amber-600" />;
     default:
       return null;
   }
@@ -20,7 +22,8 @@ function getMessageTypeIcon(type: Message['type']) {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isReceived = message.type === 'received';
-  const isSent = !isReceived;
+  const isNote = message.type === 'note';
+  const isSent = !isReceived && !isNote;
   
   return (
     <div className={cn("flex mb-3", isReceived ? "justify-start" : "justify-end")}>
@@ -35,12 +38,24 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       )}
       
       <div className="flex flex-col max-w-xs lg:max-w-md">
+        {/* Note label for note messages */}
+        {isNote && (
+          <div className="flex items-center mb-1 justify-end">
+            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-200 flex items-center gap-1">
+              <FileText className="w-3 h-3" />
+              Nota
+            </span>
+          </div>
+        )}
+        
         <div
           className={cn(
-            "px-4 py-3 rounded-2xl",
+            "px-4 py-3 rounded-2xl relative",
             isReceived 
               ? "bg-gray-100 text-gray-900 rounded-tl-md" 
-              : "bg-emerald-500 text-white rounded-tr-md"
+              : isNote
+                ? "bg-amber-50 text-amber-900 border border-amber-200 rounded-tr-md"
+                : "bg-emerald-500 text-white rounded-tr-md"
           )}
         >
           <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
@@ -56,11 +71,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </span>
       </div>
       
-      {/* Avatar/Icon for sent messages (right side) */}
-      {isSent && (
+      {/* Avatar/Icon for sent messages and notes (right side) */}
+      {(isSent || isNote) && (
         <div className="ml-2 mt-1 flex-shrink-0">
-          {message.type === 'sent_ai' || message.type === 'sent_system' ? (
-            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200">
+          {message.type === 'sent_ai' || message.type === 'sent_system' || message.type === 'note' ? (
+            <div className={cn(
+              "w-6 h-6 rounded-full flex items-center justify-center border",
+              message.type === 'note' 
+                ? "bg-amber-50 border-amber-200" 
+                : "bg-white border-gray-200"
+            )}>
               {getMessageTypeIcon(message.type)}
             </div>
           ) : (
