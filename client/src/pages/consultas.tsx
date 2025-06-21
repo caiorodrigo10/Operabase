@@ -1494,7 +1494,7 @@ export function Consultas() {
                 <span className="text-sm font-medium min-w-32 text-center">
                   {calendarView === 'month' && format(currentDate, "MMMM yyyy", { locale: ptBR })}
                   {calendarView === 'week' && `${format(startOfWeek(currentDate), "dd MMM", { locale: ptBR })} - ${format(endOfWeek(currentDate), "dd MMM yyyy", { locale: ptBR })}`}
-                  {calendarView === 'day' && format(currentDate, "EEEE, dd 'de' MMMM yyyy", { locale: ptBR })}
+                  {calendarView === 'day' && format(currentDate, "EEEE, dd 'de' MMMM yyyy", { locale: ptBR }).replace(/^(\w)/, (match) => match.toUpperCase()).replace(/ de (\w)/, (match, letter) => ` de ${letter.toUpperCase()}`)}
                 </span>
                 <Button variant="outline" size="sm" onClick={() => navigateCalendar('next')}>
                   <ChevronRight className="w-4 h-4" />
