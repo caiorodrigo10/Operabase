@@ -14,7 +14,6 @@ import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
 import { AdminRouteGuard } from "./components/AdminRouteGuard";
 import { Dashboard } from "./pages/dashboard";
-import { Conversas } from "./pages/conversas";
 import { Pipeline } from "./pages/pipeline";
 import { Consultas } from "./pages/consultas";
 import { Contatos } from "./pages/contatos";
@@ -41,18 +40,18 @@ function Router() {
   const [location] = useLocation();
   const { user, loading } = useAuth();
   const { isAdminView } = useAdmin();
-  
+
   console.log('🔍 Router state:', { user: !!user, loading, location });
-  
+
   // Handle public routes first, completely outside auth system
   if (location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/')) {
     return <AnamnesisPublica />;
   }
-  
+
   if (location === '/reset-password') {
     return <ResetPassword />;
   }
-  
+
   const getCurrentPage = () => {
     if (location === "/") return "dashboard";
     return location.substring(1);
@@ -124,7 +123,6 @@ function Router() {
     <Layout currentPage={getCurrentPage()}>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/conversas" component={Conversas} />
         <Route path="/pipeline" component={Pipeline} />
         <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />
@@ -149,14 +147,14 @@ function Router() {
 
 function GleapWrapper() {
   const [location] = useLocation();
-  
+
   // Don't initialize Gleap for public anamnesis pages
   const isPublicPage = location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/');
-  
+
   if (!isPublicPage) {
     useGleap(); // Initialize Gleap with user data only for internal pages
   }
-  
+
   return <Router />;
 }
 

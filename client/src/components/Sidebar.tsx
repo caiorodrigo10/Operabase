@@ -1,7 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { 
   BarChart3, 
-  MessageCircle, 
   GitBranch, 
   Users, 
   Settings,
@@ -21,7 +20,6 @@ interface SidebarProps {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3, route: "dashboard" },
-  { name: "Conversas", href: "/conversas", icon: MessageCircle, route: "conversas" },
   { name: "Pipeline", href: "/pipeline", icon: GitBranch, route: "pipeline" },
   { name: "Consultas", href: "/consultas", icon: Calendar, route: "consultas" },
   { name: "Contatos", href: "/contatos", icon: Users, route: "contatos" },
@@ -64,7 +62,7 @@ export function Sidebar({ currentPage, isMobile, isOpen, onClose }: SidebarProps
         {navigation.map((item) => {
           const isActive = location === item.href;
           const Icon = item.icon;
-          
+
           return (
             <Link
               key={item.name}
@@ -100,3 +98,4 @@ export function Sidebar({ currentPage, isMobile, isOpen, onClose }: SidebarProps
     </aside>
   );
 }
+```This code removes the Conversas feature from the sidebar navigation.
