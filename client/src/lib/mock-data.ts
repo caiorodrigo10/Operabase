@@ -204,48 +204,99 @@ export const conversationFilters = [
   { type: 'manual' as const, label: 'Manual' }
 ];
 
-// Dashboard mock data exports to fix the missing imports
+// Dashboard mock data exports - Comprehensive medical clinic data
 export const mockMetrics = {
-  totalContacts: 150,
-  monthlyAppointments: 45,
-  completedAppointments: 38,
-  pendingAppointments: 7
+  // Main metrics for cards
+  mensagensHoje: 247,
+  agendamentosHoje: 18,
+  atendimentosAtivos: 12,
+  
+  // Performance metrics
+  tempoResposta: "2.3s",
+  taxaSucesso: 94.8,
+  satisfacao: 4.7,
+  
+  // Legacy support for other components
+  totalContacts: 1247,
+  monthlyAppointments: 342,
+  completedAppointments: 298,
+  pendingAppointments: 44
 };
 
 export const mockActivities = [
-  { id: 1, type: 'appointment', description: 'Nova consulta agendada', time: '10 min' },
-  { id: 2, type: 'contact', description: 'Novo contato adicionado', time: '25 min' },
-  { id: 3, type: 'ai', description: 'IA respondeu automaticamente', time: '1h' }
+  {
+    id: 1,
+    action: "Triagem automática concluída",
+    details: "Paciente Maria Santos - Sintomas de gripe identificados",
+    status: "Concluído",
+    color: "green"
+  },
+  {
+    id: 2,
+    action: "Agendamento realizado via IA",
+    details: "Dr. Carlos Silva - Cardiologia, 25/06 às 14:30",
+    status: "Agendado",
+    color: "blue"
+  },
+  {
+    id: 3,
+    action: "Análise de exames iniciada",
+    details: "Resultados de hemograma para João Oliveira",
+    status: "Em análise",
+    color: "purple"
+  },
+  {
+    id: 4,
+    action: "Prescrição médica enviada",
+    details: "Receita digital para Ana Costa - Antibiótico",
+    status: "Enviado",
+    color: "green"
+  },
+  {
+    id: 5,
+    action: "Lembrete de consulta enviado",
+    details: "SMS automático para 15 pacientes - Consultas de amanhã",
+    status: "Enviado",
+    color: "blue"
+  },
+  {
+    id: 6,
+    action: "Suporte técnico acionado",
+    details: "Integração WhatsApp - Verificação de conectividade",
+    status: "Em progresso",
+    color: "purple"
+  }
 ];
 
 export const weeklyPerformanceData = [
-  { name: 'Seg', appointments: 8, contacts: 12 },
-  { name: 'Ter', appointments: 12, contacts: 15 },
-  { name: 'Qua', appointments: 15, contacts: 18 },
-  { name: 'Qui', appointments: 10, contacts: 14 },
-  { name: 'Sex', appointments: 14, contacts: 20 },
-  { name: 'Sáb', appointments: 6, contacts: 8 },
-  { name: 'Dom', appointments: 3, contacts: 5 }
+  { day: 'Seg', mensagens: 186, agendamentos: 12 },
+  { day: 'Ter', mensagens: 234, agendamentos: 18 },
+  { day: 'Qua', mensagens: 298, agendamentos: 22 },
+  { day: 'Qui', mensagens: 267, agendamentos: 19 },
+  { day: 'Sex', mensagens: 312, agendamentos: 25 },
+  { day: 'Sáb', mensagens: 156, agendamentos: 8 },
+  { day: 'Dom', mensagens: 89, agendamentos: 4 }
 ];
 
 export const conversionData = [
-  { name: 'Novos Contatos', value: 45, color: '#3b82f6' },
-  { name: 'Agendamentos', value: 30, color: '#10b981' },
-  { name: 'Consultas Realizadas', value: 25, color: '#f59e0b' }
+  { name: 'Triagem Inicial', value: 42, fill: '#3b82f6' },
+  { name: 'Em Consulta', value: 28, fill: '#10b981' },
+  { name: 'Agendado', value: 18, fill: '#f59e0b' },
+  { name: 'Finalizado', value: 12, fill: '#8b5cf6' }
 ];
 
 export const hourlyActivityData = [
-  { hour: '8h', activity: 5 },
-  { hour: '9h', activity: 12 },
-  { hour: '10h', activity: 18 },
-  { hour: '11h', activity: 22 },
-  { hour: '12h', activity: 15 },
-  { hour: '13h', activity: 8 },
-  { hour: '14h', activity: 25 },
-  { hour: '15h', activity: 28 },
-  { hour: '16h', activity: 20 },
-  { hour: '17h', activity: 15 },
-  { hour: '18h', activity: 10 }
+  { hour: '8h', atividade: 12 },
+  { hour: '9h', atividade: 28 },
+  { hour: '10h', atividade: 45 },
+  { hour: '11h', atividade: 52 },
+  { hour: '12h', atividade: 38 },
+  { hour: '13h', atividade: 22 },
+  { hour: '14h', atividade: 67 },
+  { hour: '15h', atividade: 73 },
+  { hour: '16h', atividade: 58 },
+  { hour: '17h', atividade: 41 },
+  { hour: '18h', atividade: 29 }
 ];
 
 export const mockPipelineData = [
