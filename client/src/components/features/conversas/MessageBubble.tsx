@@ -1,49 +1,34 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Message } from "@/types/conversations";
+import { Bot, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
   message: Message;
 }
 
-const messageStyles = {
-  received: {
-    position: "justify-start",
-    background: "bg-gray-50",
-    border: "border-gray-300",
-    badge: null
-  },
-  sent_system: {
-    position: "justify-end",
-    background: "bg-green-50",
-    border: "border-green-500",
-    badge: "Sistema"
-  },
-  sent_ai: {
-    position: "justify-end",
-    background: "bg-blue-50",
-    border: "border-blue-500",
-    badge: "IA"
-  },
-  sent_whatsapp: {
-    position: "justify-end",
-    background: "bg-green-100",
-    border: "border-green-600",
-    badge: "WhatsApp"
+function getMessageTypeIcon(type: Message['type']) {
+  switch (type) {
+    case 'sent_ai':
+      return <Bot className="w-3 h-3 text-blue-600" />;
+    case 'sent_system':
+      return <Settings className="w-3 h-3 text-gray-600" />;
+    default:
+      return null;
   }
-};
+}
 
 export function MessageBubble({ message }: MessageBubbleProps) {
-  const style = messageStyles[message.type];
   const isReceived = message.type === 'received';
+  const isSent = !isReceived;
   
   return (
-    <div className={cn("flex", style.position, "mb-3")}>
+    <div className={cn("flex mb-3", isReceived ? "justify-start" : "justify-end")}>
+      {/* Avatar for received messages (left side) */}
       {isReceived && (
-        <Avatar className="w-8 h-8 mr-3 mt-1">
+        <Avatar className="w-6 h-6 mr-2 mt-1 flex-shrink-0">
           <AvatarImage src={message.sender_avatar} />
-          <AvatarFallback className="text-xs">
+          <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
             {message.sender_name?.charAt(0)?.toUpperCase() || 'P'}
           </AvatarFallback>
         </Avatar>
@@ -52,21 +37,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <div className="flex flex-col max-w-xs lg:max-w-md">
         <div
           className={cn(
-            "px-4 py-2 rounded-lg border",
-            style.background,
-            style.border,
-            isReceived ? "rounded-tl-sm" : "rounded-tr-sm"
+            "px-4 py-3 rounded-2xl",
+            isReceived 
+              ? "bg-gray-100 text-gray-900 rounded-tl-md" 
+              : "bg-emerald-500 text-white rounded-tr-md"
           )}
         >
-          <div className="flex items-center justify-between mb-1">
-            {style.badge && (
-              <Badge variant="outline" className="text-xs mb-1">
-                {style.badge}
-              </Badge>
-            )}
-          </div>
-          
-          <p className="text-sm whitespace-pre-wrap break-words">
+          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
             {message.content}
           </p>
         </div>
@@ -79,13 +56,22 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </span>
       </div>
       
-      {!isReceived && (
-        <Avatar className="w-8 h-8 ml-3 mt-1">
-          <AvatarImage src={message.sender_avatar} />
-          <AvatarFallback className="text-xs">
-            {message.sender_name?.charAt(0)?.toUpperCase() || 'S'}
-          </AvatarFallback>
-        </Avatar>
+      {/* Avatar/Icon for sent messages (right side) */}
+      {isSent && (
+        <div className="ml-2 mt-1 flex-shrink-0">
+          {message.type === 'sent_ai' || message.type === 'sent_system' ? (
+            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200">
+              {getMessageTypeIcon(message.type)}
+            </div>
+          ) : (
+            <Avatar className="w-6 h-6">
+              <AvatarImage src={message.sender_avatar} />
+              <AvatarFallback className="text-xs bg-blue-500 text-white">
+                {message.sender_name?.charAt(0)?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
       )}
     </div>
   );

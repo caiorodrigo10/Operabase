@@ -104,14 +104,14 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
     <div
       onClick={onClick}
       className={cn(
-        "p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50",
-        isActive && "bg-blue-50 border-l-4 border-l-blue-500"
+        "p-4 cursor-pointer transition-colors hover:bg-gray-50",
+        isActive && "bg-blue-50 border-r-2 border-r-blue-500"
       )}
     >
       <div className="flex items-start space-x-3">
-        <Avatar className="w-10 h-10">
+        <Avatar className="w-12 h-12 flex-shrink-0">
           <AvatarImage src={conversation.patient_avatar} />
-          <AvatarFallback className="text-sm">
+          <AvatarFallback className="text-sm bg-gray-200 text-gray-700">
             {conversation.patient_name.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
@@ -119,34 +119,34 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <h3 className={cn(
-              "font-medium text-gray-900 truncate",
+              "font-medium text-gray-900 truncate text-sm",
               conversation.unread_count > 0 && "font-semibold"
             )}>
               {conversation.patient_name}
             </h3>
-            <span className="text-xs text-gray-500 flex-shrink-0">
+            <span className="text-xs text-gray-400 flex-shrink-0">
               {conversation.timestamp}
             </span>
           </div>
 
-          <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+          <p className="text-xs text-gray-600 line-clamp-2 mb-3 leading-relaxed">
             {conversation.last_message}
           </p>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               {conversation.ai_active && (
-                <Bot className="w-4 h-4 text-blue-500" />
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               )}
               {conversation.has_pending_appointment && (
-                <Calendar className="w-4 h-4 text-green-500" />
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               )}
             </div>
 
             {conversation.unread_count > 0 && (
-              <Badge variant="destructive" className="text-xs">
+              <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
                 {conversation.unread_count}
-              </Badge>
+              </div>
             )}
           </div>
         </div>

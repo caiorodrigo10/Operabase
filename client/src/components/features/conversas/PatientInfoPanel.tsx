@@ -27,28 +27,28 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
   }
 
   return (
-    <div className="w-full h-full bg-white p-5 overflow-y-auto">
+    <div className="w-full h-full bg-white p-6 overflow-y-auto">
       {/* Foto de Perfil */}
-      <div className="text-center mb-6">
-        <Avatar className="w-20 h-20 mx-auto mb-4 border-2 border-gray-100">
+      <div className="text-center mb-8">
+        <Avatar className="w-16 h-16 mx-auto mb-4">
           <AvatarImage src={patientInfo.avatar} />
-          <AvatarFallback className="text-2xl font-semibold bg-blue-500 text-white">
+          <AvatarFallback className="text-lg font-medium bg-gray-200 text-gray-700">
             {patientInfo.name.split(' ').map(n => n.charAt(0)).join('').slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
         
         {/* Dados Básicos */}
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-medium text-gray-900 mb-6">
           {patientInfo.name}
         </h3>
         
-        <div className="space-y-3 text-base">
-          <div className="flex items-center justify-center space-x-3 text-gray-600">
-            <Phone className="w-4 h-4" />
+        <div className="space-y-2 text-sm text-gray-600">
+          <div className="flex items-center justify-center space-x-2">
+            <Phone className="w-3 h-3" />
             <span>{patientInfo.phone}</span>
           </div>
-          <div className="flex items-center justify-center space-x-3 text-gray-600">
-            <Mail className="w-4 h-4" />
+          <div className="flex items-center justify-center space-x-2">
+            <Mail className="w-3 h-3" />
             <span>{patientInfo.email}</span>
           </div>
         </div>
@@ -56,15 +56,15 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
 
       {/* Última Consulta */}
       {patientInfo.last_appointment && (
-        <div className="mb-6">
-          <h4 className="text-base font-semibold text-gray-900 mb-3">
+        <div className="mb-8">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
             Última Consulta
           </h4>
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">
+          <div className="space-y-1 text-sm text-gray-600">
+            <p>
               {patientInfo.last_appointment.date} - {patientInfo.last_appointment.time}
             </p>
-            <p className="text-sm text-gray-700">
+            <p>
               {patientInfo.last_appointment.doctor} - {patientInfo.last_appointment.specialty}
             </p>
           </div>
@@ -73,22 +73,21 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
 
       {/* Botão Agendar Nova Consulta */}
       <Button 
-        className="w-full mb-6 h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
-        size="lg"
+        className="w-full mb-8 h-10 bg-blue-600 hover:bg-blue-700 text-white font-normal"
       >
         <Calendar className="w-4 h-4 mr-2" />
         Agendar Nova Consulta
       </Button>
 
       {/* Consultas Recentes */}
-      <div className="mb-6">
-        <h4 className="text-base font-semibold text-gray-900 mb-3">
+      <div className="mb-8">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">
           Consultas Recentes
         </h4>
         <div className="space-y-1">
           {patientInfo.recent_appointments.slice(0, 3).map((appointment, index) => (
-            <div key={index} className="text-sm text-gray-600 py-1">
-              • {appointment.date} - {appointment.specialty}
+            <div key={index} className="text-sm text-gray-600 leading-relaxed">
+              {appointment.date} - {appointment.specialty}
             </div>
           ))}
         </div>
@@ -96,8 +95,8 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
 
       {/* Botão Ver Histórico Completo */}
       <Button 
-        variant="outline" 
-        className="w-full h-9 text-gray-600 border-gray-300 hover:bg-gray-50"
+        variant="ghost" 
+        className="w-full h-9 text-gray-500 hover:bg-gray-50 font-normal"
       >
         Ver Histórico Completo
       </Button>
