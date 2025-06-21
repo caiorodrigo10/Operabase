@@ -14,7 +14,10 @@ import {
   Filter,
   Bot,
   Megaphone,
-  BarChart3
+  BarChart3,
+  Home,
+  Calendar,
+  Users
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,17 +40,17 @@ interface HeaderProps {
 
 // Navigation items for the new horizontal menu
 const navigationItems = [
-  { name: "Painel", href: "/", key: "dashboard" },
-  { name: "Agenda", href: "/consultas", key: "consultas" },
-  { name: "Pacientes", href: "/contatos", key: "contatos" },
+  { name: "Painel", href: "/", key: "dashboard", icon: Home },
+  { name: "Agenda", href: "/consultas", key: "consultas", icon: Calendar },
+  { name: "Pacientes", href: "/contatos", key: "contatos", icon: Users },
 ];
 
 // Admin navigation items
 const adminNavigationItems = [
-  { name: "Dashboard", href: "/admin", key: "admin-dashboard" },
-  { name: "Clínicas", href: "/admin/clinics", key: "admin-clinics" },
-  { name: "Usuários", href: "/admin/users", key: "admin-users" },
-  { name: "Configurações", href: "/admin/settings", key: "admin-settings" },
+  { name: "Dashboard", href: "/admin", key: "admin-dashboard", icon: Home },
+  { name: "Clínicas", href: "/admin/clinics", key: "admin-clinics", icon: Building },
+  { name: "Usuários", href: "/admin/users", key: "admin-users", icon: Users },
+  { name: "Configurações", href: "/admin/settings", key: "admin-settings", icon: Settings },
 ];
 
 // Right side icon buttons
@@ -199,17 +202,20 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   (item.key === "admin-users" && location.startsWith("/admin/users")) ||
                   (item.key === "admin-settings" && location.startsWith("/admin/settings"));
                 
+                const Icon = (item as any).icon;
+                
                 return (
                   <Link
                     key={item.key}
                     href={item.href}
                     className={cn(
-                      "px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                      "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                       isActive
                         ? "bg-blue-100 text-blue-700"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     )}
                   >
+                    {Icon && <Icon className="h-4 w-4" />}
                     {item.name}
                   </Link>
                 );
@@ -473,17 +479,20 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   (item.key === "admin-users" && location.startsWith("/admin/users")) ||
                   (item.key === "admin-settings" && location.startsWith("/admin/settings"));
                 
+                const Icon = (item as any).icon;
+                
                 return (
                   <Link
                     key={item.key}
                     href={item.href}
                     className={cn(
-                      "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
                       isActive
                         ? "bg-blue-100 text-blue-700"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     )}
                   >
+                    {Icon && <Icon className="h-3 w-3" />}
                     {item.name}
                   </Link>
                 );
