@@ -169,7 +169,12 @@ export function MainConversationArea({
             onClick={handleSendMessage}
             disabled={!message.trim()}
             size="sm"
-            className="flex-shrink-0 w-10 h-10 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300"
+            className={cn(
+              "flex-shrink-0 w-10 h-10 disabled:bg-gray-300",
+              isNoteMode 
+                ? "bg-amber-500 hover:bg-amber-600" 
+                : "bg-emerald-500 hover:bg-emerald-600"
+            )}
           >
             <Send className="w-4 h-4" />
           </Button>
