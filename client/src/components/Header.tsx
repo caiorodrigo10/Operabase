@@ -164,7 +164,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 px-4 lg:px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Logo and Left Navigation */}
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             {/* Logo */}
             <Link href={isAdminView ? "/admin" : "/"} className="flex items-center space-x-2">
               <div className={cn(
@@ -190,7 +190,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
             </Link>
 
             {/* Main Navigation - Hidden on mobile */}
-            <nav className="hidden md:flex items-center space-x-4">
+            <nav className="hidden md:flex items-center space-x-2">
               {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
                 const isActive = location === item.href || 
                   (item.key === "dashboard" && location === "/") ||
