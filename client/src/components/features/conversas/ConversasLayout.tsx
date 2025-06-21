@@ -127,7 +127,7 @@ export function ConversasLayout() {
         </div>
 
         {/* Main Conversation Area - 50% */}
-        <div className="w-1/2 min-w-0 border-r border-gray-200">
+        <div className="w-1/2 min-w-0 border-r border-gray-200 h-screen">
           <MainConversationArea
             timelineItems={timelineItems}
             patientInfo={currentPatientInfo}
@@ -158,7 +158,7 @@ export function ConversasLayout() {
         </div>
 
         {/* Main Conversation Area - 70% with Info Button */}
-        <div className="flex-1 min-w-0 relative">
+        <div className="flex-1 min-w-0 relative h-screen">
           <MainConversationArea
             timelineItems={timelineItems}
             patientInfo={currentPatientInfo}
