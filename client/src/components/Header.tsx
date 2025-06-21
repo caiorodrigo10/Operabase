@@ -224,7 +224,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-9 w-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100 data-[state=open]:bg-slate-100"
+                      className="h-9 w-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100 data-[state=open]:bg-slate-100 border-0"
                     >
                       <LayoutGrid className="h-4 w-4" />
                     </Button>
