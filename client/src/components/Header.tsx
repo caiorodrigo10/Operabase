@@ -9,7 +9,12 @@ import {
   RotateCcw, 
   Settings,
   Stethoscope,
-  Building
+  Building,
+  Grid3X3,
+  Filter,
+  Bot,
+  Megaphone,
+  BarChart3
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -109,6 +114,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
   const { isAdminView, toggleAdminView } = useAdmin();
   const { toast } = useToast();
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isAppsDropdownOpen, setIsAppsDropdownOpen] = useState(false);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -209,6 +215,99 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                 );
               })}
             </nav>
+
+            {/* Apps Dropdown - Only show in regular view */}
+            {!isAdminView && (
+              <div className="hidden md:block">
+                <DropdownMenu open={isAppsDropdownOpen} onOpenChange={setIsAppsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100 data-[state=open]:bg-slate-100"
+                    >
+                      <Grid3X3 className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-80 p-4" 
+                    align="start"
+                    side="bottom"
+                    sideOffset={8}
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div 
+                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setIsAppsDropdownOpen(false);
+                          toast({
+                            title: "Funcionalidade em desenvolvimento",
+                            description: "Funis estará disponível em breve",
+                            variant: "default",
+                          });
+                        }}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
+                          <Filter className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-900">Funis</span>
+                      </div>
+
+                      <div 
+                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setIsAppsDropdownOpen(false);
+                          toast({
+                            title: "Funcionalidade em desenvolvimento",
+                            description: "Trabalhadores Digitais estará disponível em breve",
+                            variant: "default",
+                          });
+                        }}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-2">
+                          <Bot className="h-5 w-5 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-900">Trabalhadores Digitais</span>
+                      </div>
+
+                      <div 
+                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setIsAppsDropdownOpen(false);
+                          toast({
+                            title: "Funcionalidade em desenvolvimento",
+                            description: "Campanhas Automáticas estará disponível em breve",
+                            variant: "default",
+                          });
+                        }}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-2">
+                          <Megaphone className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-900">Campanhas Automáticas</span>
+                      </div>
+
+                      <div 
+                        className="flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setIsAppsDropdownOpen(false);
+                          toast({
+                            title: "Funcionalidade em desenvolvimento",
+                            description: "Relatórios estará disponível em breve",
+                            variant: "default",
+                          });
+                        }}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-2">
+                          <BarChart3 className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-900">Relatórios</span>
+                      </div>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
             {/* Mobile Menu Button */}
             {isMobile && (
@@ -362,32 +461,105 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
 
         {/* Mobile Navigation Menu */}
         {isMobile && (
-          <nav className="mt-3 pt-3 border-t border-slate-200 flex space-x-4 md:hidden">
-            {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
-              const isActive = location === item.href || 
-                (item.key === "dashboard" && location === "/") ||
-                (item.key === "admin-dashboard" && location === "/admin") ||
-                (item.key === "contatos" && location.startsWith("/contatos")) ||
-                (item.key === "consultas" && location.startsWith("/consultas")) ||
-                (item.key === "admin-clinics" && location.startsWith("/admin/clinics")) ||
-                (item.key === "admin-users" && location.startsWith("/admin/users")) ||
-                (item.key === "admin-settings" && location.startsWith("/admin/settings"));
-              
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
-                    isActive
-                      ? "bg-blue-100 text-blue-700"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                  )}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
+          <nav className="mt-3 pt-3 border-t border-slate-200 md:hidden">
+            <div className="flex space-x-4 mb-3">
+              {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
+                const isActive = location === item.href || 
+                  (item.key === "dashboard" && location === "/") ||
+                  (item.key === "admin-dashboard" && location === "/admin") ||
+                  (item.key === "contatos" && location.startsWith("/contatos")) ||
+                  (item.key === "consultas" && location.startsWith("/consultas")) ||
+                  (item.key === "admin-clinics" && location.startsWith("/admin/clinics")) ||
+                  (item.key === "admin-users" && location.startsWith("/admin/users")) ||
+                  (item.key === "admin-settings" && location.startsWith("/admin/settings"));
+                
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                      isActive
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Mobile Apps Grid - Only show in regular view */}
+            {!isAdminView && (
+              <div className="pt-3 border-t border-slate-200">
+                <div className="grid grid-cols-2 gap-2">
+                  <div 
+                    className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => {
+                      toast({
+                        title: "Funcionalidade em desenvolvimento",
+                        description: "Funis estará disponível em breve",
+                        variant: "default",
+                      });
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center mb-1">
+                      <Filter className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-900">Funis</span>
+                  </div>
+
+                  <div 
+                    className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => {
+                      toast({
+                        title: "Funcionalidade em desenvolvimento",
+                        description: "Trabalhadores Digitais estará disponível em breve",
+                        variant: "default",
+                      });
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mb-1">
+                      <Bot className="h-4 w-4 text-green-600" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-900">Digitais</span>
+                  </div>
+
+                  <div 
+                    className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => {
+                      toast({
+                        title: "Funcionalidade em desenvolvimento",
+                        description: "Campanhas Automáticas estará disponível em breve",
+                        variant: "default",
+                      });
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mb-1">
+                      <Megaphone className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-900">Campanhas</span>
+                  </div>
+
+                  <div 
+                    className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => {
+                      toast({
+                        title: "Funcionalidade em desenvolvimento",
+                        description: "Relatórios estará disponível em breve",
+                        variant: "default",
+                      });
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center mb-1">
+                      <BarChart3 className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-900">Relatórios</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </nav>
         )}
 
