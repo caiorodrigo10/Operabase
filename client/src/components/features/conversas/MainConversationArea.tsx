@@ -64,7 +64,7 @@ export function MainConversationArea({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-white overflow-hidden">
       {/* Messages Timeline - Scrollable */}
       <div 
         ref={timelineRef}

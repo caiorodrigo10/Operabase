@@ -2,7 +2,7 @@ import { ConversasLayout } from "@/components/features/conversas/ConversasLayout
 
 export default function ConversasPage() {
   return (
-    <div className="h-screen">
+    <div className="h-full">
       <ConversasLayout />
     </div>
   );

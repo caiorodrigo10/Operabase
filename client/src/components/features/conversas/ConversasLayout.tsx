@@ -54,7 +54,7 @@ export function ConversasLayout() {
 
   if (isMobile) {
     return (
-      <div className="h-screen bg-gray-50">
+      <div className="h-full bg-gray-50">
         {!selectedConversationId ? (
           // Mobile: Show conversations list
           <ConversationsSidebar
@@ -115,7 +115,7 @@ export function ConversasLayout() {
   // Desktop layout (1200px+): 3 panels side by side
   if (!isMobile && !isTablet) {
     return (
-      <div className="h-screen flex bg-gray-50">
+      <div className="h-full flex bg-gray-50">
         {/* Conversations Sidebar - 25% */}
         <div className="w-1/4 min-w-[300px] border-r border-gray-200">
           <ConversationsSidebar
@@ -127,7 +127,7 @@ export function ConversasLayout() {
         </div>
 
         {/* Main Conversation Area - 50% */}
-        <div className="w-1/2 min-w-0 border-r border-gray-200 h-screen">
+        <div className="w-1/2 min-w-0 border-r border-gray-200 h-full">
           <MainConversationArea
             timelineItems={timelineItems}
             patientInfo={currentPatientInfo}
@@ -146,7 +146,7 @@ export function ConversasLayout() {
   // Tablet layout (768px-1200px): 2 panels + drawer
   if (isTablet) {
     return (
-      <div className="h-screen flex bg-gray-50">
+      <div className="h-full flex bg-gray-50">
         {/* Conversations Sidebar - 30% */}
         <div className="w-[30%] min-w-[280px] border-r border-gray-200">
           <ConversationsSidebar
@@ -158,7 +158,7 @@ export function ConversasLayout() {
         </div>
 
         {/* Main Conversation Area - 70% with Info Button */}
-        <div className="flex-1 min-w-0 relative h-screen">
+        <div className="flex-1 min-w-0 relative h-full">
           <MainConversationArea
             timelineItems={timelineItems}
             patientInfo={currentPatientInfo}
