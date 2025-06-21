@@ -21,7 +21,9 @@ export function CardInfo({ title, value, subtitle, icon: Icon, iconColor = "bg-b
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-slate-600 mb-2">{title}</p>
-            <p className="text-3xl font-bold text-slate-900 mb-2 group-hover:text-medical-blue transition-colors">{value.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-slate-900 mb-2 group-hover:text-medical-blue transition-colors">
+              {typeof value === 'number' ? value.toLocaleString() : value || '0'}
+            </p>
             {trend && (
               <div className="flex items-center space-x-2">
                 <p className={cn(
