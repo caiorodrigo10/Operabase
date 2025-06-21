@@ -56,35 +56,6 @@ export function MainConversationArea({
 
   return (
     <div className="flex-1 flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <Avatar className="w-12 h-12">
-            <AvatarImage src={patientInfo.avatar} />
-            <AvatarFallback className="text-lg">
-              {patientInfo.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              {patientInfo.name}
-            </h2>
-            <p className="text-sm text-gray-500">Online</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          {showInfoButton && onInfoClick && (
-            <Button variant="ghost" size="sm" onClick={onInfoClick}>
-              <Info className="w-4 h-4" />
-            </Button>
-          )}
-          <Button variant="ghost" size="sm">
-            <MoreVertical className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
       {/* Timeline */}
       <div className="flex-1 overflow-y-auto p-4 space-y-1">
         {timelineItems.length === 0 ? (
