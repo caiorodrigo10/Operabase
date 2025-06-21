@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, User, Phone, Mail } from 'lucide-react';
+import { Search, User, Phone, Mail, Loader2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { cn } from '@/lib/utils';
 
@@ -20,29 +20,52 @@ interface SearchModalProps {
   onClose: () => void;
 }
 
+// Custom hook for debouncing search term
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Only search when we have at least 2 characters
+  const shouldSearch = debouncedSearchTerm.length >= 2;
 
   const { data: contactsData = [], isLoading } = useQuery<Contact[]>({
-    queryKey: ['/api/contacts', { clinic_id: 1 }], // Using clinic_id 1 for now
+    queryKey: ['/api/contacts/optimized', { clinic_id: 1, search: debouncedSearchTerm }],
     queryFn: async () => {
-      const response = await fetch('/api/contacts?clinic_id=1');
+      const params = new URLSearchParams({
+        clinic_id: '1',
+        search: debouncedSearchTerm,
+        limit: '10' // Limit results for search modal
+      });
+      
+      const response = await fetch(`/api/contacts/optimized?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch contacts');
       }
       return response.json();
     },
-    enabled: isOpen, // Only fetch when modal is open
+    enabled: isOpen && shouldSearch, // Only fetch when modal is open and we have a search term
     retry: false,
+    staleTime: 30 * 1000, // Cache for 30 seconds
   });
 
   // Ensure contacts is properly typed
   const contacts = Array.isArray(contactsData) ? contactsData : [];
-
-  // Filter contacts based on search term
-  const filteredContacts = contacts.filter((contact: Contact) =>
-    contact.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   // Reset search when modal closes
   useEffect(() => {
@@ -62,6 +85,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <DialogTitle className="text-xl font-semibold text-slate-800">
             Procurar Pacientes
           </DialogTitle>
+          <DialogDescription>
+            Digite pelo menos 2 caracteres para buscar pacientes
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
@@ -75,21 +101,34 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               className="search-input pl-10 text-base"
               autoFocus
             />
+            {isLoading && (
+              <div className="absolute right-3 top-3">
+                <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+              </div>
+            )}
           </div>
 
           {/* Results */}
           <div className="flex-1 overflow-auto">
-            {isLoading ? (
+            {!shouldSearch ? (
+              <div className="text-center py-8 text-slate-500">
+                <Search className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                <p>Digite pelo menos 2 caracteres para buscar pacientes</p>
+              </div>
+            ) : isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-slate-600">Buscando pacientes...</span>
               </div>
-            ) : filteredContacts.length === 0 ? (
+            ) : contacts.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
-                {searchTerm ? 'Nenhum paciente encontrado' : 'Digite para buscar pacientes'}
+                <User className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                <p>Nenhum paciente encontrado para "{debouncedSearchTerm}"</p>
+                <p className="text-sm mt-2">Tente um termo de busca diferente</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredContacts.map((contact: Contact) => (
+                {contacts.map((contact: Contact) => (
                   <Link
                     key={contact.id}
                     href={`/contatos/${contact.id}`}
@@ -128,11 +167,16 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             )}
           </div>
 
-          {/* Quick Actions */}
-          {searchTerm && filteredContacts.length > 0 && (
+          {/* Search Results Summary */}
+          {shouldSearch && contacts.length > 0 && (
             <div className="border-t border-slate-200 pt-4">
               <div className="text-xs text-slate-500 mb-2">
-                {filteredContacts.length} paciente{filteredContacts.length !== 1 ? 's' : ''} encontrado{filteredContacts.length !== 1 ? 's' : ''}
+                {contacts.length} paciente{contacts.length !== 1 ? 's' : ''} encontrado{contacts.length !== 1 ? 's' : ''}
+                {contacts.length >= 10 && (
+                  <span className="ml-2 text-orange-600">
+                    (mostrando primeiros 10 resultados)
+                  </span>
+                )}
               </div>
             </div>
           )}
