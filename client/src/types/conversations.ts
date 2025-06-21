@@ -13,7 +13,7 @@ export interface Conversation {
 export interface Message {
   id: number;
   conversation_id: number;
-  type: 'received' | 'sent_system' | 'sent_ai' | 'sent_whatsapp';
+  type: 'received' | 'sent_system' | 'sent_ai' | 'sent_whatsapp' | 'sent_user';
   content: string;
   timestamp: string;
   sender_name?: string;
@@ -23,7 +23,7 @@ export interface Message {
 export interface SystemEvent {
   id: number;
   conversation_id: number;
-  type: 'availability_check' | 'appointment_created' | 'webhook_executed' | 'other';
+  type: 'availability_check' | 'appointment_created' | 'webhook_executed' | 'medical_guidance' | 'exam_analysis' | 'priority_alert' | 'medical_triage' | 'treatment_progress' | 'appointment_reminder' | 'other';
   content: string;
   timestamp: string;
   metadata?: {
