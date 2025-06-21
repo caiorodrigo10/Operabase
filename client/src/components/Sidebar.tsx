@@ -100,4 +100,3 @@ export function Sidebar({ currentPage, isMobile, isOpen, onClose }: SidebarProps
     </aside>
   );
 }
-```This code removes the Conversas feature from the sidebar navigation.
