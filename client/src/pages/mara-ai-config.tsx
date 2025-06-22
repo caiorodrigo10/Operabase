@@ -70,6 +70,9 @@ export default function MaraAIConfig() {
       { professionalId, knowledgeBaseId },
       {
         onSuccess: (response) => {
+          // Invalidate and refetch the professional configs
+          queryClient.invalidateQueries({ queryKey: ['/api/mara/professional-configs'] });
+          
           if (knowledgeBaseId === null) {
             toast({
               title: "Base desconectada",

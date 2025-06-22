@@ -135,8 +135,9 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
 
       // Verify the professional belongs to the same clinic
       const professional = await db.execute(`
-        SELECT id, clinic_id FROM users 
-        WHERE id = $1 AND clinic_id = $2 AND is_professional = true
+        SELECT u.id FROM users u
+        JOIN clinic_users cu ON u.id = cu.user_id
+        WHERE u.id = $1 AND cu.clinic_id = $2 AND cu.is_professional = true
       `, [professionalId, userClinicId]);
 
       if (professional.rows.length === 0) {
