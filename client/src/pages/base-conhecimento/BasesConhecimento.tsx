@@ -111,6 +111,7 @@ export default function BasesConhecimento() {
       return response.json();
     },
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rag/knowledge-bases'] });
       queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
       toast({
         title: "Sucesso",
