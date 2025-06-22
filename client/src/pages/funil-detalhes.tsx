@@ -127,7 +127,15 @@ const FunilPageNode = ({ data }: { data: any }) => {
           {/* Quick Actions - More Compact */}
           <div className="flex items-center justify-center space-x-0.5">
             <Link href={`/funis/1/pagina/${data.id}/editor`}>
-              <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="p-1 h-6 w-6"
+                onClick={() => {
+                  console.log('🔧 Clicando para editar página:', data.id);
+                  console.log('🔗 URL destino:', `/funis/1/pagina/${data.id}/editor`);
+                }}
+              >
                 <Edit3 className="h-3 w-3 text-blue-600" />
               </Button>
             </Link>
