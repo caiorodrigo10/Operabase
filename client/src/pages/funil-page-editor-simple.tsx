@@ -113,8 +113,8 @@ export default function FunilPageEditorSimple() {
                         size="lg"
                         buttonStyle="full"
                         text="Call to Action"
-                        color={{ r: "59", g: "130", b: "246", a: "1" }}
-                        background={{ r: "37", g: "99", b: "235", a: "1" }}
+                        color={{ r: 59, g: 130, b: 246, a: 1 }}
+                        background={{ r: 37, g: 99, b: 235, a: 1 }}
                       />
                     </Element>
                   </Element>

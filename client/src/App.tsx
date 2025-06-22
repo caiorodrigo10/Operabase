@@ -42,6 +42,7 @@ import RAGUpload from "./pages/rag/RAGUpload";
 import FunisPage from "./pages/funis";
 import FunilDetalhes from "./pages/funil-detalhes";
 import FunilPageEditorWorking from "./pages/funil-page-editor-working";
+import FunilPageEditorSimple from "./pages/funil-page-editor-simple";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
