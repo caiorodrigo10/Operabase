@@ -1,158 +1,301 @@
 import React from 'react';
 import { Editor, Frame, Element } from '@craftjs/core';
-import { Link } from 'wouter';
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye, Save } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
 
-// Import basic working components
-import { Container, Text } from '../components/craft/selectors';
-import { Button as CraftButton } from '../components/craft/selectors/Button';
+// Simple Text Component
+const Text = ({ text, fontSize = 16, fontWeight = 400, textAlign = 'left', color = '#000000' }: any) => {
+  return (
+    <div
+      style={{
+        fontSize: `${fontSize}px`,
+        fontWeight,
+        textAlign: textAlign as any,
+        color,
+        padding: '8px',
+        minHeight: '20px',
+        cursor: 'text'
+      }}
+      contentEditable
+      suppressContentEditableWarning={true}
+    >
+      {text}
+    </div>
+  );
+};
 
+Text.craft = {
+  displayName: 'Text',
+  props: {
+    text: 'Edit this text',
+    fontSize: 16,
+    fontWeight: 400,
+    textAlign: 'left',
+    color: '#000000'
+  },
+  related: {
+    toolbar: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Font Size</label>
+          <input
+            type="range"
+            min="12"
+            max="48"
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Text Align</label>
+          <select className="w-full p-2 border rounded">
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+};
+
+// Simple Container Component
+const Container = ({ children, backgroundColor = '#ffffff', padding = 20, margin = 0 }: any) => {
+  return (
+    <div
+      style={{
+        backgroundColor,
+        padding: `${padding}px`,
+        margin: `${margin}px`,
+        minHeight: '50px',
+        border: '1px dashed #ccc'
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+Container.craft = {
+  displayName: 'Container',
+  props: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    margin: 0
+  },
+  rules: {
+    canDrag: () => true,
+  },
+  related: {
+    toolbar: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Background Color</label>
+          <input
+            type="color"
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Padding</label>
+          <input
+            type="range"
+            min="0"
+            max="50"
+            className="w-full"
+          />
+        </div>
+      </div>
+    )
+  }
+};
+
+// Simple Button Component
+const CraftButton = ({ text = 'Click me', backgroundColor = '#3b82f6', textColor = '#ffffff' }) => {
+  return (
+    <button
+      style={{
+        backgroundColor,
+        color: textColor,
+        padding: '12px 24px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '16px',
+        fontWeight: '500'
+      }}
+    >
+      {text}
+    </button>
+  );
+};
+
+CraftButton.craft = {
+  displayName: 'Button',
+  props: {
+    text: 'Click me',
+    backgroundColor: '#3b82f6',
+    textColor: '#ffffff'
+  },
+  related: {
+    toolbar: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Button Text</label>
+          <input
+            type="text"
+            className="w-full p-2 border rounded"
+            placeholder="Button text"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Background Color</label>
+          <input
+            type="color"
+            className="w-full"
+          />
+        </div>
+      </div>
+    )
+  }
+};
+
+// Toolbox Component
+const Toolbox = () => {
+  return (
+    <div className="w-80 bg-white border-r border-gray-200 p-4">
+      <h3 className="text-lg font-semibold mb-4">Elementos</h3>
+      <div className="space-y-2">
+        <div
+          className="p-3 bg-gray-50 rounded-lg cursor-move hover:bg-gray-100 transition-colors"
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('text/plain', 'Text');
+          }}
+        >
+          <div className="font-medium">Texto</div>
+          <div className="text-sm text-gray-500">Adicionar texto editável</div>
+        </div>
+        
+        <div
+          className="p-3 bg-gray-50 rounded-lg cursor-move hover:bg-gray-100 transition-colors"
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('text/plain', 'Container');
+          }}
+        >
+          <div className="font-medium">Container</div>
+          <div className="text-sm text-gray-500">Adicionar container</div>
+        </div>
+        
+        <div
+          className="p-3 bg-gray-50 rounded-lg cursor-move hover:bg-gray-100 transition-colors"
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('text/plain', 'CraftButton');
+          }}
+        >
+          <div className="font-medium">Botão</div>
+          <div className="text-sm text-gray-500">Adicionar botão clicável</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Settings Panel Component
+const SettingsPanel = () => {
+  return (
+    <div className="w-80 bg-white border-l border-gray-200 p-4">
+      <h3 className="text-lg font-semibold mb-4">Propriedades</h3>
+      <div className="text-sm text-gray-500">
+        Selecione um elemento para editar suas propriedades
+      </div>
+    </div>
+  );
+};
+
+// Main Editor Component
 export default function FunilPageEditor() {
-  console.log('🔧 Abrindo editor padrão para página:', "Landing Page");
+  const handleSave = () => {
+    console.log('Salvando página...');
+  };
+
+  const handlePreview = () => {
+    console.log('Visualizando página...');
+  };
 
   return (
-    <div className="h-full min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 fixed top-0 left-0 right-0 z-50">
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/funis/1">
+            <Link href="/funis">
               <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar ao Funil
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar aos Funis
               </Button>
             </Link>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Editor Landing Page
-              </h1>
-              <p className="text-sm text-gray-500">
-                Editor completo com componentes Craft.js
-              </p>
-            </div>
+            <h1 className="text-xl font-semibold">Editor de Página</h1>
           </div>
           
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-2" />
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={handlePreview}>
+              <Eye className="w-4 h-4 mr-2" />
               Visualizar
             </Button>
-            
-            <Button size="sm">
-              <Save className="h-4 w-4 mr-2" />
+            <Button size="sm" onClick={handleSave}>
+              <Save className="w-4 h-4 mr-2" />
               Salvar
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div className="pt-20 h-full">
+      {/* Editor Layout */}
+      <div className="flex h-[calc(100vh-73px)]">
         <Editor
           resolver={{
-            Container,
             Text,
-            Button: CraftButton,
+            Container,
+            CraftButton
           }}
-          enabled={true}
         >
-          <div className="flex h-full">
-            {/* Editor Area */}
-            <div className="flex-1 bg-gray-100 p-6">
-              <div className="bg-white rounded-lg shadow-sm min-h-96 p-8">
-                <Frame>
+          {/* Toolbox */}
+          <Toolbox />
+          
+          {/* Canvas */}
+          <div className="flex-1 p-6 overflow-auto">
+            <div className="bg-white rounded-lg shadow-sm min-h-full">
+              <Frame>
+                <Element
+                  canvas
+                  is={Container}
+                  backgroundColor="#ffffff"
+                  padding={40}
+                >
+                  <Text text="Bem-vindo ao Editor de Funis" fontSize={32} fontWeight={700} textAlign="center" />
+                  <Text text="Clique em qualquer texto para editá-lo. Arraste elementos da barra lateral para adicionar novos componentes." fontSize={16} textAlign="center" />
+                  
                   <Element
                     canvas
                     is={Container}
-                    width="100%"
-                    height="auto"
-                    background={{ r: 255, g: 255, b: 255, a: 1 }}
-                    padding={['40', '40', '40', '40']}
+                    backgroundColor="#f8fafc"
+                    padding={30}
+                    margin={20}
                   >
-                    <Text
-                      fontSize="32"
-                      fontWeight="700"
-                      text="Bem-vindo ao Editor Landing Page"
-                      textAlign="center"
-                      color={{ r: "33", g: "37", b: "41", a: "1" }}
-                    />
-                    
-                    <Text
-                      fontSize="16"
-                      fontWeight="400"
-                      text="Este é o editor oficial do Craft.js funcionando no seu sistema de funis. Clique nos elementos para editá-los e use a barra lateral para adicionar novos componentes."
-                      textAlign="center"
-                      color={{ r: "107", g: "114", b: "128", a: "1" }}
-                      margin={["20", "0", "30", "0"]}
-                    />
-
-                    <Element
-                      canvas
-                      is={Container}
-                      background={{ r: 248, g: 250, b: 252, a: 1 }}
-                      padding={['30', '30', '30', '30']}
-                      margin={['20', '0', '0', '0']}
-                    >
-                      <Text
-                        fontSize="24"
-                        fontWeight="600"
-                        text="Seção de Conteúdo"
-                        color={{ r: "31", g: "41", b: "55", a: "1" }}
-                      />
-                      
-                      <Text
-                        fontSize="14"
-                        fontWeight="400"
-                        text="Adicione aqui o conteúdo principal da sua landing page. Você pode editar textos, adicionar botões e customizar layouts."
-                        color={{ r: "75", g: "85", b: "99", a: "1" }}
-                        margin={["10", "0", "20", "0"]}
-                      />
-                      
-                      <CraftButton
-                        buttonStyle="full"
-                        text="Call to Action"
-                        color={{ r: 59, g: 130, b: 246, a: 1 }}
-                        background={{ r: 37, g: 99, b: 235, a: 1 }}
-                        margin={[10, 0, 0, 0]}
-                      />
-                    </Element>
+                    <Text text="Container Aninhado" fontSize={24} fontWeight={600} />
+                    <Text text="Este é um exemplo de container dentro de outro container." fontSize={14} />
+                    <CraftButton text="Botão de Exemplo" />
                   </Element>
-                </Frame>
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="w-80 bg-white border-l border-gray-200 p-4">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                    Elementos
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                      📝 Texto
-                    </div>
-                    <div className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                      🔘 Botão
-                    </div>
-                    <div className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                      📦 Container
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                    Propriedades
-                  </h3>
-                  <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                    Selecione um elemento para editar suas propriedades
-                  </div>
-                </div>
-              </div>
+                </Element>
+              </Frame>
             </div>
           </div>
+          
+          {/* Settings Panel */}
+          <SettingsPanel />
         </Editor>
       </div>
     </div>

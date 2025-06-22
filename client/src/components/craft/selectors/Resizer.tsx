@@ -1,6 +1,6 @@
 import { useNode, useEditor } from '@craftjs/core';
 import cx from 'classnames';
-import { debounce } from 'debounce';
+import debounce from 'debounce';
 import { Resizable } from 're-resizable';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { styled } from 'styled-components';
