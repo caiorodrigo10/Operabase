@@ -1,5 +1,5 @@
 import React from 'react';
-import { Editor, Frame, Element, useNode } from '@craftjs/core';
+import { Editor, Frame, Element, useNode, useEditor } from '@craftjs/core';
 import { useParams, Link } from 'wouter';
 import { ArrowLeft, Eye, Save, Move, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -358,170 +358,77 @@ export default function FunilPageEditor() {
       </div>
 
       {/* Craft.js Editor */}
-      <div className="flex-1 relative">
-        <Editor
-          resolver={{
-            Container,
-            Text,
-            Custom1,
-            Custom2,
-            Custom2VideoDrop,
-            Custom3,
-            Custom3BtnDrop,
-            OnlyButtons,
-            Button: CraftButton,
-            Video,
-          }}
-          enabled={enabled}
-          onRender={RenderNode}
-        >
-          <Viewport>
-            <Frame>
-              <Element
-                canvas
-                is={Container}
-                width="800px"
-                height="auto"
-                background={{ r: 255, g: 255, b: 255, a: 1 }}
-                padding={['40', '40', '40', '40']}
-                custom={{ displayName: 'App' }}
-              >
+      <div className="flex-1 flex">
+        {/* Main Editor Area */}
+        <div className="flex-1 relative">
+          <Editor
+            resolver={{
+              Container,
+              Text,
+              CraftButton,
+            }}
+            enabled={enabled}
+          >
+            <div className="h-full bg-gray-100 p-6">
+              <Frame>
                 <Element
-                  canvas
                   is={Container}
-                  flexDirection="column"
-                  width="100%"
-                  height="auto"
-                  padding={['40', '40', '40', '40']}
-                  margin={['0', '0', '40', '0']}
-                  custom={{ displayName: 'Header Section' }}
+                  canvas
+                  background="#ffffff"
+                  padding={40}
+                  style={{
+                    width: '100%',
+                    minHeight: '600px',
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                  }}
                 >
-                  <Text
-                    fontSize="32"
-                    fontWeight="bold"
-                    text={`Bem-vindo à ${currentPage.title}`}
+                  <Text 
+                    text={`Bem-vindo à ${currentPage.title}`} 
+                    fontSize={32} 
                     textAlign="center"
+                    color="#1f2937"
                   />
-                  <Text
-                    fontSize="16"
-                    fontWeight="400"
+                  <Text 
                     text="Esta é uma página editável do seu funil. Clique nos elementos para personalizá-los."
+                    fontSize={16}
                     textAlign="center"
+                    color="#6b7280"
                   />
-                </Element>
-
-                <Element
-                  canvas
-                  is={Container}
-                  background={{ r: 248, g: 250, b: 252, a: 1 }}
-                  flexDirection="row"
-                  width="100%"
-                  height="auto"
-                  padding={['40', '40', '40', '40']}
-                  margin={['0', '0', '40', '0']}
-                  custom={{ displayName: 'Content Section' }}
-                >
-                  <Element
-                    canvas
-                    is={Container}
-                    width="50%"
-                    height="100%"
-                    padding={['0', '20', '0', '0']}
-                    custom={{ displayName: 'Left Column' }}
-                  >
-                    <Text
-                      fontSize="20"
-                      fontWeight="600"
-                      text="Conteúdo Principal"
-                    />
-                    <Text
-                      fontSize="14"
-                      fontWeight="400"
-                      text="Adicione aqui o conteúdo principal da sua página. Você pode editar este texto, adicionar botões, imagens e outros elementos."
-                    />
-                  </Element>
                   
                   <Element
-                    canvas
                     is={Container}
-                    width="50%"
-                    height="100%"
-                    padding={['0', '0', '0', '20']}
-                    custom={{ displayName: 'Right Column' }}
+                    canvas
+                    background="#f8fafc"
+                    padding={30}
+                    style={{ marginTop: '20px' }}
                   >
-                    <Custom2
-                      background={{
-                        r: 59,
-                        g: 130,
-                        b: 246,
-                        a: 1,
-                      }}
-                      height="200px"
-                      width="100%"
-                      padding={['20', '20', '20', '20']}
-                      margin={['0', '0', '20', '0']}
-                      shadow={20}
-                      flexDirection="column"
-                      alignItems="center"
+                    <Text 
+                      text="Conteúdo Principal"
+                      fontSize={24}
+                      color="#1f2937"
                     />
+                    <Text 
+                      text="Adicione aqui o conteúdo principal da sua página. Você pode editar este texto, adicionar botões e outros elementos."
+                      fontSize={14}
+                      color="#4b5563"
+                    />
+                    <CraftButton size="lg">
+                      Agendar Consulta
+                    </CraftButton>
                   </Element>
                 </Element>
+              </Frame>
+            </div>
+          </Editor>
+        </div>
 
-                <Element
-                  canvas
-                  is={Container}
-                  background={{ r: 37, g: 99, b: 235, a: 1 }}
-                  flexDirection="column"
-                  width="100%"
-                  height="auto"
-                  padding={['40', '40', '40', '40']}
-                  custom={{ displayName: 'CTA Section' }}
-                >
-                  <Text
-                    fontSize="24"
-                    fontWeight="bold"
-                    text="Pronto para começar?"
-                    textAlign="center"
-                    color={{ r: 255, g: 255, b: 255, a: 1 }}
-                  />
-                  <Text
-                    fontSize="16"
-                    fontWeight="400"
-                    text="Entre em contato conosco e agende sua consulta."
-                    textAlign="center"
-                    color={{ r: 255, g: 255, b: 255, a: 1 }}
-                  />
-                  <Element
-                    canvas
-                    is={Container}
-                    flexDirection="row"
-                    width="100%"
-                    height="auto"
-                    padding={['20', '0', '0', '0']}
-                    custom={{ displayName: 'CTA Buttons' }}
-                  >
-                    <Custom3
-                      background={{
-                        r: 255,
-                        g: 255,
-                        b: 255,
-                        a: 1,
-                      }}
-                      height="auto"
-                      width="200px"
-                      padding={['15', '30', '15', '30']}
-                      margin={['0', '10', '0', '0']}
-                      shadow={10}
-                      flexDirection="row"
-                      alignItems="center"
-                      justifyContent="center"
-                    />
-                  </Element>
-                </Element>
-              </Element>
-            </Frame>
-          </Viewport>
-        </Editor>
+        {/* Sidebar with Toolbox and Settings */}
+        <div className="w-80 bg-white border-l border-gray-200 p-4 space-y-4 overflow-y-auto">
+          <Toolbox />
+          <SettingsPanel />
+        </div>
       </div>
     </div>
   );
