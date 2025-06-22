@@ -1,6 +1,7 @@
 import https from 'https';
 import http from 'http';
 import * as cheerio from 'cheerio';
+import { createGunzip } from 'zlib';
 import { ProcessedChunk } from './pdf-processor';
 
 export class URLProcessor {
@@ -43,7 +44,7 @@ export class URLProcessor {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
           'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-          'Accept-Encoding': 'gzip, deflate',
+          'Accept-Encoding': 'identity',
           'Connection': 'keep-alive',
           'Upgrade-Insecure-Requests': '1'
         },
@@ -63,7 +64,9 @@ export class URLProcessor {
           return reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
         }
 
+        // Set encoding to utf8 for text responses
         res.setEncoding('utf8');
+        
         res.on('data', (chunk) => {
           data += chunk;
         });
