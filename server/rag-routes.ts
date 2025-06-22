@@ -254,7 +254,7 @@ router.delete('/documents/:id', ragAuth, async (req: any, res: Response) => {
 });
 
 // Reprocessar documento
-router.post('/documents/:id/reprocess', isAuthenticated, async (req: any, res: Response) => {
+router.post('/documents/:id/reprocess', ragAuth, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
     const userId = req.user?.email || req.user?.id?.toString();
@@ -296,7 +296,7 @@ router.post('/documents/:id/reprocess', isAuthenticated, async (req: any, res: R
 });
 
 // Busca semântica (placeholder - será implementado na próxima fase)
-router.post('/search', isAuthenticated, async (req: any, res: Response) => {
+router.post('/search', ragAuth, async (req: any, res: Response) => {
   try {
     const userId = req.user?.email || req.user?.id?.toString();
     const { query, maxResults = 10 } = req.body;
