@@ -1,6 +1,5 @@
 import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
-import { encoding_for_model } from 'tiktoken';
 import { ProcessedChunk } from './pdf-processor';
 
 export class URLProcessor {

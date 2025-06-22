@@ -41,7 +41,7 @@ const upload = multer({
 // Listar documentos do usuário
 router.get('/documents', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
     
     const documents = await db
       .select()
