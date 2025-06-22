@@ -41,6 +41,14 @@ const upload = multer({
 // Listar documentos do usuário
 router.get('/documents', isAuthenticated, async (req: any, res: Response) => {
   try {
+    console.log('🔍 Debug - req.user:', req.user);
+    console.log('🔍 Debug - req.isAuthenticated():', req.isAuthenticated());
+    
+    if (!req.user) {
+      console.log('❌ No user found in request');
+      return res.status(401).json({ error: 'Usuário não encontrado na sessão' });
+    }
+    
     const userId = req.user?.email || req.user?.id?.toString();
     
     const documents = await db
@@ -247,7 +255,7 @@ router.delete('/documents/:id', isAuthenticated, async (req: any, res: Response)
 router.post('/documents/:id/reprocess', isAuthenticated, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
 
     // Verificar ownership do documento
     const [document] = await db
@@ -288,7 +296,7 @@ router.post('/documents/:id/reprocess', isAuthenticated, async (req: any, res: R
 // Busca semântica (placeholder - será implementado na próxima fase)
 router.post('/search', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
     const { query, maxResults = 10 } = req.body;
 
     if (!query) {
