@@ -302,33 +302,13 @@ export function ContatoDetalhes() {
             </button>
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === 'orcamentos'
+                activeTab === 'mara-ai'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
-              onClick={() => handleTabChange('orcamentos')}
+              onClick={() => handleTabChange('mara-ai')}
             >
-              Orçamentos
-            </button>
-            <button
-              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === 'tratamentos'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-              onClick={() => handleTabChange('tratamentos')}
-            >
-              Tratamentos
-            </button>
-            <button
-              className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === 'pagamentos'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-              onClick={() => handleTabChange('pagamentos')}
-            >
-              Pagamentos
+              Mara AI
             </button>
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
@@ -698,43 +678,103 @@ export function ContatoDetalhes() {
             </div>
           )}
 
-          {/* Orçamentos Tab */}
-          {activeTab === 'orcamentos' && (
+          {/* Mara AI Tab */}
+          {activeTab === 'mara-ai' && (
             <div className="p-6">
               <Card className="border border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-lg">Orçamentos</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">M</span>
+                    </div>
+                    Mara AI - Assistente Inteligente
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-slate-500">Funcionalidade de orçamentos será implementada em breve.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Tratamentos Tab */}
-          {activeTab === 'tratamentos' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Tratamentos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-500">Funcionalidade de tratamentos será implementada em breve.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Pagamentos Tab */}
-          {activeTab === 'pagamentos' && (
-            <div className="p-6">
-              <Card className="border border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Pagamentos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-500">Funcionalidade de pagamentos será implementada em breve.</p>
+                <CardContent className="space-y-4">
+                  {/* Chat Container */}
+                  <div className="border rounded-lg bg-slate-50 h-96 flex flex-col">
+                    {/* Messages */}
+                    <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                      {maraConversation.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] p-3 rounded-lg ${
+                              message.role === 'user'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-white border border-slate-200 text-slate-900'
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            <p className="text-xs opacity-70 mt-1">
+                              {format(message.timestamp, 'HH:mm', { locale: ptBR })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {isMaraLoading && (
+                        <div className="flex justify-start">
+                          <div className="bg-white border border-slate-200 text-slate-900 p-3 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Input */}
+                    <div className="border-t p-4">
+                      <div className="flex gap-2">
+                        <Input
+                          value={maraMessage}
+                          onChange={(e) => setMaraMessage(e.target.value)}
+                          placeholder="Faça uma pergunta sobre este paciente..."
+                          onKeyPress={(e) => e.key === 'Enter' && sendMaraMessage()}
+                          disabled={isMaraLoading}
+                          className="flex-1"
+                        />
+                        <Button
+                          onClick={sendMaraMessage}
+                          disabled={isMaraLoading || !maraMessage.trim()}
+                          size="sm"
+                        >
+                          Enviar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Suggestions */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-slate-700">Sugestões de perguntas:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "Qual o histórico médico deste paciente?",
+                        "Há alguma alergia importante?",
+                        "Quais foram as últimas consultas?",
+                        "Resumo geral do paciente"
+                      ].map((suggestion, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setMaraMessage(suggestion);
+                            setTimeout(() => sendMaraMessage(), 100);
+                          }}
+                          disabled={isMaraLoading}
+                          className="text-xs"
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -804,33 +844,13 @@ export function ContatoDetalhes() {
               </button>
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'orcamentos'
+                  activeTab === 'mara-ai'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
-                onClick={() => handleTabChange('orcamentos')}
+                onClick={() => handleTabChange('mara-ai')}
               >
-                Orçamentos
-              </button>
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'tratamentos'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('tratamentos')}
-              >
-                Tratamentos
-              </button>
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'pagamentos'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('pagamentos')}
-              >
-                Pagamentos
+                Mara AI
               </button>
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
