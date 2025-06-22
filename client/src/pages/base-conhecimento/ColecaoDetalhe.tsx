@@ -33,6 +33,7 @@ interface KnowledgeItem {
   date: string;
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
   error_message?: string;
+  url?: string;
 }
 
 export default function ColecaoDetalhe() {
@@ -125,7 +126,8 @@ export default function ColecaoDetalhe() {
     preview: doc.original_content?.substring(0, 100) + (doc.original_content?.length > 100 ? '...' : ''),
     date: new Date(doc.created_at).toLocaleDateString('pt-BR'),
     processing_status: doc.processing_status,
-    error_message: doc.error_message
+    error_message: doc.error_message,
+    url: doc.content_type === 'url' ? doc.original_content : undefined
   })) || [];
 
   const handleOpenAddModal = () => {
@@ -512,36 +514,34 @@ export default function ColecaoDetalhe() {
           </div>
 
           {/* Items List */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             {filteredItems.map((item: KnowledgeItem) => (
-              <div key={item.id} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div key={item.id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                   {getTypeIcon(item.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h4 className="font-medium text-gray-900">{item.title}</h4>
-                    <span className="text-xs text-gray-400 font-mono">ID: {item.id}</span>
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-medium text-gray-900 truncate">
+                      {item.type === 'url' ? item.url || item.title : item.title}
+                    </h4>
+                    <span className="text-xs text-gray-400 font-mono flex-shrink-0">ID: {item.id}</span>
                     {getStatusBadge(item.processing_status)}
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{item.preview}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-500">Adicionado em {item.date}</p>
                     {item.processing_status === 'failed' && item.error_message && (
-                      <p className="text-xs text-red-600 truncate max-w-xs" title={item.error_message}>
+                      <span className="text-xs text-red-600 truncate max-w-xs" title={item.error_message}>
                         Erro: {item.error_message}
-                      </p>
+                      </span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-red-600 hover:text-red-700"
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                     onClick={() => handleDeleteDocument(item.id)}
                   >
                     <Trash2 className="h-4 w-4" />
