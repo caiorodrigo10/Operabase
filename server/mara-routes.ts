@@ -16,6 +16,12 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       console.log('📝 Pergunta:', question);
       console.log('👤 Usuário:', req.user?.id);
 
+      // Verificar se o usuário está autenticado
+      if (!req.user || !req.user.id) {
+        console.error('❌ Usuário não autenticado');
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
       if (!question || question.trim().length === 0) {
         return res.status(400).json({ error: 'Pergunta é obrigatória' });
       }
@@ -112,7 +118,8 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
         return res.status(404).json({ error: 'Contato não encontrado' });
       }
 
-      const userClinics = await storage.getUserClinics(req.user.id);
+      const userId = parseInt(req.user?.id || '0');
+      const userClinics = await storage.getUserClinics(userId);
       const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
@@ -120,8 +127,9 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       }
 
       // Buscar dados básicos para gerar sugestões inteligentes
-      const appointments = await storage.getContactAppointments(contactId);
-      const medicalRecords = await storage.getContactMedicalRecords(contactId);
+      const allAppointments = await storage.getAppointments(contact.clinic_id, {});
+      const appointments = allAppointments.filter(apt => apt.contact_id === contactId);
+      const medicalRecords = await storage.getMedicalRecords(contactId);
 
       const suggestions = [];
 

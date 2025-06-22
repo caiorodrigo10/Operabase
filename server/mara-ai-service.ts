@@ -26,17 +26,30 @@ export class MaraAIService {
 
   async analyzeContact(contactId: number, question: string, userId?: number): Promise<MaraResponse> {
     try {
+      console.log('🤖 Mara AI: Iniciando análise do contato', contactId);
+      
       // Buscar contexto completo do contato
       const context = await this.getContactContext(contactId);
+      console.log('📋 Contexto obtido:', {
+        contactName: context.contact?.name,
+        appointmentsCount: context.appointments?.length || 0,
+        medicalRecordsCount: context.medicalRecords?.length || 0
+      });
       
       // Buscar informações do usuário logado
       let currentUser = null;
       if (userId) {
-        currentUser = await this.storage.getUser(userId);
+        try {
+          currentUser = await this.storage.getUser(userId);
+          console.log('👤 Usuário encontrado:', currentUser?.name);
+        } catch (error: any) {
+          console.log('⚠️ Não foi possível buscar dados do usuário:', error.message);
+        }
       }
       
       // Criar prompt simples e conversacional
       const systemPrompt = this.createSimpleSystemPrompt(context, currentUser);
+      console.log('📝 Prompt criado, enviando para OpenAI...');
 
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       const response = await this.openai.chat.completions.create({
@@ -50,13 +63,15 @@ export class MaraAIService {
       });
 
       const result = response.choices[0].message.content || "Desculpe, não consegui processar sua pergunta.";
+      console.log('✅ Resposta gerada com sucesso');
       
       return {
         response: result
       };
 
     } catch (error) {
-      console.error('Erro na Mara AI:', error);
+      console.error('❌ Erro na Mara AI:', error);
+      console.error('Stack trace:', error.stack);
       return {
         response: "Desculpe, ocorreu um erro ao processar sua pergunta. Tente novamente."
       };
@@ -82,7 +97,7 @@ export class MaraAIService {
       const medicalRecords = await this.storage.getMedicalRecords(contactId);
       
       // Get anamnesis responses for this contact - simplified for now
-      let anamnesisResponses = [];
+      const anamnesisResponses: any[] = [];
       console.log('Info: Anamnesis integration will be added later');
       
       let clinicInfo = null;

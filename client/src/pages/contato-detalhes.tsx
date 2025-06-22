@@ -129,27 +129,47 @@ export function ContatoDetalhes() {
   // Mara AI mutation
   const maraMutation = useMutation({
     mutationFn: async (question: string) => {
+      console.log('🤖 Enviando pergunta para Mara:', question);
       const response = await fetch(`/api/contacts/${contactId}/mara/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question })
       });
       
+      console.log('📡 Resposta do servidor:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Erro ao conversar com Mara IA');
+        const errorText = await response.text();
+        console.error('❌ Erro na resposta:', errorText);
+        throw new Error(`Erro ao conversar com Mara IA: ${response.status}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('📨 Dados recebidos:', data);
+      return data;
     },
     onSuccess: (data) => {
-      setMaraConversation(prev => [
-        ...prev,
-        { role: 'assistant', content: data.response, timestamp: new Date() }
-      ]);
+      console.log('✅ Sucesso na conversa com Mara:', data);
+      if (data && data.response) {
+        setMaraConversation(prev => [
+          ...prev,
+          { role: 'assistant', content: data.response, timestamp: new Date() }
+        ]);
+      } else {
+        console.error('❌ Resposta sem conteúdo:', data);
+        setMaraConversation(prev => [
+          ...prev,
+          { role: 'assistant', content: 'Desculpe, não recebi uma resposta válida.', timestamp: new Date() }
+        ]);
+      }
       setIsMaraLoading(false);
     },
     onError: (error: Error) => {
-      console.error('Erro na conversa com Mara:', error);
+      console.error('❌ Erro na conversa com Mara:', error);
+      setMaraConversation(prev => [
+        ...prev,
+        { role: 'assistant', content: 'Desculpe, ocorreu um erro. Tente novamente.', timestamp: new Date() }
+      ]);
       setIsMaraLoading(false);
     }
   });
