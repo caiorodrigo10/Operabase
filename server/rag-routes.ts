@@ -337,12 +337,12 @@ router.get('/processing/:id', ragAuth, async (req: any, res: Response) => {
 });
 
 // Deletar base de conhecimento completa
-router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response) => {
+router.delete('/knowledge-bases/:id', ragAuth, async (req: any, res: Response) => {
   try {
-    const knowledgeBaseName = decodeURIComponent(req.params.name);
+    const knowledgeBaseId = parseInt(req.params.id);
     const userId = req.user?.email || req.user?.id?.toString();
 
-    console.log(`🗑️ Deleting knowledge base: ${knowledgeBaseName} for user: ${userId}`);
+    console.log(`🗑️ Deleting knowledge base ID: ${knowledgeBaseId} for user: ${userId}`);
 
     // Buscar a base de conhecimento
     const [knowledgeBase] = await db
@@ -350,7 +350,7 @@ router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response)
       .from(rag_knowledge_bases)
       .where(and(
         eq(rag_knowledge_bases.external_user_id, userId),
-        eq(rag_knowledge_bases.name, knowledgeBaseName)
+        eq(rag_knowledge_bases.id, knowledgeBaseId)
       ));
 
     if (!knowledgeBase) {
@@ -367,7 +367,7 @@ router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response)
     const documents = allDocuments.filter(doc => {
       if (doc.metadata && typeof doc.metadata === 'object') {
         const metadata = doc.metadata as any;
-        return metadata.knowledge_base === knowledgeBaseName;
+        return metadata.knowledge_base === knowledgeBase.name;
       }
       return false;
     });

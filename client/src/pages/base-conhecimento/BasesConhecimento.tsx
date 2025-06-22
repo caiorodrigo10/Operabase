@@ -42,6 +42,7 @@ export default function BasesConhecimento() {
   const [newCollectionDescription, setNewCollectionDescription] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [knowledgeBaseToDelete, setKnowledgeBaseToDelete] = useState<string | null>(null);
+  const [knowledgeBaseIdToDelete, setKnowledgeBaseIdToDelete] = useState<number | null>(null);
 
   // Query para buscar bases de conhecimento
   const { data: knowledgeBases = [], isLoading } = useQuery({
@@ -98,8 +99,8 @@ export default function BasesConhecimento() {
 
   // Mutation para deletar base de conhecimento
   const deleteKnowledgeBaseMutation = useMutation({
-    mutationFn: async (knowledgeBaseName: string) => {
-      const response = await fetch(`/api/rag/knowledge-bases/${encodeURIComponent(knowledgeBaseName)}`, {
+    mutationFn: async (knowledgeBaseId: number) => {
+      const response = await fetch(`/api/rag/knowledge-bases/${knowledgeBaseId}`, {
         method: 'DELETE'
       });
       
@@ -175,16 +176,18 @@ export default function BasesConhecimento() {
     });
   };
 
-  const handleDeleteKnowledgeBase = (knowledgeBaseName: string) => {
+  const handleDeleteKnowledgeBase = (knowledgeBaseId: number, knowledgeBaseName: string) => {
     setKnowledgeBaseToDelete(knowledgeBaseName);
+    setKnowledgeBaseIdToDelete(knowledgeBaseId);
     setDeleteDialogOpen(true);
   };
 
   const confirmDeleteKnowledgeBase = () => {
-    if (knowledgeBaseToDelete) {
-      deleteKnowledgeBaseMutation.mutate(knowledgeBaseToDelete);
+    if (knowledgeBaseIdToDelete) {
+      deleteKnowledgeBaseMutation.mutate(knowledgeBaseIdToDelete);
       setDeleteDialogOpen(false);
       setKnowledgeBaseToDelete(null);
+      setKnowledgeBaseIdToDelete(null);
     }
   };
 
@@ -258,7 +261,7 @@ export default function BasesConhecimento() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteKnowledgeBase(collection.name);
+                        handleDeleteKnowledgeBase(collection.id, collection.name);
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
