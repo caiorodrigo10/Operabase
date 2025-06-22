@@ -259,22 +259,18 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                         <span className="text-sm font-medium text-slate-900 text-center">Funis</span>
                       </div>
 
-                      <div 
+                      <Link
+                        href="/trabalhadores-digitais"
                         className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"
                         onClick={() => {
                           setIsAppsDropdownOpen(false);
-                          toast({
-                            title: "Funcionalidade em desenvolvimento",
-                            description: "Trabalhadores Digitais estará disponível em breve",
-                            variant: "default",
-                          });
                         }}
                       >
                         <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-2">
                           <Bot className="h-5 w-5 text-green-600" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Trabalhadores Digitais</span>
-                      </div>
+                      </Link>
 
                       <div 
                         className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"

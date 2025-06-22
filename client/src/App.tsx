@@ -34,6 +34,7 @@ import PreencherAnamnese from "./pages/preencher-anamnese";
 import AnamnesisTemplatesPage from "./pages/anamneses";
 import EditarAnamnesePage from "./pages/editar-anamnese";
 import EditarAnamneseResposta from "./pages/editar-anamnese-resposta";
+import TrabalhadoresesDigitais from "./pages/TrabalhadoresesDigitais";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -140,6 +141,7 @@ function Router() {
         <Route path="/chatdeteste" component={ChatDeTeste} />
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
+        <Route path="/trabalhadores-digitais" component={TrabalhadoresesDigitais} />
 
         <Route component={NotFound} />
       </Switch>
