@@ -147,14 +147,25 @@ router.post('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
   }
 });
 
-// Upload de documento de texto
-router.post('/documents/text', ragAuth, async (req: any, res: Response) => {
+// Upload genérico de documentos (text, url)
+router.post('/documents', ragAuth, async (req: any, res: Response) => {
   try {
     const userId = req.user?.email || req.user?.id?.toString();
-    const { title, content } = req.body;
+    const { title, content, content_type, knowledge_base } = req.body;
 
-    if (!title || !content) {
-      return res.status(400).json({ error: 'Título e conteúdo são obrigatórios' });
+    console.log('📝 Creating document:', { title, content_type, knowledge_base, userId });
+
+    if (!title || !content || !content_type) {
+      return res.status(400).json({ error: 'Título, conteúdo e tipo são obrigatórios' });
+    }
+
+    // Validar URL se for tipo url
+    if (content_type === 'url') {
+      try {
+        new URL(content);
+      } catch {
+        return res.status(400).json({ error: 'URL inválida' });
+      }
     }
 
     const [document] = await db
@@ -162,12 +173,16 @@ router.post('/documents/text', ragAuth, async (req: any, res: Response) => {
       .values({
         external_user_id: userId,
         title,
-        content_type: 'text',
+        content_type,
         original_content: content,
-        extracted_content: content,
-        processing_status: 'pending'
+        source_url: content_type === 'url' ? content : null,
+        extracted_content: content_type === 'text' ? content : null,
+        processing_status: 'pending',
+        metadata: knowledge_base ? { knowledge_base } : null
       })
       .returning();
+
+    console.log('✅ Document created with ID:', document.id);
 
     // Iniciar processamento em background
     processDocumentAsync(document.id);
@@ -178,7 +193,7 @@ router.post('/documents/text', ragAuth, async (req: any, res: Response) => {
       message: 'Documento adicionado para processamento'
     });
   } catch (error) {
-    console.error('Error creating text document:', error);
+    console.error('Error creating document:', error);
     res.status(500).json({ error: 'Falha ao criar documento' });
   }
 });

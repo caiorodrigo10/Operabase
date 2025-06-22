@@ -180,7 +180,7 @@ export default function ColecaoDetalhe() {
           knowledge_base: collectionData.name,
           title: textTitle || "Documento de Texto",
           content_type: "text",
-          original_content: textContent
+          content: textContent
         };
       } else if (selectedType === "url") {
         if (!urlContent.trim()) {
@@ -196,7 +196,7 @@ export default function ColecaoDetalhe() {
           knowledge_base: collectionData.name,
           title: urlTitle || "Link",
           content_type: "url",
-          source_url: urlContent
+          content: urlContent
         };
       } else if (selectedType === "pdf") {
         if (selectedFiles.length === 0) {
