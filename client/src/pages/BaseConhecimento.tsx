@@ -2,24 +2,25 @@ import { ChevronLeft, BookOpen, Users, Building } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import FontesConhecimento from "./base-conhecimento/FontesConhecimento";
+import BasesConhecimento from "./base-conhecimento/BasesConhecimento";
+import ColecaoDetalhe from "./base-conhecimento/ColecaoDetalhe";
 import Profissionais from "./base-conhecimento/Profissionais";
 import Empresa from "./base-conhecimento/Empresa";
 
 export default function BaseConhecimento() {
   const [location] = useLocation();
 
-  // Determine active section from URL or default to fontes
+  // Determine active section from URL or default to bases
   const currentSection = location.includes("/base-conhecimento/") 
-    ? location.split("/base-conhecimento/")[1] || "fontes"
-    : "fontes";
+    ? location.split("/base-conhecimento/")[1] || "bases"
+    : "bases";
 
   const navigationItems = [
     {
-      key: "fontes",
-      name: "Fontes de Conhecimento",
+      key: "bases",
+      name: "Bases de Conhecimento",
       icon: BookOpen,
-      href: "/base-conhecimento/fontes"
+      href: "/base-conhecimento"
     },
     {
       key: "profissionais",
@@ -36,13 +37,18 @@ export default function BaseConhecimento() {
   ];
 
   const renderContent = () => {
+    // Check if this is a collection detail page (numeric ID)
+    if (currentSection && /^\d+$/.test(currentSection)) {
+      return <ColecaoDetalhe />;
+    }
+    
     switch (currentSection) {
       case "profissionais":
         return <Profissionais />;
       case "empresa":
         return <Empresa />;
       default:
-        return <FontesConhecimento />;
+        return <BasesConhecimento />;
     }
   };
 
