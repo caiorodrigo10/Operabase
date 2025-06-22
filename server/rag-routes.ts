@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import { db } from "./db";
 import { rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 // Middleware simplificado que usa usuário fixo para demonstração
 const ragAuth = (req: any, res: any, next: any) => {
@@ -306,13 +306,25 @@ router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response)
     console.log(`🗑️ Deleting knowledge base: ${knowledgeBaseName} for user: ${userId}`);
 
     // Buscar todos os documentos da base de conhecimento
-    const documents = await db
+    // Incluir documentos que são a própria base de conhecimento (criados como texto)
+    const allDocuments = await db
       .select()
       .from(rag_documents)
-      .where(and(
-        eq(rag_documents.external_user_id, userId),
-        eq(rag_documents.metadata, JSON.stringify({ knowledge_base: knowledgeBaseName }))
-      ));
+      .where(eq(rag_documents.external_user_id, userId));
+
+    // Filtrar documentos que pertencem à base de conhecimento
+    const documents = allDocuments.filter(doc => {
+      // Documento que é a própria base de conhecimento
+      if (doc.title === knowledgeBaseName && doc.content_type === 'text') {
+        return true;
+      }
+      // Documentos com metadata da base de conhecimento
+      if (doc.metadata && typeof doc.metadata === 'object') {
+        const metadata = doc.metadata as any;
+        return metadata.knowledge_base === knowledgeBaseName;
+      }
+      return false;
+    });
 
     console.log(`📊 Found ${documents.length} documents to delete`);
 
@@ -330,13 +342,12 @@ router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response)
       }
     }
 
-    // Deletar todos os documentos da base de conhecimento (cascata deletará chunks e embeddings)
-    const deletedCount = await db
-      .delete(rag_documents)
-      .where(and(
-        eq(rag_documents.external_user_id, userId),
-        eq(rag_documents.metadata, JSON.stringify({ knowledge_base: knowledgeBaseName }))
-      ));
+    // Deletar todos os documentos encontrados
+    for (const document of documents) {
+      await db
+        .delete(rag_documents)
+        .where(eq(rag_documents.id, document.id));
+    }
 
     console.log(`✅ Deleted knowledge base with ${documents.length} documents`);
 
