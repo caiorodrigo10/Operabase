@@ -142,11 +142,16 @@ export const AICodeChat = () => {
       }
 
       // Apply transformation to get new JSON
+      console.log('🔧 Original JSON:', currentJSON);
+      console.log('🎯 Action to apply:', result.action);
+      
       const newJSON = builderTransformer.applyAction(currentJSON, result.action, userCommand);
+      console.log('✨ Transformed JSON:', newJSON);
       
       // Validate the transformation
       const validation = builderTransformer.validateJSON(newJSON);
       if (!validation.valid) {
+        console.error('❌ Validation failed:', validation.errors);
         const errorMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           content: `I tried to apply your changes but encountered issues: ${validation.errors.join(', ')}`,
@@ -160,7 +165,26 @@ export const AICodeChat = () => {
       }
 
       // Apply changes to Craft.js editor
-      actions.deserialize(JSON.stringify(newJSON));
+      console.log('🔄 Applying changes to Craft.js...');
+      const newJSONString = JSON.stringify(newJSON);
+      console.log('📄 JSON string to deserialize:', newJSONString);
+      
+      try {
+        actions.deserialize(newJSONString);
+        console.log('✅ Successfully applied changes to editor');
+        
+        // Force a small delay to ensure the editor has processed the changes
+        setTimeout(() => {
+          console.log('🔄 Forcing editor refresh after deserialize');
+          // Get updated state to verify changes were applied
+          const updatedState = query.serialize();
+          console.log('📊 Editor state after changes:', typeof updatedState === 'string' ? JSON.parse(updatedState) : updatedState);
+        }, 100);
+        
+      } catch (deserializeError) {
+        console.error('❌ Failed to deserialize:', deserializeError);
+        throw new Error(`Failed to apply changes: ${deserializeError instanceof Error ? deserializeError.message : 'Unknown error'}`);
+      }
 
       // Success message
       const successMessage: ChatMessage = {

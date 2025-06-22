@@ -129,14 +129,34 @@ export class AIDevService {
    */
   private parseAIResponse(response: string): BuilderAction {
     try {
-      const parsed = JSON.parse(response);
+      console.log('🔍 Raw AI response:', response);
+      
+      // Try to extract JSON from response (in case it's wrapped in text)
+      let jsonString = response.trim();
+      
+      // Look for JSON blocks if response contains other text
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[0];
+      }
+      
+      console.log('📄 Extracted JSON string:', jsonString);
+      
+      const parsed = JSON.parse(jsonString);
+      console.log('✅ Parsed JSON:', parsed);
       
       // Garantir que temos uma ação válida
       if (!parsed.action || !parsed.target || !parsed.props || !parsed.reasoning) {
-        throw new Error('Resposta AI incompleta');
+        console.error('❌ Missing required fields:', {
+          action: !!parsed.action,
+          target: !!parsed.target,
+          props: !!parsed.props,
+          reasoning: !!parsed.reasoning
+        });
+        throw new Error('Resposta AI incompleta - campos obrigatórios ausentes');
       }
 
-      return {
+      const builderAction: BuilderAction = {
         action: parsed.action,
         target: parsed.target,
         component: parsed.component,
@@ -144,8 +164,13 @@ export class AIDevService {
         reasoning: parsed.reasoning,
         parentTarget: parsed.parentTarget
       };
+      
+      console.log('🎯 Final BuilderAction:', builderAction);
+      return builderAction;
 
     } catch (error) {
+      console.error('❌ Parse error:', error);
+      console.error('📄 Original response:', response);
       throw new Error(`Erro ao parsear resposta AI: ${error instanceof Error ? error.message : 'Invalid JSON'}`);
     }
   }

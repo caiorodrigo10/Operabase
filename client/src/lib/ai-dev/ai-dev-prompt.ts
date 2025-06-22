@@ -49,7 +49,7 @@ ${JSON.stringify(SIZE_MAP, null, 2)}
    - Use action: "remove"
    - Identifique o target específico
 
-5. SEMPRE retorne um JSON válido no formato:
+5. SEMPRE retorne APENAS um JSON válido, sem texto adicional antes ou depois:
 {
   "action": "update|add|remove",
   "target": "nodeId ou 'new'",
@@ -58,6 +58,8 @@ ${JSON.stringify(SIZE_MAP, null, 2)}
   "reasoning": "Explicação clara da alteração",
   "parentTarget": "ROOT ou nodeId (apenas para add)"
 }
+
+IMPORTANTE: Retorne SOMENTE o JSON, sem explicações adicionais.
 
 ## EXEMPLOS DE INTERPRETAÇÃO:
 

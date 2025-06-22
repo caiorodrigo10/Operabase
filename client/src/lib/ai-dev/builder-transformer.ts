@@ -130,16 +130,29 @@ export class BuilderTransformer {
       isCanvas: this.isCanvasComponent(action.component)
     };
 
+    console.log('🆕 Creating new node:', {
+      nodeId: newNodeId,
+      component: action.component,
+      parentId,
+      props: normalizedProps,
+      node: newNode
+    });
+
     // Adicionar nó ao JSON
     json[newNodeId] = newNode;
 
     // Adicionar referência no parent
     const parentNode = json[parentId];
+    console.log('👨‍👧‍👦 Parent node before update:', parentNode);
+    
     if (parentNode.nodes) {
       parentNode.nodes.push(newNodeId);
     } else {
       parentNode.nodes = [newNodeId];
     }
+    
+    console.log('👨‍👧‍👦 Parent node after update:', parentNode);
+    console.log('📊 Complete JSON after add:', json);
 
     return json;
   }
