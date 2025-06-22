@@ -18,6 +18,13 @@ export default function BaseConhecimento() {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [editingProfessional, setEditingProfessional] = useState<number | null>(null);
   const [professionalInfo, setProfessionalInfo] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addStep, setAddStep] = useState<"select" | "form">("select");
+  const [selectedType, setSelectedType] = useState<"text" | "pdf" | "url" | null>(null);
+  const [textContent, setTextContent] = useState("");
+  const [textTitle, setTextTitle] = useState("");
+  const [urlContent, setUrlContent] = useState("");
+  const [urlTitle, setUrlTitle] = useState("");
   const [companyInfo, setCompanyInfo] = useState(`Clínica Médica Exemplo
 
 📍 Endereço: Rua das Flores, 123 - Centro - São Paulo/SP
@@ -127,6 +134,60 @@ Domingo: Emergências apenas
     });
   };
 
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+    setAddStep("select");
+    setSelectedType(null);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setAddStep("select");
+    setSelectedType(null);
+    setTextContent("");
+    setTextTitle("");
+    setUrlContent("");
+    setUrlTitle("");
+  };
+
+  const handleTypeSelection = (type: "text" | "pdf" | "url") => {
+    setSelectedType(type);
+    setAddStep("form");
+  };
+
+  const handleBackToSelection = () => {
+    setAddStep("select");
+    setSelectedType(null);
+  };
+
+  const handleSaveContent = () => {
+    let title = "";
+    let preview = "";
+
+    switch (selectedType) {
+      case "text":
+        title = textTitle || "Texto sem título";
+        preview = textContent.slice(0, 100) + "...";
+        break;
+      case "url":
+        title = urlTitle || "Link sem título";
+        preview = urlContent;
+        break;
+      case "pdf":
+        title = "Documento PDF";
+        preview = "Arquivo PDF carregado";
+        break;
+    }
+
+    toast({
+      title: "Conteúdo adicionado",
+      description: `${title} foi adicionado à biblioteca de conhecimento.`,
+      variant: "default",
+    });
+
+    handleCloseAddModal();
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "text":
@@ -193,54 +254,23 @@ Domingo: Emergências apenas
 
           {/* Tab 1: Knowledge Sources */}
           <TabsContent value="knowledge-sources" className="space-y-8">
-            {/* Import Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Importar Conhecimento</CardTitle>
-                <CardDescription>
+            {/* Clean Header with Add Button */}
+            <div className="text-center space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Fontes de Conhecimento</h2>
+                <p className="text-slate-600 mb-6">
                   Adicione informações através de diferentes formatos
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Text Input */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-900">Texto Livre</label>
-                  <Textarea
-                    placeholder="Digite ou cole informações importantes sobre sua clínica..."
-                    className="min-h-[120px]"
-                  />
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Texto
-                  </Button>
-                </div>
-
-                {/* PDF Upload */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-900">Upload de PDFs</label>
-                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors">
-                    <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600 mb-2">Arraste e solte arquivos PDF aqui ou</p>
-                    <Button variant="outline" size="sm">
-                      Selecionar Arquivos
-                    </Button>
-                    <p className="text-xs text-slate-500 mt-2">Máximo 10MB por arquivo</p>
-                  </div>
-                </div>
-
-                {/* URL Input */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-900">Links/URLs</label>
-                  <div className="flex gap-2">
-                    <Input placeholder="https://exemplo.com/pagina-importante" className="flex-1" />
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar URL
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleOpenAddModal}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg h-auto"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Adicionar Conhecimento
+              </Button>
+            </div>
 
             {/* Library Section */}
             <Card>
@@ -482,6 +512,179 @@ Domingo: Emergências apenas
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Add Knowledge Modal */}
+        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+          <DialogContent className="max-w-2xl">
+            {addStep === "select" ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Escolha o tipo de conhecimento</DialogTitle>
+                  <DialogDescription>
+                    Selecione como você gostaria de adicionar informações
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-6">
+                  {/* Text Option */}
+                  <div 
+                    className="p-6 border-2 border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all group"
+                    onClick={() => handleTypeSelection("text")}
+                  >
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
+                        <FileText className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 mb-2">Texto Livre</h3>
+                      <p className="text-sm text-slate-600">
+                        Digite ou cole informações diretamente
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* PDF Option */}
+                  <div 
+                    className="p-6 border-2 border-slate-200 rounded-lg hover:border-red-300 hover:bg-red-50 cursor-pointer transition-all group"
+                    onClick={() => handleTypeSelection("pdf")}
+                  >
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-red-200 transition-colors">
+                        <Upload className="h-8 w-8 text-red-600" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 mb-2">Upload PDF</h3>
+                      <p className="text-sm text-slate-600">
+                        Importe documentos em formato PDF
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* URL Option */}
+                  <div 
+                    className="p-6 border-2 border-slate-200 rounded-lg hover:border-green-300 hover:bg-green-50 cursor-pointer transition-all group"
+                    onClick={() => handleTypeSelection("url")}
+                  >
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
+                        <ExternalLink className="h-8 w-8 text-green-600" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 mb-2">Link/URL</h3>
+                      <p className="text-sm text-slate-600">
+                        Adicione links de páginas web
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button variant="outline" onClick={handleCloseAddModal}>
+                    Cancelar
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>
+                    {selectedType === "text" && "Adicionar Texto"}
+                    {selectedType === "pdf" && "Upload PDF"}
+                    {selectedType === "url" && "Adicionar Link"}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-6 py-6">
+                  {selectedType === "text" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-900">
+                          Título (opcional)
+                        </label>
+                        <Input
+                          value={textTitle}
+                          onChange={(e) => setTextTitle(e.target.value)}
+                          placeholder="Ex: Protocolos de Atendimento"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-900">
+                          Conteúdo
+                        </label>
+                        <Textarea
+                          value={textContent}
+                          onChange={(e) => setTextContent(e.target.value)}
+                          placeholder="Digite ou cole informações importantes sobre sua clínica..."
+                          className="min-h-[200px]"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {selectedType === "pdf" && (
+                    <div className="space-y-4">
+                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-12 text-center hover:border-slate-400 transition-colors">
+                        <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-600 mb-4">
+                          Arraste e solte arquivos PDF aqui ou
+                        </p>
+                        <Button variant="outline">
+                          Selecionar Arquivos
+                        </Button>
+                        <p className="text-sm text-slate-500 mt-4">
+                          Máximo 10MB por arquivo, apenas PDFs
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedType === "url" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-900">
+                          URL da página
+                        </label>
+                        <Input
+                          value={urlContent}
+                          onChange={(e) => setUrlContent(e.target.value)}
+                          placeholder="https://exemplo.com/pagina-importante"
+                          type="url"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-900">
+                          Título (opcional)
+                        </label>
+                        <Input
+                          value={urlTitle}
+                          onChange={(e) => setUrlTitle(e.target.value)}
+                          placeholder="Ex: Site da Clínica"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex justify-between pt-4">
+                  <Button variant="outline" onClick={handleBackToSelection}>
+                    Voltar
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleCloseAddModal}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleSaveContent}
+                      disabled={
+                        (selectedType === "text" && !textContent.trim()) ||
+                        (selectedType === "url" && !urlContent.trim())
+                      }
+                    >
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
