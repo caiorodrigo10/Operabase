@@ -31,7 +31,7 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
       const userClinicId = user.clinic_id || 1; // Use hardcoded clinic ID for demo
 
       // Get all professionals in the clinic (from clinic_users logs we know IDs 4 and 5 are professionals)
-      const professionals = await db.execute(`
+      const professionals = await db.execute(sql`
         SELECT 
           u.id,
           u.name,
@@ -49,14 +49,14 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
       // Get Mara configurations for these professionals  
       let configs = { rows: [] };
       try {
-        configs = await db.execute(`
+        configs = await db.execute(sql`
           SELECT 
             mpc.professional_id,
             mpc.knowledge_base_id,
             mpc.is_active,
             kb.name as knowledge_base_name,
             COALESCE((SELECT COUNT(*) FROM rag_documents WHERE knowledge_base_id = kb.id AND status = 'completed'), 0) as document_count,
-            COALESCE((SELECT COUNT(*) FROM rag_embeddings WHERE document_id IN (
+            COALESCE((SELECT COUNT(*) FROM rag_chunks WHERE document_id IN (
               SELECT id FROM rag_documents WHERE knowledge_base_id = kb.id AND status = 'completed'
             )), 0) as chunk_count,
             kb.updated_at as last_updated
@@ -136,11 +136,11 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
       }
 
       // Verify the professional belongs to the same clinic
-      const professional = await db.execute(`
+      const professional = await db.execute(sql`
         SELECT u.id FROM users u
         JOIN clinic_users cu ON u.id = cu.user_id
-        WHERE u.id = $1 AND cu.clinic_id = $2 AND cu.is_professional = true
-      `, [professionalId, userClinicId]);
+        WHERE u.id = ${professionalId} AND cu.clinic_id = ${userClinicId} AND cu.is_professional = true
+      `);
 
       if (professional.rows.length === 0) {
         return res.status(404).json({ error: 'Professional not found or not in your clinic' });
@@ -148,35 +148,35 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
 
       // If knowledge_base_id is null, delete the configuration (disconnect)
       if (knowledge_base_id === null || knowledge_base_id === undefined) {
-        await db.execute(`
+        await db.execute(sql`
           DELETE FROM mara_professional_configs 
-          WHERE professional_id = $1 AND clinic_id = $2
-        `, [professionalId, userClinicId]);
+          WHERE professional_id = ${professionalId} AND clinic_id = ${userClinicId}
+        `);
         
         res.json({ message: 'Mara configuration disconnected' });
         return;
       }
 
       // Verify the knowledge base exists and belongs to the user
-      const knowledgeBase = await db.execute(`
+      const knowledgeBase = await db.execute(sql`
         SELECT id, name FROM rag_knowledge_bases 
-        WHERE id = $1 AND (external_user_id = $2 OR external_user_id IS NULL)
-      `, [knowledge_base_id, (req as any).user?.id]);
+        WHERE id = ${knowledge_base_id} AND (external_user_id = ${(req as any).user?.id} OR external_user_id IS NULL)
+      `);
 
       if (knowledgeBase.rows.length === 0) {
         return res.status(404).json({ error: 'Knowledge base not found or not accessible' });
       }
 
       // Upsert the configuration
-      await db.execute(`
+      await db.execute(sql`
         INSERT INTO mara_professional_configs (clinic_id, professional_id, knowledge_base_id, is_active)
-        VALUES ($1, $2, $3, true)
+        VALUES (${userClinicId}, ${professionalId}, ${knowledge_base_id}, true)
         ON CONFLICT (clinic_id, professional_id)
         DO UPDATE SET 
-          knowledge_base_id = $3,
+          knowledge_base_id = ${knowledge_base_id},
           is_active = true,
           updated_at = NOW()
-      `, [userClinicId, professionalId, knowledge_base_id]);
+      `);
 
       res.json({ 
         message: 'Mara configuration updated successfully',
