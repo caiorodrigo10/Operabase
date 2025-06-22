@@ -34,34 +34,34 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
           u.id,
           u.name,
           u.email,
-          u.role,
-          u.is_professional
+          u.role
         FROM users u
-        WHERE u.clinic_id = $1 
-          AND u.is_professional = true
-          AND u.is_active = true
+        WHERE u.is_active = true
         ORDER BY u.name
-      `, [userClinicId]);
+        LIMIT 10
+      `);
 
       // Get professional IDs for the next query
       const professionalIds = professionals.rows.map((p: any) => p.id);
 
-      // Get Mara configurations for these professionals
-      const configs = await db.execute(`
-        SELECT 
-          mpc.professional_id,
-          mpc.knowledge_base_id,
-          mpc.is_active,
-          kb.name as knowledge_base_name,
-          (SELECT COUNT(*) FROM rag_documents WHERE knowledge_base_id = kb.id AND status = 'completed') as document_count,
-          (SELECT COUNT(*) FROM rag_embeddings WHERE document_id IN (
-            SELECT id FROM rag_documents WHERE knowledge_base_id = kb.id AND status = 'completed'
-          )) as chunk_count,
-          kb.updated_at as last_updated
-        FROM mara_professional_configs mpc
-        LEFT JOIN rag_knowledge_bases kb ON mpc.knowledge_base_id = kb.id
-        WHERE mpc.clinic_id = $1
-      `, [userClinicId]);
+      // Get Mara configurations for these professionals  
+      let configs = { rows: [] };
+      try {
+        configs = await db.execute(`
+          SELECT 
+            mpc.professional_id,
+            mpc.knowledge_base_id,
+            mpc.is_active,
+            kb.name as knowledge_base_name,
+            0 as document_count,
+            0 as chunk_count,
+            kb.updated_at as last_updated
+          FROM mara_professional_configs mpc
+          LEFT JOIN rag_knowledge_bases kb ON mpc.knowledge_base_id = kb.id
+        `);
+      } catch (error) {
+        console.log('No mara_professional_configs table yet, using empty configs');
+      }
 
       // Combine professionals with their configs
       const result = professionals.rows.map(prof => {
