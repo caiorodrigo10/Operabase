@@ -160,7 +160,7 @@ CraftButton.craft = {
   }
 };
 
-// Toolbox Component
+// Toolbox Component (inside Editor context)
 const Toolbox = () => {
   return (
     <div className="w-80 bg-white border-r border-gray-200 p-4">
@@ -203,7 +203,7 @@ const Toolbox = () => {
   );
 };
 
-// Settings Panel Component
+// Settings Panel Component (inside Editor context)
 const SettingsPanel = () => {
   return (
     <div className="w-80 bg-white border-l border-gray-200 p-4">

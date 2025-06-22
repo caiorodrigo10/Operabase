@@ -4,10 +4,8 @@ import cx from 'classnames';
 import React from 'react';
 import { styled } from 'styled-components';
 
-import Checkmark from '../../../public/icons/check.svg';
-import Customize from '../../../public/icons/customize.svg';
-import RedoSvg from '../../../public/icons/toolbox/redo.svg';
-import UndoSvg from '../../../public/icons/toolbox/undo.svg';
+// Use lucide-react icons instead of SVG imports
+import { Check, Settings, Redo, Undo } from 'lucide-react';
 
 const HeaderDiv = styled.div`
   width: 100%;
@@ -89,9 +87,9 @@ export const Header = () => {
             }}
           >
             {enabled ? (
-              <Checkmark viewBox="-3 -3 20 20" />
+              <Check className="w-3 h-3" />
             ) : (
-              <Customize viewBox="2 0 16 16" />
+              <Settings className="w-3 h-3" />
             )}
             {enabled ? 'Finish Editing' : 'Edit'}
           </Btn>
