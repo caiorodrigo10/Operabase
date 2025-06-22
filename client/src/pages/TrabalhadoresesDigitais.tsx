@@ -129,19 +129,19 @@ export default function TrabalhadoresesDigitais() {
             return (
               <div
                 key={index}
-                className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col justify-center items-center text-center hover:scale-[1.02] hover:bg-white/90"
+                className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col hover:scale-[1.02] hover:bg-white/90"
                 onClick={() => handleCardClick(assistant.name, assistant.description)}
               >
                 {/* Gradient Background */}
                 <div className={`absolute inset-0 ${colors.bg} rounded-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-300`}></div>
                 
+                {/* Icon positioned in top right corner */}
+                <div className={`absolute top-4 right-4 w-12 h-12 ${colors.iconBg} rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110`}>
+                  <Icon className={`h-6 w-6 ${colors.iconColor}`} />
+                </div>
+                
                 {/* Content */}
-                <div className="relative z-10">
-                  {/* Icon with animated glow */}
-                  <div className={`w-20 h-20 ${colors.iconBg} rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
-                    <Icon className={`h-10 w-10 ${colors.iconColor}`} />
-                  </div>
-
+                <div className="relative z-10 flex flex-col justify-center items-center text-center h-full">
                   {/* Title */}
                   <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors">
                     {assistant.name}
@@ -149,13 +149,13 @@ export default function TrabalhadoresesDigitais() {
                   <p className="text-base font-medium text-gray-600 mb-4">{assistant.role}</p>
 
                   {/* Description */}
-                  <p className="text-sm text-gray-500 mb-8 line-clamp-3 leading-relaxed max-w-sm">
+                  <p className="text-sm text-gray-500 mb-8 line-clamp-3 leading-relaxed max-w-sm flex-1 flex items-center">
                     {assistant.description}
                   </p>
 
                   {/* Footer */}
                   <Button 
-                    className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-slate-800 hover:bg-slate-900 text-white border-0"
+                    className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white border-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCardClick(assistant.name, assistant.description);
@@ -169,17 +169,17 @@ export default function TrabalhadoresesDigitais() {
           })}
 
           {/* Knowledge Base Card */}
-          <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col justify-center items-center text-center hover:scale-[1.02] hover:bg-white/90">
+          <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col hover:scale-[1.02] hover:bg-white/90">
             {/* Gradient Background */}
             <div className="absolute inset-0 bg-orange-50 rounded-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
             
+            {/* Icon positioned in top right corner */}
+            <div className="absolute top-4 right-4 w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
+              <BookOpen className="h-6 w-6 text-orange-600" />
+            </div>
+            
             {/* Content */}
-            <div className="relative z-10">
-              {/* Icon with animated glow */}
-              <div className="w-20 h-20 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                <BookOpen className="h-10 w-10 text-orange-600" />
-              </div>
-
+            <div className="relative z-10 flex flex-col justify-center items-center text-center h-full">
               {/* Title */}
               <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors">
                 {knowledgeBase.name}
@@ -187,12 +187,12 @@ export default function TrabalhadoresesDigitais() {
               <p className="text-base font-medium text-gray-600 mb-4">Central de Treinamento</p>
 
               {/* Description */}
-              <p className="text-sm text-gray-500 mb-8 line-clamp-3 leading-relaxed max-w-sm">
+              <p className="text-sm text-gray-500 mb-8 line-clamp-3 leading-relaxed max-w-sm flex-1 flex items-center">
                 {knowledgeBase.description}
               </p>
 
               <Link href="/base-conhecimento" className="inline-block">
-                <Button className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-orange-500 hover:bg-orange-600 text-white border-0">
+                <Button className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white border-0">
                   Acessar Base de Conhecimento
                 </Button>
               </Link>
