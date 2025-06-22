@@ -819,10 +819,10 @@ export default function ColecaoDetalhe() {
                             </div>
                           </div>
                           
-                          <div className="max-h-60 overflow-y-auto space-y-2 border rounded p-3 bg-gray-50">
+                          <div className="max-h-60 overflow-y-auto space-y-1 border rounded p-3 bg-gray-50">
                             {crawledPages.map((page, index) => (
-                              <div key={index} className={`p-3 border rounded bg-white ${!page.isValid ? 'opacity-50' : ''}`}>
-                                <label className="flex items-start space-x-3 cursor-pointer">
+                              <div key={index} className={`p-2 border rounded bg-white ${!page.isValid ? 'opacity-50' : ''}`}>
+                                <label className="flex items-center space-x-3 cursor-pointer">
                                   <input
                                     type="checkbox"
                                     checked={page.isValid && selectedPages.includes(page.url)}
@@ -834,18 +834,18 @@ export default function ColecaoDetalhe() {
                                       }
                                     }}
                                     disabled={!page.isValid}
-                                    className="mt-1 text-blue-600"
+                                    className="text-blue-600"
                                   />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-gray-900 truncate">{page.title}</div>
-                                    <div className="text-sm text-gray-500 truncate">{page.url}</div>
-                                    <div className="text-xs text-gray-400 mt-1">
-                                      {page.wordCount} palavras
-                                      {page.error && ` • Erro: ${page.error}`}
+                                  <div className="flex-1 min-w-0 flex items-center justify-between">
+                                    <div className="truncate">
+                                      <span className="font-medium text-gray-900">{page.title}</span>
+                                      {page.error && (
+                                        <span className="text-xs text-red-600 ml-2">• Erro: {page.error}</span>
+                                      )}
                                     </div>
-                                    {page.preview && (
-                                      <div className="text-xs text-gray-600 mt-1 line-clamp-2">{page.preview}</div>
-                                    )}
+                                    <span className="text-xs text-gray-500 ml-3 flex-shrink-0">
+                                      {page.wordCount} palavras
+                                    </span>
                                   </div>
                                 </label>
                               </div>
