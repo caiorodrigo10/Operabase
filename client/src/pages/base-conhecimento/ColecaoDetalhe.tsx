@@ -17,6 +17,8 @@ interface RAGDocument {
   content_type: 'text' | 'url' | 'pdf';
   original_content: string;
   created_at: string;
+  processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  error_message?: string;
   metadata?: {
     knowledge_base?: string;
     description?: string;
@@ -29,6 +31,8 @@ interface KnowledgeItem {
   title: string;
   preview: string;
   date: string;
+  processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  error_message?: string;
 }
 
 export default function ColecaoDetalhe() {
@@ -50,6 +54,24 @@ export default function ColecaoDetalhe() {
   const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
+
+  // Status badge component
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, { color: string; text: string }> = {
+      pending: { color: "bg-yellow-100 text-yellow-800", text: "Pendente" },
+      processing: { color: "bg-blue-100 text-blue-800", text: "Processando" },
+      completed: { color: "bg-green-100 text-green-800", text: "Processado" },
+      failed: { color: "bg-red-100 text-red-800", text: "Erro" }
+    };
+    
+    const badge = badges[status] || badges.pending;
+    
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
+        {badge.text}
+      </span>
+    );
+  };
 
   // Query para buscar a base de conhecimento específica
   const { data: knowledgeBase, isLoading: isLoadingKB } = useQuery({
@@ -97,7 +119,9 @@ export default function ColecaoDetalhe() {
     type: doc.content_type,
     title: doc.title,
     preview: doc.original_content?.substring(0, 100) + (doc.original_content?.length > 100 ? '...' : ''),
-    date: new Date(doc.created_at).toLocaleDateString('pt-BR')
+    date: new Date(doc.created_at).toLocaleDateString('pt-BR'),
+    processing_status: doc.processing_status,
+    error_message: doc.error_message
   })) || [];
 
   const handleOpenAddModal = () => {
@@ -393,9 +417,20 @@ export default function ColecaoDetalhe() {
                   {getTypeIcon(item.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h4 className="font-medium text-gray-900">{item.title}</h4>
+                    <span className="text-xs text-gray-400 font-mono">ID: {item.id}</span>
+                    {getStatusBadge(item.processing_status)}
+                  </div>
                   <p className="text-sm text-gray-600 mb-2">{item.preview}</p>
-                  <p className="text-xs text-gray-500">Adicionado em {item.date}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500">Adicionado em {item.date}</p>
+                    {item.processing_status === 'failed' && item.error_message && (
+                      <p className="text-xs text-red-600 truncate max-w-xs" title={item.error_message}>
+                        Erro: {item.error_message}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm">

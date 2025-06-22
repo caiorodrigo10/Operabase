@@ -272,11 +272,15 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: any
       return res.status(400).json({ error: 'Base de conhecimento e arquivo são obrigatórios' });
     }
 
+    // Fix encoding issue for filenames with accents
+    const decodedFilename = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    const cleanTitle = decodedFilename.replace(/\.pdf$/i, '');
+
     const [document] = await db
       .insert(rag_documents)
       .values({
         external_user_id: userId,
-        title: file.originalname.replace('.pdf', ''),
+        title: cleanTitle,
         content_type: 'pdf',
         file_path: file.path,
         metadata: { 
