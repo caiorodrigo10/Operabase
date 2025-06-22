@@ -301,7 +301,7 @@ INSTRUÇÕES:
       // First, generate embedding for the query using the EmbeddingService
       const { EmbeddingService } = await import('./rag-processors/embedding-service.js');
       const embeddingService = new EmbeddingService();
-      const queryEmbedding = await embeddingService.generateEmbedding(query);
+      const queryEmbedding = await embeddingService.generateSingleEmbedding(query);
       
       console.log(`🔍 RAG Debug: Generated query embedding with ${queryEmbedding.length} dimensions`);
       
