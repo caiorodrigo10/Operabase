@@ -40,50 +40,58 @@ export default function MaraAIConfig() {
   const queryClient = useQueryClient();
 
 
-  // Mock data for now - will be replaced with real API calls later
-  const mockProfessionals: Professional[] = [
-    { id: 4, name: "Dr. João Silva", email: "joao@clinica.com", role: "admin", is_professional: true },
-    { id: 5, name: "Dra. Maria Santos", email: "maria@clinica.com", role: "usuario", is_professional: true },
-    { id: 6, name: "Dr. Pedro Costa", email: "pedro@clinica.com", role: "usuario", is_professional: true },
-  ];
+  // Fetch real data from APIs
+  const { data: professionalsData, isLoading: professionalsLoading } = useQuery({
+    queryKey: ['/api/mara/professional-configs'],
+    queryFn: () => fetch('/api/mara/professional-configs').then(r => r.json())
+  });
 
-  const mockKnowledgeBases: KnowledgeBase[] = [
-    { id: 1, name: "Protocolos Cardíacos", description: "Protocolos e diretrizes de cardiologia", documentCount: 156 },
-    { id: 2, name: "Base Médica Geral", description: "Conhecimento médico geral", documentCount: 89 },
-    { id: 3, name: "Psicologia Clínica", description: "Materiais de psicologia e terapia", documentCount: 45 },
-    { id: 4, name: "Dermatologia", description: "Estudos e protocolos dermatológicos", documentCount: 23 },
-  ];
+  const { data: knowledgeBases, isLoading: basesLoading } = useQuery({
+    queryKey: ['/api/rag/knowledge-bases'],
+    queryFn: () => fetch('/api/rag/knowledge-bases').then(r => r.json())
+  });
 
-  const mockConfigs: Record<number, MaraConfig> = {
-    4: { 
-      professionalId: 4, 
-      knowledgeBaseId: 1, 
-      knowledgeBaseName: "Protocolos Cardíacos", 
-      isActive: true,
-      stats: { documentCount: 156, chunkCount: 2300, lastUpdated: "2025-01-22" }
-    },
-    6: { 
-      professionalId: 6, 
-      knowledgeBaseId: 2, 
-      knowledgeBaseName: "Base Médica Geral", 
-      isActive: true,
-      stats: { documentCount: 89, chunkCount: 1200, lastUpdated: "2025-01-20" }
-    },
-  };
+  const updateConfigMutation = useMutation({
+    mutationFn: (data: { professionalId: number, knowledgeBaseId: number | null }) =>
+      fetch(`/api/mara/professionals/${data.professionalId}/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ knowledge_base_id: data.knowledgeBaseId })
+      }).then(r => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mara/professional-configs'] });
+    }
+  });
 
-  const handleConnect = (professionalId: number, baseId: number) => {
-    const baseName = mockKnowledgeBases.find(b => b.id === baseId)?.name;
-    toast({
-      title: "Base conectada",
-      description: `${baseName} foi conectada ao profissional com sucesso`,
-    });
-  };
-
-  const handleDisconnect = (professionalId: number) => {
-    toast({
-      title: "Base desconectada",
-      description: "A base de conhecimento foi removida do profissional",
-    });
+  const handleConfigChange = (professionalId: number, baseId: string) => {
+    const knowledgeBaseId = baseId === "none" ? null : parseInt(baseId);
+    
+    updateConfigMutation.mutate(
+      { professionalId, knowledgeBaseId },
+      {
+        onSuccess: (response) => {
+          if (knowledgeBaseId === null) {
+            toast({
+              title: "Base desconectada",
+              description: "A base de conhecimento foi removida do profissional",
+            });
+          } else {
+            const baseName = knowledgeBases?.find((b: any) => b.id === knowledgeBaseId)?.name;
+            toast({
+              title: "Base conectada",
+              description: `${baseName} foi conectada ao profissional com sucesso`,
+            });
+          }
+        },
+        onError: (error) => {
+          toast({
+            title: "Erro",
+            description: "Não foi possível atualizar a configuração",
+            variant: "destructive"
+          });
+        }
+      }
+    );
   };
 
   const getStatusBadge = (config?: MaraConfig) => {
@@ -128,73 +136,72 @@ export default function MaraAIConfig() {
 
       {/* Professional Cards */}
       <div className="space-y-6">
-        {mockProfessionals.map((professional) => {
-          const config = mockConfigs[professional.id];
-          
-          return (
-            <Card key={professional.id} className="border border-slate-200">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  {/* Professional Info */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <User className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                        {professional.name}
-                      </h3>
-                      <p className="text-sm text-slate-500 mb-3">
-                        {professional.email}
-                      </p>
-                      
-                      {/* Base Connection */}
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">Base conectada:</span>
-                        </div>
-                        <Select 
-                          value={config?.knowledgeBaseId?.toString() || "none"}
-                          onValueChange={(value) => {
-                            if (value === "none") {
-                              handleDisconnect(professional.id);
-                            } else {
-                              handleConnect(professional.id, parseInt(value));
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="w-64">
-                            <SelectValue placeholder="Selecionar base..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhuma (Mara Genérica)</SelectItem>
-                            {mockKnowledgeBases.map((base) => (
-                              <SelectItem key={base.id} value={base.id.toString()}>
-                                📚 {base.name} ({base.documentCount} docs)
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+        {professionalsLoading || basesLoading ? (
+          <div className="text-center py-8">
+            <p className="text-slate-600">Carregando configurações...</p>
+          </div>
+        ) : (
+          professionalsData?.map((professional: any) => {
+            const config = professional.maraConfig;
+            
+            return (
+              <Card key={professional.id} className="border border-slate-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    {/* Professional Info */}
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <User className="w-6 h-6 text-blue-600" />
                       </div>
-
-                      {/* Status and Stats */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-600">Status:</span>
-                          {getStatusBadge(config)}
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                          {professional.name}
+                        </h3>
+                        <p className="text-sm text-slate-500 mb-3">
+                          {professional.email}
+                        </p>
+                        
+                        {/* Base Connection */}
+                        <div className="flex items-center gap-4 mb-3">
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-slate-400" />
+                            <span className="text-sm text-slate-600">Base conectada:</span>
+                          </div>
+                          <Select 
+                            value={config?.knowledgeBaseId?.toString() || "none"}
+                            onValueChange={(value) => handleConfigChange(professional.id, value)}
+                            disabled={updateConfigMutation.isPending}
+                          >
+                            <SelectTrigger className="w-64">
+                              <SelectValue placeholder="Selecionar base..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Nenhuma (Mara Genérica)</SelectItem>
+                              {knowledgeBases?.map((base: any) => (
+                                <SelectItem key={base.id} value={base.id.toString()}>
+                                  📚 {base.name} ({base.document_count || 0} docs)
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                        {getStatsText(config)}
+
+                        {/* Status and Stats */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-600">Status:</span>
+                            {getStatusBadge(config)}
+                          </div>
+                          {getStatsText(config)}
+                        </div>
                       </div>
                     </div>
                   </div>
-
-
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       {/* Info Card */}

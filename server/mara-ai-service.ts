@@ -246,20 +246,12 @@ INSTRUÇÕES:
 
   async searchRAGKnowledge(query: string, knowledgeBaseId: number): Promise<RAGResult[]> {
     try {
-      // Use the existing RAG semantic search function
+      // Use the existing search_similar_chunks function
       const result = await db.execute(`
-        SELECT 
-          re.content,
-          re.metadata,
-          1 - (re.embedding <=> $1::vector) as similarity
-        FROM rag_embeddings re
-        JOIN rag_documents rd ON re.document_id = rd.id
-        WHERE rd.knowledge_base_id = $2 
-          AND rd.status = 'completed'
-          AND 1 - (re.embedding <=> $1::vector) > 0.7
-        ORDER BY similarity DESC
-        LIMIT 5
-      `, [query, knowledgeBaseId]);
+        SELECT content, metadata, similarity
+        FROM search_similar_chunks($1, $2, 0.7, 5)
+        WHERE knowledge_base_id = $3
+      `, [query, 5, knowledgeBaseId]);
 
       return result.rows.map(row => ({
         content: row.content,

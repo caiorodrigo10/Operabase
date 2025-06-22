@@ -129,6 +129,10 @@ app.use((req, res, next) => {
   const { setupMaraRoutes } = await import('./mara-routes');
   setupMaraRoutes(app, storage);
   
+  // Add Mara Configuration routes
+  const { setupMaraConfigRoutes } = await import('./mara-config-routes');
+  setupMaraConfigRoutes(app, storage);
+  
   // Add Google Calendar authentication routes with professional validation
   const { isAuthenticated } = await import('./auth');
   const { createRequireProfessional } = await import('./middleware/professional-validation');
