@@ -82,63 +82,24 @@ export default function BasesConhecimento() {
     }
   });
 
-  // Agrupar documentos por "coleção" baseado no título ou tipo
-  const collections: Collection[] = [
-    {
-      id: 1,
-      name: "Protocolos de Atendimento",
-      description: "Protocolos médicos e procedimentos da clínica",
-      itemCount: documents.filter(doc => 
-        doc.title.toLowerCase().includes('protocolo') || 
-        doc.title.toLowerCase().includes('atendimento') ||
-        doc.title.toLowerCase().includes('procedimento')
-      ).length,
-      lastUpdated: documents.length > 0 ? new Date(Math.max(...documents.map(d => new Date(d.updated_at).getTime()))).toLocaleDateString('pt-BR') : "Sem dados",
-      documents: documents.filter(doc => 
-        doc.title.toLowerCase().includes('protocolo') || 
-        doc.title.toLowerCase().includes('atendimento') ||
-        doc.title.toLowerCase().includes('procedimento')
-      )
-    },
-    {
-      id: 2,
-      name: "Cardiologia",
-      description: "Conhecimentos específicos sobre cardiologia",
-      itemCount: documents.filter(doc => 
-        doc.title.toLowerCase().includes('cardiologia') ||
-        doc.title.toLowerCase().includes('cardio') ||
-        doc.title.toLowerCase().includes('coração')
-      ).length,
-      lastUpdated: documents.length > 0 ? new Date(Math.max(...documents.map(d => new Date(d.updated_at).getTime()))).toLocaleDateString('pt-BR') : "Sem dados",
-      documents: documents.filter(doc => 
-        doc.title.toLowerCase().includes('cardiologia') ||
-        doc.title.toLowerCase().includes('cardio') ||
-        doc.title.toLowerCase().includes('coração')
-      )
-    },
-    {
-      id: 3,
-      name: "Documentos Gerais",
-      description: "Outros documentos e informações",
-      itemCount: documents.filter(doc => 
-        !doc.title.toLowerCase().includes('protocolo') && 
-        !doc.title.toLowerCase().includes('atendimento') &&
-        !doc.title.toLowerCase().includes('procedimento') &&
-        !doc.title.toLowerCase().includes('cardiologia') &&
-        !doc.title.toLowerCase().includes('cardio') &&
-        !doc.title.toLowerCase().includes('coração')
-      ).length,
-      lastUpdated: documents.length > 0 ? new Date(Math.max(...documents.map(d => new Date(d.updated_at).getTime()))).toLocaleDateString('pt-BR') : "Sem dados",
-      documents: documents.filter(doc => 
-        !doc.title.toLowerCase().includes('protocolo') && 
-        !doc.title.toLowerCase().includes('atendimento') &&
-        !doc.title.toLowerCase().includes('procedimento') &&
-        !doc.title.toLowerCase().includes('cardiologia') &&
-        !doc.title.toLowerCase().includes('cardio') &&
-        !doc.title.toLowerCase().includes('coração')
-      )
+  // Agrupar documentos reais por knowledge_base metadata
+  const knowledgeBaseGroups = documents.reduce((groups: any, doc) => {
+    const knowledgeBase = doc.metadata?.knowledge_base || doc.title;
+    if (!groups[knowledgeBase]) {
+      groups[knowledgeBase] = [];
     }
-  ];
+    groups[knowledgeBase].push(doc);
+    return groups;
+  }, {});
+
+  const collections: Collection[] = Object.entries(knowledgeBaseGroups).map(([name, docs]: [string, any]) => ({
+    id: Math.abs(name.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)),
+    name,
+    description: docs[0]?.metadata?.description || `Base de conhecimento ${name}`,
+    itemCount: docs.length,
+    lastUpdated: docs.length > 0 ? new Date(Math.max(...docs.map((d: any) => new Date(d.updated_at).getTime()))).toLocaleDateString('pt-BR') : "Sem dados",
+    documents: docs
+  }));
 
   // Mutation para criar nova coleção (simulado por enquanto)
   const createCollectionMutation = useMutation({
