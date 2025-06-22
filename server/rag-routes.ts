@@ -297,7 +297,60 @@ router.get('/processing/:id', ragAuth, async (req: any, res: Response) => {
   }
 });
 
-// Deletar documento
+// Deletar base de conhecimento completa
+router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response) => {
+  try {
+    const knowledgeBaseName = decodeURIComponent(req.params.name);
+    const userId = req.user?.email || req.user?.id?.toString();
+
+    console.log(`🗑️ Deleting knowledge base: ${knowledgeBaseName} for user: ${userId}`);
+
+    // Buscar todos os documentos da base de conhecimento
+    const documents = await db
+      .select()
+      .from(rag_documents)
+      .where(and(
+        eq(rag_documents.external_user_id, userId),
+        eq(rag_documents.metadata, JSON.stringify({ knowledge_base: knowledgeBaseName }))
+      ));
+
+    console.log(`📊 Found ${documents.length} documents to delete`);
+
+    // Deletar arquivos físicos se existirem
+    for (const document of documents) {
+      if (document.content_type === 'pdf' && document.file_path) {
+        try {
+          if (fs.existsSync(document.file_path)) {
+            fs.unlinkSync(document.file_path);
+            console.log(`🗂️ Deleted file: ${document.file_path}`);
+          }
+        } catch (error) {
+          console.warn('Warning: Could not delete file:', error);
+        }
+      }
+    }
+
+    // Deletar todos os documentos da base de conhecimento (cascata deletará chunks e embeddings)
+    const deletedCount = await db
+      .delete(rag_documents)
+      .where(and(
+        eq(rag_documents.external_user_id, userId),
+        eq(rag_documents.metadata, JSON.stringify({ knowledge_base: knowledgeBaseName }))
+      ));
+
+    console.log(`✅ Deleted knowledge base with ${documents.length} documents`);
+
+    res.json({ 
+      message: 'Base de conhecimento deletada com sucesso',
+      deletedDocuments: documents.length
+    });
+  } catch (error) {
+    console.error('Error deleting knowledge base:', error);
+    res.status(500).json({ error: 'Falha ao deletar base de conhecimento' });
+  }
+});
+
+// Deletar documento individual
 router.delete('/documents/:id', ragAuth, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);

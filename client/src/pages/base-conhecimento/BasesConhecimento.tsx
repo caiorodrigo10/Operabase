@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +40,8 @@ export default function BasesConhecimento() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionDescription, setNewCollectionDescription] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [knowledgeBaseToDelete, setKnowledgeBaseToDelete] = useState<string | null>(null);
 
   // Query para buscar documentos RAG
   const { data: documents = [], isLoading } = useQuery({
@@ -88,6 +91,35 @@ export default function BasesConhecimento() {
       toast({
         title: "Erro",
         description: "Falha ao criar base de conhecimento",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Mutation para deletar base de conhecimento
+  const deleteKnowledgeBaseMutation = useMutation({
+    mutationFn: async (knowledgeBaseName: string) => {
+      const response = await fetch(`/api/rag/knowledge-bases/${encodeURIComponent(knowledgeBaseName)}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao deletar base de conhecimento');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+      toast({
+        title: "Sucesso",
+        description: `Base de conhecimento deletada com sucesso. ${data.deletedDocuments} documentos removidos.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao deletar base de conhecimento",
         variant: "destructive"
       });
     }
@@ -152,6 +184,19 @@ export default function BasesConhecimento() {
     });
   };
 
+  const handleDeleteKnowledgeBase = (knowledgeBaseName: string) => {
+    setKnowledgeBaseToDelete(knowledgeBaseName);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteKnowledgeBase = () => {
+    if (knowledgeBaseToDelete) {
+      deleteKnowledgeBaseMutation.mutate(knowledgeBaseToDelete);
+      setDeleteDialogOpen(false);
+      setKnowledgeBaseToDelete(null);
+    }
+  };
+
   const getItemIcon = (type: string) => {
     switch (type) {
       case "pdf":
@@ -211,6 +256,7 @@ export default function BasesConhecimento() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        handleDeleteKnowledgeBase(collection.name);
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
