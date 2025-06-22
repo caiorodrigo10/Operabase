@@ -52,9 +52,10 @@ export function setupAuth(app: Express, storage: IStorage) {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false, // Allow JavaScript access for testing
+      secure: false, // Disable secure in development
       maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+      sameSite: 'lax'
     },
   };
 
@@ -211,7 +212,7 @@ export function setupAuth(app: Express, storage: IStorage) {
 // Middleware to check if user is authenticated (supports both session and Supabase token)
 export const isAuthenticated = async (req: any, res: any, next: any) => {
   // Check session-based authentication first
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
   }
   

@@ -25,6 +25,7 @@ const testRAGWithAuth = async () => {
     // Extract session cookie
     const cookies = loginResponse.headers.get('set-cookie');
     console.log('✅ Login successful, got session cookie');
+    console.log('🔍 Cookie details:', cookies);
     
     // Test 1: Create text document
     console.log('📝 Creating text document...');
