@@ -298,12 +298,22 @@ INSTRUÇÕES:
       
       console.log(`📊 RAG Debug: Knowledge base ${knowledgeBaseId} has ${embeddingsCheck.rows[0]?.total_embeddings || 0} embeddings`);
       
+      // First, generate embedding for the query using the EmbeddingService
+      const { EmbeddingService } = await import('./rag-processors/embedding-service.js');
+      const embeddingService = new EmbeddingService();
+      const queryEmbedding = await embeddingService.generateEmbedding(query);
+      
+      console.log(`🔍 RAG Debug: Generated query embedding with ${queryEmbedding.length} dimensions`);
+      
+      // Convert embedding array to PostgreSQL vector format
+      const embeddingVector = `[${queryEmbedding.join(',')}]`;
+      
       // Perform similarity search using proper table structure
       const result = await db.execute(sql`
         SELECT 
           rc.content, 
           rc.metadata, 
-          1 - (re.embedding <=> openai_embedding(${query})) as similarity,
+          1 - (re.embedding <=> ${embeddingVector}::vector) as similarity,
           rd.title as document_title
         FROM rag_chunks rc
         JOIN rag_documents rd ON rc.document_id = rd.id
@@ -313,7 +323,7 @@ INSTRUÇÕES:
           FROM rag_knowledge_bases 
           WHERE id = ${knowledgeBaseId}
         )
-        ORDER BY re.embedding <=> openai_embedding(${query})
+        ORDER BY re.embedding <=> ${embeddingVector}::vector
         LIMIT 5
       `);
 
