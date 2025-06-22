@@ -164,7 +164,7 @@ export const AICodeChat = () => {
 
       {/* Input */}
       <div className="p-3 pb-6 bg-white border-t border-gray-200 flex-shrink-0">
-        <div className="flex gap-2 items-end">
+        <div className="flex gap-2 items-start">
           <div className="flex-1">
             <textarea
               ref={textareaRef}
@@ -172,16 +172,16 @@ export const AICodeChat = () => {
               onChange={handleTextareaChange}
               onKeyPress={handleKeyPress}
               placeholder="Describe what you want to create or modify..."
-              className="w-full resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={1}
-              style={{ minHeight: '38px', maxHeight: '120px' }}
+              className="w-full resize-none border border-gray-300 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={3}
+              style={{ minHeight: '80px', maxHeight: '160px' }}
             />
           </div>
           <Button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isTyping}
             size="sm"
-            className="h-[38px] w-[38px] p-0 flex-shrink-0"
+            className="h-[40px] w-[40px] p-0 flex-shrink-0 mt-1"
           >
             <Send size={16} />
           </Button>
