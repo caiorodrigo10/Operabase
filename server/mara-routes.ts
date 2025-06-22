@@ -15,6 +15,7 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       console.log('🤖 Mara AI: Iniciando chat para contato', contactId);
       console.log('📝 Pergunta:', question);
       console.log('👤 Usuário:', req.user?.id);
+      console.log('🔐 Sessão req.user:', JSON.stringify(req.user, null, 2));
 
       // Verificar se o usuário está autenticado
       if (!req.user || !req.user.id) {
@@ -52,18 +53,25 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
 
       const result = await maraService.analyzeContact(contactId, question, userId);
 
-      console.log(`✅ Mara AI: Resposta gerada`);
+      console.log(`✅ Mara AI: Resposta gerada:`, result);
 
-      res.json({
-        response: result.response,
+      // Ensure we always return a valid response
+      const response = {
+        response: result?.response || 'Desculpe, não consegui gerar uma resposta.',
         timestamp: new Date().toISOString()
-      });
+      };
 
-    } catch (error) {
-      console.error('Erro na rota Mara AI:', error);
+      console.log('📤 Enviando resposta:', response);
+      res.json(response);
+
+    } catch (error: any) {
+      console.error('❌ Erro na rota Mara AI:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Stack trace:', error.stack);
       res.status(500).json({ 
         error: 'Erro interno do servidor',
-        message: 'Não foi possível processar sua pergunta no momento'
+        message: 'Não foi possível processar sua pergunta no momento',
+        details: error.message
       });
     }
   });

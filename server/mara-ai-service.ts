@@ -69,9 +69,11 @@ export class MaraAIService {
         response: result
       };
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Erro na Mara AI:', error);
       console.error('Stack trace:', error.stack);
+      console.error('Error message:', error.message);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return {
         response: "Desculpe, ocorreu um erro ao processar sua pergunta. Tente novamente."
       };
