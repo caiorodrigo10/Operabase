@@ -144,6 +144,9 @@ function Router() {
         <Route path="/api-keys" component={ApiKeysPage} />
         <Route path="/trabalhadores-digitais" component={TrabalhadoresesDigitais} />
         <Route path="/base-conhecimento" component={BaseConhecimento} />
+        <Route path="/base-conhecimento/fontes" component={BaseConhecimento} />
+        <Route path="/base-conhecimento/profissionais" component={BaseConhecimento} />
+        <Route path="/base-conhecimento/empresa" component={BaseConhecimento} />
 
         <Route component={NotFound} />
       </Switch>

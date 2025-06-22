@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ChevronLeft, BookOpen, Users, Building } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import Profissionais from "./base-conhecimento/Profissionais";
 import Empresa from "./base-conhecimento/Empresa";
 
 export default function BaseConhecimento() {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
 
   // Determine active section from URL or default to fontes
   const currentSection = location.includes("/base-conhecimento/") 
