@@ -80,7 +80,7 @@ export class EmbeddingService {
   private splitOversizedChunk(chunk: any): any[] {
     const content = chunk.content;
     const targetSize = Math.floor(this.MAX_TOKENS_PER_CHUNK * 0.8); // Use 80% of max for safety
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const sentences = content.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
     
     const splitChunks = [];
     let currentContent = '';

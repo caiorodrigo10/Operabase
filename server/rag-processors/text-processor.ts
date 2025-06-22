@@ -1,8 +1,8 @@
 import { ProcessedChunk } from './pdf-processor';
 
 export class TextProcessor {
-  private readonly MAX_CHUNK_SIZE = 500;
-  private readonly CHUNK_OVERLAP = 60;
+  private readonly MAX_CHUNK_SIZE = 400;
+  private readonly CHUNK_OVERLAP = 50;
 
   async processText(content: string, documentId: number): Promise<ProcessedChunk[]> {
     try {
@@ -150,7 +150,7 @@ export class TextProcessor {
   }
 
   private countTokens(text: string): number {
-    // Aproximação simples baseada em palavras (1.3 tokens por palavra em média)
-    return Math.ceil(text.split(' ').length * 1.3);
+    // Usar o mesmo método do EmbeddingService (1 token ≈ 4 caracteres)
+    return Math.ceil(text.length / 4);
   }
 }

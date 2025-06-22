@@ -27,8 +27,8 @@ export interface ProcessedChunk {
 }
 
 export class PDFProcessor {
-  private readonly MAX_CHUNK_SIZE = 800;
-  private readonly CHUNK_OVERLAP = 100;
+  private readonly MAX_CHUNK_SIZE = 400;
+  private readonly CHUNK_OVERLAP = 50;
 
   async extractText(filePath: string): Promise<string> {
     try {

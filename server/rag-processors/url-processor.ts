@@ -4,8 +4,8 @@ import * as cheerio from 'cheerio';
 import { ProcessedChunk } from './pdf-processor';
 
 export class URLProcessor {
-  private readonly MAX_CHUNK_SIZE = 600;
-  private readonly CHUNK_OVERLAP = 80;
+  private readonly MAX_CHUNK_SIZE = 400;
+  private readonly CHUNK_OVERLAP = 50;
 
   async extractContent(url: string): Promise<string> {
     try {
@@ -250,7 +250,7 @@ export class URLProcessor {
   }
 
   private countTokens(text: string): number {
-    // Aproximação baseada em palavras (1.3 tokens por palavra em média)
-    return Math.ceil(text.split(' ').length * 1.3);
+    // Usar o mesmo método do EmbeddingService (1 token ≈ 4 caracteres)
+    return Math.ceil(text.length / 4);
   }
 }
