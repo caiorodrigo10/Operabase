@@ -82,19 +82,18 @@ export class CrawlerService {
           return;
         }
 
-        // Handle encoding properly
-        const encoding = res.headers['content-encoding'];
-        const isGzipped = encoding === 'gzip';
+        // Handle encoding and compression properly
+        const chunks: Buffer[] = [];
         
-        if (isGzipped) {
-          const chunks: Buffer[] = [];
+        res.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+
+        res.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          const encoding = res.headers['content-encoding'];
           
-          res.on('data', (chunk) => {
-            chunks.push(chunk);
-          });
-          
-          res.on('end', () => {
-            const buffer = Buffer.concat(chunks);
+          if (encoding === 'gzip') {
             zlib.gunzip(buffer, (err: Error | null, decompressed: Buffer) => {
               if (err) {
                 reject(err);
@@ -102,17 +101,27 @@ export class CrawlerService {
                 resolve(decompressed.toString('utf8'));
               }
             });
-          });
-        } else {
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => {
-            data += chunk;
-          });
-
-          res.on('end', () => {
-            resolve(data);
-          });
-        }
+          } else if (encoding === 'deflate') {
+            zlib.inflate(buffer, (err: Error | null, decompressed: Buffer) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(decompressed.toString('utf8'));
+              }
+            });
+          } else if (encoding === 'br') {
+            zlib.brotliDecompress(buffer, (err: Error | null, decompressed: Buffer) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(decompressed.toString('utf8'));
+              }
+            });
+          } else {
+            // No compression or unknown compression
+            resolve(buffer.toString('utf8'));
+          }
+        });
       });
 
       req.on('error', (error) => {

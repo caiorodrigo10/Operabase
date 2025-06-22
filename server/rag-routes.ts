@@ -202,7 +202,8 @@ router.post('/documents', ragAuth, async (req: any, res: Response) => {
 // Preview de crawling para URLs
 router.post('/crawl/preview', ragAuth, async (req: any, res: Response) => {
   try {
-    const { url, crawlMode } = req.body;
+    const { url, crawlMode, mode } = req.body;
+    const actualMode = crawlMode || mode;
 
     if (!url) {
       return res.status(400).json({ error: 'URL é obrigatória' });
@@ -215,13 +216,13 @@ router.post('/crawl/preview', ragAuth, async (req: any, res: Response) => {
       return res.status(400).json({ error: 'URL inválida' });
     }
 
-    console.log(`🔍 Preview de crawling: ${url} (modo: ${crawlMode})`);
+    console.log(`🔍 Preview de crawling: ${url} (modo: ${actualMode})`);
 
     const { CrawlerService } = await import('./rag-processors/crawler-service');
     const crawler = new CrawlerService();
 
     let pages;
-    if (crawlMode === 'domain') {
+    if (actualMode === 'domain') {
       pages = await crawler.crawlDomain(url, { maxPages: 50 });
     } else {
       const singlePage = await crawler.crawlSinglePage(url);
