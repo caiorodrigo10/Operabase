@@ -121,35 +121,35 @@ export const BUILDER_COMPONENTS: Record<string, ComponentDefinition> = {
     ]
   },
 
-  CraftButton: {
+  Button: {
     description: "Customizable button with styles and colors",
     props: {
-      text: { 
+      children: { 
         type: 'string', 
         example: 'Click me',
         description: 'Button text content' 
       },
       size: { 
         type: 'select', 
-        options: ['small', 'medium', 'large'],
-        example: 'medium',
+        options: ['sm', 'default', 'lg'],
+        example: 'default',
         description: 'Button size' 
       },
-      buttonStyle: { 
+      variant: { 
         type: 'select', 
-        options: ['full', 'outline'],
-        example: 'full',
+        options: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'],
+        example: 'default',
         description: 'Button style variant' 
       },
-      color: { 
-        type: 'color', 
-        example: { r: 255, g: 255, b: 255, a: 1 },
-        description: 'Button text color in RGBA format' 
+      textColor: { 
+        type: 'string', 
+        example: '#ffffff',
+        description: 'Button text color in hex format' 
       },
-      background: { 
-        type: 'color', 
-        example: { r: 59, g: 130, b: 246, a: 1 },
-        description: 'Button background color in RGBA format' 
+      backgroundColor: { 
+        type: 'string', 
+        example: '#3b82f6',
+        description: 'Button background color in hex format' 
       }
     },
     naturalLanguage: [

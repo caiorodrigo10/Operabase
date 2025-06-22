@@ -171,14 +171,19 @@ export const AICodeChat = () => {
       
       try {
         actions.deserialize(newJSONString);
-        console.log('✅ Successfully applied changes to editor');
+        console.log('✅ Changes applied to editor');
         
-        // Force a small delay to ensure the editor has processed the changes
+        // Force editor refresh after changes
         setTimeout(() => {
-          console.log('🔄 Forcing editor refresh after deserialize');
-          // Get updated state to verify changes were applied
+          console.log('🔄 Verifying changes...');
           const updatedState = query.serialize();
-          console.log('📊 Editor state after changes:', typeof updatedState === 'string' ? JSON.parse(updatedState) : updatedState);
+          const updatedJSON = typeof updatedState === 'string' ? JSON.parse(updatedState) : updatedState;
+          console.log('📊 Final editor state:', updatedJSON);
+          
+          const newElements = Object.keys(updatedJSON).filter(key => 
+            key !== 'ROOT' && !Object.keys(currentJSON).includes(key)
+          );
+          console.log('🆕 New elements created:', newElements.length);
         }, 100);
         
       } catch (deserializeError) {
