@@ -246,26 +246,90 @@ INSTRUÇÕES:
   }
 
   async searchRAGKnowledge(query: string, knowledgeBaseId: number): Promise<RAGResult[]> {
+    console.log(`🔍 RAG Debug: Searching knowledge base ${knowledgeBaseId} for query: "${query}"`);
+    
     try {
-      // Direct query to rag_documents with similarity search
+      // First, check if the knowledge base exists and has documents
+      const kbCheck = await db.execute(sql`
+        SELECT COUNT(*) as total_docs 
+        FROM rag_documents 
+        WHERE id IN (
+          SELECT DISTINCT document_id 
+          FROM rag_chunks 
+          WHERE document_id IN (
+            SELECT id FROM rag_documents 
+            WHERE external_user_id = (
+              SELECT external_user_id 
+              FROM rag_knowledge_bases 
+              WHERE id = ${knowledgeBaseId}
+            )
+          )
+        )
+      `);
+      
+      console.log(`📊 RAG Debug: Knowledge base ${knowledgeBaseId} has ${kbCheck.rows[0]?.total_docs || 0} documents`);
+      
+      // Check chunks availability
+      const chunksCheck = await db.execute(sql`
+        SELECT COUNT(*) as total_chunks
+        FROM rag_chunks rc
+        JOIN rag_documents rd ON rc.document_id = rd.id
+        WHERE rd.external_user_id = (
+          SELECT external_user_id 
+          FROM rag_knowledge_bases 
+          WHERE id = ${knowledgeBaseId}
+        )
+      `);
+      
+      console.log(`📊 RAG Debug: Knowledge base ${knowledgeBaseId} has ${chunksCheck.rows[0]?.total_chunks || 0} chunks`);
+      
+      // Check embeddings availability
+      const embeddingsCheck = await db.execute(sql`
+        SELECT COUNT(*) as total_embeddings
+        FROM rag_embeddings re
+        JOIN rag_chunks rc ON re.chunk_id = rc.id
+        JOIN rag_documents rd ON rc.document_id = rd.id
+        WHERE rd.external_user_id = (
+          SELECT external_user_id 
+          FROM rag_knowledge_bases 
+          WHERE id = ${knowledgeBaseId}
+        )
+      `);
+      
+      console.log(`📊 RAG Debug: Knowledge base ${knowledgeBaseId} has ${embeddingsCheck.rows[0]?.total_embeddings || 0} embeddings`);
+      
+      // Perform similarity search using proper table structure
       const result = await db.execute(sql`
         SELECT 
-          content, 
-          metadata, 
-          1 - (embedding <=> openai_embedding(${query})) as similarity
-        FROM rag_documents 
-        WHERE knowledge_base_id = ${knowledgeBaseId}
-        ORDER BY embedding <=> openai_embedding(${query})
+          rc.content, 
+          rc.metadata, 
+          1 - (re.embedding <=> openai_embedding(${query})) as similarity,
+          rd.title as document_title
+        FROM rag_chunks rc
+        JOIN rag_documents rd ON rc.document_id = rd.id
+        JOIN rag_embeddings re ON re.chunk_id = rc.id
+        WHERE rd.external_user_id = (
+          SELECT external_user_id 
+          FROM rag_knowledge_bases 
+          WHERE id = ${knowledgeBaseId}
+        )
+        ORDER BY re.embedding <=> openai_embedding(${query})
         LIMIT 5
       `);
 
-      return result.rows.map(row => ({
-        content: row.content,
+      console.log(`🎯 RAG Debug: Query returned ${result.rows.length} results`);
+      
+      const results = result.rows.map(row => ({
+        content: row.content as string,
         metadata: row.metadata,
-        similarity: parseFloat(row.similarity)
+        similarity: parseFloat(row.similarity as string)
       }));
+      
+      console.log(`📋 RAG Debug: Top result similarity: ${results[0]?.similarity || 'N/A'}`);
+      
+      return results;
     } catch (error) {
-      console.error('Error searching RAG knowledge:', error);
+      console.error('❌ RAG Debug: Error searching RAG knowledge:', error);
       return [];
     }
   }
