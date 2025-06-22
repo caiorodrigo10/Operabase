@@ -36,6 +36,8 @@ import EditarAnamnesePage from "./pages/editar-anamnese";
 import EditarAnamneseResposta from "./pages/editar-anamnese-resposta";
 import TrabalhadoresesDigitais from "./pages/TrabalhadoresesDigitais";
 import BaseConhecimento from "./pages/BaseConhecimento";
+import RAGDocuments from "./pages/rag/RAGDocuments";
+import RAGUpload from "./pages/rag/RAGUpload";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -147,6 +149,8 @@ function Router() {
         <Route path="/base-conhecimento/:id" component={BaseConhecimento} />
         <Route path="/base-conhecimento/profissionais" component={BaseConhecimento} />
         <Route path="/base-conhecimento/empresa" component={BaseConhecimento} />
+        <Route path="/rag" component={RAGDocuments} />
+        <Route path="/rag/upload" component={RAGUpload} />
 
         <Route component={NotFound} />
       </Switch>

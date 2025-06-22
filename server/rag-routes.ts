@@ -41,7 +41,7 @@ const upload = multer({
 // Listar documentos do usuário
 router.get('/documents', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id?.toString() || req.user?.email;
     
     const documents = await db
       .select()
@@ -59,7 +59,7 @@ router.get('/documents', isAuthenticated, async (req: any, res: Response) => {
 // Upload de documento de texto
 router.post('/documents/text', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id?.toString() || req.user?.email;
     const { title, content } = req.body;
 
     if (!title || !content) {
@@ -95,7 +95,7 @@ router.post('/documents/text', isAuthenticated, async (req: any, res: Response) 
 // Upload de URL
 router.post('/documents/url', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id?.toString() || req.user?.email;
     const { title, url } = req.body;
 
     if (!title || !url) {
@@ -137,7 +137,7 @@ router.post('/documents/url', isAuthenticated, async (req: any, res: Response) =
 // Upload de PDF
 router.post('/documents/pdf', isAuthenticated, upload.single('file'), async (req: any, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id?.toString() || req.user?.email;
     const { title } = req.body;
     const file = req.file;
 
