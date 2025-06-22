@@ -521,18 +521,22 @@ export default function ColecaoDetalhe() {
                   {getTypeIcon(item.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between">
                     <h4 className="font-medium text-gray-900 truncate">
                       {item.title}
                     </h4>
-                    <span className="text-xs text-gray-400 font-mono flex-shrink-0">ID: {item.id}</span>
-                    {getStatusBadge(item.processing_status)}
-                    {item.processing_status === 'failed' && item.error_message && (
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="text-xs text-gray-400 font-mono">ID: {item.id}</span>
+                      {getStatusBadge(item.processing_status)}
+                    </div>
+                  </div>
+                  {item.processing_status === 'failed' && item.error_message && (
+                    <div className="mt-1">
                       <span className="text-xs text-red-600 truncate max-w-xs" title={item.error_message}>
                         Erro: {item.error_message}
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
