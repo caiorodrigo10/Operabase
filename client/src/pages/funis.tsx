@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -112,9 +113,12 @@ export default function FunisPage() {
               <Button 
                 variant="outline" 
                 className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                asChild
               >
-                <Edit3 className="h-4 w-4 mr-2" />
-                Editar Funil
+                <Link href={`/funis/${funil.id}`}>
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Editar Funil
+                </Link>
               </Button>
             </CardContent>
           </Card>
