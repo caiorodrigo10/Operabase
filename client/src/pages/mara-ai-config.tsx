@@ -5,10 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, User, Brain, BookOpen, TestTube, Link as LinkIcon, X } from "lucide-react";
+import { ArrowLeft, User, Brain, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Professional {
@@ -41,9 +38,7 @@ interface MaraConfig {
 export default function MaraAIConfig() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [testingProfessional, setTestingProfessional] = useState<number | null>(null);
-  const [testQuestion, setTestQuestion] = useState("");
-  const [testResponse, setTestResponse] = useState("");
+
 
   // Mock data for now - will be replaced with real API calls later
   const mockProfessionals: Professional[] = [
@@ -88,14 +83,6 @@ export default function MaraAIConfig() {
     toast({
       title: "Base desconectada",
       description: "A base de conhecimento foi removida do profissional",
-    });
-  };
-
-  const handleTest = () => {
-    setTestResponse("Olá! Sou a Mara AI configurada com a base de conhecimento especializada. Como posso ajudar você hoje?");
-    toast({
-      title: "Teste realizado",
-      description: "Mara AI respondeu com base na configuração atual",
     });
   };
 
@@ -202,92 +189,7 @@ export default function MaraAIConfig() {
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    {config?.knowledgeBaseId && (
-                      <>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setTestingProfessional(professional.id)}
-                            >
-                              <TestTube className="w-4 h-4 mr-2" />
-                              Testar
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-md">
-                            <DialogHeader>
-                              <DialogTitle>Testar Mara AI - {professional.name}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <p className="text-sm text-slate-600 mb-2">
-                                  Base: {config?.knowledgeBaseName}
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <label className="text-sm font-medium text-slate-700">
-                                  Pergunta:
-                                </label>
-                                <Textarea
-                                  value={testQuestion}
-                                  onChange={(e) => setTestQuestion(e.target.value)}
-                                  placeholder="Como tratar arritmia?"
-                                  className="mt-1"
-                                  rows={3}
-                                />
-                              </div>
 
-                              {testResponse && (
-                                <div>
-                                  <label className="text-sm font-medium text-slate-700">
-                                    Resposta:
-                                  </label>
-                                  <div className="mt-1 p-3 bg-slate-50 rounded-md border text-sm">
-                                    {testResponse}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="flex gap-2">
-                                <Button 
-                                  onClick={handleTest}
-                                  disabled={!testQuestion.trim()}
-                                  className="flex-1"
-                                >
-                                  <Brain className="w-4 h-4 mr-2" />
-                                  Testar
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDisconnect(professional.id)}
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          Desconectar
-                        </Button>
-                      </>
-                    )}
-
-                    {!config?.knowledgeBaseId && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        disabled
-                      >
-                        <LinkIcon className="w-4 h-4 mr-2" />
-                        Conectar Base
-                      </Button>
-                    )}
-                  </div>
                 </div>
               </CardContent>
             </Card>
