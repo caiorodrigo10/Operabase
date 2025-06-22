@@ -39,7 +39,22 @@ export default function BasesConhecimento() {
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/rag/documents'],
     queryFn: async () => {
-      const response = await fetch('/api/rag/documents');
+      // Obter token do Supabase
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch('/api/rag/documents', {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Falha ao carregar documentos');
       }

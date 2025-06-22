@@ -6,26 +6,42 @@ import { db } from "./db";
 import { rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
-// Middleware de autenticação específico para RAG que funciona com sessões
-const ragAuth = (req: any, res: any, next: any) => {
-  console.log('🔍 RAG Auth - Session:', req.session);
-  console.log('🔍 RAG Auth - User:', req.user);
-  console.log('🔍 RAG Auth - ragAuth:', typeof req.ragAuth === 'function' ? req.ragAuth() : false);
-  
-  // Verificar se há usuário na sessão
-  if (req.user && req.user.email) {
-    console.log('✅ RAG Auth - Usuario autenticado:', req.user.email);
-    return next();
+// Middleware de autenticação que funciona com Supabase tokens do frontend
+const ragAuth = async (req: any, res: any, next: any) => {
+  try {
+    // Verificar token Supabase do frontend
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: "Token de autenticação necessário" });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verificar token com Supabase
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL!, 
+      process.env.SUPABASE_ANON_KEY!
+    );
+    
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: "Token inválido" });
+    }
+    
+    // Definir usuário na requisição
+    req.user = {
+      id: user.id,
+      email: user.email,
+      name: user.user_metadata?.name || user.email
+    };
+    
+    next();
+  } catch (error) {
+    console.error('RAG Auth error:', error);
+    return res.status(401).json({ error: "Erro de autenticação" });
   }
-  
-  // Verificar se há sessão ativa
-  if (req.session && req.session.passport && req.session.passport.user) {
-    console.log('✅ RAG Auth - Sessão ativa encontrada');
-    return next();
-  }
-  
-  console.log('❌ RAG Auth - Usuário não autenticado');
-  return res.status(401).json({ error: "Usuário não autenticado" });
 };
 
 const router = Router();
