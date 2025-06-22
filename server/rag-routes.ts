@@ -59,7 +59,7 @@ router.get('/documents', isAuthenticated, async (req: any, res: Response) => {
 // Upload de documento de texto
 router.post('/documents/text', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
     const { title, content } = req.body;
 
     if (!title || !content) {
@@ -95,7 +95,7 @@ router.post('/documents/text', isAuthenticated, async (req: any, res: Response) 
 // Upload de URL
 router.post('/documents/url', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
     const { title, url } = req.body;
 
     if (!title || !url) {
@@ -137,7 +137,7 @@ router.post('/documents/url', isAuthenticated, async (req: any, res: Response) =
 // Upload de PDF
 router.post('/documents/pdf', isAuthenticated, upload.single('file'), async (req: any, res: Response) => {
   try {
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
     const { title } = req.body;
     const file = req.file;
 
@@ -174,7 +174,7 @@ router.post('/documents/pdf', isAuthenticated, upload.single('file'), async (req
 router.get('/processing/:id', isAuthenticated, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
 
     const [document] = await db
       .select()
@@ -205,7 +205,7 @@ router.get('/processing/:id', isAuthenticated, async (req: any, res: Response) =
 router.delete('/documents/:id', isAuthenticated, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
-    const userId = req.user?.id?.toString() || req.user?.email;
+    const userId = req.user?.email || req.user?.id?.toString();
 
     // Buscar documento para verificar ownership e obter file_path
     const [document] = await db
