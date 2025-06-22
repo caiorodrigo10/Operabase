@@ -45,6 +45,7 @@ import FunilPageEditorWorking from "./pages/funil-page-editor-working";
 import FunilPageEditorSimple from "./pages/funil-page-editor-simple";
 import FunilEditorClean from "./pages/funil-editor-clean";
 import FunilEditorMinimal from "./pages/funil-editor-minimal";
+import FunilEditorLanding from "./pages/funil-editor-landing";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -165,6 +166,7 @@ function Router() {
         <Route path="/editor-working" component={FunilPageEditorWorking} />
         <Route path="/editor-simple" component={FunilPageEditorSimple} />
         <Route path="/editor-clean" component={FunilEditorClean} />
+        <Route path="/editor-landing" component={FunilEditorLanding} />
 
         <Route component={NotFound} />
       </Switch>
