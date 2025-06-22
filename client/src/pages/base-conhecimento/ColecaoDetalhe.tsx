@@ -562,7 +562,7 @@ export default function ColecaoDetalhe() {
 
       {/* Add Knowledge Modal */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           {addStep === "select" ? (
             <>
               <DialogHeader>
@@ -838,7 +838,7 @@ export default function ColecaoDetalhe() {
                                   />
                                   <div className="flex-1 min-w-0 flex items-center justify-between">
                                     <div className="truncate">
-                                      <span className="font-medium text-gray-900">{page.title}</span>
+                                      <span className="font-medium text-gray-900">{page.url}</span>
                                       {page.error && (
                                         <span className="text-xs text-red-600 ml-2">• Erro: {page.error}</span>
                                       )}
