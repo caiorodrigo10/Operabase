@@ -12,6 +12,8 @@ import {
   Edge,
   Node,
   Position,
+  Handle,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from "@/components/ui/button";
@@ -78,28 +80,40 @@ const FunilPageNode = ({ data }: { data: any }) => {
   };
 
   return (
-    <Card className={`w-64 ${getBorderColor()} border-2 hover:shadow-lg transition-all duration-200 bg-white`}>
-      <CardHeader className="pb-2">
-        {/* Preview Thumbnail */}
-        <div className="w-full h-32 bg-gray-100 rounded-md mb-3 flex items-center justify-center border">
-          <div className="text-center text-gray-500">
-            <FileText className="h-8 w-8 mx-auto mb-1" />
-            <span className="text-xs">Preview</span>
+    <div className="relative">
+      {/* Target Handle (Left) */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{
+          background: '#3b82f6',
+          width: 12,
+          height: 12,
+          border: '2px solid white',
+        }}
+      />
+      
+      <Card className={`w-48 ${getBorderColor()} border-2 hover:shadow-lg transition-all duration-200 bg-white`}>
+        <CardHeader className="pb-2">
+          {/* Preview Thumbnail - Smaller */}
+          <div className="w-full h-20 bg-gray-100 rounded-md mb-2 flex items-center justify-center border">
+            <div className="text-center text-gray-500">
+              <FileText className="h-6 w-6 mx-auto mb-1" />
+              <span className="text-xs">Preview</span>
+            </div>
           </div>
-        </div>
-        
-        {/* Page Title and Status */}
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-gray-900 truncate">
-            {data.title}
-          </CardTitle>
-          {getStatusIcon()}
-        </div>
-        
-        <div className="flex items-center justify-between">
+          
+          {/* Page Title and Status */}
+          <div className="flex items-center justify-between mb-1">
+            <CardTitle className="text-sm font-medium text-gray-900 truncate">
+              {data.title}
+            </CardTitle>
+            {getStatusIcon()}
+          </div>
+          
           <Badge 
             variant="secondary" 
-            className={`text-xs ${
+            className={`text-xs w-fit ${
               data.status === 'published' ? 'bg-green-100 text-green-800' :
               data.status === 'draft' ? 'bg-orange-100 text-orange-800' :
               'bg-red-100 text-red-800'
@@ -107,42 +121,51 @@ const FunilPageNode = ({ data }: { data: any }) => {
           >
             {getStatusText()}
           </Badge>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-0">
-        {/* Quick Actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Button size="sm" variant="ghost" className="p-1 h-8 w-8">
-              <Edit3 className="h-4 w-4 text-blue-600" />
+        </CardHeader>
+        
+        <CardContent className="pt-0">
+          {/* Quick Actions - More Compact */}
+          <div className="flex items-center justify-center space-x-1">
+            <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+              <Edit3 className="h-3 w-3 text-blue-600" />
             </Button>
-            <Button size="sm" variant="ghost" className="p-1 h-8 w-8">
-              <Eye className="h-4 w-4 text-gray-600" />
+            <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+              <Eye className="h-3 w-3 text-gray-600" />
             </Button>
-            <Button size="sm" variant="ghost" className="p-1 h-8 w-8">
-              <Settings className="h-4 w-4 text-gray-600" />
+            <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+              <Settings className="h-3 w-3 text-gray-600" />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+                  <MoreVertical className="h-3 w-3 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>Duplicar</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600">Excluir</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" className="p-1 h-8 w-8">
-                <MoreVertical className="h-4 w-4 text-gray-600" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Duplicar</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">Excluir</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      
+      {/* Source Handle (Right) */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{
+          background: '#10b981',
+          width: 12,
+          height: 12,
+          border: '2px solid white',
+        }}
+      />
+    </div>
   );
 };
 
-// Node types
+// Node types - memoized to prevent warnings
 const nodeTypes = {
   funilPage: FunilPageNode,
 };
@@ -183,12 +206,12 @@ const mockFunilData = {
 export default function FunilDetalhes() {
   const { id } = useParams();
 
-  // Create nodes from mock data
+  // Create nodes from mock data with proper spacing
   const initialNodes: Node[] = useMemo(() => {
     return mockFunilData.pages.map((page, index) => ({
       id: page.id,
       type: 'funilPage',
-      position: { x: index * 300, y: 100 },
+      position: { x: index * 250, y: 150 },
       data: {
         title: page.title,
         status: page.status,
@@ -196,10 +219,11 @@ export default function FunilDetalhes() {
       },
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
+      draggable: true,
     }));
   }, []);
 
-  // Create edges to connect nodes
+  // Create edges to connect nodes in sequence
   const initialEdges: Edge[] = useMemo(() => {
     const edges: Edge[] = [];
     for (let i = 0; i < mockFunilData.pages.length - 1; i++) {
@@ -209,7 +233,10 @@ export default function FunilDetalhes() {
         target: mockFunilData.pages[i + 1].id,
         type: 'smoothstep',
         animated: true,
-        style: { stroke: '#10b981', strokeWidth: 2 },
+        style: { 
+          stroke: '#10b981', 
+          strokeWidth: 3,
+        },
       });
     }
     return edges;
