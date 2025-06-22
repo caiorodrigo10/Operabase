@@ -47,7 +47,7 @@ export default function FunilPageEditor() {
                   Editor Landing Page
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Editor completo com componentes avançados
+                  Editor oficial Craft.js Landing Example
                 </p>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function FunilPageEditor() {
                       <Text
                         fontSize="14"
                         fontWeight="400"
-                        text="Tudo que você vê aqui, incluindo o próprio editor, é feito de componentes React. Craft.js vem apenas com os blocos de construção para um editor de página; ele fornece um sistema drag-n-drop e lida com a forma como os componentes do usuário devem ser renderizados, atualizados e movidos, entre outras coisas. <br /> <br /> Você controla a aparência e o comportamento do seu editor."
+                        text="Tudo que você vê aqui, incluindo o próprio editor, é feito de componentes React. Craft.js vem apenas com os blocos de construção para um editor de página."
                       />
                     </Element>
                   </Element>
@@ -149,7 +149,7 @@ export default function FunilPageEditor() {
                     <Text
                       fontSize="36"
                       fontWeight="700"
-                      color={{ r: 255, g: 255, b: 255, a: 1 }}
+                      color={{ r: "255", g: "255", b: "255", a: "1" }}
                       text="Crie Páginas Incríveis"
                       textAlign="center"
                     />
