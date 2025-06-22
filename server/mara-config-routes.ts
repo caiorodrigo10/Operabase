@@ -30,7 +30,7 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
       }
 
       // Get all professionals in the clinic
-      const professionals = await storage.db.execute(`
+      const professionals = await db.execute(`
         SELECT 
           u.id,
           u.name,
@@ -43,6 +43,9 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
           AND u.is_active = true
         ORDER BY u.name
       `, [userClinicId]);
+
+      // Get professional IDs for the next query
+      const professionalIds = professionals.rows.map((p: any) => p.id);
 
       // Get Mara configurations for these professionals
       const configs = await db.execute(`
