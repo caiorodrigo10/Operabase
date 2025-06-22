@@ -140,8 +140,8 @@ export default function MaraAIConfig() {
           <div className="text-center py-8">
             <p className="text-slate-600">Carregando configurações...</p>
           </div>
-        ) : (
-          professionalsData?.map((professional: any) => {
+        ) : Array.isArray(professionalsData) && professionalsData.length > 0 ? (
+          professionalsData.map((professional: any) => {
             const config = professional.maraConfig;
             
             return (
@@ -177,7 +177,7 @@ export default function MaraAIConfig() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">Nenhuma (Mara Genérica)</SelectItem>
-                              {knowledgeBases?.map((base: any) => (
+                              {Array.isArray(knowledgeBases) && knowledgeBases.map((base: any) => (
                                 <SelectItem key={base.id} value={base.id.toString()}>
                                   📚 {base.name} ({base.document_count || 0} docs)
                                 </SelectItem>
@@ -201,6 +201,10 @@ export default function MaraAIConfig() {
               </Card>
             );
           })
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-slate-600">Nenhum profissional encontrado na clínica.</p>
+          </div>
         )}
       </div>
 

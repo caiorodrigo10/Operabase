@@ -8,15 +8,29 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
   // Get all professionals in the clinic with their Mara configurations
   app.get('/api/mara/professional-configs', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user?.id;
-      const userClinicId = (req as any).user?.clinic_id;
+      const user = (req as any).user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      const userId = parseInt(user.id);
+      let userClinicId = user.clinic_id;
+
+      // If clinic_id is not directly available, get it from user clinics
+      if (!userClinicId) {
+        const userClinics = await storage.getUserClinics(userId);
+        if (userClinics.length === 0) {
+          return res.status(400).json({ error: 'User not associated with a clinic' });
+        }
+        userClinicId = userClinics[0].clinic.id;
+      }
 
       if (!userClinicId) {
         return res.status(400).json({ error: 'User not associated with a clinic' });
       }
 
       // Get all professionals in the clinic
-      const professionals = await db.execute(`
+      const professionals = await storage.db.execute(`
         SELECT 
           u.id,
           u.name,
@@ -75,10 +89,20 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
   // Get professionals list (without configs, for dropdown)
   app.get('/api/clinic/professionals', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userClinicId = (req as any).user?.clinic_id;
+      const user = (req as any).user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      const userId = parseInt(user.id);
+      let userClinicId = user.clinic_id;
 
       if (!userClinicId) {
-        return res.status(400).json({ error: 'User not associated with a clinic' });
+        const userClinics = await storage.getUserClinics(userId);
+        if (userClinics.length === 0) {
+          return res.status(400).json({ error: 'User not associated with a clinic' });
+        }
+        userClinicId = userClinics[0].clinic.id;
       }
 
       const professionals = await db.execute(`
