@@ -251,15 +251,16 @@ export default function TrabalhadoresesDigitais() {
                     ))}
                   </div>
 
-                  <Button 
-                    className="bg-orange-600 hover:bg-orange-700 text-white px-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCardClick(knowledgeBase.name, knowledgeBase.description);
-                    }}
-                  >
-                    Acessar Base de Conhecimento
-                  </Button>
+                  <Link href="/base-conhecimento">
+                    <Button 
+                      className="bg-orange-600 hover:bg-orange-700 text-white px-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      Acessar Base de Conhecimento
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>

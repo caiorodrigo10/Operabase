@@ -35,6 +35,7 @@ import AnamnesisTemplatesPage from "./pages/anamneses";
 import EditarAnamnesePage from "./pages/editar-anamnese";
 import EditarAnamneseResposta from "./pages/editar-anamnese-resposta";
 import TrabalhadoresesDigitais from "./pages/TrabalhadoresesDigitais";
+import BaseConhecimento from "./pages/BaseConhecimento";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -142,6 +143,7 @@ function Router() {
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
         <Route path="/trabalhadores-digitais" component={TrabalhadoresesDigitais} />
+        <Route path="/base-conhecimento" component={BaseConhecimento} />
 
         <Route component={NotFound} />
       </Switch>
