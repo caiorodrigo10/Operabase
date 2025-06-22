@@ -47,6 +47,19 @@ export const AICodeChat = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
+    // Check if API key is configured
+    if (!apiKeyConfigured) {
+      const systemMessage: ChatMessage = {
+        id: Date.now().toString(),
+        content: 'OpenAI API key is not configured. Please set VITE_OPENAI_API_KEY in your environment or contact your administrator.',
+        type: 'system',
+        timestamp: new Date(),
+        error: 'API key not configured'
+      };
+      setMessages(prev => [...prev, systemMessage]);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: inputValue,
@@ -55,20 +68,88 @@ export const AICodeChat = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const userCommand = inputValue;
     setInputValue('');
-    setIsTyping(true);
+    setIsProcessing(true);
 
-    // Simulate AI response (replace with actual API call later)
-    setTimeout(() => {
-      const assistantMessage: ChatMessage = {
+    try {
+      // Get current page state from Craft.js
+      const serializedData = query.serialize();
+      const currentJSON = (typeof serializedData === 'string' ? JSON.parse(serializedData) : serializedData) as CraftJSON;
+      
+      // Process command with AI
+      const result = await aiDevService.processPrompt(userCommand, currentJSON);
+      
+      if (!result.success) {
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: `Sorry, I couldn't process your request: ${result.error}`,
+          type: 'assistant',
+          timestamp: new Date(),
+          error: result.error
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!result.action) {
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: 'I understood your request but couldn\'t generate a valid action. Please try rephrasing your command.',
+          type: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Apply transformation to get new JSON
+      const newJSON = builderTransformer.applyAction(currentJSON, result.action, userCommand);
+      
+      // Validate the transformation
+      const validation = builderTransformer.validateJSON(newJSON);
+      if (!validation.valid) {
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: `I tried to apply your changes but encountered issues: ${validation.errors.join(', ')}`,
+          type: 'assistant',
+          timestamp: new Date(),
+          error: validation.errors.join(', ')
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Apply changes to Craft.js editor
+      actions.deserialize(JSON.stringify(newJSON));
+
+      // Success message
+      const successMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: 'I understand you want to modify the code. Here\'s what I can help you with:\n\n```jsx\n// Example component\nconst CustomButton = ({ text, onClick }) => {\n  return (\n    <button \n      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"\n      onClick={onClick}\n    >\n      {text}\n    </button>\n  );\n};\n```\n\nWould you like me to create a specific component or modify the existing layout?',
+        content: `✅ Done! ${result.action.reasoning}\n\nAction: ${result.action.action} → ${result.action.target}`,
         type: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        action: result.action,
+        success: true
       };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+      setMessages(prev => [...prev, successMessage]);
+
+    } catch (error) {
+      console.error('Error processing AI command:', error);
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `Something went wrong while processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        type: 'assistant',
+        timestamp: new Date(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -156,7 +237,7 @@ export const AICodeChat = () => {
           </div>
         ))}
         
-        {isTyping && (
+        {isProcessing && (
           <div className="flex gap-2 justify-start">
             <div className="flex gap-2 max-w-[85%]">
               <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-gray-200 text-gray-600">
@@ -192,7 +273,7 @@ export const AICodeChat = () => {
           </div>
           <Button
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isTyping}
+            disabled={!inputValue.trim() || isProcessing}
             size="sm"
             className="h-[40px] w-[40px] p-0 flex-shrink-0 mt-1"
           >
