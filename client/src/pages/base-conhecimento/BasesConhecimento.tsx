@@ -17,6 +17,11 @@ interface RAGDocument {
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
   created_at: string;
   updated_at: string;
+  metadata?: {
+    knowledge_base?: string;
+    description?: string;
+    created_by?: string;
+  };
 }
 
 interface Collection {
@@ -50,6 +55,8 @@ export default function BasesConhecimento() {
   // Mutation para criar nova base de conhecimento
   const createKnowledgeBaseMutation = useMutation({
     mutationFn: async ({ name, description }: { name: string; description: string }) => {
+      console.log('🔍 Frontend - Sending data:', { name, description });
+      
       const response = await fetch('/api/rag/knowledge-bases', {
         method: 'POST',
         headers: {
@@ -58,8 +65,12 @@ export default function BasesConhecimento() {
         body: JSON.stringify({ name, description })
       });
       
+      console.log('📊 Frontend - Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Falha ao criar base de conhecimento');
+        const errorData = await response.json();
+        console.log('❌ Frontend - Error response:', errorData);
+        throw new Error(errorData.error || 'Falha ao criar base de conhecimento');
       }
       return response.json();
     },

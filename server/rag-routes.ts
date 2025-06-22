@@ -72,22 +72,29 @@ router.post('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
     const userId = req.user?.email || req.user?.id?.toString();
     const { name, description } = req.body;
     
-    if (!name || !description) {
-      return res.status(400).json({ error: 'Nome e descrição são obrigatórios' });
+    console.log('🔍 Request body:', req.body);
+    console.log('🔍 Name:', name, 'Description:', description);
+    
+    if (!name || !name.trim()) {
+      console.log('❌ Validation failed - name is required');
+      return res.status(400).json({ error: 'Nome é obrigatório' });
     }
+    
+    // Descrição é opcional, usar valor padrão se vazia
+    const finalDescription = description && description.trim() ? description.trim() : `Base de conhecimento ${name}`;
     
     // Criar documento inicial para a base de conhecimento
     const [newDocument] = await db
       .insert(rag_documents)
       .values({
         external_user_id: userId,
-        title: name,
+        title: name.trim(),
         content_type: 'text',
-        original_content: description,
-        extracted_content: description,
+        original_content: finalDescription,
+        extracted_content: finalDescription,
         metadata: { 
-          knowledge_base: name,
-          description: description,
+          knowledge_base: name.trim(),
+          description: finalDescription,
           created_by: req.user?.name || req.user?.email
         },
         processing_status: 'completed'
