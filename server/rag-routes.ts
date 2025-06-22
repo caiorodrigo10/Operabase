@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { db } from "./db";
-import { rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
+import { rag_knowledge_bases, rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
 // Middleware simplificado que usa usuário fixo para demonstração
@@ -48,6 +48,48 @@ const upload = multer({
   }
 });
 
+// Listar bases de conhecimento do usuário
+router.get('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.email || req.user?.id?.toString();
+    
+    // Buscar bases de conhecimento
+    const knowledgeBases = await db
+      .select()
+      .from(rag_knowledge_bases)
+      .where(eq(rag_knowledge_bases.external_user_id, userId))
+      .orderBy(desc(rag_knowledge_bases.created_at));
+
+    // Buscar documentos para contar itens por base
+    const documents = await db
+      .select()
+      .from(rag_documents)
+      .where(eq(rag_documents.external_user_id, userId));
+
+    // Adicionar contagem de documentos para cada base
+    const basesWithCounts = knowledgeBases.map(base => {
+      const docsInBase = documents.filter(doc => 
+        doc.metadata && 
+        typeof doc.metadata === 'object' && 
+        (doc.metadata as any).knowledge_base === base.name
+      );
+      
+      return {
+        ...base,
+        documentCount: docsInBase.length,
+        lastUpdated: docsInBase.length > 0 
+          ? new Date(Math.max(...docsInBase.map(d => new Date(d.updated_at).getTime()))).toISOString()
+          : base.updated_at
+      };
+    });
+
+    res.json(basesWithCounts);
+  } catch (error) {
+    console.error('Error fetching knowledge bases:', error);
+    res.status(500).json({ error: 'Falha ao buscar bases de conhecimento' });
+  }
+});
+
 // Listar documentos do usuário
 router.get('/documents', ragAuth, async (req: any, res: Response) => {
   try {
@@ -83,28 +125,21 @@ router.post('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
     // Descrição é opcional, usar valor padrão se vazia
     const finalDescription = description && description.trim() ? description.trim() : `Base de conhecimento ${name}`;
     
-    // Criar documento inicial para a base de conhecimento
-    const [newDocument] = await db
-      .insert(rag_documents)
+    // Criar base de conhecimento na tabela dedicada
+    const [newKnowledgeBase] = await db
+      .insert(rag_knowledge_bases)
       .values({
         external_user_id: userId,
-        title: name.trim(),
-        content_type: 'text',
-        original_content: finalDescription,
-        extracted_content: finalDescription,
-        metadata: { 
-          knowledge_base: name.trim(),
-          description: finalDescription,
-          created_by: req.user?.name || req.user?.email
-        },
-        processing_status: 'completed'
+        name: name.trim(),
+        description: finalDescription,
+        created_by: req.user?.name || req.user?.email
       })
       .returning();
 
     res.json({ 
       success: true, 
       message: 'Base de conhecimento criada com sucesso',
-      document: newDocument 
+      knowledgeBase: newKnowledgeBase 
     });
   } catch (error) {
     console.error('Error creating knowledge base:', error);
@@ -305,8 +340,20 @@ router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response)
 
     console.log(`🗑️ Deleting knowledge base: ${knowledgeBaseName} for user: ${userId}`);
 
+    // Buscar a base de conhecimento
+    const [knowledgeBase] = await db
+      .select()
+      .from(rag_knowledge_bases)
+      .where(and(
+        eq(rag_knowledge_bases.external_user_id, userId),
+        eq(rag_knowledge_bases.name, knowledgeBaseName)
+      ));
+
+    if (!knowledgeBase) {
+      return res.status(404).json({ error: 'Base de conhecimento não encontrada' });
+    }
+
     // Buscar todos os documentos da base de conhecimento
-    // Incluir documentos que são a própria base de conhecimento (criados como texto)
     const allDocuments = await db
       .select()
       .from(rag_documents)
@@ -314,11 +361,6 @@ router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response)
 
     // Filtrar documentos que pertencem à base de conhecimento
     const documents = allDocuments.filter(doc => {
-      // Documento que é a própria base de conhecimento
-      if (doc.title === knowledgeBaseName && doc.content_type === 'text') {
-        return true;
-      }
-      // Documentos com metadata da base de conhecimento
       if (doc.metadata && typeof doc.metadata === 'object') {
         const metadata = doc.metadata as any;
         return metadata.knowledge_base === knowledgeBaseName;
@@ -348,6 +390,11 @@ router.delete('/knowledge-bases/:name', ragAuth, async (req: any, res: Response)
         .delete(rag_documents)
         .where(eq(rag_documents.id, document.id));
     }
+
+    // Deletar a base de conhecimento
+    await db
+      .delete(rag_knowledge_bases)
+      .where(eq(rag_knowledge_bases.id, knowledgeBase.id));
 
     console.log(`✅ Deleted knowledge base with ${documents.length} documents`);
 

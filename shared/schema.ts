@@ -298,6 +298,20 @@ export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema
 // RAG SYSTEM TABLES (ISOLATED MODULE)
 // ================================================================
 
+// Bases de conhecimento RAG (separadas dos documentos)
+export const rag_knowledge_bases = pgTable("rag_knowledge_bases", {
+  id: serial("id").primaryKey(),
+  external_user_id: text("external_user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  created_by: text("created_by"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_rag_knowledge_bases_user").on(table.external_user_id),
+  unique("unique_knowledge_base_name_user").on(table.name, table.external_user_id),
+]);
+
 // Documentos RAG (isolado do sistema principal)
 export const rag_documents = pgTable("rag_documents", {
   id: serial("id").primaryKey(),
@@ -353,12 +367,16 @@ export const rag_queries = pgTable("rag_queries", {
 });
 
 // Zod schemas for RAG tables
+export const insertRagKnowledgeBaseSchema = createInsertSchema(rag_knowledge_bases);
 export const insertRagDocumentSchema = createInsertSchema(rag_documents);
 export const insertRagChunkSchema = createInsertSchema(rag_chunks);
 export const insertRagEmbeddingSchema = createInsertSchema(rag_embeddings);
 export const insertRagQuerySchema = createInsertSchema(rag_queries);
 
 // Types for RAG tables
+export type RagKnowledgeBase = typeof rag_knowledge_bases.$inferSelect;
+export type InsertRagKnowledgeBase = z.infer<typeof insertRagKnowledgeBaseSchema>;
+
 export type RagDocument = typeof rag_documents.$inferSelect;
 export type InsertRagDocument = z.infer<typeof insertRagDocumentSchema>;
 
