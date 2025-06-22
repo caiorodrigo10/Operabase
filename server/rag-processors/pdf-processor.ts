@@ -1,6 +1,14 @@
 import fs from 'fs';
 import path from 'path';
-import pdfParse from 'pdf-parse';
+
+// Import pdf-parse with proper error handling for debug mode
+let pdfParse: any;
+try {
+  pdfParse = require('pdf-parse');
+} catch (error) {
+  console.error('Error importing pdf-parse:', error);
+  throw new Error('Failed to load PDF processing library');
+}
 
 export interface ProcessedChunk {
   content: string;
