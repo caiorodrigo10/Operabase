@@ -190,7 +190,7 @@ router.post('/documents/url', ragAuth, async (req: any, res: Response) => {
   }
 });
 
-// Upload de PDF
+// Upload de PDF (endpoint original)
 router.post('/documents/pdf', ragAuth, upload.single('file'), async (req: any, res: Response) => {
   try {
     const userId = req.user?.email || req.user?.id?.toString();
@@ -208,6 +208,46 @@ router.post('/documents/pdf', ragAuth, upload.single('file'), async (req: any, r
         title,
         content_type: 'pdf',
         file_path: file.path,
+        processing_status: 'pending'
+      })
+      .returning();
+
+    // Iniciar processamento em background
+    processDocumentAsync(document.id);
+
+    res.json({
+      documentId: document.id,
+      status: 'queued',
+      message: 'PDF enviado para processamento'
+    });
+  } catch (error) {
+    console.error('Error uploading PDF:', error);
+    res.status(500).json({ error: 'Falha ao enviar PDF' });
+  }
+});
+
+// Upload de PDF (endpoint usado pelo frontend)
+router.post('/documents/upload', ragAuth, upload.single('file'), async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.email || req.user?.id?.toString();
+    const { knowledge_base } = req.body;
+    const file = req.file;
+
+    if (!knowledge_base || !file) {
+      return res.status(400).json({ error: 'Base de conhecimento e arquivo são obrigatórios' });
+    }
+
+    const [document] = await db
+      .insert(rag_documents)
+      .values({
+        external_user_id: userId,
+        title: file.originalname.replace('.pdf', ''),
+        content_type: 'pdf',
+        file_path: file.path,
+        metadata: { 
+          knowledge_base: knowledge_base,
+          created_by: req.user?.name || req.user?.email
+        },
         processing_status: 'pending'
       })
       .returning();
