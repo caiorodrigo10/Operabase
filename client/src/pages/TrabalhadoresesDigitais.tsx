@@ -119,8 +119,8 @@ export default function TrabalhadoresesDigitais() {
           </div>
         </div>
 
-        {/* Grid Layout - 2x2 Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+        {/* Grid Layout - 4 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {/* Assistant Cards */}
           {assistants.map((assistant, index) => {
             const colors = getColorClasses(assistant.color);
