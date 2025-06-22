@@ -100,125 +100,113 @@ export default function TrabalhadoresesDigitais() {
   };
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6 h-screen overflow-hidden">
       {/* Page Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4">
         <Link href="/">
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
             <ChevronLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Trabalhadores Digitais</h1>
-          <p className="text-gray-600">
+          <h1 className="text-xl font-bold text-gray-900">Trabalhadores Digitais</h1>
+          <p className="text-sm text-gray-600">
             Assistentes de IA especializados para automatizar sua clínica
           </p>
         </div>
       </div>
 
-      <div className="space-y-8">
-        {/* Assistants Section */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Seus Assistentes de IA
-          </h2>
+      {/* Grid Layout - 2x2 Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-120px)]">
+        {/* Assistant Cards */}
+        {assistants.map((assistant, index) => {
+          const colors = getColorClasses(assistant.color);
+          const Icon = assistant.icon;
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assistants.map((assistant, index) => {
-              const colors = getColorClasses(assistant.color);
-              const Icon = assistant.icon;
-
-              return (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleCardClick(assistant.name, assistant.description)}
-                >
-                  {/* Header */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`w-12 h-12 ${colors.iconBg} rounded-lg flex items-center justify-center`}>
-                      <Icon className={`h-6 w-6 ${colors.iconColor}`} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{assistant.name}</h3>
-                      <p className="text-sm text-gray-600">{assistant.role}</p>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                    {assistant.description}
-                  </p>
-
-                  {/* Specialties */}
-                  <div className="space-y-2 mb-6">
-                    <h4 className="text-sm font-medium text-gray-900">Especialidades:</h4>
-                    <ul className="space-y-1">
-                      {assistant.specialties.slice(0, 3).map((specialty, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                          <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0"></div>
-                          <span className="line-clamp-1">{specialty}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Footer */}
-                  <Button 
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCardClick(assistant.name, assistant.description);
-                    }}
-                  >
-                    Configurar {assistant.name}
-                  </Button>
+          return (
+            <div
+              key={index}
+              className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+              onClick={() => handleCardClick(assistant.name, assistant.description)}
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-10 h-10 ${colors.iconBg} rounded-lg flex items-center justify-center`}>
+                  <Icon className={`h-5 w-5 ${colors.iconColor}`} />
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Knowledge Base Section */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Base de Conhecimento
-          </h2>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-start gap-6">
-              {/* Icon */}
-              <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <BookOpen className="h-8 w-8 text-orange-600" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">{assistant.name}</h3>
+                  <p className="text-sm text-gray-600">{assistant.role}</p>
+                </div>
               </div>
 
-              {/* Content */}
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {knowledgeBase.name}
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {knowledgeBase.description}
-                </p>
+              {/* Description */}
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                {assistant.description}
+              </p>
 
-                {/* Features */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
-                  {knowledgeBase.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="w-1 h-1 bg-orange-500 rounded-full flex-shrink-0"></div>
-                      <span>{feature}</span>
-                    </div>
+              {/* Specialties */}
+              <div className="flex-1 mb-3">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Especialidades:</h4>
+                <ul className="space-y-1">
+                  {assistant.specialties.slice(0, 3).map((specialty, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
+                      <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0"></div>
+                      <span className="line-clamp-1">{specialty}</span>
+                    </li>
                   ))}
-                </div>
-
-                <Link href="/base-conhecimento">
-                  <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-                    Acessar Base de Conhecimento
-                  </Button>
-                </Link>
+                </ul>
               </div>
+
+              {/* Footer */}
+              <Button 
+                size="sm"
+                className="w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCardClick(assistant.name, assistant.description);
+                }}
+              >
+                Configurar {assistant.name}
+              </Button>
+            </div>
+          );
+        })}
+
+        {/* Knowledge Base Card */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">{knowledgeBase.name}</h3>
+              <p className="text-sm text-gray-600">Central de Treinamento</p>
             </div>
           </div>
+
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+            {knowledgeBase.description}
+          </p>
+
+          {/* Features */}
+          <div className="flex-1 mb-3">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Recursos:</h4>
+            <ul className="space-y-1">
+              {knowledgeBase.features.slice(0, 3).map((feature, idx) => (
+                <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
+                  <div className="w-1 h-1 bg-orange-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                  <span className="line-clamp-1">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <Link href="/base-conhecimento" className="w-full">
+            <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+              Acessar Base de Conhecimento
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
