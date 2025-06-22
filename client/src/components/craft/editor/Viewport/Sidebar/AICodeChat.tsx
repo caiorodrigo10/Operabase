@@ -1,27 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Code, Sparkles, User, Bot } from 'lucide-react';
+import { Send, Code, Sparkles, User, Bot, AlertCircle, CheckCircle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEditor } from '@craftjs/core';
+import { aiDevService, builderTransformer, type BuilderAction, type CraftJSON } from '@/lib/ai-dev';
 
 interface ChatMessage {
   id: string;
   content: string;
-  type: 'user' | 'assistant';
+  type: 'user' | 'assistant' | 'system';
   timestamp: Date;
+  action?: BuilderAction;
+  success?: boolean;
+  error?: string;
 }
 
 export const AICodeChat = () => {
+  const { query, actions } = useEditor();
+  
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      content: 'Hi! I can help you generate and modify code for your landing page. What would you like to create or change?',
+      content: 'Hi! I can help you modify your landing page with natural language commands. Try saying:\n\n• "Change the title to blue"\n• "Add a green button"\n• "Remove the video"\n• "Make the text larger"',
       type: 'assistant',
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Check API key status on mount
+  useEffect(() => {
+    setApiKeyConfigured(aiDevService.isConfigured());
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

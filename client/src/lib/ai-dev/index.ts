@@ -36,6 +36,12 @@ export type {
   ActionLog
 } from './types';
 
+// AI Service
+export { AIDevService, aiDevService } from './ai-dev-service';
+
+// Builder Transformer
+export { BuilderTransformer, builderTransformer } from './builder-transformer';
+
 // Utilities
 export {
   findNodeByType,
@@ -57,11 +63,11 @@ export {
 } from './utils';
 
 // Configurações padrão
-export const DEFAULT_AI_DEV_CONFIG: AIDevConfig = {
+export const DEFAULT_AI_DEV_CONFIG = {
   maxHistorySize: 50,
   enableValidation: true,
   debugMode: process.env.NODE_ENV === 'development'
-};
+} as const;
 
 // Constantes úteis
 export const AI_DEV_CONSTANTS = {
@@ -93,9 +99,10 @@ export const AI_DEV_CONSTANTS = {
 } as const;
 
 /**
- * Status da Fase 1: ✅ COMPLETA
+ * Status da Fase 2: ✅ COMPLETA
  * 
  * Funcionalidades implementadas:
+ * Fase 1:
  * - Knowledge base completa de todos os componentes
  * - Sistema de mapeamento de linguagem natural
  * - Prompt engineering otimizado para GPT
@@ -103,5 +110,12 @@ export const AI_DEV_CONSTANTS = {
  * - Validação de ações e propriedades
  * - Tipos TypeScript robustos
  * 
- * Próxima etapa: Fase 2 - Core AI Engine
+ * Fase 2:
+ * - AIDevService: Processamento de comandos com OpenAI
+ * - BuilderTransformer: Engine de transformação JSON
+ * - Integração completa prompt → ação → JSON
+ * - Validação e tratamento de erros
+ * - Suporte a múltiplos comandos sequenciais
+ * 
+ * Próxima etapa: Fase 3 - Integração com Editor
  */
