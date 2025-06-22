@@ -199,13 +199,13 @@ router.post('/documents', ragAuth, async (req: any, res: Response) => {
 });
 
 // Upload de URL
-router.post('/documents/url', ragAuth, async (req: any, res: Response) => {
+// Preview de crawling para URLs
+router.post('/crawl/preview', ragAuth, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
-    const { title, url } = req.body;
+    const { url, crawlMode } = req.body;
 
-    if (!title || !url) {
-      return res.status(400).json({ error: 'Título e URL são obrigatórios' });
+    if (!url) {
+      return res.status(400).json({ error: 'URL é obrigatória' });
     }
 
     // Validar URL
@@ -215,28 +215,83 @@ router.post('/documents/url', ragAuth, async (req: any, res: Response) => {
       return res.status(400).json({ error: 'URL inválida' });
     }
 
-    const [document] = await db
-      .insert(rag_documents)
-      .values({
-        external_user_id: userId,
-        title,
-        content_type: 'url',
-        source_url: url,
-        processing_status: 'pending'
-      })
-      .returning();
+    console.log(`🔍 Preview de crawling: ${url} (modo: ${crawlMode})`);
 
-    // Iniciar processamento em background
-    processDocumentAsync(document.id);
+    const { CrawlerService } = await import('./rag-processors/crawler-service');
+    const crawler = new CrawlerService();
+
+    let pages;
+    if (crawlMode === 'domain') {
+      pages = await crawler.crawlDomain(url, { maxPages: 50 });
+    } else {
+      const singlePage = await crawler.crawlSinglePage(url);
+      pages = [singlePage];
+    }
+
+    await crawler.close();
+
+    console.log(`✅ Preview concluído: ${pages.length} páginas encontradas`);
 
     res.json({
-      documentId: document.id,
-      status: 'queued',
-      message: 'URL adicionada para processamento'
+      pages: pages.map(page => ({
+        url: page.url,
+        title: page.title,
+        wordCount: page.wordCount,
+        isValid: page.isValid,
+        preview: page.content.substring(0, 200) + (page.content.length > 200 ? '...' : ''),
+        error: page.error
+      }))
     });
   } catch (error) {
-    console.error('Error creating URL document:', error);
-    res.status(500).json({ error: 'Falha ao criar documento' });
+    console.error('Error crawling URL:', error);
+    res.status(500).json({ error: 'Falha no crawling da URL' });
+  }
+});
+
+// Processar URLs selecionadas do crawling
+router.post('/crawl/process', ragAuth, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.email || req.user?.id?.toString();
+    const { selectedPages, knowledge_base } = req.body;
+
+    if (!selectedPages || !Array.isArray(selectedPages) || selectedPages.length === 0) {
+      return res.status(400).json({ error: 'Páginas selecionadas são obrigatórias' });
+    }
+
+    console.log(`📦 Processando ${selectedPages.length} páginas selecionadas`);
+
+    const documentIds = [];
+
+    for (const pageData of selectedPages) {
+      const { url, title, content } = pageData;
+
+      const [document] = await db
+        .insert(rag_documents)
+        .values({
+          external_user_id: userId,
+          title: title || 'Página Web',
+          content_type: 'url',
+          source_url: url,
+          original_content: content,
+          processing_status: 'pending',
+          metadata: knowledge_base ? { knowledge_base } : null
+        })
+        .returning();
+
+      documentIds.push(document.id);
+
+      // Processar documento em background
+      processDocumentAsync(document.id);
+    }
+
+    res.json({
+      documentIds,
+      message: `${selectedPages.length} páginas adicionadas para processamento`,
+      status: 'queued'
+    });
+  } catch (error) {
+    console.error('Error processing crawled pages:', error);
+    res.status(500).json({ error: 'Falha ao processar páginas' });
   }
 });
 
