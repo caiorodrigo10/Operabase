@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import pdfParse from 'pdf-parse';
-import { encoding_for_model } from 'tiktoken';
 
 export interface ProcessedChunk {
   content: string;
@@ -175,12 +174,7 @@ export class PDFProcessor {
   }
 
   private countTokens(text: string): number {
-    try {
-      const encoding = encoding_for_model('gpt-3.5-turbo');
-      return encoding.encode(text).length;
-    } catch (error) {
-      // Fallback: aproximação baseada em palavras
-      return Math.ceil(text.split(' ').length * 1.3);
-    }
+    // Aproximação baseada em palavras (1.3 tokens por palavra em média)
+    return Math.ceil(text.split(' ').length * 1.3);
   }
 }

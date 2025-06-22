@@ -243,6 +243,48 @@ router.delete('/documents/:id', isAuthenticated, async (req: any, res: Response)
   }
 });
 
+// Reprocessar documento
+router.post('/documents/:id/reprocess', isAuthenticated, async (req: any, res: Response) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    const userId = req.user?.id?.toString() || req.user?.email;
+
+    // Verificar ownership do documento
+    const [document] = await db
+      .select()
+      .from(rag_documents)
+      .where(and(
+        eq(rag_documents.id, documentId),
+        eq(rag_documents.external_user_id, userId)
+      ));
+
+    if (!document) {
+      return res.status(404).json({ error: 'Documento não encontrado' });
+    }
+
+    // Iniciar reprocessamento
+    const { DocumentWorkflow } = await import('./rag-processors/document-workflow');
+    const workflow = new DocumentWorkflow();
+    
+    setImmediate(async () => {
+      try {
+        await workflow.reprocessDocument(documentId);
+        console.log(`✅ Document ${documentId} reprocessed successfully`);
+      } catch (error) {
+        console.error(`❌ Error reprocessing document ${documentId}:`, error);
+      }
+    });
+
+    res.json({
+      message: 'Reprocessamento iniciado',
+      documentId
+    });
+  } catch (error) {
+    console.error('Error starting reprocessing:', error);
+    res.status(500).json({ error: 'Falha ao iniciar reprocessamento' });
+  }
+});
+
 // Busca semântica (placeholder - será implementado na próxima fase)
 router.post('/search', isAuthenticated, async (req: any, res: Response) => {
   try {
@@ -266,43 +308,21 @@ router.post('/search', isAuthenticated, async (req: any, res: Response) => {
   }
 });
 
-// Função auxiliar para processamento assíncrono
+// Função auxiliar para processamento assíncrono real
 async function processDocumentAsync(documentId: number) {
   try {
-    // Atualizar status para processing
-    await db
-      .update(rag_documents)
-      .set({ 
-        processing_status: 'processing',
-        updated_at: new Date()
-      })
-      .where(eq(rag_documents.id, documentId));
-
-    // Simular processamento por enquanto
-    setTimeout(async () => {
+    const { DocumentWorkflow } = await import('./rag-processors/document-workflow');
+    const workflow = new DocumentWorkflow();
+    
+    // Processar documento em background
+    setImmediate(async () => {
       try {
-        await db
-          .update(rag_documents)
-          .set({ 
-            processing_status: 'completed',
-            updated_at: new Date()
-          })
-          .where(eq(rag_documents.id, documentId));
-        
+        await workflow.processDocument(documentId);
         console.log(`✅ Document ${documentId} processed successfully`);
       } catch (error) {
         console.error(`❌ Error processing document ${documentId}:`, error);
-        
-        await db
-          .update(rag_documents)
-          .set({ 
-            processing_status: 'failed',
-            error_message: error instanceof Error ? error.message : 'Erro desconhecido',
-            updated_at: new Date()
-          })
-          .where(eq(rag_documents.id, documentId));
       }
-    }, 2000); // 2 segundos de simulação
+    });
 
   } catch (error) {
     console.error(`Error starting processing for document ${documentId}:`, error);
