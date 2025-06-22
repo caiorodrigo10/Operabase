@@ -41,7 +41,7 @@ import RAGDocuments from "./pages/rag/RAGDocuments";
 import RAGUpload from "./pages/rag/RAGUpload";
 import FunisPage from "./pages/funis";
 import FunilDetalhes from "./pages/funil-detalhes";
-import FunilPageEditorSimple from "./pages/funil-page-editor-simple";
+import FunilPageEditorWorking from "./pages/funil-page-editor-working";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -158,7 +158,7 @@ function Router() {
         <Route path="/rag/upload" component={RAGUpload} />
         <Route path="/funis" component={FunisPage} />
         <Route path="/funis/:id" component={FunilDetalhes} />
-        <Route path="/editor" component={FunilPageEditor} />
+        <Route path="/editor" component={FunilPageEditorWorking} />
 
         <Route component={NotFound} />
       </Switch>
