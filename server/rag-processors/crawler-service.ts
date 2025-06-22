@@ -1,5 +1,6 @@
 import https from 'https';
 import http from 'http';
+import * as zlib from 'zlib';
 import { load } from 'cheerio';
 
 export interface CrawledPage {
@@ -81,14 +82,37 @@ export class CrawlerService {
           return;
         }
 
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
+        // Handle encoding properly
+        const encoding = res.headers['content-encoding'];
+        const isGzipped = encoding === 'gzip';
+        
+        if (isGzipped) {
+          const chunks: Buffer[] = [];
+          
+          res.on('data', (chunk) => {
+            chunks.push(chunk);
+          });
+          
+          res.on('end', () => {
+            const buffer = Buffer.concat(chunks);
+            zlib.gunzip(buffer, (err: Error | null, decompressed: Buffer) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(decompressed.toString('utf8'));
+              }
+            });
+          });
+        } else {
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
 
-        res.on('end', () => {
-          resolve(data);
-        });
+          res.on('end', () => {
+            resolve(data);
+          });
+        }
       });
 
       req.on('error', (error) => {
@@ -223,6 +247,7 @@ export class CrawlerService {
       const domain = new URL(baseUrl).hostname;
       const urls = new Set<string>();
 
+      // Extract from regular anchor tags
       $('a[href]').each((_, element) => {
         const href = $(element).attr('href');
         if (!href) return;
@@ -255,6 +280,46 @@ export class CrawlerService {
         }
       });
 
+      // Also try to extract from JavaScript-rendered content
+      // Look for common patterns in the HTML source
+      const scriptContent = $('script').text();
+      const urlPatterns = [
+        /["']([^"']*\/[^"']*?)["']/g,  // Quoted URLs with paths
+        /url\s*:\s*["']([^"']+)["']/g,  // url: "path" patterns
+        /href\s*:\s*["']([^"']+)["']/g, // href: "path" patterns
+      ];
+
+      for (const pattern of urlPatterns) {
+        let match;
+        while ((match = pattern.exec(scriptContent)) !== null) {
+          const url = match[1];
+          if (url && url.startsWith('/') && !url.includes('..') && url.length > 1) {
+            try {
+              const fullUrl = new URL(url, baseUrl).href;
+              if (fullUrl !== baseUrl && !urls.has(fullUrl)) {
+                urls.add(fullUrl);
+              }
+            } catch {
+              // Invalid URL, skip
+            }
+          }
+        }
+      }
+
+      // Add some common page paths for sites that don't expose links
+      if (urls.size === 0) {
+        const commonPaths = [
+          '/about', '/sobre', '/contato', '/contact', '/servicos', '/services',
+          '/produtos', '/products', '/blog', '/news', '/noticias', '/help', '/ajuda'
+        ];
+        
+        for (const path of commonPaths) {
+          const fullUrl = new URL(path, baseUrl).href;
+          urls.add(fullUrl);
+        }
+      }
+
+      console.log(`🔗 Encontrados ${urls.size} links internos`);
       return Array.from(urls);
     } catch (error) {
       console.error('❌ Erro ao extrair links internos:', error);
