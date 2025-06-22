@@ -100,84 +100,104 @@ export default function TrabalhadoresesDigitais() {
   };
 
   return (
-    <div className="p-4 lg:p-6 h-screen overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Page Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Trabalhadores Digitais</h1>
-          <p className="text-sm text-gray-600">
-            Assistentes de IA especializados para automatizar sua clínica
-          </p>
+      <div className="p-4 lg:p-6">
+        <div className="flex items-center gap-3 mb-8">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full bg-white/70 hover:bg-white shadow-sm">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Trabalhadores Digitais
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Assistentes de IA especializados para automatizar sua clínica
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Grid Layout - 2x2 Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-120px)]">
-        {/* Assistant Cards */}
-        {assistants.map((assistant, index) => {
-          const colors = getColorClasses(assistant.color);
-          const Icon = assistant.icon;
+        {/* Grid Layout - 2x2 Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          {/* Assistant Cards */}
+          {assistants.map((assistant, index) => {
+            const colors = getColorClasses(assistant.color);
+            const Icon = assistant.icon;
 
-          return (
-            <div
-              key={index}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col justify-center items-center text-center"
-              onClick={() => handleCardClick(assistant.name, assistant.description)}
-            >
-              {/* Icon */}
-              <div className={`w-16 h-16 ${colors.iconBg} rounded-lg flex items-center justify-center mb-4`}>
-                <Icon className={`h-8 w-8 ${colors.iconColor}`} />
+            return (
+              <div
+                key={index}
+                className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col justify-center items-center text-center hover:scale-[1.02] hover:bg-white/90"
+                onClick={() => handleCardClick(assistant.name, assistant.description)}
+              >
+                {/* Gradient Background */}
+                <div className={`absolute inset-0 ${colors.bg} rounded-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-300`}></div>
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  {/* Icon with animated glow */}
+                  <div className={`w-20 h-20 ${colors.iconBg} rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
+                    <Icon className={`h-10 w-10 ${colors.iconColor}`} />
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors">
+                    {assistant.name}
+                  </h3>
+                  <p className="text-base font-medium text-gray-600 mb-4">{assistant.role}</p>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-500 mb-8 line-clamp-3 leading-relaxed max-w-sm">
+                    {assistant.description}
+                  </p>
+
+                  {/* Footer */}
+                  <Button 
+                    className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-slate-800 hover:bg-slate-900 text-white border-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick(assistant.name, assistant.description);
+                    }}
+                  >
+                    Configurar {assistant.name}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Knowledge Base Card */}
+          <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col justify-center items-center text-center hover:scale-[1.02] hover:bg-white/90">
+            {/* Gradient Background */}
+            <div className="absolute inset-0 bg-orange-50 rounded-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
+            
+            {/* Content */}
+            <div className="relative z-10">
+              {/* Icon with animated glow */}
+              <div className="w-20 h-20 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                <BookOpen className="h-10 w-10 text-orange-600" />
               </div>
 
               {/* Title */}
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{assistant.name}</h3>
-              <p className="text-sm font-medium text-gray-600 mb-3">{assistant.role}</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors">
+                {knowledgeBase.name}
+              </h3>
+              <p className="text-base font-medium text-gray-600 mb-4">Central de Treinamento</p>
 
               {/* Description */}
-              <p className="text-sm text-gray-500 mb-6 line-clamp-3 flex-1">
-                {assistant.description}
+              <p className="text-sm text-gray-500 mb-8 line-clamp-3 leading-relaxed max-w-sm">
+                {knowledgeBase.description}
               </p>
 
-              {/* Footer */}
-              <Button 
-                className="w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCardClick(assistant.name, assistant.description);
-                }}
-              >
-                Configurar {assistant.name}
-              </Button>
+              <Link href="/base-conhecimento" className="inline-block">
+                <Button className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-orange-500 hover:bg-orange-600 text-white border-0">
+                  Acessar Base de Conhecimento
+                </Button>
+              </Link>
             </div>
-          );
-        })}
-
-        {/* Knowledge Base Card */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col justify-center items-center text-center">
-          {/* Icon */}
-          <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-            <BookOpen className="h-8 w-8 text-orange-600" />
           </div>
-
-          {/* Title */}
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{knowledgeBase.name}</h3>
-          <p className="text-sm font-medium text-gray-600 mb-3">Central de Treinamento</p>
-
-          {/* Description */}
-          <p className="text-sm text-gray-500 mb-6 line-clamp-3 flex-1">
-            {knowledgeBase.description}
-          </p>
-
-          <Link href="/base-conhecimento" className="w-full">
-            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
-              Acessar Base de Conhecimento
-            </Button>
-          </Link>
         </div>
       </div>
     </div>
