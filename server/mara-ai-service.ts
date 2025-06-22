@@ -247,11 +247,16 @@ INSTRUÇÕES:
 
   async searchRAGKnowledge(query: string, knowledgeBaseId: number): Promise<RAGResult[]> {
     try {
-      // Use the existing search_similar_chunks function
+      // Direct query to rag_documents with similarity search
       const result = await db.execute(sql`
-        SELECT content, metadata, similarity
-        FROM search_similar_chunks(${query}, ${5}, 0.7, 5)
+        SELECT 
+          content, 
+          metadata, 
+          1 - (embedding <=> openai_embedding(${query})) as similarity
+        FROM rag_documents 
         WHERE knowledge_base_id = ${knowledgeBaseId}
+        ORDER BY embedding <=> openai_embedding(${query})
+        LIMIT 5
       `);
 
       return result.rows.map(row => ({
