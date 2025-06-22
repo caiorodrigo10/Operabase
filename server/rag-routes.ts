@@ -2,10 +2,20 @@ import { Router, type Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { isAuthenticated } from "./auth";
 import { db } from "./db";
 import { rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
 import { eq, desc, and } from "drizzle-orm";
+
+// Middleware de autenticação específico para RAG
+const ragAuth = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ error: "Usuário não autenticado" });
+  }
+  if (!req.user) {
+    return res.status(401).json({ error: "Dados do usuário não encontrados" });
+  }
+  next();
+};
 
 const router = Router();
 
@@ -39,16 +49,8 @@ const upload = multer({
 });
 
 // Listar documentos do usuário
-router.get('/documents', isAuthenticated, async (req: any, res: Response) => {
+router.get('/documents', ragAuth, async (req: any, res: Response) => {
   try {
-    console.log('🔍 Debug - req.user:', req.user);
-    console.log('🔍 Debug - req.isAuthenticated():', req.isAuthenticated());
-    
-    if (!req.user) {
-      console.log('❌ No user found in request');
-      return res.status(401).json({ error: 'Usuário não encontrado na sessão' });
-    }
-    
     const userId = req.user?.email || req.user?.id?.toString();
     
     const documents = await db
@@ -65,7 +67,7 @@ router.get('/documents', isAuthenticated, async (req: any, res: Response) => {
 });
 
 // Upload de documento de texto
-router.post('/documents/text', isAuthenticated, async (req: any, res: Response) => {
+router.post('/documents/text', ragAuth, async (req: any, res: Response) => {
   try {
     const userId = req.user?.email || req.user?.id?.toString();
     const { title, content } = req.body;
@@ -101,7 +103,7 @@ router.post('/documents/text', isAuthenticated, async (req: any, res: Response) 
 });
 
 // Upload de URL
-router.post('/documents/url', isAuthenticated, async (req: any, res: Response) => {
+router.post('/documents/url', ragAuth, async (req: any, res: Response) => {
   try {
     const userId = req.user?.email || req.user?.id?.toString();
     const { title, url } = req.body;
@@ -143,7 +145,7 @@ router.post('/documents/url', isAuthenticated, async (req: any, res: Response) =
 });
 
 // Upload de PDF
-router.post('/documents/pdf', isAuthenticated, upload.single('file'), async (req: any, res: Response) => {
+router.post('/documents/pdf', ragAuth, upload.single('file'), async (req: any, res: Response) => {
   try {
     const userId = req.user?.email || req.user?.id?.toString();
     const { title } = req.body;
@@ -179,7 +181,7 @@ router.post('/documents/pdf', isAuthenticated, upload.single('file'), async (req
 });
 
 // Buscar status de processamento
-router.get('/processing/:id', isAuthenticated, async (req: any, res: Response) => {
+router.get('/processing/:id', ragAuth, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
     const userId = req.user?.email || req.user?.id?.toString();
@@ -210,7 +212,7 @@ router.get('/processing/:id', isAuthenticated, async (req: any, res: Response) =
 });
 
 // Deletar documento
-router.delete('/documents/:id', isAuthenticated, async (req: any, res: Response) => {
+router.delete('/documents/:id', ragAuth, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
     const userId = req.user?.email || req.user?.id?.toString();
