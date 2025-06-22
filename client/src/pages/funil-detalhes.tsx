@@ -126,13 +126,13 @@ const FunilPageNode = ({ data }: { data: any }) => {
         <CardContent className="pt-0 px-3 pb-3">
           {/* Quick Actions - More Compact */}
           <div className="flex items-center justify-center space-x-0.5">
-            <Link href="/editor">
+            <Link href="/editor-landing">
               <Button 
                 size="sm" 
                 variant="ghost" 
                 className="p-1 h-6 w-6"
                 onClick={() => {
-                  console.log('🔧 Abrindo editor padrão para página:', data.title);
+                  console.log('🔧 Abrindo editor Landing Page completo');
                 }}
               >
                 <Edit3 className="h-3 w-3 text-blue-600" />

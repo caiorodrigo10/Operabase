@@ -41,10 +41,7 @@ import RAGDocuments from "./pages/rag/RAGDocuments";
 import RAGUpload from "./pages/rag/RAGUpload";
 import FunisPage from "./pages/funis";
 import FunilDetalhes from "./pages/funil-detalhes";
-import FunilPageEditorWorking from "./pages/funil-page-editor-working";
-import FunilPageEditorSimple from "./pages/funil-page-editor-simple";
-import FunilEditorClean from "./pages/funil-editor-clean";
-import FunilEditorMinimal from "./pages/funil-editor-minimal";
+
 import FunilEditorLanding from "./pages/funil-editor-landing";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -162,10 +159,7 @@ function Router() {
         <Route path="/rag/upload" component={RAGUpload} />
         <Route path="/funis" component={FunisPage} />
         <Route path="/funis/:id" component={FunilDetalhes} />
-        <Route path="/editor" component={FunilEditorMinimal} />
-        <Route path="/editor-working" component={FunilPageEditorWorking} />
-        <Route path="/editor-simple" component={FunilPageEditorSimple} />
-        <Route path="/editor-clean" component={FunilEditorClean} />
+
         <Route path="/editor-landing" component={FunilEditorLanding} />
 
         <Route component={NotFound} />
