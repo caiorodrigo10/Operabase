@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft } from "lucide-react";
+import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ export default function ColecaoDetalhe() {
   const [textTitle, setTextTitle] = useState("");
   const [urlContent, setUrlContent] = useState("");
   const [urlTitle, setUrlTitle] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const queryClient = useQueryClient();
 
@@ -106,6 +107,7 @@ export default function ColecaoDetalhe() {
     setTextTitle("");
     setUrlContent("");
     setUrlTitle("");
+    setSelectedFiles([]);
   };
 
   const handleTypeSelection = (type: "text" | "pdf" | "url") => {
@@ -118,27 +120,116 @@ export default function ColecaoDetalhe() {
     setSelectedType(null);
   };
 
-  const handleSaveContent = () => {
-    let title = "";
-    switch (selectedType) {
-      case "text":
-        title = textTitle || "Texto sem título";
-        break;
-      case "url":
-        title = urlTitle || "Link sem título";
-        break;
-      case "pdf":
-        title = "Documento PDF";
-        break;
+  const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+      setSelectedFiles(pdfFiles);
+      console.log('PDFs selecionados:', pdfFiles.map(f => f.name));
     }
+  };
 
-    toast({
-      title: "Conteúdo adicionado",
-      description: `${title} foi adicionado à base de conhecimento.`,
-      variant: "default",
-    });
+  const handleSaveContent = async () => {
+    if (!collectionData) return;
 
-    handleCloseAddModal();
+    try {
+      let payload;
+      
+      if (selectedType === "text") {
+        if (!textContent.trim()) {
+          toast({
+            title: "Erro",
+            description: "Por favor, digite o conteúdo do texto",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        payload = {
+          knowledge_base: collectionData.name,
+          title: textTitle || "Documento de Texto",
+          content_type: "text",
+          original_content: textContent
+        };
+      } else if (selectedType === "url") {
+        if (!urlContent.trim()) {
+          toast({
+            title: "Erro",
+            description: "Por favor, digite a URL",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        payload = {
+          knowledge_base: collectionData.name,
+          title: urlTitle || "Link",
+          content_type: "url",
+          source_url: urlContent
+        };
+      } else if (selectedType === "pdf") {
+        if (selectedFiles.length === 0) {
+          toast({
+            title: "Erro",
+            description: "Por favor, selecione um arquivo PDF",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Upload do PDF usando FormData
+        const formData = new FormData();
+        formData.append('knowledge_base', collectionData.name);
+        formData.append('file', selectedFiles[0]);
+
+        const response = await fetch('/api/rag/documents/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha no upload do PDF');
+        }
+
+        // Invalidar cache e fechar modal
+        queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+        handleCloseAddModal();
+        
+        toast({
+          title: "Sucesso",  
+          description: "PDF enviado com sucesso!"
+        });
+        return;
+      }
+
+      const response = await fetch('/api/rag/documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao adicionar documento');
+      }
+
+      // Invalidar cache e fechar modal
+      queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+      handleCloseAddModal();
+      
+      toast({
+        title: "Sucesso",
+        description: "Documento adicionado com sucesso!"
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar documento:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao adicionar documento",
+        variant: "destructive"
+      });
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -383,7 +474,7 @@ export default function ColecaoDetalhe() {
 
                 {selectedType === "pdf" && (
                   <div className="space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-gray-400 transition-colors">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
                       <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 mb-4">
                         Arraste e solte arquivos PDF aqui ou
@@ -392,27 +483,44 @@ export default function ColecaoDetalhe() {
                         <input
                           type="file"
                           accept=".pdf"
-                          multiple
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files || []);
-                            files.forEach(file => {
-                              if (file.type === 'application/pdf') {
-                                console.log('PDF selecionado:', file.name);
-                                // Aqui você pode processar o arquivo
-                              }
-                            });
-                          }}
+                          onChange={handleFileSelection}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                           id="pdf-upload"
                         />
                         <Button variant="outline" className="pointer-events-none">
-                          Selecionar Arquivos
+                          {selectedFiles.length > 0 ? `${selectedFiles.length} arquivo(s) selecionado(s)` : "Selecionar Arquivos"}
                         </Button>
                       </div>
                       <p className="text-sm text-gray-500 mt-4">
                         Máximo 10MB por arquivo, apenas PDFs
                       </p>
                     </div>
+                    
+                    {selectedFiles.length > 0 && (
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Arquivos selecionados:</h4>
+                        <div className="space-y-2">
+                          {selectedFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white p-3 rounded border">
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-red-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">{file.name}</p>
+                                  <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -455,7 +563,8 @@ export default function ColecaoDetalhe() {
                     onClick={handleSaveContent}
                     disabled={
                       (selectedType === "text" && !textContent.trim()) ||
-                      (selectedType === "url" && !urlContent.trim())
+                      (selectedType === "url" && !urlContent.trim()) ||
+                      (selectedType === "pdf" && selectedFiles.length === 0)
                     }
                   >
                     Adicionar
