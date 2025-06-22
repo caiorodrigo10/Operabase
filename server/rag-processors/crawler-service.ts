@@ -164,7 +164,7 @@ export class CrawlerService {
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
       await page.goto(baseUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
-      const links = await page.evaluate((baseUrl) => {
+      const links = await page.evaluate((baseUrl: string) => {
         const domain = new URL(baseUrl).hostname;
         const linkElements = document.querySelectorAll('a[href]');
         const urls = new Set<string>();

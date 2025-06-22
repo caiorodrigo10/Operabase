@@ -49,6 +49,10 @@ export default function ColecaoDetalhe() {
   const [textTitle, setTextTitle] = useState("");
   const [urlContent, setUrlContent] = useState("");
   const [urlTitle, setUrlTitle] = useState("");
+  const [crawlMode, setCrawlMode] = useState<"single" | "domain">("single");
+  const [crawledPages, setCrawledPages] = useState<any[]>([]);
+  const [selectedPages, setSelectedPages] = useState<string[]>([]);
+  const [isCrawling, setIsCrawling] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
@@ -138,6 +142,10 @@ export default function ColecaoDetalhe() {
     setTextTitle("");
     setUrlContent("");
     setUrlTitle("");
+    setCrawlMode("single");
+    setCrawledPages([]);
+    setSelectedPages([]);
+    setIsCrawling(false);
     setSelectedFiles([]);
   };
 
@@ -157,6 +165,58 @@ export default function ColecaoDetalhe() {
       const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
       setSelectedFiles(pdfFiles);
       console.log('PDFs selecionados:', pdfFiles.map(f => f.name));
+    }
+  };
+
+  const handleCrawlPreview = async () => {
+    if (!urlContent.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, digite a URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCrawling(true);
+    setCrawledPages([]);
+    setSelectedPages([]);
+
+    try {
+      const response = await fetch('/api/rag/crawl/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: urlContent,
+          crawlMode: crawlMode
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha no crawling');
+      }
+
+      const data = await response.json();
+      setCrawledPages(data.pages || []);
+      
+      // Auto-select valid pages for single mode
+      if (crawlMode === "single") {
+        const validPages = data.pages.filter((p: any) => p.isValid);
+        setSelectedPages(validPages.map((p: any) => p.url));
+      }
+
+      toast({
+        title: "Sucesso",
+        description: `${data.pages.length} página(s) encontrada(s)`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao fazer crawling da URL",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCrawling(false);
     }
   };
 
@@ -183,21 +243,63 @@ export default function ColecaoDetalhe() {
           content: textContent
         };
       } else if (selectedType === "url") {
-        if (!urlContent.trim()) {
-          toast({
-            title: "Erro",
-            description: "Por favor, digite a URL",
-            variant: "destructive"
+        if (crawlMode === "single") {
+          if (!urlContent.trim()) {
+            toast({
+              title: "Erro",
+              description: "Por favor, digite a URL",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          payload = {
+            knowledge_base: collectionData.name,
+            title: urlTitle || "Link",
+            content_type: "url",
+            content: urlContent
+          };
+        } else {
+          // Process crawled pages
+          if (selectedPages.length === 0) {
+            toast({
+              title: "Erro",
+              description: "Por favor, selecione pelo menos uma página",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          const selectedPagesData = crawledPages
+            .filter(page => selectedPages.includes(page.url))
+            .map(page => ({
+              url: page.url,
+              title: page.title,
+              content: page.content || page.preview
+            }));
+
+          const response = await fetch('/api/rag/crawl/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              selectedPages: selectedPagesData,
+              knowledge_base: collectionData.name
+            })
           });
+
+          if (!response.ok) {
+            throw new Error('Falha ao processar páginas');
+          }
+
+          toast({
+            title: "Sucesso",
+            description: `${selectedPages.length} página(s) adicionada(s) para processamento`,
+          });
+
+          handleCloseAddModal();
+          queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
           return;
         }
-        
-        payload = {
-          knowledge_base: collectionData.name,
-          title: urlTitle || "Link",
-          content_type: "url",
-          content: urlContent
-        };
       } else if (selectedType === "pdf") {
         if (selectedFiles.length === 0) {
           toast({
@@ -617,26 +719,127 @@ export default function ColecaoDetalhe() {
 
                 {selectedType === "url" && (
                   <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900">
-                        URL da página
-                      </label>
-                      <Input
-                        value={urlContent}
-                        onChange={(e) => setUrlContent(e.target.value)}
-                        placeholder="https://exemplo.com/pagina-importante"
-                        type="url"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900">
-                        Título (opcional)
-                      </label>
-                      <Input
-                        value={urlTitle}
-                        onChange={(e) => setUrlTitle(e.target.value)}
-                        placeholder="Ex: Diretrizes Oficiais"
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-900">
+                          URL da página
+                        </label>
+                        <Input
+                          value={urlContent}
+                          onChange={(e) => setUrlContent(e.target.value)}
+                          placeholder="https://exemplo.com/pagina-importante"
+                          type="url"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-gray-900">
+                          Modo de importação
+                        </label>
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="crawlMode"
+                              value="single"
+                              checked={crawlMode === "single"}
+                              onChange={(e) => setCrawlMode(e.target.value as "single" | "domain")}
+                              className="text-blue-600"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900">Apenas esta página</div>
+                              <div className="text-sm text-gray-500">Extrair conteúdo somente da URL informada</div>
+                            </div>
+                          </label>
+                          
+                          <label className="flex items-center space-x-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="crawlMode"
+                              value="domain"
+                              checked={crawlMode === "domain"}
+                              onChange={(e) => setCrawlMode(e.target.value as "single" | "domain")}
+                              className="text-blue-600"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900">Todo o site (crawling)</div>
+                              <div className="text-sm text-gray-500">Buscar e permitir seleção de todas as páginas internas do domínio</div>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+
+                      {crawlMode === "single" && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-900">
+                            Título (opcional)
+                          </label>
+                          <Input
+                            value={urlTitle}
+                            onChange={(e) => setUrlTitle(e.target.value)}
+                            placeholder="Ex: Diretrizes Oficiais"
+                          />
+                        </div>
+                      )}
+
+                      {crawledPages.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-gray-900">
+                              Páginas encontradas ({crawledPages.filter(p => p.isValid).length} válidas)
+                            </h4>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  const allSelected = crawledPages.every(p => p.isValid && selectedPages.includes(p.url));
+                                  if (allSelected) {
+                                    setSelectedPages([]);
+                                  } else {
+                                    setSelectedPages(crawledPages.filter(p => p.isValid).map(p => p.url));
+                                  }
+                                }}
+                              >
+                                {crawledPages.every(p => p.isValid && selectedPages.includes(p.url)) ? 'Desmarcar todas' : 'Selecionar todas'}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="max-h-60 overflow-y-auto space-y-2 border rounded p-3 bg-gray-50">
+                            {crawledPages.map((page, index) => (
+                              <div key={index} className={`p-3 border rounded bg-white ${!page.isValid ? 'opacity-50' : ''}`}>
+                                <label className="flex items-start space-x-3 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={page.isValid && selectedPages.includes(page.url)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedPages(prev => [...prev, page.url]);
+                                      } else {
+                                        setSelectedPages(prev => prev.filter(url => url !== page.url));
+                                      }
+                                    }}
+                                    disabled={!page.isValid}
+                                    className="mt-1 text-blue-600"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-gray-900 truncate">{page.title}</div>
+                                    <div className="text-sm text-gray-500 truncate">{page.url}</div>
+                                    <div className="text-xs text-gray-400 mt-1">
+                                      {page.wordCount} palavras
+                                      {page.error && ` • Erro: ${page.error}`}
+                                    </div>
+                                    {page.preview && (
+                                      <div className="text-xs text-gray-600 mt-1 line-clamp-2">{page.preview}</div>
+                                    )}
+                                  </div>
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
