@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { IStorage } from './storage.js';
 import { db } from './db.js';
+import { sql } from 'drizzle-orm';
 
 interface ContactContext {
   contact: any;
@@ -218,15 +219,15 @@ INSTRUÇÕES:
   // RAG Integration Methods
   async getMaraConfigForProfessional(userId: number, clinicId: number): Promise<MaraConfig | null> {
     try {
-      const result = await db.execute(`
+      const result = await db.execute(sql`
         SELECT 
           mpc.knowledge_base_id,
           mpc.is_active,
           kb.name as knowledge_base_name
         FROM mara_professional_configs mpc
         LEFT JOIN rag_knowledge_bases kb ON mpc.knowledge_base_id = kb.id
-        WHERE mpc.professional_id = $1 AND mpc.clinic_id = $2 AND mpc.is_active = true
-      `, [userId, clinicId]);
+        WHERE mpc.professional_id = ${userId} AND mpc.clinic_id = ${clinicId} AND mpc.is_active = true
+      `);
 
       if (result.rows.length === 0) {
         return null;
@@ -247,11 +248,11 @@ INSTRUÇÕES:
   async searchRAGKnowledge(query: string, knowledgeBaseId: number): Promise<RAGResult[]> {
     try {
       // Use the existing search_similar_chunks function
-      const result = await db.execute(`
+      const result = await db.execute(sql`
         SELECT content, metadata, similarity
-        FROM search_similar_chunks($1, $2, 0.7, 5)
-        WHERE knowledge_base_id = $3
-      `, [query, 5, knowledgeBaseId]);
+        FROM search_similar_chunks(${query}, ${5}, 0.7, 5)
+        WHERE knowledge_base_id = ${knowledgeBaseId}
+      `);
 
       return result.rows.map(row => ({
         content: row.content,
