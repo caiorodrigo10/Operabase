@@ -48,23 +48,25 @@ export default function BaseConhecimento() {
 
   return (
     <div className="p-4 lg:p-6">
+      {/* Page Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/trabalhadores-digitais">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Base de Conhecimento</h1>
+          <p className="text-gray-600">
+            Treine seus assistentes de IA com informações personalizadas
+          </p>
+        </div>
+      </div>
+
       <div className="flex gap-6">
         {/* Sidebar Navigation */}
         <div className="w-64 flex-shrink-0">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Link href="/trabalhadores-digitais">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <h2 className="text-lg font-semibold text-gray-900">Base de Conhecimento</h2>
-              </div>
-              <p className="text-sm text-gray-600">
-                Treine seus assistentes de IA
-              </p>
-            </div>
             <nav className="space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
