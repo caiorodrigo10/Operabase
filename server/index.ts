@@ -281,6 +281,15 @@ app.use((req, res, next) => {
     console.error('❌ Error initializing anamnesis system:', error);
   }
 
+  // Initialize RAG system
+  try {
+    const { initializeRAGSystem } = await import('./rag-setup');
+    await initializeRAGSystem();
+    console.log('✅ RAG system initialized');
+  } catch (error) {
+    console.error('❌ Error initializing RAG system:', error);
+  }
+
   // Initialize WhatsApp table
   try {
     if (storage && 'pool' in storage) {
