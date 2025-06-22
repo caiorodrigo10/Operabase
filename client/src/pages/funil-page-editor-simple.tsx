@@ -4,12 +4,12 @@ import { Link } from 'wouter';
 import { ArrowLeft, Eye, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Import basic working components
+// Import basic Craft.js components that we know work
 import { Container, Text } from '../components/craft/selectors';
 import { Button as CraftButton } from '../components/craft/selectors/Button';
 
-export default function FunilPageEditor() {
-  console.log('🔧 Abrindo editor padrão para página:', "Landing Page");
+export default function FunilPageEditorSimple() {
+  console.log('🔧 Abrindo editor simples para página:', "Landing Page");
 
   return (
     <div className="h-full min-h-screen">
@@ -28,7 +28,7 @@ export default function FunilPageEditor() {
                 Editor Landing Page
               </h1>
               <p className="text-sm text-gray-500">
-                Editor completo com componentes Craft.js
+                Editor Craft.js funcionando
               </p>
             </div>
           </div>
