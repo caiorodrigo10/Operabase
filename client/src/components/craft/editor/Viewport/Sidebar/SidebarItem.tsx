@@ -28,7 +28,7 @@ const Chevron = styled.a<{ $visible: boolean }>`
 export type SidebarItemProps = {
   title: string;
   height?: string;
-  icon: string;
+  icon: React.ComponentType<any>;
   visible?: boolean;
   onChange?: (bool: boolean) => void;
   children?: React.ReactNode;
@@ -70,8 +70,8 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
           {React.createElement(icon, { className: 'w-4 h-4 mr-2' })}
           <h2 className="text-xs uppercase">{title}</h2>
         </div>
-        <Chevron $visible={visible}>
-          <Arrow viewBox="-2 -1 12 12" />
+        <Chevron $visible={visible || false}>
+          <ChevronDown size={10} />
         </Chevron>
       </HeaderDiv>
       {visible ? (

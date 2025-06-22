@@ -3,7 +3,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Grid2 as Grid,
+  Grid,
 } from '@mui/material';
 import React from 'react';
 
@@ -45,13 +45,13 @@ export const ToolbarSection = ({ title, props, summary, children }: any) => {
       >
         <div className="px-6 w-full">
           <Grid container direction="row" alignItems="center" spacing={3}>
-            <Grid size={{ xs: 4 }}>
+            <Grid item xs={4}>
               <h5 className="text-sm text-light-gray-1 text-left font-medium text-dark-gray">
                 {title}
               </h5>
             </Grid>
             {summary && props ? (
-              <Grid size={{ xs: 8 }}>
+              <Grid item xs={8}>
                 <h5 className="text-light-gray-2 text-sm text-right text-dark-blue">
                   {summary(
                     props.reduce((acc: any, key: any) => {

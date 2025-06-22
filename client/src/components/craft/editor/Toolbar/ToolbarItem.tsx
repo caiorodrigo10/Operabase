@@ -1,5 +1,5 @@
 import { useNode } from '@craftjs/core';
-import { Grid2 as Grid, Slider, RadioGroup } from '@mui/material';
+import { Grid, Slider, RadioGroup } from '@mui/material';
 import * as React from 'react';
 
 import { ToolbarDropdown } from './ToolbarDropdown';
@@ -32,7 +32,7 @@ export const ToolbarItem = ({
   const value = Array.isArray(propValue) ? propValue[index] : propValue;
 
   return (
-    <Grid size={{ xs: full ? 12 : 6 }}>
+    <Grid item xs={full ? 12 : 6}>
       <div className="mb-2">
         {['text', 'color', 'bg', 'number'].includes(type) ? (
           <ToolbarTextInput
