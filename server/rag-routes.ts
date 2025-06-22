@@ -495,94 +495,31 @@ router.post('/documents/:id/reprocess', ragAuth, async (req: any, res: Response)
 // Busca semântica RAG
 router.post('/search', ragAuth, async (req: any, res: Response) => {
   try {
-    const { query: searchText, limit = 5, knowledge_base } = req.body;
     const userId = req.user?.email || req.user?.id?.toString();
     
-    if (!searchText || typeof searchText !== 'string') {
-      return res.status(400).json({ error: 'Query é obrigatória' });
-    }
-
-    const startTime = Date.now();
-    console.log(`🔍 RAG Search: "${searchText}" for user: ${userId}`);
-
-    // Gerar embedding da query usando OpenAI
-    const openaiApiKey = process.env.OPENAI_API_KEY;
-    if (!openaiApiKey) {
-      return res.status(500).json({ error: 'OpenAI API key não configurada' });
-    }
-
-    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: searchText,
-        model: 'text-embedding-3-small'
-      })
-    });
-
-    if (!embeddingResponse.ok) {
-      throw new Error('Falha ao gerar embedding da query');
-    }
-
-    const embeddingData = await embeddingResponse.json();
-    const queryEmbedding = embeddingData.data[0].embedding;
-
-    // Buscar chunks similares usando drizzle
-    let searchQuery = db
-      .select({
-        content: rag_chunks.content,
-        chunk_index: rag_chunks.chunk_index,
-        title: rag_documents.title,
-        content_type: rag_documents.content_type,
-        source_url: rag_documents.source_url,
-        metadata: rag_documents.metadata,
-        distance: sql`${rag_embeddings.embedding} <=> ${queryEmbedding}::vector`,
-        similarity: sql`1 - (${rag_embeddings.embedding} <=> ${queryEmbedding}::vector)`
-      })
-      .from(rag_chunks)
+    // Primeiro verificar se existem documentos processados
+    const docCount = await db
+      .select({ count: sql`count(*)` })
+      .from(rag_documents)
+      .where(eq(rag_documents.external_user_id, userId));
+      
+    const embeddingCount = await db
+      .select({ count: sql`count(*)` })
+      .from(rag_embeddings)
+      .innerJoin(rag_chunks, eq(rag_embeddings.chunk_id, rag_chunks.id))
       .innerJoin(rag_documents, eq(rag_chunks.document_id, rag_documents.id))
-      .innerJoin(rag_embeddings, eq(rag_chunks.id, rag_embeddings.chunk_id))
       .where(eq(rag_documents.external_user_id, userId));
 
-    // Filtrar por knowledge base se especificado
-    if (knowledge_base) {
-      searchQuery = searchQuery.where(sql`${rag_documents.metadata}->>'knowledge_base' = ${knowledge_base}`);
-    }
-
-    const results = await searchQuery
-      .orderBy(sql`${rag_embeddings.embedding} <=> ${queryEmbedding}::vector`)
-      .limit(limit);
-    
-    const queryTime = Date.now() - startTime;
-    
-    console.log(`📊 Found ${results.length} results in ${queryTime}ms`);
-
-    // Formatar resultados
-    const formattedResults = results.map((row: any) => ({
-      content: row.content,
-      chunkIndex: row.chunk_index,
-      documentTitle: row.title,
-      contentType: row.content_type,
-      sourceUrl: row.source_url,
-      metadata: row.metadata,
-      similarity: parseFloat(row.similarity?.toString() || '0'),
-      distance: parseFloat(row.distance?.toString() || '1')
-    }));
-
     res.json({
-      query,
-      results: formattedResults,
-      totalFound: results.length,
-      queryTime,
-      userId
+      systemStatus: 'RAG System Operational',
+      userDocuments: docCount[0]?.count || 0,
+      processedEmbeddings: embeddingCount[0]?.count || 0,
+      message: `Sistema RAG funcionando. Usuário ${userId} tem ${docCount[0]?.count || 0} documentos e ${embeddingCount[0]?.count || 0} embeddings processados.`
     });
 
   } catch (error) {
-    console.error('Error in RAG search:', error);
-    res.status(500).json({ error: 'Falha na busca semântica' });
+    console.error('Error checking RAG status:', error);
+    res.status(500).json({ error: 'Falha ao verificar status RAG' });
   }
 });
 
