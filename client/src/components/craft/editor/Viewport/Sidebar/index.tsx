@@ -2,10 +2,11 @@ import { useEditor } from '@craftjs/core';
 import { Layers } from '@craftjs/layers';
 import React, { useState } from 'react';
 import { styled } from 'styled-components';
-import { Settings, Layers as LayersIcon } from 'lucide-react';
+import { Settings, Layers as LayersIcon, Code } from 'lucide-react';
 
 import { SidebarItem } from './SidebarItem';
 import { Toolbar } from '../../Toolbar';
+import { AICodeChat } from './AICodeChat';
 
 export const SidebarDiv = styled.div<{ $enabled: boolean }>`
   width: 280px;
@@ -136,9 +137,27 @@ const Carbonads = () => {
 export const Sidebar = () => {
   const [layersVisible, setLayerVisible] = useState(true);
   const [toolbarVisible, setToolbarVisible] = useState(true);
+  const [aiCodeVisible, setAiCodeVisible] = useState(false);
   const { enabled } = useEditor((state) => ({
     enabled: state.options.enabled,
   }));
+
+  // Calculate heights based on which sections are visible
+  const getHeight = (section: 'customize' | 'layers' | 'aicode') => {
+    const visibleSections = [
+      toolbarVisible && 'customize',
+      layersVisible && 'layers', 
+      aiCodeVisible && 'aicode'
+    ].filter(Boolean);
+    
+    const sectionCount = visibleSections.length;
+    
+    if (sectionCount === 1) return 'full';
+    if (sectionCount === 2) return '50%';
+    if (sectionCount === 3) return '33.33%';
+    
+    return '33.33%';
+  };
 
   return (
     <SidebarDiv $enabled={enabled} className="sidebar transition bg-white w-2">
@@ -146,7 +165,7 @@ export const Sidebar = () => {
         <SidebarItem
           icon={Settings}
           title="Customize"
-          height={!layersVisible ? 'full' : '55%'}
+          height={getHeight('customize')}
           visible={toolbarVisible}
           onChange={(val) => setToolbarVisible(val)}
           className="overflow-auto"
@@ -156,13 +175,23 @@ export const Sidebar = () => {
         <SidebarItem
           icon={LayersIcon}
           title="Layers"
-          height={!toolbarVisible ? 'full' : '45%'}
+          height={getHeight('layers')}
           visible={layersVisible}
           onChange={(val) => setLayerVisible(val)}
         >
           <div className="">
             <Layers expandRootOnLoad={true} />
           </div>
+        </SidebarItem>
+        <SidebarItem
+          icon={Code}
+          title="AI Code"
+          height={getHeight('aicode')}
+          visible={aiCodeVisible}
+          onChange={(val) => setAiCodeVisible(val)}
+          className="overflow-hidden"
+        >
+          <AICodeChat />
         </SidebarItem>
         <Carbonads />
       </div>
