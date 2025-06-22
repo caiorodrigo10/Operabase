@@ -242,22 +242,18 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     sideOffset={8}
                   >
                     <div className="grid grid-cols-2 gap-4">
-                      <div 
+                      <Link
+                        href="/funis"
                         className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"
                         onClick={() => {
                           setIsAppsDropdownOpen(false);
-                          toast({
-                            title: "Funcionalidade em desenvolvimento",
-                            description: "Funis estará disponível em breve",
-                            variant: "default",
-                          });
                         }}
                       >
                         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
                           <Filter className="h-5 w-5 text-blue-600" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Funis</span>
-                      </div>
+                      </Link>
 
                       <Link
                         href="/trabalhadores-digitais"
@@ -499,21 +495,15 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
             {!isAdminView && (
               <div className="pt-3 border-t border-slate-200">
                 <div className="grid grid-cols-2 gap-2">
-                  <div 
+                  <Link
+                    href="/funis"
                     className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => {
-                      toast({
-                        title: "Funcionalidade em desenvolvimento",
-                        description: "Funis estará disponível em breve",
-                        variant: "default",
-                      });
-                    }}
                   >
                     <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center mb-1">
                       <Filter className="h-4 w-4 text-blue-600" />
                     </div>
                     <span className="text-xs font-medium text-slate-900">Funis</span>
-                  </div>
+                  </Link>
 
                   <div 
                     className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"

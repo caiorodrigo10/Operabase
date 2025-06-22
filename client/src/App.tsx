@@ -39,6 +39,7 @@ import MaraAIConfig from "./pages/mara-ai-config";
 import BaseConhecimento from "./pages/BaseConhecimento";
 import RAGDocuments from "./pages/rag/RAGDocuments";
 import RAGUpload from "./pages/rag/RAGUpload";
+import FunisPage from "./pages/funis";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -153,6 +154,7 @@ function Router() {
         <Route path="/base-conhecimento/empresa" component={BaseConhecimento} />
         <Route path="/rag" component={RAGDocuments} />
         <Route path="/rag/upload" component={RAGUpload} />
+        <Route path="/funis" component={FunisPage} />
 
         <Route component={NotFound} />
       </Switch>
