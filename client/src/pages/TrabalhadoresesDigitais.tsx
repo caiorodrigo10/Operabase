@@ -126,41 +126,25 @@ export default function TrabalhadoresesDigitais() {
           return (
             <div
               key={index}
-              className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col justify-center items-center text-center"
               onClick={() => handleCardClick(assistant.name, assistant.description)}
             >
-              {/* Header */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 ${colors.iconBg} rounded-lg flex items-center justify-center`}>
-                  <Icon className={`h-5 w-5 ${colors.iconColor}`} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{assistant.name}</h3>
-                  <p className="text-sm text-gray-600">{assistant.role}</p>
-                </div>
+              {/* Icon */}
+              <div className={`w-16 h-16 ${colors.iconBg} rounded-lg flex items-center justify-center mb-4`}>
+                <Icon className={`h-8 w-8 ${colors.iconColor}`} />
               </div>
 
+              {/* Title */}
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{assistant.name}</h3>
+              <p className="text-sm font-medium text-gray-600 mb-3">{assistant.role}</p>
+
               {/* Description */}
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+              <p className="text-sm text-gray-500 mb-6 line-clamp-3 flex-1">
                 {assistant.description}
               </p>
 
-              {/* Specialties */}
-              <div className="flex-1 mb-3">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Especialidades:</h4>
-                <ul className="space-y-1">
-                  {assistant.specialties.slice(0, 3).map((specialty, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                      <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0"></div>
-                      <span className="line-clamp-1">{specialty}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
               {/* Footer */}
               <Button 
-                size="sm"
                 className="w-full"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -174,36 +158,23 @@ export default function TrabalhadoresesDigitais() {
         })}
 
         {/* Knowledge Base Card */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">{knowledgeBase.name}</h3>
-              <p className="text-sm text-gray-600">Central de Treinamento</p>
-            </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col justify-center items-center text-center">
+          {/* Icon */}
+          <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+            <BookOpen className="h-8 w-8 text-orange-600" />
           </div>
 
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {/* Title */}
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{knowledgeBase.name}</h3>
+          <p className="text-sm font-medium text-gray-600 mb-3">Central de Treinamento</p>
+
+          {/* Description */}
+          <p className="text-sm text-gray-500 mb-6 line-clamp-3 flex-1">
             {knowledgeBase.description}
           </p>
 
-          {/* Features */}
-          <div className="flex-1 mb-3">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Recursos:</h4>
-            <ul className="space-y-1">
-              {knowledgeBase.features.slice(0, 3).map((feature, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                  <div className="w-1 h-1 bg-orange-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                  <span className="line-clamp-1">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           <Link href="/base-conhecimento" className="w-full">
-            <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
               Acessar Base de Conhecimento
             </Button>
           </Link>
