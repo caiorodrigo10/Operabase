@@ -6,14 +6,25 @@ import { db } from "./db";
 import { rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
-// Middleware de autenticação para RAG
+// Middleware de autenticação específico para RAG que funciona com sessões
 const ragAuth = (req: any, res: any, next: any) => {
-  // Verificar se o usuário está logado via sessão
-  if (req.user) {
+  console.log('🔍 RAG Auth - Session:', req.session);
+  console.log('🔍 RAG Auth - User:', req.user);
+  console.log('🔍 RAG Auth - ragAuth:', typeof req.ragAuth === 'function' ? req.ragAuth() : false);
+  
+  // Verificar se há usuário na sessão
+  if (req.user && req.user.email) {
+    console.log('✅ RAG Auth - Usuario autenticado:', req.user.email);
     return next();
   }
   
-  // Se não há usuário na sessão, retornar erro
+  // Verificar se há sessão ativa
+  if (req.session && req.session.passport && req.session.passport.user) {
+    console.log('✅ RAG Auth - Sessão ativa encontrada');
+    return next();
+  }
+  
+  console.log('❌ RAG Auth - Usuário não autenticado');
   return res.status(401).json({ error: "Usuário não autenticado" });
 };
 
@@ -51,7 +62,12 @@ const upload = multer({
 // Listar documentos do usuário
 router.get('/documents', ragAuth, async (req: any, res: Response) => {
   try {
+    console.log('🔍 RAG Documents - User data:', req.user);
     const userId = req.user?.email || req.user?.id?.toString();
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não identificado' });
+    }
     
     const documents = await db
       .select()
@@ -59,6 +75,7 @@ router.get('/documents', ragAuth, async (req: any, res: Response) => {
       .where(eq(rag_documents.external_user_id, userId))
       .orderBy(desc(rag_documents.created_at));
 
+    console.log('📊 RAG Documents found:', documents.length);
     res.json(documents);
   } catch (error) {
     console.error('Error fetching RAG documents:', error);
