@@ -35,6 +35,7 @@ import AnamnesisTemplatesPage from "./pages/anamneses";
 import EditarAnamnesePage from "./pages/editar-anamnese";
 import EditarAnamneseResposta from "./pages/editar-anamnese-resposta";
 import TrabalhadoresesDigitais from "./pages/TrabalhadoresesDigitais";
+import MaraAIConfig from "./pages/mara-ai-config";
 import BaseConhecimento from "./pages/BaseConhecimento";
 import RAGDocuments from "./pages/rag/RAGDocuments";
 import RAGUpload from "./pages/rag/RAGUpload";
@@ -145,6 +146,7 @@ function Router() {
         <Route path="/mcptest" component={MCPTestPage} />
         <Route path="/api-keys" component={ApiKeysPage} />
         <Route path="/trabalhadores-digitais" component={TrabalhadoresesDigitais} />
+        <Route path="/trabalhadores-digitais/mara-ai" component={MaraAIConfig} />
         <Route path="/base-conhecimento" component={BaseConhecimento} />
         <Route path="/base-conhecimento/:id" component={BaseConhecimento} />
         <Route path="/base-conhecimento/profissionais" component={BaseConhecimento} />

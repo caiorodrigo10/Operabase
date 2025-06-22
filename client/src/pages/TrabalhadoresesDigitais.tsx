@@ -1,4 +1,4 @@
-import { Bot, Users, BarChart3, BookOpen, ChevronLeft } from "lucide-react";
+import { Bot, Users, BarChart3, BookOpen, ChevronLeft, Brain } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -167,6 +167,7 @@ export default function TrabalhadoresesDigitais() {
               </div>
             );
           })}
+
 
           {/* Knowledge Base Card */}
           <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col hover:scale-[1.02] hover:bg-white/90">
