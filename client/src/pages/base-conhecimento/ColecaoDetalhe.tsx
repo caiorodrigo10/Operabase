@@ -782,6 +782,19 @@ export default function ColecaoDetalhe() {
                         </div>
                       )}
 
+                      {crawlMode === "domain" && (
+                        <div className="flex justify-end">
+                          <Button 
+                            onClick={handleCrawlPreview}
+                            disabled={!urlContent.trim() || isCrawling}
+                            variant="outline"
+                            size="sm"
+                          >
+                            {isCrawling ? "Buscando páginas..." : "Buscar páginas do site"}
+                          </Button>
+                        </div>
+                      )}
+
                       {crawledPages.length > 0 && (
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
@@ -857,7 +870,8 @@ export default function ColecaoDetalhe() {
                     onClick={handleSaveContent}
                     disabled={
                       (selectedType === "text" && !textContent.trim()) ||
-                      (selectedType === "url" && !urlContent.trim()) ||
+                      (selectedType === "url" && crawlMode === "single" && !urlContent.trim()) ||
+                      (selectedType === "url" && crawlMode === "domain" && selectedPages.length === 0) ||
                       (selectedType === "pdf" && selectedFiles.length === 0)
                     }
                   >
