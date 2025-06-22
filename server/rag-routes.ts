@@ -78,8 +78,8 @@ router.get('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
         ...base,
         documentCount: docsInBase.length,
         lastUpdated: docsInBase.length > 0 
-          ? new Date(Math.max(...docsInBase.map(d => new Date(d.updated_at).getTime()))).toISOString()
-          : base.updated_at
+          ? new Date(Math.max(...docsInBase.map(d => d.updated_at ? new Date(d.updated_at).getTime() : 0))).toISOString()
+          : base.updated_at?.toISOString() || new Date().toISOString()
       };
     });
 
