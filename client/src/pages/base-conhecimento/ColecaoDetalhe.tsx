@@ -8,6 +8,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface RAGDocument {
+  id: number;
+  title: string;
+  content_type: 'text' | 'url' | 'pdf';
+  original_content: string;
+  created_at: string;
+  metadata?: {
+    knowledge_base?: string;
+    description?: string;
+  };
+}
+
+interface KnowledgeItem {
+  id: number;
+  type: string;
+  title: string;
+  preview: string;
+  date: string;
+}
 
 export default function ColecaoDetalhe() {
   const { toast } = useToast();
@@ -24,51 +45,52 @@ export default function ColecaoDetalhe() {
   const [urlContent, setUrlContent] = useState("");
   const [urlTitle, setUrlTitle] = useState("");
 
-  // Mock collection data
-  const collection = {
-    id: 1,
-    name: "Protocolos de Atendimento",
-    description: "Protocolos médicos e procedimentos padrão da clínica"
-  };
+  const queryClient = useQueryClient();
 
-  // Mock data for knowledge items in this collection
-  const knowledgeItems = [
-    {
-      id: 1,
-      type: "text",
-      title: "Protocolo de Triagem",
-      preview: "Procedimentos iniciais para triagem de pacientes na recepção...",
-      date: "20/01/2025"
-    },
-    {
-      id: 2,
-      type: "pdf",
-      title: "Manual de Emergências.pdf",
-      preview: "Documento com 25 páginas",
-      date: "18/01/2025"
-    },
-    {
-      id: 3,
-      type: "url",
-      title: "Diretrizes CFM",
-      preview: "https://portal.cfm.org.br/diretrizes",
-      date: "15/01/2025"
-    },
-    {
-      id: 4,
-      type: "text",
-      title: "Procedimentos de Higienização",
-      preview: "Protocolos de limpeza e desinfecção das salas de atendimento...",
-      date: "12/01/2025"
-    },
-    {
-      id: 5,
-      type: "pdf",
-      title: "Protocolos COVID.pdf",
-      preview: "Documento com 15 páginas",
-      date: "10/01/2025"
+  // Query para buscar documentos RAG
+  const { data: documents = [], isLoading } = useQuery({
+    queryKey: ['/api/rag/documents'],
+    queryFn: async () => {
+      const response = await fetch('/api/rag/documents');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar documentos');
+      }
+      return response.json() as Promise<RAGDocument[]>;
     }
-  ];
+  });
+
+  // Encontrar a coleção atual baseada no ID
+  const knowledgeBaseGroups = documents.reduce((groups: Record<string, RAGDocument[]>, doc: RAGDocument) => {
+    const knowledgeBase = doc.metadata?.knowledge_base || doc.title;
+    if (!groups[knowledgeBase]) {
+      groups[knowledgeBase] = [];
+    }
+    groups[knowledgeBase].push(doc);
+    return groups;
+  }, {});
+
+  // Encontrar a coleção pelo ID hasheado
+  const targetId = parseInt(collectionId || '0');
+  const collection = Object.entries(knowledgeBaseGroups).find(([name]) => {
+    const hashedId = Math.abs(name.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0));
+    return hashedId === targetId;
+  });
+
+  const collectionData = collection ? {
+    id: targetId,
+    name: collection[0] as string,
+    description: (collection[1] as RAGDocument[])[0]?.metadata?.description || `Base de conhecimento ${collection[0]}`,
+    documents: collection[1] as RAGDocument[]
+  } : null;
+
+  // Converter documentos para o formato esperado pela interface
+  const knowledgeItems: KnowledgeItem[] = collectionData?.documents.map((doc: RAGDocument) => ({
+    id: doc.id,
+    type: doc.content_type,
+    title: doc.title,
+    preview: doc.original_content?.substring(0, 100) + (doc.original_content?.length > 100 ? '...' : ''),
+    date: new Date(doc.created_at).toLocaleDateString('pt-BR')
+  })) || [];
 
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
@@ -148,13 +170,13 @@ export default function ColecaoDetalhe() {
             Base de Conhecimento
           </Link>
           <span>›</span>
-          <span className="text-gray-900">{collection.name}</span>
+          <span className="text-gray-900">{collectionData?.name || 'Carregando...'}</span>
         </div>
         
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{collection.name}</h1>
-            <p className="text-gray-600">{collection.description}</p>
+            <h1 className="text-2xl font-bold text-gray-900">{collectionData?.name || 'Carregando...'}</h1>
+            <p className="text-gray-600">{collectionData?.description || 'Carregando descrição...'}</p>
           </div>
           <Button onClick={handleOpenAddModal}>
             <Plus className="h-4 w-4 mr-2" />
