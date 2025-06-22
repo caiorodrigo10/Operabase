@@ -158,7 +158,7 @@ function Router() {
         <Route path="/rag/upload" component={RAGUpload} />
         <Route path="/funis" component={FunisPage} />
         <Route path="/funis/:id" component={FunilDetalhes} />
-        <Route path="/funis/:funilId/pagina/:pageId/editor" component={FunilPageEditor} />
+        <Route path="/editor" component={FunilPageEditor} />
 
         <Route component={NotFound} />
       </Switch>

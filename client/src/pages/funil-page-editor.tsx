@@ -297,41 +297,25 @@ const mockPageData = {
 };
 
 export default function FunilPageEditor() {
-  const { funilId, pageId } = useParams();
   const [enabled, setEnabled] = React.useState(true);
-  
-  const currentPage = mockPageData[pageId as keyof typeof mockPageData];
-  
-  if (!currentPage) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Página não encontrada</h1>
-          <Link href={`/funis/${funilId}`}>
-            <Button>Voltar ao Funil</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link href={`/funis/${funilId}`}>
+          <Link href="/funis">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar ao Funil
+              Voltar aos Funis
             </Button>
           </Link>
           <div>
             <h1 className="text-xl font-semibold text-gray-900">
-              Editor: {currentPage.title}
+              Editor de Página
             </h1>
             <p className="text-sm text-gray-500">
-              Tipo: {currentPage.type} • Status: {currentPage.status}
+              Editor visual com Craft.js
             </p>
           </div>
         </div>
@@ -385,7 +369,7 @@ export default function FunilPageEditor() {
                   }}
                 >
                   <Text 
-                    text={`Bem-vindo à ${currentPage.title}`} 
+                    text="Bem-vindo ao Editor de Páginas" 
                     fontSize={32} 
                     textAlign="center"
                     color="#1f2937"

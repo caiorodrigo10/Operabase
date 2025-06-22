@@ -126,14 +126,13 @@ const FunilPageNode = ({ data }: { data: any }) => {
         <CardContent className="pt-0 px-3 pb-3">
           {/* Quick Actions - More Compact */}
           <div className="flex items-center justify-center space-x-0.5">
-            <Link href={`/funis/1/pagina/${data.id}/editor`}>
+            <Link href="/editor">
               <Button 
                 size="sm" 
                 variant="ghost" 
                 className="p-1 h-6 w-6"
                 onClick={() => {
-                  console.log('🔧 Clicando para editar página:', data.id);
-                  console.log('🔗 URL destino:', `/funis/1/pagina/${data.id}/editor`);
+                  console.log('🔧 Abrindo editor padrão para página:', data.title);
                 }}
               >
                 <Edit3 className="h-3 w-3 text-blue-600" />
@@ -223,6 +222,7 @@ export default function FunilDetalhes() {
       type: 'funilPage',
       position: { x: index * 220, y: 150 },
       data: {
+        id: page.id,
         title: page.title,
         status: page.status,
         type: page.type
