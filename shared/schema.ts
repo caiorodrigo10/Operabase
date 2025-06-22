@@ -294,6 +294,26 @@ export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
 export type PipelineActivity = typeof pipeline_activities.$inferSelect;
 export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;
 
+export type MaraProfessionalConfig = typeof mara_professional_configs.$inferSelect;
+export type InsertMaraProfessionalConfig = z.infer<typeof insertMaraProfessionalConfigSchema>;
+
+// Tabela para configurações de Mara AI por profissional
+export const mara_professional_configs = pgTable("mara_professional_configs", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  professional_id: integer("professional_id").notNull(),
+  knowledge_base_id: integer("knowledge_base_id"),
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_mara_configs_clinic_professional").on(table.clinic_id, table.professional_id),
+  index("idx_mara_configs_knowledge_base").on(table.knowledge_base_id),
+  unique("unique_clinic_professional").on(table.clinic_id, table.professional_id),
+]);
+
+export const insertMaraProfessionalConfigSchema = createInsertSchema(mara_professional_configs);
+
 // ================================================================
 // RAG SYSTEM TABLES (ISOLATED MODULE)
 // ================================================================

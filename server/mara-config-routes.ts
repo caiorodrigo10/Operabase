@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { IStorage } from './storage';
 import { isAuthenticated } from './auth';
 import { db } from './db';
+import { mara_professional_configs, rag_knowledge_bases, rag_documents, rag_chunks } from '../shared/schema';
+import { eq, and, sql } from 'drizzle-orm';
 
 // Middleware simplificado que usa usuário fixo para demonstração
 const maraAuth = (req: any, res: any, next: any) => {
