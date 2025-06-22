@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { apiRequest } from "../lib/queryClient";
 import { ContactAvatar } from "@/components/ContactAvatar";
 import EvolucaoEditor from "@/components/EvolucaoEditor";
 import { ContactPipelineHistory } from "@/components/ContactPipelineHistory";
@@ -130,19 +131,9 @@ export function ContatoDetalhes() {
   const maraMutation = useMutation({
     mutationFn: async (question: string) => {
       console.log('🤖 Enviando pergunta para Mara:', question);
-      const response = await fetch(`/api/contacts/${contactId}/mara/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question })
-      });
+      const response = await apiRequest(`/api/contacts/${contactId}/mara/chat`, 'POST', { question });
       
       console.log('📡 Resposta do servidor:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Erro na resposta:', errorText);
-        throw new Error(`Erro ao conversar com Mara IA: ${response.status}`);
-      }
       
       const data = await response.json();
       console.log('📨 Dados recebidos:', data);

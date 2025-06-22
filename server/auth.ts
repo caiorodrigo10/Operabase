@@ -230,8 +230,13 @@ export function setupAuth(app: Express, storage: IStorage) {
 
 // Middleware to check if user is authenticated (supports both session and Supabase token)
 export const isAuthenticated = async (req: any, res: any, next: any) => {
+  console.log('🔐 Auth middleware: Checking authentication...');
+  console.log('🔍 Headers:', req.headers.authorization ? 'Bearer token present' : 'No bearer token');
+  console.log('🔍 Session authenticated:', req.isAuthenticated ? req.isAuthenticated() : 'No session method');
+  
   // Check session-based authentication first
   if (req.isAuthenticated && req.isAuthenticated()) {
+    console.log('✅ Session authentication successful');
     return next();
   }
   
@@ -239,6 +244,7 @@ export const isAuthenticated = async (req: any, res: any, next: any) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
+    console.log('🔑 Found Bearer token, verifying...');
     
     try {
       // Verify Supabase token and get user
@@ -251,16 +257,22 @@ export const isAuthenticated = async (req: any, res: any, next: any) => {
       const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
       
       if (error || !supabaseUser) {
+        console.log('❌ Supabase token verification failed:', error?.message);
         return res.status(401).json({ error: "Token inválido" });
       }
+      
+      console.log('✅ Supabase user verified:', supabaseUser.email);
       
       // Get user from database by email
       const storage = req.app.get('storage');
       const user = await storage.getUserByEmail(supabaseUser.email);
       
       if (!user) {
+        console.log('❌ User not found in database:', supabaseUser.email);
         return res.status(401).json({ error: "Usuário não encontrado" });
       }
+      
+      console.log('✅ Database user found:', user.name);
       
       // Set user in request for downstream middleware
       req.user = user;
@@ -272,6 +284,7 @@ export const isAuthenticated = async (req: any, res: any, next: any) => {
     }
   }
   
+  console.log('❌ Authentication failed - no valid session or token');
   res.status(401).json({ error: "Acesso negado" });
 };
 
