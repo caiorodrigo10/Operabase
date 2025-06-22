@@ -163,7 +163,7 @@ export const AICodeChat = () => {
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-white border-t border-gray-200 flex-shrink-0">
+      <div className="p-3 pb-6 bg-white border-t border-gray-200 flex-shrink-0">
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <textarea

@@ -171,10 +171,11 @@ function Router() {
 function GleapWrapper() {
   const [location] = useLocation();
 
-  // Don't initialize Gleap for public anamnesis pages
+  // Don't initialize Gleap for public anamnesis pages or landing editor
   const isPublicPage = location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/');
+  const isLandingEditor = location === '/editor-landing';
 
-  if (!isPublicPage) {
+  if (!isPublicPage && !isLandingEditor) {
     useGleap(); // Initialize Gleap with user data only for internal pages
   }
 
