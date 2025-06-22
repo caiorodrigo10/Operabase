@@ -87,14 +87,16 @@ export const RenderNode = ({ render }) => {
   }, [dom, getPos]);
 
   React.useEffect(() => {
-    document
-      .querySelector('.craftjs-renderer')
-      .addEventListener('scroll', scroll);
+    const renderer = document.querySelector('.craftjs-renderer');
+    if (renderer) {
+      renderer.addEventListener('scroll', scroll);
+    }
 
     return () => {
-      document
-        .querySelector('.craftjs-renderer')
-        .removeEventListener('scroll', scroll);
+      const renderer = document.querySelector('.craftjs-renderer');
+      if (renderer) {
+        renderer.removeEventListener('scroll', scroll);
+      }
     };
   }, [scroll]);
 
@@ -106,8 +108,8 @@ export const RenderNode = ({ render }) => {
               ref={currentRef}
               className="px-2 py-2 text-white bg-primary fixed flex items-center"
               style={{
-                left: getPos(dom).left,
-                top: getPos(dom).top,
+                left: dom ? getPos(dom).left : 0,
+                top: dom ? getPos(dom).top : 0,
                 zIndex: 9999,
               }}
             >
@@ -116,7 +118,7 @@ export const RenderNode = ({ render }) => {
                 <Btn
                   className="mr-2 cursor-move"
                   ref={(dom) => {
-                    drag(dom);
+                    if (dom) drag(dom);
                   }}
                 >
                   <Move size={16} />
@@ -126,7 +128,7 @@ export const RenderNode = ({ render }) => {
                 <Btn
                   className="mr-2 cursor-pointer"
                   onClick={() => {
-                    actions.selectNode(parent);
+                    if (parent) actions.selectNode(parent);
                   }}
                 >
                   <ArrowUp size={16} />
@@ -144,7 +146,7 @@ export const RenderNode = ({ render }) => {
                 </Btn>
               ) : null}
             </IndicatorDiv>,
-            document.querySelector('.page-container')
+            document.querySelector('.page-container') || document.body
           )
         : null}
       {render}
