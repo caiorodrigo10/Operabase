@@ -137,7 +137,7 @@ const Carbonads = () => {
 export const Sidebar = () => {
   const [layersVisible, setLayerVisible] = useState(true);
   const [toolbarVisible, setToolbarVisible] = useState(true);
-  const [aiCodeVisible, setAiCodeVisible] = useState(false);
+  const [aiCodeVisible, setAiCodeVisible] = useState(true);
   const { enabled } = useEditor((state) => ({
     enabled: state.options.enabled,
   }));

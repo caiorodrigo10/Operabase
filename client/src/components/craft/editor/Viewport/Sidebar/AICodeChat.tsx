@@ -78,7 +78,7 @@ export const AICodeChat = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="flex items-center gap-2 p-3 bg-white border-b border-gray-200">
+      <div className="flex items-center gap-2 p-3 bg-white border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Code className="w-4 h-4 text-blue-500" />
           <Sparkles className="w-4 h-4 text-purple-500" />
@@ -90,7 +90,7 @@ export const AICodeChat = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 space-y-4 min-h-0">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -163,7 +163,7 @@ export const AICodeChat = () => {
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-white border-t border-gray-200">
+      <div className="p-3 bg-white border-t border-gray-200 flex-shrink-0">
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <textarea
