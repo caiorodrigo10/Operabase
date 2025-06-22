@@ -343,16 +343,16 @@ export default function FunilPageEditor() {
 
       {/* Craft.js Editor */}
       <div className="flex-1 flex">
-        {/* Main Editor Area */}
-        <div className="flex-1 relative">
-          <Editor
-            resolver={{
-              Container,
-              Text,
-              CraftButton,
-            }}
-            enabled={enabled}
-          >
+        <Editor
+          resolver={{
+            Container,
+            Text,
+            CraftButton,
+          }}
+          enabled={enabled}
+        >
+          {/* Main Editor Area */}
+          <div className="flex-1 relative">
             <div className="h-full bg-gray-100 p-6">
               <Frame>
                 <Element
@@ -405,14 +405,14 @@ export default function FunilPageEditor() {
                 </Element>
               </Frame>
             </div>
-          </Editor>
-        </div>
+          </div>
 
-        {/* Sidebar with Toolbox and Settings */}
-        <div className="w-80 bg-white border-l border-gray-200 p-4 space-y-4 overflow-y-auto">
-          <Toolbox />
-          <SettingsPanel />
-        </div>
+          {/* Sidebar with Toolbox and Settings */}
+          <div className="w-80 bg-white border-l border-gray-200 p-4 space-y-4 overflow-y-auto">
+            <Toolbox />
+            <SettingsPanel />
+          </div>
+        </Editor>
       </div>
     </div>
   );
