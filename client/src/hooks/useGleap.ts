@@ -7,11 +7,11 @@ declare global {
   }
 }
 
-export function useGleap() {
+export function useGleap(shouldInitialize: boolean = true) {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Gleap && user) {
+    if (typeof window !== 'undefined' && window.Gleap && user && shouldInitialize) {
       // Configurar dados do usuário no Gleap
       window.Gleap.identify(user.id, {
         name: user.name || user.email,
@@ -59,7 +59,7 @@ export function useGleap() {
 
       console.log('Gleap configurado com dados do usuário:', user.email);
     }
-  }, [user]);
+  }, [user, shouldInitialize]);
 
   // Função para enviar evento customizado
   const trackEvent = (eventName: string, properties?: Record<string, any>) => {

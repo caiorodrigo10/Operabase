@@ -174,10 +174,10 @@ function GleapWrapper() {
   // Don't initialize Gleap for public anamnesis pages or landing editor
   const isPublicPage = location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/');
   const isLandingEditor = location === '/editor-landing';
+  const shouldInitializeGleap = !isPublicPage && !isLandingEditor;
 
-  if (!isPublicPage && !isLandingEditor) {
-    useGleap(); // Initialize Gleap with user data only for internal pages
-  }
+  // Always call useGleap hook, but pass condition to control initialization
+  useGleap(shouldInitializeGleap);
 
   return <Router />;
 }
