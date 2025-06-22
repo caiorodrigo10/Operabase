@@ -6,15 +6,15 @@ import { db } from "./db";
 import { rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
-// Middleware de autenticação específico para RAG
+// Middleware de autenticação para RAG
 const ragAuth = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return res.status(401).json({ error: "Usuário não autenticado" });
+  // Verificar se o usuário está logado via sessão
+  if (req.user) {
+    return next();
   }
-  if (!req.user) {
-    return res.status(401).json({ error: "Dados do usuário não encontrados" });
-  }
-  next();
+  
+  // Se não há usuário na sessão, retornar erro
+  return res.status(401).json({ error: "Usuário não autenticado" });
 };
 
 const router = Router();
