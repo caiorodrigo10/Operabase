@@ -151,15 +151,13 @@ export class CrawlerService {
     } catch (error) {
       console.error(`❌ Erro ao extrair página ${url}:`, error);
       
-
-      
       return {
         url,
         title: 'Erro ao carregar',
         content: '',
         wordCount: 0,
         isValid: false,
-        error: this.getErrorMessage(error)
+        error: this.formatErrorMessage(error)
       };
     }
   }
@@ -314,6 +312,25 @@ export class CrawlerService {
 
   private countWords(text: string): number {
     return text.trim().split(/\s+/).length;
+  }
+
+  private formatErrorMessage(error: any): string {
+    if (error instanceof Error) {
+      if (error.message.includes('403')) {
+        return 'Site com proteção anti-bot - acesso bloqueado';
+      } else if (error.message.includes('404')) {
+        return 'Página não encontrada';
+      } else if (error.message.includes('timeout')) {
+        return 'Site muito lento - tempo limite excedido';
+      } else if (error.message.includes('ENOTFOUND')) {
+        return 'Site não encontrado - verifique a URL';
+      } else if (error.message.includes('ECONNREFUSED')) {
+        return 'Conexão recusada pelo servidor';
+      } else {
+        return error.message;
+      }
+    }
+    return 'Erro desconhecido';
   }
 
   async close(): Promise<void> {
