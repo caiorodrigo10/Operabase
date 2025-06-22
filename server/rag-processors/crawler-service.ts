@@ -23,10 +23,19 @@ export class CrawlerService {
     // No browser needed
   }
 
-  private async fetchHTML(url: string): Promise<string> {
+  private async fetchHTML(url: string, retryCount = 0): Promise<string> {
+    const maxRetries = 3;
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
+    ];
+
     return new Promise((resolve, reject) => {
       const urlObj = new URL(url);
       const protocol = urlObj.protocol === 'https:' ? https : http;
+      const currentUserAgent = userAgents[retryCount % userAgents.length];
 
       const options = {
         hostname: urlObj.hostname,
@@ -34,10 +43,19 @@ export class CrawlerService {
         path: urlObj.pathname + urlObj.search,
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'User-Agent': currentUserAgent,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
           'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-          'Connection': 'keep-alive'
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Cache-Control': 'max-age=0',
+          'Referer': 'https://www.google.com/'
         },
         timeout: 30000
       };
@@ -48,11 +66,19 @@ export class CrawlerService {
         // Handle redirects
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           const redirectUrl = new URL(res.headers.location, url).href;
-          return this.fetchHTML(redirectUrl).then(resolve).catch(reject);
+          return this.fetchHTML(redirectUrl, retryCount).then(resolve).catch(reject);
         }
 
         if (res.statusCode && res.statusCode !== 200) {
-          return reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+          if ((res.statusCode === 403 || res.statusCode === 429) && retryCount < maxRetries) {
+            console.log(`🔄 Tentativa ${retryCount + 1}/${maxRetries + 1} para ${url} (${res.statusCode})`);
+            setTimeout(() => {
+              this.fetchHTML(url, retryCount + 1).then(resolve).catch(reject);
+            }, Math.pow(2, retryCount) * 1000); // Exponential backoff
+          } else {
+            return reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+          }
+          return;
         }
 
         res.setEncoding('utf8');
@@ -65,10 +91,27 @@ export class CrawlerService {
         });
       });
 
-      req.on('error', reject);
+      req.on('error', (error) => {
+        if (retryCount < maxRetries) {
+          console.log(`🔄 Tentativa ${retryCount + 1}/${maxRetries + 1} para ${url} (erro de rede)`);
+          setTimeout(() => {
+            this.fetchHTML(url, retryCount + 1).then(resolve).catch(reject);
+          }, Math.pow(2, retryCount) * 1000);
+        } else {
+          reject(error);
+        }
+      });
+
       req.on('timeout', () => {
         req.destroy();
-        reject(new Error('Request timeout'));
+        if (retryCount < maxRetries) {
+          console.log(`🔄 Tentativa ${retryCount + 1}/${maxRetries + 1} para ${url} (timeout)`);
+          setTimeout(() => {
+            this.fetchHTML(url, retryCount + 1).then(resolve).catch(reject);
+          }, 2000);
+        } else {
+          reject(new Error('Request timeout'));
+        }
       });
 
       req.end();
@@ -107,13 +150,16 @@ export class CrawlerService {
       };
     } catch (error) {
       console.error(`❌ Erro ao extrair página ${url}:`, error);
+      
+
+      
       return {
         url,
         title: 'Erro ao carregar',
         content: '',
         wordCount: 0,
         isValid: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: this.getErrorMessage(error)
       };
     }
   }
