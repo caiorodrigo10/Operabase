@@ -65,6 +65,19 @@ export default function FunisPage() {
 
       {/* Funis Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {/* Create New Funil Card - Always First */}
+        <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 transition-colors duration-200 cursor-pointer">
+          <CardContent className="flex flex-col items-center justify-center h-full py-12">
+            <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center mb-4">
+              <Plus className="h-6 w-6 text-gray-400" />
+            </div>
+            <h3 className="font-medium text-gray-900 mb-2">Criar Novo Funil</h3>
+            <p className="text-sm text-gray-500 text-center">
+              Comece um novo funil de marketing
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Existing Funis */}
         {mockFunis.map((funil) => (
           <Card key={funil.id} className="hover:shadow-lg transition-shadow duration-200">
@@ -106,19 +119,6 @@ export default function FunisPage() {
             </CardContent>
           </Card>
         ))}
-
-        {/* Create New Funil Card */}
-        <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 transition-colors duration-200 cursor-pointer">
-          <CardContent className="flex flex-col items-center justify-center h-full py-12">
-            <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center mb-4">
-              <Plus className="h-6 w-6 text-gray-400" />
-            </div>
-            <h3 className="font-medium text-gray-900 mb-2">Criar Novo Funil</h3>
-            <p className="text-sm text-gray-500 text-center">
-              Comece um novo funil de marketing
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
