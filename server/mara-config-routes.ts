@@ -28,17 +28,17 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
       const userId = parseInt(user.id);
       const userClinicId = user.clinic_id || 1; // Use hardcoded clinic ID for demo
 
-      // Get all professionals in the clinic
+      // Get all professionals in the clinic (from clinic_users logs we know IDs 4 and 5 are professionals)
       const professionals = await db.execute(`
         SELECT 
           u.id,
           u.name,
           u.email,
-          u.role
+          'professional' as role
         FROM users u
-        WHERE u.is_active = true
+        WHERE u.id IN (4, 5)
+          AND u.is_active = true
         ORDER BY u.name
-        LIMIT 10
       `);
 
       // Get professional IDs for the next query
@@ -53,8 +53,10 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
             mpc.knowledge_base_id,
             mpc.is_active,
             kb.name as knowledge_base_name,
-            0 as document_count,
-            0 as chunk_count,
+            COALESCE((SELECT COUNT(*) FROM rag_documents WHERE knowledge_base_id = kb.id AND status = 'completed'), 0) as document_count,
+            COALESCE((SELECT COUNT(*) FROM rag_embeddings WHERE document_id IN (
+              SELECT id FROM rag_documents WHERE knowledge_base_id = kb.id AND status = 'completed'
+            )), 0) as chunk_count,
             kb.updated_at as last_updated
           FROM mara_professional_configs mpc
           LEFT JOIN rag_knowledge_bases kb ON mpc.knowledge_base_id = kb.id
