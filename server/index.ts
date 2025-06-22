@@ -272,6 +272,10 @@ app.use((req, res, next) => {
   const whatsappRoutes = await import('./whatsapp-routes');
   app.use(whatsappRoutes.default);
   
+  // Add RAG routes
+  const ragRoutes = await import('./rag-routes');
+  app.use('/api/rag', ragRoutes.default);
+  
   // Initialize anamnesis system
   try {
     const { initializeAnamnesisSystem } = await import('./anamnesis-setup');
