@@ -1,11 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
-// Simple approach using dynamic import
-async function getPdfParser() {
+// Import pdf-parse using CommonJS require with proper ESM compatibility
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+
+function getPdfParser() {
   try {
-    const pdfParse = await import('pdf-parse');
-    return pdfParse.default;
+    return require('pdf-parse');
   } catch (error) {
     console.error('Error importing pdf-parse:', error);
     throw new Error('Failed to load PDF processing library');
@@ -33,7 +35,7 @@ export class PDFProcessor {
       console.log(`📄 Extraindo texto do PDF: ${filePath}`);
       
       // Initialize pdf-parse
-      const pdfParseLib = await getPdfParser();
+      const pdfParseLib = getPdfParser();
       
       // Normalize and validate file path
       const normalizedPath = path.resolve(filePath);

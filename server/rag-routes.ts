@@ -496,13 +496,15 @@ router.post('/documents/:id/reprocess', ragAuth, async (req: any, res: Response)
 router.post('/search', ragAuth, async (req: any, res: Response) => {
   try {
     const userId = req.user?.email || req.user?.id?.toString();
-    
-    // Primeiro verificar se existem documentos processados
-    const docCount = await db
-      .select({ count: sql`count(*)` })
-      .from(rag_documents)
-      .where(eq(rag_documents.external_user_id, userId));
-      
+    const { query, limit = 5, minSimilarity = 0.7 } = req.body;
+
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Query é obrigatória' });
+    }
+
+    console.log(`🔍 Busca semântica para: "${query}" (usuário: ${userId})`);
+
+    // Verificar se existem documentos processados
     const embeddingCount = await db
       .select({ count: sql`count(*)` })
       .from(rag_embeddings)
@@ -510,16 +512,82 @@ router.post('/search', ragAuth, async (req: any, res: Response) => {
       .innerJoin(rag_documents, eq(rag_chunks.document_id, rag_documents.id))
       .where(eq(rag_documents.external_user_id, userId));
 
+    if (!embeddingCount[0]?.count || embeddingCount[0].count === 0) {
+      const docCount = await db
+        .select({ count: sql`count(*)` })
+        .from(rag_documents)
+        .where(eq(rag_documents.external_user_id, userId));
+
+      return res.json({
+        results: [],
+        message: `Nenhum documento processado encontrado. Você tem ${docCount[0]?.count || 0} documentos, mas nenhum foi processado ainda.`,
+        totalDocuments: docCount[0]?.count || 0,
+        processedEmbeddings: 0
+      });
+    }
+
+    // Gerar embedding da query usando OpenAI
+    const { EmbeddingService } = await import('./rag-processors/embedding-service');
+    const embeddingService = new EmbeddingService();
+    
+    const queryEmbeddings = await embeddingService.generateEmbeddings([{
+      content: query,
+      chunkIndex: 0,
+      tokenCount: query.split(' ').length,
+      metadata: { type: 'query' }
+    }]);
+
+    if (!queryEmbeddings || queryEmbeddings.length === 0) {
+      return res.status(500).json({ error: 'Falha ao gerar embedding da query' });
+    }
+
+    const queryEmbedding = queryEmbeddings[0].embedding;
+
+    // Realizar busca vetorial usando função SQL
+    const searchResults = await db.execute(sql`
+      SELECT 
+        c.content,
+        c.metadata,
+        d.title,
+        d.id as document_id,
+        c.id as chunk_id,
+        1 - (e.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as similarity
+      FROM rag_embeddings e
+      JOIN rag_chunks c ON e.chunk_id = c.id
+      JOIN rag_documents d ON c.document_id = d.id
+      WHERE d.external_user_id = ${userId}
+        AND d.processing_status = 'completed'
+        AND 1 - (e.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) >= ${minSimilarity}
+      ORDER BY similarity DESC
+      LIMIT ${limit}
+    `);
+
+    console.log(`📊 Encontrados ${searchResults.rows.length} resultados para "${query}"`);
+
+    const formattedResults = searchResults.rows.map((row: any) => ({
+      content: row.content,
+      similarity: parseFloat(row.similarity),
+      document: {
+        id: row.document_id,
+        title: row.title
+      },
+      metadata: row.metadata,
+      chunkId: row.chunk_id
+    }));
+
     res.json({
-      systemStatus: 'RAG System Operational',
-      userDocuments: docCount[0]?.count || 0,
-      processedEmbeddings: embeddingCount[0]?.count || 0,
-      message: `Sistema RAG funcionando. Usuário ${userId} tem ${docCount[0]?.count || 0} documentos e ${embeddingCount[0]?.count || 0} embeddings processados.`
+      results: formattedResults,
+      query,
+      totalResults: formattedResults.length,
+      message: formattedResults.length > 0 
+        ? `Encontrados ${formattedResults.length} resultados relevantes`
+        : 'Nenhum resultado relevante encontrado',
+      processedEmbeddings: embeddingCount[0]?.count || 0
     });
 
   } catch (error) {
-    console.error('Error checking RAG status:', error);
-    res.status(500).json({ error: 'Falha ao verificar status RAG' });
+    console.error('Error performing semantic search:', error);
+    res.status(500).json({ error: 'Falha na busca semântica' });
   }
 });
 
