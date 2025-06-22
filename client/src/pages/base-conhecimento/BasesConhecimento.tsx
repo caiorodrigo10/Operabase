@@ -376,6 +376,28 @@ export default function BasesConhecimento() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar Base de Conhecimento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar a base de conhecimento "{knowledgeBaseToDelete}"? 
+              Esta ação é irreversível e removerá todos os documentos, chunks e embeddings associados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteKnowledgeBase}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
