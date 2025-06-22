@@ -290,9 +290,9 @@ export default function FunilDetalhes() {
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{
-            padding: 0.4,
-            maxZoom: 0.7,
-            minZoom: 0.4
+            padding: 0.2,
+            maxZoom: 1.0,
+            minZoom: 0.6
           }}
           attributionPosition="top-right"
           className="bg-gray-50"
