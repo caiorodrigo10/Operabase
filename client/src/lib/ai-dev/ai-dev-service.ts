@@ -74,6 +74,7 @@ export class AIDevService {
 
     } catch (error) {
       console.error('Erro no processamento AI:', error);
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Erro desconhecido',

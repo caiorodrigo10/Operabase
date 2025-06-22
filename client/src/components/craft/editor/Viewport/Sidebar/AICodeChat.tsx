@@ -175,6 +175,11 @@ export const AICodeChat = () => {
 
     } catch (error) {
       console.error('Error processing AI command:', error);
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('Current JSON structure:', currentJSON);
+      console.error('User command:', userCommand);
+      console.error('API key configured:', apiKeyConfigured);
+      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: `Something went wrong while processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
