@@ -27,8 +27,11 @@ export class MaraAIService {
   async analyzeContact(contactId: number, question: string, userId?: number): Promise<MaraResponse> {
     try {
       console.log('🤖 Mara AI: Iniciando análise do contato', contactId);
+      console.log('📝 Pergunta recebida:', question);
+      console.log('👤 User ID:', userId);
       
       // Buscar contexto completo do contato
+      console.log('📊 Buscando contexto do contato...');
       const context = await this.getContactContext(contactId);
       console.log('📋 Contexto obtido:', {
         contactName: context.contact?.name,

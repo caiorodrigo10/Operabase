@@ -16,6 +16,7 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       console.log('📝 Pergunta:', question);
       console.log('👤 Usuário:', req.user?.id);
       console.log('🔐 Sessão req.user:', JSON.stringify(req.user, null, 2));
+      console.log('🔍 Headers:', JSON.stringify(req.headers, null, 2));
 
       // Verificar se o usuário está autenticado
       if (!req.user || !req.user.id) {
