@@ -341,9 +341,27 @@ export default function ColecaoDetalhe() {
                       <p className="text-gray-600 mb-4">
                         Arraste e solte arquivos PDF aqui ou
                       </p>
-                      <Button variant="outline">
-                        Selecionar Arquivos
-                      </Button>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            files.forEach(file => {
+                              if (file.type === 'application/pdf') {
+                                console.log('PDF selecionado:', file.name);
+                                // Aqui você pode processar o arquivo
+                              }
+                            });
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          id="pdf-upload"
+                        />
+                        <Button variant="outline" className="pointer-events-none">
+                          Selecionar Arquivos
+                        </Button>
+                      </div>
                       <p className="text-sm text-gray-500 mt-4">
                         Máximo 10MB por arquivo, apenas PDFs
                       </p>

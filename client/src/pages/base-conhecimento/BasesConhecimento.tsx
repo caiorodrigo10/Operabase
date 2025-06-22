@@ -8,65 +8,141 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface RAGDocument {
+  id: number;
+  title: string;
+  content_type: 'text' | 'url' | 'pdf';
+  processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  created_at: string;
+  updated_at: string;
+}
+
+interface Collection {
+  id: number;
+  name: string;
+  description: string;
+  itemCount: number;
+  lastUpdated: string;
+  documents: RAGDocument[];
+}
 
 export default function BasesConhecimento() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionDescription, setNewCollectionDescription] = useState("");
 
-  // Mock data for knowledge base collections
-  const collections = [
+  // Query para buscar documentos RAG
+  const { data: documents = [], isLoading } = useQuery({
+    queryKey: ['/api/rag/documents'],
+    queryFn: async () => {
+      const response = await fetch('/api/rag/documents');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar documentos');
+      }
+      return response.json() as Promise<RAGDocument[]>;
+    }
+  });
+
+  // Agrupar documentos por "coleção" baseado no título ou tipo
+  const collections: Collection[] = [
     {
       id: 1,
       name: "Protocolos de Atendimento",
-      description: "Protocolos médicos e procedimentos padrão da clínica",
-      itemCount: 5,
-      lastUpdated: "20/01/2025",
-      items: [
-        { type: "text", name: "Protocolo de Triagem" },
-        { type: "pdf", name: "Manual de Emergências.pdf" },
-        { type: "url", name: "Diretrizes CFM" }
-      ]
+      description: "Protocolos médicos e procedimentos da clínica",
+      itemCount: documents.filter(doc => 
+        doc.title.toLowerCase().includes('protocolo') || 
+        doc.title.toLowerCase().includes('atendimento') ||
+        doc.title.toLowerCase().includes('procedimento')
+      ).length,
+      lastUpdated: documents.length > 0 ? new Date(Math.max(...documents.map(d => new Date(d.updated_at).getTime()))).toLocaleDateString('pt-BR') : "Sem dados",
+      documents: documents.filter(doc => 
+        doc.title.toLowerCase().includes('protocolo') || 
+        doc.title.toLowerCase().includes('atendimento') ||
+        doc.title.toLowerCase().includes('procedimento')
+      )
     },
     {
       id: 2,
-      name: "Informações da Clínica",
-      description: "Dados gerais, políticas e informações sobre a clínica",
-      itemCount: 3,
-      lastUpdated: "18/01/2025",
-      items: [
-        { type: "url", name: "Site da Clínica" },
-        { type: "text", name: "Políticas de Agendamento" },
-        { type: "text", name: "Convênios Aceitos" }
-      ]
+      name: "Cardiologia",
+      description: "Conhecimentos específicos sobre cardiologia",
+      itemCount: documents.filter(doc => 
+        doc.title.toLowerCase().includes('cardiologia') ||
+        doc.title.toLowerCase().includes('cardio') ||
+        doc.title.toLowerCase().includes('coração')
+      ).length,
+      lastUpdated: documents.length > 0 ? new Date(Math.max(...documents.map(d => new Date(d.updated_at).getTime()))).toLocaleDateString('pt-BR') : "Sem dados",
+      documents: documents.filter(doc => 
+        doc.title.toLowerCase().includes('cardiologia') ||
+        doc.title.toLowerCase().includes('cardio') ||
+        doc.title.toLowerCase().includes('coração')
+      )
     },
     {
       id: 3,
-      name: "Cardiologia",
-      description: "Conhecimentos específicos sobre cardiologia",
-      itemCount: 7,
-      lastUpdated: "15/01/2025",
-      items: [
-        { type: "pdf", name: "Diretrizes de Hipertensão.pdf" },
-        { type: "pdf", name: "Protocolos de ECG.pdf" },
-        { type: "url", name: "Portal da Cardiologia" }
-      ]
+      name: "Documentos Gerais",
+      description: "Outros documentos e informações",
+      itemCount: documents.filter(doc => 
+        !doc.title.toLowerCase().includes('protocolo') && 
+        !doc.title.toLowerCase().includes('atendimento') &&
+        !doc.title.toLowerCase().includes('procedimento') &&
+        !doc.title.toLowerCase().includes('cardiologia') &&
+        !doc.title.toLowerCase().includes('cardio') &&
+        !doc.title.toLowerCase().includes('coração')
+      ).length,
+      lastUpdated: documents.length > 0 ? new Date(Math.max(...documents.map(d => new Date(d.updated_at).getTime()))).toLocaleDateString('pt-BR') : "Sem dados",
+      documents: documents.filter(doc => 
+        !doc.title.toLowerCase().includes('protocolo') && 
+        !doc.title.toLowerCase().includes('atendimento') &&
+        !doc.title.toLowerCase().includes('procedimento') &&
+        !doc.title.toLowerCase().includes('cardiologia') &&
+        !doc.title.toLowerCase().includes('cardio') &&
+        !doc.title.toLowerCase().includes('coração')
+      )
     }
   ];
 
+  // Mutation para criar nova coleção (simulado por enquanto)
+  const createCollectionMutation = useMutation({
+    mutationFn: async (data: { name: string; description: string }) => {
+      // Por enquanto, só mostrar toast
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Base de conhecimento criada",
+        description: `${data.name} foi criada com sucesso.`,
+      });
+      setIsCreateModalOpen(false);
+      setNewCollectionName("");
+      setNewCollectionDescription("");
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando bases de conhecimento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Remover coleções vazias
+  const visibleCollections = collections.filter(collection => collection.itemCount > 0 || collection.id <= 3);
+
   const handleCreateCollection = () => {
     if (!newCollectionName.trim()) return;
-
-    toast({
-      title: "Base de conhecimento criada",
-      description: `${newCollectionName} foi criada com sucesso.`,
-      variant: "default",
+    
+    createCollectionMutation.mutate({
+      name: newCollectionName,
+      description: newCollectionDescription
     });
-
-    setIsCreateModalOpen(false);
-    setNewCollectionName("");
-    setNewCollectionDescription("");
   };
 
   const getItemIcon = (type: string) => {
@@ -157,10 +233,16 @@ export default function BasesConhecimento() {
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-gray-700">Conteúdo:</p>
                     <div className="space-y-1">
-                      {collection.items.slice(0, 3).map((item, index) => (
+                      {collection.documents.slice(0, 3).map((doc, index) => (
                         <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
-                          {getItemIcon(item.type)}
-                          <span className="truncate">{item.name}</span>
+                          {getItemIcon(doc.content_type)}
+                          <span className="truncate">{doc.title}</span>
+                          <Badge 
+                            variant={doc.processing_status === 'completed' ? 'default' : 'secondary'}
+                            className="text-xs px-1 py-0"
+                          >
+                            {doc.processing_status}
+                          </Badge>
                         </div>
                       ))}
                       {collection.itemCount > 3 && (
