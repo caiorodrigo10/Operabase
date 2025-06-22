@@ -51,40 +51,44 @@ export default function ColecaoDetalhe() {
 
   const queryClient = useQueryClient();
 
-  // Query para buscar documentos RAG
-  const { data: documents = [], isLoading } = useQuery({
-    queryKey: ['/api/rag/documents'],
+  // Query para buscar a base de conhecimento específica
+  const { data: knowledgeBase, isLoading: isLoadingKB } = useQuery({
+    queryKey: ['/api/rag/knowledge-bases', collectionId],
+    queryFn: async () => {
+      const response = await fetch('/api/rag/knowledge-bases');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar bases de conhecimento');
+      }
+      const knowledgeBases = await response.json();
+      return knowledgeBases.find((kb: any) => kb.id === parseInt(collectionId || '0'));
+    },
+    enabled: !!collectionId
+  });
+
+  // Query para buscar documentos da base de conhecimento
+  const { data: documents = [], isLoading: isLoadingDocs } = useQuery({
+    queryKey: ['/api/rag/documents', knowledgeBase?.name],
     queryFn: async () => {
       const response = await fetch('/api/rag/documents');
       if (!response.ok) {
         throw new Error('Falha ao carregar documentos');
       }
-      return response.json() as Promise<RAGDocument[]>;
-    }
+      const allDocuments = await response.json() as RAGDocument[];
+      // Filtrar documentos que pertencem a esta base de conhecimento
+      return allDocuments.filter(doc => 
+        doc.metadata?.knowledge_base === knowledgeBase?.name
+      );
+    },
+    enabled: !!knowledgeBase?.name
   });
 
-  // Encontrar a coleção atual baseada no ID
-  const knowledgeBaseGroups = documents.reduce((groups: Record<string, RAGDocument[]>, doc: RAGDocument) => {
-    const knowledgeBase = doc.metadata?.knowledge_base || doc.title;
-    if (!groups[knowledgeBase]) {
-      groups[knowledgeBase] = [];
-    }
-    groups[knowledgeBase].push(doc);
-    return groups;
-  }, {});
+  const isLoading = isLoadingKB || isLoadingDocs;
 
-  // Encontrar a coleção pelo ID hasheado
-  const targetId = parseInt(collectionId || '0');
-  const collection = Object.entries(knowledgeBaseGroups).find(([name]) => {
-    const hashedId = Math.abs(name.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0));
-    return hashedId === targetId;
-  });
-
-  const collectionData = collection ? {
-    id: targetId,
-    name: collection[0] as string,
-    description: (collection[1] as RAGDocument[])[0]?.metadata?.description || `Base de conhecimento ${collection[0]}`,
-    documents: collection[1] as RAGDocument[]
+  const collectionData = knowledgeBase ? {
+    id: knowledgeBase.id,
+    name: knowledgeBase.name,
+    description: knowledgeBase.description || `Base de conhecimento ${knowledgeBase.name}`,
+    documents: documents
   } : null;
 
   // Converter documentos para o formato esperado pela interface
@@ -219,6 +223,7 @@ export default function ColecaoDetalhe() {
 
       // Invalidar cache e fechar modal
       queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rag/knowledge-bases'] });
       handleCloseAddModal();
       
       toast({
@@ -250,6 +255,7 @@ export default function ColecaoDetalhe() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rag/knowledge-bases'] });
       toast({
         title: "Sucesso",
         description: "Documento deletado com sucesso",
