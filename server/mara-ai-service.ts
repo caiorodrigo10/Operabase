@@ -5,6 +5,7 @@ interface ContactContext {
   contact: any;
   appointments: any[];
   medicalRecords: any[];
+  anamnesisResponses: any[];
   clinicInfo?: any;
 }
 
@@ -80,6 +81,10 @@ export class MaraAIService {
       // Get medical records for this contact
       const medicalRecords = await this.storage.getMedicalRecords(contactId);
       
+      // Get anamnesis responses for this contact - simplified for now
+      let anamnesisResponses = [];
+      console.log('Info: Anamnesis integration will be added later');
+      
       let clinicInfo = null;
       if (contact?.clinic_id) {
         clinicInfo = await this.storage.getClinic(contact.clinic_id);
@@ -89,6 +94,7 @@ export class MaraAIService {
         contact,
         appointments,
         medicalRecords,
+        anamnesisResponses,
         clinicInfo
       };
     } catch (error) {
@@ -98,7 +104,7 @@ export class MaraAIService {
   }
 
   private createSimpleSystemPrompt(context: ContactContext, currentUser?: any): string {
-    const { contact, appointments, medicalRecords, clinicInfo } = context;
+    const { contact, appointments, medicalRecords, anamnesisResponses, clinicInfo } = context;
     
     return `Você é Mara, uma assistente médica conversacional e amigável da ${clinicInfo?.name || 'clínica'}.
 

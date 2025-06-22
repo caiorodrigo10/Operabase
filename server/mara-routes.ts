@@ -33,7 +33,8 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       }
 
       // Verificar permissão do usuário para acessar este contato
-      const userClinics = await storage.getUserClinics(req.user.id);
+      const userId = parseInt(req.user?.id || '0');
+      const userClinics = await storage.getUserClinics(userId);
       const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
@@ -43,14 +44,12 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       console.log(`🤖 Mara AI: Processando pergunta sobre contato ${contactId}`);
       console.log(`📝 Pergunta: ${question}`);
 
-      const result = await maraService.analyzeContact(contactId, question);
+      const result = await maraService.analyzeContact(contactId, question, userId);
 
-      console.log(`✅ Mara AI: Resposta gerada com confiança ${result.confidence}`);
+      console.log(`✅ Mara AI: Resposta gerada`);
 
       res.json({
         response: result.response,
-        confidence: result.confidence,
-        sources: result.sources,
         timestamp: new Date().toISOString()
       });
 
@@ -75,7 +74,8 @@ export function setupMaraRoutes(app: any, storage: IStorage) {
       }
 
       // Verificar permissão do usuário
-      const userClinics = await storage.getUserClinics(req.user.id);
+      const userId = parseInt(req.user?.id || '0');
+      const userClinics = await storage.getUserClinics(userId);
       const hasAccess = userClinics.some(clinicUser => clinicUser.clinic.id === contact.clinic_id);
       
       if (!hasAccess) {
