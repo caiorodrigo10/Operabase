@@ -78,7 +78,8 @@ export class MaraAIService {
             console.log('🔍 Buscando conhecimento na base RAG:', maraConfig.knowledgeBaseId);
             const ragResults = await this.searchRAGKnowledge(question, maraConfig.knowledgeBaseId);
             ragContext = this.formatRAGContext(ragResults);
-            console.log('📚 Contexto RAG obtido:', ragContext ? 'Sim' : 'Não');
+            console.log('📚 Contexto RAG obtido:', ragContext ? `Sim (${ragContext.length} chars)` : 'Não');
+            console.log('📝 RAG Context Preview:', ragContext.substring(0, 200) + '...');
           }
         } catch (error: any) {
           console.log('⚠️ Erro ao buscar configuração Mara:', error.message);
@@ -350,8 +351,8 @@ INSTRUÇÕES:
     }
 
     const contextChunks = ragResults
-      .filter(result => result.similarity > 0.7)
-      .slice(0, 3) // Top 3 most relevant chunks
+      .filter(result => result.similarity > 0.2) // Lowered threshold for better coverage
+      .slice(0, 5) // Top 5 most relevant chunks
       .map(result => result.content)
       .join('\n\n');
 
