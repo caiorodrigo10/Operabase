@@ -154,12 +154,37 @@ export default function ColecaoDetalhe() {
     }
   };
 
-  const filteredItems = knowledgeItems.filter(item => {
+  const filteredItems = knowledgeItems.filter((item: KnowledgeItem) => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.preview.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = selectedFilter === "all" || item.type === selectedFilter;
     return matchesSearch && matchesFilter;
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando base de conhecimento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!collectionData) {
+    return (
+      <div className="text-center py-8">
+        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-600">Base de conhecimento não encontrada</p>
+        <Link href="/base-conhecimento">
+          <Button variant="outline" className="mt-4">
+            Voltar às Bases de Conhecimento
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -170,13 +195,13 @@ export default function ColecaoDetalhe() {
             Base de Conhecimento
           </Link>
           <span>›</span>
-          <span className="text-gray-900">{collectionData?.name || 'Carregando...'}</span>
+          <span className="text-gray-900">{collectionData.name}</span>
         </div>
         
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{collectionData?.name || 'Carregando...'}</h1>
-            <p className="text-gray-600">{collectionData?.description || 'Carregando descrição...'}</p>
+            <h1 className="text-2xl font-bold text-gray-900">{collectionData.name}</h1>
+            <p className="text-gray-600">{collectionData.description}</p>
           </div>
           <Button onClick={handleOpenAddModal}>
             <Plus className="h-4 w-4 mr-2" />
@@ -220,7 +245,7 @@ export default function ColecaoDetalhe() {
 
           {/* Items List */}
           <div className="space-y-4">
-            {filteredItems.map((item) => (
+            {filteredItems.map((item: KnowledgeItem) => (
               <div key={item.id} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                   {getTypeIcon(item.type)}
