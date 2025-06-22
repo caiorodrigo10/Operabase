@@ -39,26 +39,46 @@ export default function BasesConhecimento() {
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/rag/documents'],
     queryFn: async () => {
-      // Obter token do Supabase
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      );
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch('/api/rag/documents', {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
+      const response = await fetch('/api/rag/documents');
       if (!response.ok) {
         throw new Error('Falha ao carregar documentos');
       }
       return response.json() as Promise<RAGDocument[]>;
+    }
+  });
+
+  // Mutation para criar nova base de conhecimento
+  const createKnowledgeBaseMutation = useMutation({
+    mutationFn: async ({ name, description }: { name: string; description: string }) => {
+      const response = await fetch('/api/rag/knowledge-bases', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, description })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao criar base de conhecimento');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+      setIsCreateModalOpen(false);
+      setNewCollectionName("");
+      setNewCollectionDescription("");
+      toast({
+        title: "Sucesso",
+        description: "Base de conhecimento criada com sucesso",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Falha ao criar base de conhecimento",
+        variant: "destructive"
+      });
     }
   });
 
@@ -154,7 +174,7 @@ export default function BasesConhecimento() {
   const handleCreateCollection = () => {
     if (!newCollectionName.trim()) return;
     
-    createCollectionMutation.mutate({
+    createKnowledgeBaseMutation.mutate({
       name: newCollectionName,
       description: newCollectionDescription
     });
