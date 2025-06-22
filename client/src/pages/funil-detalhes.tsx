@@ -93,10 +93,10 @@ const FunilPageNode = ({ data }: { data: any }) => {
         }}
       />
       
-      <Card className={`w-48 ${getBorderColor()} border-2 hover:shadow-lg transition-all duration-200 bg-white`}>
-        <CardHeader className="pb-2">
-          {/* Preview Thumbnail - Smaller */}
-          <div className="w-full h-20 bg-gray-100 rounded-md mb-2 flex items-center justify-center border">
+      <Card className={`w-36 ${getBorderColor()} border-2 hover:shadow-lg transition-all duration-200 bg-white`}>
+        <CardHeader className="pb-1 px-3 pt-3">
+          {/* Preview Thumbnail - Taller */}
+          <div className="w-full h-28 bg-gray-100 rounded-md mb-2 flex items-center justify-center border">
             <div className="text-center text-gray-500">
               <FileText className="h-6 w-6 mx-auto mb-1" />
               <span className="text-xs">Preview</span>
@@ -105,7 +105,7 @@ const FunilPageNode = ({ data }: { data: any }) => {
           
           {/* Page Title and Status */}
           <div className="flex items-center justify-between mb-1">
-            <CardTitle className="text-sm font-medium text-gray-900 truncate">
+            <CardTitle className="text-xs font-medium text-gray-900 truncate">
               {data.title}
             </CardTitle>
             {getStatusIcon()}
@@ -123,21 +123,21 @@ const FunilPageNode = ({ data }: { data: any }) => {
           </Badge>
         </CardHeader>
         
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 px-3 pb-3">
           {/* Quick Actions - More Compact */}
-          <div className="flex items-center justify-center space-x-1">
-            <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+          <div className="flex items-center justify-center space-x-0.5">
+            <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
               <Edit3 className="h-3 w-3 text-blue-600" />
             </Button>
-            <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+            <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
               <Eye className="h-3 w-3 text-gray-600" />
             </Button>
-            <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+            <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
               <Settings className="h-3 w-3 text-gray-600" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="ghost" className="p-1 h-7 w-7">
+                <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
                   <MoreVertical className="h-3 w-3 text-gray-600" />
                 </Button>
               </DropdownMenuTrigger>
@@ -206,12 +206,12 @@ const mockFunilData = {
 export default function FunilDetalhes() {
   const { id } = useParams();
 
-  // Create nodes from mock data with proper spacing
+  // Create nodes from mock data with compact spacing
   const initialNodes: Node[] = useMemo(() => {
     return mockFunilData.pages.map((page, index) => ({
       id: page.id,
       type: 'funilPage',
-      position: { x: index * 250, y: 150 },
+      position: { x: index * 180, y: 150 },
       data: {
         title: page.title,
         status: page.status,
@@ -289,6 +289,11 @@ export default function FunilDetalhes() {
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
+          fitViewOptions={{
+            padding: 0.4,
+            maxZoom: 0.7,
+            minZoom: 0.4
+          }}
           attributionPosition="top-right"
           className="bg-gray-50"
         >
