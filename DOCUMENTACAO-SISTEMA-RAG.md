@@ -13,12 +13,34 @@
 O sistema RAG (Retrieval-Augmented Generation) implementado utiliza uma arquitetura híbrida que combina:
 
 - **PostgreSQL** com extensão **pgvector** para armazenamento vetorial
-- **OpenAI API** para geração de embeddings 
+- **OpenAI API** para geração de embeddings (text-embedding-ada-002, 1536 dimensões)
 - **Sistema de arquivos local** para armazenamento físico de PDFs
 - **Drizzle ORM** para gerenciamento de banco de dados
 - **Node.js/Express** para APIs backend
 - **React/TypeScript** para interface frontend
 - **Puppeteer/Cheerio** para crawling e extração web
+- **Integração Mara AI** para assistente médico inteligente
+
+### 1.2 Configurações Críticas (PRESERVAR)
+
+**⚠️ CONFIGURAÇÕES ESSENCIAIS - NÃO ALTERAR SEM ANÁLISE:**
+
+#### Filtros de Similaridade RAG
+```typescript
+// Em mara-ai-service.ts - formatRAGContext()
+.filter(result => result.similarity > 0.2) // CRÍTICO: Threshold otimizado
+.slice(0, 5) // Top 5 chunks mais relevantes
+```
+
+#### Processamento de URLs
+```typescript
+// Em url-processor.ts - fetchHTML()
+headers: {
+  'Accept-Encoding': 'identity', // CRÍTICO: Evita corrupção binária
+}
+```
+
+**MOTIVO**: Thresholds mais altos (0.7) bloqueiam resultados válidos com similaridade 0.2-0.6. Encoding gzip causa corrupção de dados.
 
 ### 1.2 Fluxos de Dados Suportados
 

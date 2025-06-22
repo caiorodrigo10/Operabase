@@ -65,18 +65,18 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
       }
 
       // Combine professionals with their configs
-      const result = professionals.rows.map(prof => {
-        const config = configs.rows.find(c => c.professional_id === prof.id);
+      const result = professionals.rows.map((prof: any) => {
+        const config = configs.rows.find((c: any) => c.professional_id === prof.id);
         return {
           ...prof,
           maraConfig: config ? {
-            knowledgeBaseId: config.knowledge_base_id,
-            knowledgeBaseName: config.knowledge_base_name,
-            isActive: config.is_active,
+            knowledgeBaseId: config.knowledge_base_id as number,
+            knowledgeBaseName: config.knowledge_base_name as string,
+            isActive: config.is_active as boolean,
             stats: config.knowledge_base_id ? {
               documentCount: 5, // Hardcoded for demo
               chunkCount: 25, // Hardcoded for demo
-              lastUpdated: config.last_updated
+              lastUpdated: config.last_updated as Date
             } : null
           } : null
         };

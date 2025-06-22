@@ -234,11 +234,11 @@ INSTRUÇÕES:
         return null;
       }
 
-      const config = result.rows[0];
+      const config = result.rows[0] as any;
       return {
-        knowledgeBaseId: config.knowledge_base_id,
-        knowledgeBaseName: config.knowledge_base_name,
-        isActive: config.is_active
+        knowledgeBaseId: config.knowledge_base_id as number,
+        knowledgeBaseName: config.knowledge_base_name as string,
+        isActive: config.is_active as boolean
       };
     } catch (error) {
       console.error('Error fetching Mara config:', error);
