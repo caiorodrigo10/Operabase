@@ -147,15 +147,38 @@ export function normalizeColorProps(props: any): any {
   const normalized = { ...props };
 
   // Procurar por propriedades que podem ser cores
-  const colorProps = ['color', 'background', 'backgroundColor', 'borderColor'];
+  const colorProps = ['color', 'background', 'backgroundColor', 'textColor', 'borderColor'];
   
   for (const prop of colorProps) {
-    if (normalized[prop] && typeof normalized[prop] === 'string') {
-      const parsedColor = parseColor(normalized[prop]);
-      if (parsedColor) {
-        normalized[prop] = parsedColor;
+    if (normalized[prop]) {
+      // Se já é um objeto RGBA, converter para string CSS
+      if (typeof normalized[prop] === 'object' && normalized[prop].r !== undefined) {
+        const { r, g, b, a } = normalized[prop];
+        if (a !== undefined && a !== 1) {
+          normalized[prop] = `rgba(${r}, ${g}, ${b}, ${a})`;
+        } else {
+          normalized[prop] = `rgb(${r}, ${g}, ${b})`;
+        }
+      }
+      // Se é string, tentar parsear e converter de volta
+      else if (typeof normalized[prop] === 'string') {
+        const parsedColor = parseColor(normalized[prop]);
+        if (parsedColor) {
+          const { r, g, b, a } = parsedColor;
+          if (a !== undefined && a !== 1) {
+            normalized[prop] = `rgba(${r}, ${g}, ${b}, ${a})`;
+          } else {
+            normalized[prop] = `rgb(${r}, ${g}, ${b})`;
+          }
+        }
       }
     }
+  }
+
+  // Mapear propriedades específicas para componentes
+  if (normalized.text && !normalized.children) {
+    normalized.children = normalized.text;
+    delete normalized.text;
   }
 
   return normalized;
