@@ -22,11 +22,21 @@ export class PDFProcessor {
     try {
       console.log(`📄 Extraindo texto do PDF: ${filePath}`);
       
-      if (!fs.existsSync(filePath)) {
-        throw new Error('Arquivo PDF não encontrado');
+      // Normalize and validate file path
+      const normalizedPath = path.resolve(filePath);
+      
+      if (!fs.existsSync(normalizedPath)) {
+        console.error(`❌ Arquivo PDF não encontrado: ${normalizedPath}`);
+        throw new Error(`Arquivo PDF não encontrado: ${filePath}`);
       }
 
-      const dataBuffer = fs.readFileSync(filePath);
+      // Check if it's actually a file
+      const stats = fs.statSync(normalizedPath);
+      if (!stats.isFile()) {
+        throw new Error(`Caminho não é um arquivo: ${filePath}`);
+      }
+
+      const dataBuffer = fs.readFileSync(normalizedPath);
       const pdfData = await pdfParse(dataBuffer);
       
       console.log(`✅ PDF processado: ${pdfData.numpages} páginas, ${pdfData.text.length} caracteres`);

@@ -6,12 +6,31 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import bcrypt from "bcryptjs";
 import type { IStorage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+// Define User type based on the users table structure
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  is_active: boolean;
+  last_login: Date | null;
+  created_at: Date | null;
+  updated_at: Date | null;
+}
 import connectPg from "connect-pg-simple";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      is_active: boolean;
+      last_login: Date | null;
+      created_at: Date | null;
+      updated_at: Date | null;
+    }
   }
 }
 
