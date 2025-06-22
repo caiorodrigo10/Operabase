@@ -1,6 +1,6 @@
 # Documentação Completa do Sistema RAG
 
-**Versão:** 1.0  
+**Versão:** 2.0  
 **Data:** 22 de Junho de 2025  
 **Sistema:** Healthcare Communication Platform - RAG Module
 
@@ -18,18 +18,30 @@ O sistema RAG (Retrieval-Augmented Generation) implementado utiliza uma arquitet
 - **Drizzle ORM** para gerenciamento de banco de dados
 - **Node.js/Express** para APIs backend
 - **React/TypeScript** para interface frontend
+- **Puppeteer/Cheerio** para crawling e extração web
 
-### 1.2 Fluxo de Dados Principal
+### 1.2 Fluxos de Dados Suportados
 
+#### Fluxo PDF:
 ```
 Upload PDF → Extração de Texto → Chunking → Embeddings → Armazenamento → Busca Semântica
 ```
 
-1. **Upload**: PDF carregado via interface web
-2. **Processamento**: Texto extraído e dividido em chunks
-3. **Embeddings**: Vetores gerados via OpenAI API
-4. **Armazenamento**: Dados salvos no PostgreSQL + arquivo no filesystem
-5. **Busca**: Queries semânticas usando similaridade vetorial
+#### Fluxo Texto:
+```
+Input Texto → Chunking → Embeddings → Armazenamento → Busca Semântica
+```
+
+#### Fluxo URL/Crawling:
+```
+URL → Crawling/Extração → Chunking → Embeddings → Armazenamento → Busca Semântica
+```
+
+**Tipos de conteúdo suportados**:
+1. **PDFs**: Upload de documentos com extração automática
+2. **Texto livre**: Input direto de conteúdo textual
+3. **URLs individuais**: Extração de conteúdo de páginas específicas
+4. **Crawling de domínios**: Descoberta e processamento de múltiplas páginas
 
 ---
 
@@ -57,8 +69,11 @@ CREATE TABLE rag_documents (
   id SERIAL PRIMARY KEY,
   external_user_id VARCHAR NOT NULL,
   title VARCHAR NOT NULL,
-  content_type VARCHAR DEFAULT 'pdf',
+  content_type VARCHAR DEFAULT 'pdf', -- 'pdf', 'text', 'url'
   file_path VARCHAR,
+  source_url VARCHAR,           -- Para documentos tipo 'url'
+  original_content TEXT,        -- Conteúdo original (texto/URL)
+  extracted_content TEXT,       -- Conteúdo extraído processado
   processing_status VARCHAR DEFAULT 'pending',
   error_message TEXT,
   metadata JSONB,
@@ -67,11 +82,22 @@ CREATE TABLE rag_documents (
 );
 ```
 
-**Status possíveis**:
+**Tipos de conteúdo (`content_type`)**:
+- `pdf`: Documento PDF uploadado
+- `text`: Texto livre inserido diretamente
+- `url`: Página web extraída via crawling
+
+**Status possíveis (`processing_status`)**:
 - `pending`: Aguardando processamento
 - `processing`: Em processamento
 - `completed`: Processado com sucesso
-- `error`: Erro no processamento
+- `failed`: Erro no processamento
+
+**Campos específicos**:
+- `file_path`: Caminho do arquivo (apenas para PDFs)
+- `source_url`: URL original (apenas para tipo 'url')
+- `original_content`: Conteúdo bruto antes do processamento
+- `extracted_content`: Texto processado e limpo
 
 #### Tabela: `rag_chunks`
 ```sql
@@ -128,9 +154,11 @@ rag_chunks (1) ←→ (1) rag_embeddings
 
 ## 3. Processamento de Documentos
 
-### 3.1 Upload e Validação
+### 3.1 Processamento de Diferentes Tipos
 
-**Endpoint**: `POST /api/rag/documents`
+#### 3.1.1 Documentos PDF
+
+**Endpoint**: `POST /api/rag/documents/upload`
 
 **Validações**:
 - Tipo de arquivo: apenas PDFs
@@ -142,7 +170,45 @@ rag_chunks (1) ←→ (1) rag_embeddings
 ./uploads/rag/[timestamp]-[random]-[filename].pdf
 ```
 
-### 3.2 Extração de Texto
+#### 3.1.2 Texto Livre
+
+**Endpoint**: `POST /api/rag/documents`
+```json
+{
+  "title": "Protocolo de Emergência",
+  "content_type": "text",
+  "content": "Texto do documento...",
+  "knowledge_base": "Base Médica"
+}
+```
+
+**Processamento**:
+- Validação de conteúdo mínimo
+- Chunking direto do texto
+- Sem armazenamento físico
+
+#### 3.1.3 URLs e Crawling
+
+**Endpoint para URL única**: `POST /api/rag/documents`
+```json
+{
+  "title": "Página Importante",
+  "content_type": "url", 
+  "content": "https://exemplo.com/pagina",
+  "knowledge_base": "Base Web"
+}
+```
+
+**Endpoint para crawling**: `POST /api/rag/crawl/preview` → `POST /api/rag/crawl/process`
+
+**Fluxo de crawling**:
+1. **Preview**: Descoberta de páginas do domínio
+2. **Seleção**: Usuário escolhe páginas específicas
+3. **Processamento**: Extração e chunking das páginas selecionadas
+
+### 3.2 Processadores Específicos
+
+#### 3.2.1 PDFProcessor
 
 **Componente**: `server/rag-processors/pdf-processor.ts`
 
@@ -166,20 +232,76 @@ class PDFProcessor {
 - Mantém acentuação correta (UTF-8)
 - Extrai metadados do PDF
 
-### 3.3 Chunking Strategy
+#### 3.2.2 TextProcessor
+
+**Componente**: `server/rag-processors/text-processor.ts`
+
+```typescript
+class TextProcessor {
+  async processText(content: string): Promise<{
+    text: string;
+    metadata: any;
+  }> {
+    // Sanitização básica de texto
+    // Normalização de quebras de linha
+    // Remoção de caracteres desnecessários
+  }
+}
+```
+
+**Processamento**:
+- Validação de encoding
+- Limpeza de formatação
+- Normalização de espaços
+
+#### 3.2.3 CrawlerService
+
+**Componente**: `server/rag-processors/crawler-service.ts`
+
+```typescript
+class CrawlerService {
+  async crawlDomain(url: string): Promise<CrawlResult[]> {
+    // Descoberta de páginas internas
+    // Extração de conteúdo com Puppeteer/Cheerio
+    // Filtragem de links válidos
+  }
+  
+  async extractPageContent(url: string): Promise<PageContent> {
+    // Extração de texto limpo
+    // Remoção de elementos HTML desnecessários
+    // Contagem de palavras
+  }
+}
+```
+
+**Funcionalidades**:
+- Descoberta automática de páginas internas
+- Extração de conteúdo limpo (sem HTML)
+- Tratamento de encoding e caracteres especiais
+- Filtragem de URLs válidas vs inválidas
+- Contagem precisa de palavras por página
+
+### 3.3 Chunking Strategy Otimizada
 
 **Configurações atuais**:
 ```typescript
-const CHUNK_SIZE = 1000;        // caracteres por chunk
-const CHUNK_OVERLAP = 200;      // sobreposição entre chunks
-const MAX_CHUNK_SIZE = 2000;    // limite máximo
+const MAX_TOKENS_PER_CHUNK = 400;  // tokens por chunk (padrão OpenAI)
+const TOKEN_TO_CHAR_RATIO = 4;     // aproximação: 1 token ≈ 4 caracteres
+const CHUNK_OVERLAP = 50;          // sobreposição em tokens
 ```
 
-**Algoritmo**:
-1. Divide texto em sentenças
-2. Agrupa sentenças até atingir CHUNK_SIZE
-3. Aplica sobreposição para manter contexto
-4. Gera chunks com metadados (índice, posição, etc.)
+**Algoritmo de Chunking Inteligente**:
+1. **Contagem de tokens**: Usa aproximação 1 token ≈ 4 caracteres
+2. **Divisão por sentenças**: Preserva integridade semântica
+3. **Limite rígido**: Máximo 400 tokens por chunk (evita erros de API)
+4. **Sobreposição controlada**: 50 tokens entre chunks adjacentes
+5. **Metadados detalhados**: Índice, posição, contagem de tokens
+
+**Vantagens da estratégia**:
+- Elimina erros de limite de tokens
+- Preserva contexto semântico
+- Melhora qualidade dos embeddings
+- Facilita debugging e análise
 
 ### 3.4 Geração de Embeddings
 
@@ -311,39 +433,55 @@ Cada base de conhecimento inclui:
 
 #### BasesConhecimento.tsx
 - Lista todas as bases de conhecimento do usuário
-- Cards com preview dos documentos
+- Cards com preview dos documentos e estatísticas
 - Status de processamento visual
-- Ações de edição e exclusão
+- Ações de criação, edição e exclusão
 
 #### ColecaoDetalhe.tsx  
 - Visualização detalhada de uma base específica
-- Lista de documentos com status
-- Interface de busca semântica
-- Upload de novos documentos
+- Lista de documentos com status e alinhamento otimizado
+- Interface para múltiplos tipos de conteúdo
+- Modal unificado para upload de PDFs, texto e URLs
+- Sistema de crawling com preview e seleção
 
-#### DocumentUpload.tsx
-- Drag & drop para PDFs
-- Progress bar de upload
-- Validação de arquivos
-- Feedback visual de status
+#### Modal de Adição de Conhecimento
+**Tipos suportados**:
+1. **Texto Livre**: Input direto de conteúdo
+2. **Upload PDF**: Drag & drop com validação
+3. **Link/URL**: Duas modalidades:
+   - **Página única**: Extração de URL específica
+   - **Crawling completo**: Descoberta e seleção de múltiplas páginas
+
+**Interface de Crawling**:
+- Preview das páginas encontradas
+- Lista minimalista: URL + contagem de palavras
+- Seleção múltipla com "Selecionar todas"
+- Modal expandido (max-w-4xl) para acomodar listas grandes
 
 ### 6.2 Estados de Interface
 
 **Status de Documento**:
-- 🟡 **Pendente**: Aguardando processamento
-- 🔵 **Processando**: Em análise
-- 🟢 **Processado**: Pronto para busca
-- 🔴 **Erro**: Falha no processamento
+- **Pendente**: Aguardando processamento (badge amarelo)
+- **Processando**: Em análise (badge azul)
+- **Processado**: Pronto para busca (badge verde)
+- **Falhado**: Erro no processamento (badge vermelho)
+
+**Layout otimizado**:
+- **Título**: Alinhado à esquerda (para URLs, mostra a URL completa)
+- **ID e Status**: Alinhados à direita para melhor organização
+- **Ações**: Botões de edição e exclusão compactos
+- **Erros**: Exibidos em linha separada quando presentes
 
 **Badges visuais**:
 ```typescript
 const getStatusBadge = (status: string) => {
-  switch(status) {
-    case 'pending': return <Badge variant="secondary">Pendente</Badge>;
-    case 'processing': return <Badge variant="default">Processando</Badge>;
-    case 'completed': return <Badge variant="success">Processado</Badge>;
-    case 'error': return <Badge variant="destructive">Erro</Badge>;
-  }
+  const badges = {
+    pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendente' },
+    processing: { color: 'bg-blue-100 text-blue-800', text: 'Processando' },
+    completed: { color: 'bg-green-100 text-green-800', text: 'Processado' },
+    failed: { color: 'bg-red-100 text-red-800', text: 'Falhado' }
+  };
+  return badges[status] || badges.pending;
 }
 ```
 
@@ -525,21 +663,60 @@ Response: { message: string, deletedDocuments: number }
 GET /api/rag/documents
 Response: Document[]
 
-// Upload documento
+// Criar documento (texto/URL)
 POST /api/rag/documents
-Body: FormData with PDF file
-Response: { id: number, message: string }
+Body: { 
+  title: string, 
+  content_type: 'text' | 'url',
+  content: string,
+  knowledge_base: string 
+}
+Response: { documentId: number, status: string, message: string }
+
+// Upload PDF
+POST /api/rag/documents/upload
+Body: FormData { file: File, knowledge_base: string }
+Response: { documentId: number, status: string, message: string }
 
 // Deletar documento
 DELETE /api/rag/documents/:id
 Response: { message: string }
-
-// Reprocessar documento
-POST /api/rag/documents/:id/reprocess
-Response: { message: string, documentId: number }
 ```
 
-### 11.3 Endpoint de Busca
+### 11.3 Endpoints de Crawling
+
+```typescript
+// Preview de crawling
+POST /api/rag/crawl/preview
+Body: { url: string, crawlMode: 'single' | 'domain' }
+Response: { 
+  pages: Array<{
+    url: string,
+    title: string,
+    wordCount: number,
+    isValid: boolean,
+    error?: string
+  }>
+}
+
+// Processar páginas selecionadas
+POST /api/rag/crawl/process
+Body: { 
+  selectedPages: Array<{
+    url: string,
+    title: string,
+    content: string
+  }>,
+  knowledge_base: string 
+}
+Response: { 
+  documentIds: number[],
+  message: string,
+  status: string 
+}
+```
+
+### 11.4 Endpoint de Busca
 
 ```typescript
 // Busca semântica
@@ -547,7 +724,8 @@ POST /api/rag/search
 Body: {
   query: string,
   limit?: number,
-  minSimilarity?: number
+  minSimilarity?: number,
+  knowledgeBaseId?: number
 }
 Response: {
   results: SearchResult[],
@@ -606,22 +784,42 @@ GROUP BY d.id, d.title;
 
 ## 13. Roadmap e Melhorias Futuras
 
-### 13.1 Melhorias Planejadas
+### 13.1 Melhorias Implementadas (v2.0)
+
+**Múltiplos tipos de conteúdo** ✅:
+- Suporte completo a PDFs, texto livre e URLs
+- Sistema de crawling inteligente para descoberta de páginas
+- Interface unificada para todos os tipos
+
+**Interface otimizada** ✅:
+- Layout minimalista e responsivo
+- Modal expandido para melhor usabilidade
+- Alinhamento otimizado de elementos
+- Feedback visual claro de status
+
+**Processamento robusto** ✅:
+- Chunking otimizado com limite de tokens
+- Eliminação de erros de limite da API OpenAI
+- Sistema de retry e tratamento de erros
+- Processamento assíncrono eficiente
+
+### 13.2 Próximas Melhorias Planejadas
 
 **Performance**:
 - Cache de queries frequentes
 - Pré-computação de embeddings populares
-- Otimização de índices vetoriais
+- Otimização de índices vetoriais para volumes maiores
 
-**Funcionalidades**:
-- Suporte a múltiplos tipos de arquivo
-- Busca híbrida (vetorial + texto)
-- Feedback de relevância
+**Funcionalidades avançadas**:
+- Busca híbrida (vetorial + full-text)
+- Feedback de relevância dos usuários
+- Análise de sentiment e categorização automática
+- Suporte a outros formatos (Word, PowerPoint)
 
-**Interface**:
-- Preview de documentos
-- Highlighting de trechos relevantes
-- Analytics de uso
+**Analytics e monitoramento**:
+- Dashboard de uso e performance
+- Métricas de qualidade de busca
+- Alertas de sistema e notificações
 
 ### 13.2 Considerações de Escala
 
