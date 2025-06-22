@@ -1,13 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 
-// Import pdf-parse with proper error handling for debug mode
-let pdfParse: any;
-try {
-  pdfParse = require('pdf-parse');
-} catch (error) {
-  console.error('Error importing pdf-parse:', error);
-  throw new Error('Failed to load PDF processing library');
+// Simple approach using dynamic import
+async function getPdfParser() {
+  try {
+    const pdfParse = await import('pdf-parse');
+    return pdfParse.default;
+  } catch (error) {
+    console.error('Error importing pdf-parse:', error);
+    throw new Error('Failed to load PDF processing library');
+  }
 }
 
 export interface ProcessedChunk {
@@ -30,6 +32,9 @@ export class PDFProcessor {
     try {
       console.log(`📄 Extraindo texto do PDF: ${filePath}`);
       
+      // Initialize pdf-parse
+      const pdfParseLib = await getPdfParser();
+      
       // Normalize and validate file path
       const normalizedPath = path.resolve(filePath);
       
@@ -45,7 +50,7 @@ export class PDFProcessor {
       }
 
       const dataBuffer = fs.readFileSync(normalizedPath);
-      const pdfData = await pdfParse(dataBuffer);
+      const pdfData = await pdfParseLib(dataBuffer);
       
       console.log(`✅ PDF processado: ${pdfData.numpages} páginas, ${pdfData.text.length} caracteres`);
       
