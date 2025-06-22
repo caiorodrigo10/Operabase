@@ -2,7 +2,7 @@ import { Element, useEditor } from '@craftjs/core';
 import { Tooltip } from '@mui/material';
 import React from 'react';
 import { styled } from 'styled-components';
-import { Square, Type, MousePointer, Youtube } from 'lucide-react';
+import { Box, AlignLeft, RectangleHorizontal, Play } from 'lucide-react';
 import { Button } from '../../selectors/Button';
 import { Container } from '../../selectors/Container';
 import { Text } from '../../selectors/Text';
@@ -19,11 +19,22 @@ const Item = styled.a<{ $move?: boolean }>`
   align-items: center;
   justify-content: center;
   flex-direction: column;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
 
   svg {
-    width: 28px;
-    height: 28px;
-    fill: #707070;
+    width: 22px;
+    height: 22px;
+    stroke: #666;
+    fill: none;
+    stroke-width: 2;
   }
   ${(props) =>
     props.$move &&
@@ -65,7 +76,7 @@ export const Toolbox = () => {
         >
           <Tooltip title="Container" placement="right">
             <Item $move>
-              <Square size={28} />
+              <Box size={22} />
             </Item>
           </Tooltip>
         </div>
@@ -81,7 +92,7 @@ export const Toolbox = () => {
         >
           <Tooltip title="Text" placement="right">
             <Item $move>
-              <Type size={28} />
+              <AlignLeft size={22} />
             </Item>
           </Tooltip>
         </div>
@@ -94,7 +105,7 @@ export const Toolbox = () => {
         >
           <Tooltip title="Button" placement="right">
             <Item $move>
-              <MousePointer size={28} />
+              <RectangleHorizontal size={22} />
             </Item>
           </Tooltip>
         </div>
@@ -107,7 +118,7 @@ export const Toolbox = () => {
         >
           <Tooltip title="Video" placement="right">
             <Item $move>
-              <Youtube size={28} />
+              <Play size={22} />
             </Item>
           </Tooltip>
         </div>
