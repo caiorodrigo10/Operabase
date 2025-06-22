@@ -3,6 +3,7 @@ import { Send, Code, Sparkles, User, Bot, AlertCircle, CheckCircle, Settings } f
 import { Button } from '@/components/ui/button';
 import { useEditor } from '@craftjs/core';
 import { aiDevService, builderTransformer, type BuilderAction, type CraftJSON } from '@/lib/ai-dev';
+import { supabase } from '@/lib/supabase';
 
 interface ChatMessage {
   id: string;
@@ -35,7 +36,22 @@ export const AICodeChat = () => {
   useEffect(() => {
     const configureApiKey = async () => {
       try {
-        const response = await fetch('/api/ai-dev/config');
+        // Get Supabase session for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.access_token) {
+          console.log('No authentication session found');
+          setApiKeyConfigured(false);
+          return;
+        }
+
+        const response = await fetch('/api/ai-dev/config', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
         if (response.ok) {
           const config = await response.json();
           if (config.configured && config.apiKey) {
