@@ -172,7 +172,7 @@ router.post('/documents', ragAuth, async (req: any, res: Response) => {
       .insert(rag_documents)
       .values({
         external_user_id: userId,
-        title,
+        title: content_type === 'url' ? content : title, // Use URL as title for URL documents
         content_type,
         original_content: content,
         source_url: content_type === 'url' ? content : null,
@@ -270,7 +270,7 @@ router.post('/crawl/process', ragAuth, async (req: any, res: Response) => {
         .insert(rag_documents)
         .values({
           external_user_id: userId,
-          title: title || 'Página Web',
+          title: url, // Always use URL as title for crawled pages
           content_type: 'url',
           source_url: url,
           original_content: content,
