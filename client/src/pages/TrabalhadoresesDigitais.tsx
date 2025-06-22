@@ -1,4 +1,4 @@
-import { Bot, Users, BarChart3, BookOpen, ChevronLeft, Brain } from "lucide-react";
+import { Bot, Users, BarChart3, BookOpen, ChevronLeft } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -154,15 +154,23 @@ export default function TrabalhadoresesDigitais() {
                   </p>
 
                   {/* Footer */}
-                  <Button 
-                    className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white border-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCardClick(assistant.name, assistant.description);
-                    }}
-                  >
-                    Configurar {assistant.name}
-                  </Button>
+                  {assistant.name === "Mara" ? (
+                    <Link href="/trabalhadores-digitais/mara-ai" className="inline-block">
+                      <Button className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white border-0">
+                        Configurar {assistant.name}
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button 
+                      className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white border-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardClick(assistant.name, assistant.description);
+                      }}
+                    >
+                      Configurar {assistant.name}
+                    </Button>
+                  )}
                 </div>
               </div>
             );
