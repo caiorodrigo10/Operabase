@@ -2,11 +2,9 @@ import { useEditor } from '@craftjs/core';
 import { Layers } from '@craftjs/layers';
 import React, { useState } from 'react';
 import { styled } from 'styled-components';
+import { Settings, Layers as LayersIcon } from 'lucide-react';
 
 import { SidebarItem } from './SidebarItem';
-
-import CustomizeIcon from '../../../../public/icons/customize.svg';
-import LayerIcon from '../../../../public/icons/layers.svg';
 import { Toolbar } from '../../Toolbar';
 
 export const SidebarDiv = styled.div<{ $enabled: boolean }>`
@@ -146,7 +144,7 @@ export const Sidebar = () => {
     <SidebarDiv $enabled={enabled} className="sidebar transition bg-white w-2">
       <div className="flex flex-col h-full">
         <SidebarItem
-          icon={CustomizeIcon}
+          icon={Settings}
           title="Customize"
           height={!layersVisible ? 'full' : '55%'}
           visible={toolbarVisible}
@@ -156,7 +154,7 @@ export const Sidebar = () => {
           <Toolbar />
         </SidebarItem>
         <SidebarItem
-          icon={LayerIcon}
+          icon={LayersIcon}
           title="Layers"
           height={!toolbarVisible ? 'full' : '45%'}
           visible={layersVisible}

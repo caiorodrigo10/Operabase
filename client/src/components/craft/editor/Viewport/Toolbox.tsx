@@ -48,58 +48,66 @@ export const Toolbox = () => {
       <div className="flex flex-1 flex-col items-center pt-3 gap-3">
         <div
           ref={(ref) => {
-            create(
-              ref,
-              <Element
-                canvas
-                is={Container}
-                background={{ r: 78, g: 78, b: 78, a: 1 }}
-                color={{ r: 0, g: 0, b: 0, a: 1 }}
-                height="300px"
-                width="300px"
-              ></Element>
-            );
+            if (ref) {
+              create(
+                ref,
+                <Element
+                  canvas
+                  is={Container}
+                  background={{ r: 78, g: 78, b: 78, a: 1 }}
+                  color={{ r: 0, g: 0, b: 0, a: 1 }}
+                  height="300px"
+                  width="300px"
+                ></Element>
+              );
+            }
           }}
         >
           <Tooltip title="Container" placement="right">
             <Item $move>
-              <SquareSvg viewBox="-3 -3 24 24" />
+              <Square size={28} />
             </Item>
           </Tooltip>
         </div>
         <div
           ref={(ref) => {
-            create(
-              ref,
-              <Text fontSize="12" textAlign="left" text="Hi there" />
-            );
+            if (ref) {
+              create(
+                ref,
+                <Text fontSize="12" textAlign="left" text="Hi there" />
+              );
+            }
           }}
         >
           <Tooltip title="Text" placement="right">
             <Item $move>
-              <TypeSvg viewBox="-3 -3 28 28" />
+              <Type size={28} />
             </Item>
           </Tooltip>
         </div>
         <div
           ref={(ref) => {
-            create(ref, <Button />);
+            if (ref) {
+              create(ref, <Button />);
+            }
           }}
         >
           <Tooltip title="Button" placement="right">
             <Item $move>
-              <ButtonSvg viewBox="-4 -3 24 24" />
+              <MousePointer size={28} />
             </Item>
           </Tooltip>
         </div>
         <div
           ref={(ref) => {
-            create(ref, <Video />);
+            if (ref) {
+              create(ref, <Video />);
+            }
           }}
         >
           <Tooltip title="Video" placement="right">
             <Item $move>
-              <YoutubeSvg viewBox="-3 -3 28 28" />
+              <Youtube size={28} />
             </Item>
           </Tooltip>
         </div>
