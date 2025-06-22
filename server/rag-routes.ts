@@ -174,7 +174,7 @@ router.post('/documents/pdf', isAuthenticated, upload.single('file'), async (req
 router.get('/processing/:id', isAuthenticated, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
-    const userId = req.user.id;
+    const userId = req.user?.id?.toString() || req.user?.email;
 
     const [document] = await db
       .select()
@@ -205,7 +205,7 @@ router.get('/processing/:id', isAuthenticated, async (req: any, res: Response) =
 router.delete('/documents/:id', isAuthenticated, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
-    const userId = req.user.id;
+    const userId = req.user?.id?.toString() || req.user?.email;
 
     // Buscar documento para verificar ownership e obter file_path
     const [document] = await db
@@ -246,7 +246,7 @@ router.delete('/documents/:id', isAuthenticated, async (req: any, res: Response)
 // Busca semântica (placeholder - será implementado na próxima fase)
 router.post('/search', isAuthenticated, async (req: any, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id?.toString() || req.user?.email;
     const { query, maxResults = 10 } = req.body;
 
     if (!query) {
