@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 // Import the existing craft components that work
 import { Container, Text } from '../components/craft/selectors';
 import { Button as CraftButton } from '../components/craft/selectors/Button';
+import { Video } from '../components/craft/selectors/Video';
 import { Viewport } from '../components/craft/editor/Viewport';
 import { RenderNode } from '../components/craft/editor/RenderNode';
 
@@ -160,6 +161,7 @@ export default function FunilEditorLanding() {
             Container,
             Text,
             CraftButton,
+            Video,
             LandingCard,
             HeroSection,
             VideoComponent,
