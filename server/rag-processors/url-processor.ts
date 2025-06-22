@@ -1,4 +1,5 @@
-import puppeteer from 'puppeteer';
+import https from 'https';
+import http from 'http';
 import * as cheerio from 'cheerio';
 import { ProcessedChunk } from './pdf-processor';
 
@@ -13,61 +14,76 @@ export class URLProcessor {
       // Validar URL
       new URL(url);
       
-      let browser;
-      try {
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-          ]
-        });
-
-        const page = await browser.newPage();
-        
-        // Configurar timeouts e user agent
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        await page.setDefaultNavigationTimeout(30000);
-        await page.setDefaultTimeout(30000);
-
-        // Navegar para a página
-        const response = await page.goto(url, { 
-          waitUntil: 'networkidle2',
-          timeout: 30000 
-        });
-
-        if (!response || !response.ok()) {
-          throw new Error(`Falha ao carregar página: ${response?.status()}`);
-        }
-
-        // Aguardar carregamento do conteúdo
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Extrair HTML
-        const html = await page.content();
-        
-        await browser.close();
-
-        // Processar HTML com Cheerio
-        const cleanedContent = this.extractTextFromHTML(html, url);
-        
-        console.log(`✅ Conteúdo extraído: ${cleanedContent.length} caracteres`);
-        return cleanedContent;
-
-      } catch (error) {
-        if (browser) {
-          await browser.close();
-        }
-        throw error;
-      }
+      // Buscar HTML usando Node.js nativo
+      const html = await this.fetchHTML(url);
+      
+      // Processar HTML com Cheerio
+      const cleanedContent = this.extractTextFromHTML(html, url);
+      
+      console.log(`✅ Conteúdo extraído: ${cleanedContent.length} caracteres`);
+      return cleanedContent;
 
     } catch (error) {
       console.error('❌ Erro ao extrair conteúdo da URL:', error);
       throw new Error(`Falha na extração da URL: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
+  }
+
+  private async fetchHTML(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const urlObj = new URL(url);
+      const protocol = urlObj.protocol === 'https:' ? https : http;
+
+      const options = {
+        hostname: urlObj.hostname,
+        port: urlObj.port,
+        path: urlObj.pathname + urlObj.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1'
+        },
+        timeout: 30000
+      };
+
+      const req = protocol.request(options, (res) => {
+        let data = '';
+
+        // Handle redirects
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const redirectUrl = new URL(res.headers.location, url).href;
+          return this.fetchHTML(redirectUrl).then(resolve).catch(reject);
+        }
+
+        if (res.statusCode && res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        }
+
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          resolve(data);
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(error);
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Request timeout'));
+      });
+
+      req.end();
+    });
   }
 
   private extractTextFromHTML(html: string, url: string): string {

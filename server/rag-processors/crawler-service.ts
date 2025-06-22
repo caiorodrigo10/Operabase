@@ -1,4 +1,6 @@
-import puppeteer from "puppeteer";
+import https from 'https';
+import http from 'http';
+import { load } from 'cheerio';
 
 export interface CrawledPage {
   url: string;
@@ -17,63 +19,84 @@ export interface CrawlOptions {
 }
 
 export class CrawlerService {
-  private browser: any = null;
-
   constructor() {
-    // Browser will be launched on demand
+    // No browser needed
   }
 
-  private async getBrowser() {
-    if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  private async fetchHTML(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const urlObj = new URL(url);
+      const protocol = urlObj.protocol === 'https:' ? https : http;
+
+      const options = {
+        hostname: urlObj.hostname,
+        port: urlObj.port,
+        path: urlObj.pathname + urlObj.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+          'Connection': 'keep-alive'
+        },
+        timeout: 30000
+      };
+
+      const req = protocol.request(options, (res) => {
+        let data = '';
+
+        // Handle redirects
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const redirectUrl = new URL(res.headers.location, url).href;
+          return this.fetchHTML(redirectUrl).then(resolve).catch(reject);
+        }
+
+        if (res.statusCode && res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        }
+
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          resolve(data);
+        });
       });
-    }
-    return this.browser;
+
+      req.on('error', reject);
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Request timeout'));
+      });
+
+      req.end();
+    });
   }
 
   async crawlSinglePage(url: string): Promise<CrawledPage> {
-    let page = null;
     try {
       console.log(`🔍 Extraindo conteúdo da página: ${url}`);
       
-      const browser = await this.getBrowser();
-      page = await browser.newPage();
-      
-      // Set user agent to avoid bot detection
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-      
-      // Navigate to page with timeout
-      await page.goto(url, { 
-        waitUntil: 'networkidle2', 
-        timeout: 30000 
-      });
+      const html = await this.fetchHTML(url);
+      const $ = load(html);
 
-      // Extract title and content
-      const pageData = await page.evaluate(() => {
-        // Remove script and style elements
-        const scripts = document.querySelectorAll('script, style, nav, footer, header');
-        scripts.forEach(el => el.remove());
+      // Remove unwanted elements
+      $('script, style, nav, footer, header, aside, .ads, .advertisement, .sidebar, .menu, .navigation').remove();
 
-        const title = document.title || '';
-        
-        // Get main content, prioritizing article, main, or body
-        let contentElement = document.querySelector('article') || 
-                           document.querySelector('main') || 
-                           document.querySelector('.content') ||
-                           document.querySelector('#content') ||
-                           document.body;
+      // Extract title
+      const title = $('title').text().trim() || this.getTitleFromUrl(url);
 
-        const content = contentElement ? contentElement.innerText || contentElement.textContent || '' : '';
+      // Get main content, prioritizing semantic elements
+      let contentElement = $('article').first();
+      if (!contentElement.length) contentElement = $('main').first();
+      if (!contentElement.length) contentElement = $('.content, #content').first();
+      if (!contentElement.length) contentElement = $('.post, .entry').first();
+      if (!contentElement.length) contentElement = $('body');
 
-        return { title, content };
-      });
-
-      await page.close();
-
-      const cleanContent = this.cleanContent(pageData.content);
-      const title = pageData.title || this.getTitleFromUrl(url);
+      const content = contentElement.text() || '';
+      const cleanContent = this.cleanContent(content);
 
       return {
         url,
@@ -83,12 +106,6 @@ export class CrawlerService {
         isValid: cleanContent.length > 50,
       };
     } catch (error) {
-      if (page) {
-        try {
-          await page.close();
-        } catch {}
-      }
-      
       console.error(`❌ Erro ao extrair página ${url}:`, error);
       return {
         url,
@@ -156,62 +173,46 @@ export class CrawlerService {
   }
 
   private async extractInternalLinks(baseUrl: string): Promise<string[]> {
-    let page = null;
     try {
-      const browser = await this.getBrowser();
-      page = await browser.newPage();
-      
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-      await page.goto(baseUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+      const html = await this.fetchHTML(baseUrl);
+      const $ = load(html);
+      const domain = new URL(baseUrl).hostname;
+      const urls = new Set<string>();
 
-      const links = await page.evaluate((baseUrl: string) => {
-        const domain = new URL(baseUrl).hostname;
-        const linkElements = document.querySelectorAll('a[href]');
-        const urls = new Set<string>();
+      $('a[href]').each((_, element) => {
+        const href = $(element).attr('href');
+        if (!href) return;
 
-        linkElements.forEach((link: any) => {
-          const href = link.getAttribute('href');
-          if (!href) return;
-
-          try {
-            let fullUrl: string;
-            
-            if (href.startsWith('http')) {
-              const linkDomain = new URL(href).hostname;
-              if (linkDomain === domain) {
-                fullUrl = href;
-              } else {
-                return; // Skip external links
-              }
-            } else if (href.startsWith('/')) {
-              fullUrl = new URL(href, baseUrl).href;
-            } else if (href.startsWith('#') || href === '') {
-              return; // Skip anchors and empty hrefs
-            } else {
-              fullUrl = new URL(href, baseUrl).href;
-            }
-
-            // Avoid duplicates and the base URL itself
-            if (fullUrl !== baseUrl && !urls.has(fullUrl)) {
-              urls.add(fullUrl);
-            }
-          } catch {
-            // Invalid URL, skip
-            return;
-          }
-        });
-
-        return Array.from(urls);
-      }, baseUrl);
-
-      await page.close();
-      return links;
-    } catch (error) {
-      if (page) {
         try {
-          await page.close();
-        } catch {}
-      }
+          let fullUrl: string;
+          
+          if (href.startsWith('http')) {
+            const linkDomain = new URL(href).hostname;
+            if (linkDomain === domain) {
+              fullUrl = href;
+            } else {
+              return; // Skip external links
+            }
+          } else if (href.startsWith('/')) {
+            fullUrl = new URL(href, baseUrl).href;
+          } else if (href.startsWith('#') || href === '') {
+            return; // Skip anchors and empty hrefs
+          } else {
+            fullUrl = new URL(href, baseUrl).href;
+          }
+
+          // Avoid duplicates and the base URL itself
+          if (fullUrl !== baseUrl && !urls.has(fullUrl)) {
+            urls.add(fullUrl);
+          }
+        } catch {
+          // Invalid URL, skip
+          return;
+        }
+      });
+
+      return Array.from(urls);
+    } catch (error) {
       console.error('❌ Erro ao extrair links internos:', error);
       return [];
     }
@@ -270,9 +271,6 @@ export class CrawlerService {
   }
 
   async close(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-    }
+    // No cleanup needed for Node.js native approach
   }
 }
