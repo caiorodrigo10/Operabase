@@ -135,6 +135,20 @@ app.use((req, res, next) => {
   
   // Add Google Calendar authentication routes with professional validation
   const { isAuthenticated } = await import('./auth');
+  
+  // Add AI Dev Agent configuration route
+  app.get('/api/ai-dev/config', isAuthenticated, (req: Request, res: Response) => {
+    try {
+      const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+      res.json({ 
+        configured: hasOpenAIKey,
+        apiKey: hasOpenAIKey ? process.env.OPENAI_API_KEY : null
+      });
+    } catch (error) {
+      console.error('Error getting AI Dev config:', error);
+      res.status(500).json({ error: 'Failed to get AI Dev configuration' });
+    }
+  });
   const { createRequireProfessional } = await import('./middleware/professional-validation');
   
   const requireProfessional = createRequireProfessional(storage);

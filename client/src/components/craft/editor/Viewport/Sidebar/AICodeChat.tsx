@@ -31,9 +31,29 @@ export const AICodeChat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Check API key status on mount
+  // Fetch and configure API key on mount
   useEffect(() => {
-    setApiKeyConfigured(aiDevService.isConfigured());
+    const configureApiKey = async () => {
+      try {
+        const response = await fetch('/api/ai-dev/config');
+        if (response.ok) {
+          const config = await response.json();
+          if (config.configured && config.apiKey) {
+            aiDevService.setApiKey(config.apiKey);
+            setApiKeyConfigured(true);
+          } else {
+            setApiKeyConfigured(false);
+          }
+        } else {
+          setApiKeyConfigured(false);
+        }
+      } catch (error) {
+        console.error('Error fetching AI Dev config:', error);
+        setApiKeyConfigured(false);
+      }
+    };
+
+    configureApiKey();
   }, []);
 
   const scrollToBottom = () => {
