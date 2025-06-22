@@ -222,11 +222,22 @@ export default function BasesConhecimento() {
             <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-blue-600" />
-                    <CardTitle className="text-lg group-hover:text-blue-700 transition-colors">
-                      {collection.name}
-                    </CardTitle>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BookOpen className="h-5 w-5 text-blue-600" />
+                      <CardTitle className="text-lg group-hover:text-blue-700 transition-colors">
+                        {collection.name}
+                      </CardTitle>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-500 mb-2">
+                      <span className="font-mono text-xs">ID: {collection.id}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {collection.itemCount} itens
+                      </Badge>
+                    </div>
+                    <CardDescription className="line-clamp-2 text-sm">
+                      {collection.description}
+                    </CardDescription>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
@@ -254,48 +265,40 @@ export default function BasesConhecimento() {
                     </Button>
                   </div>
                 </div>
-                <CardDescription className="line-clamp-2">
-                  {collection.description}
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Stats */}
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-4">
-                      <Badge variant="secondary" className="text-xs">
-                        {collection.itemCount} itens
-                      </Badge>
-                      <span className="text-gray-500 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {collection.lastUpdated}
-                      </span>
-                    </div>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  {/* Last Updated */}
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <Calendar className="h-3 w-3" />
+                    Atualizado em {collection.lastUpdated}
                   </div>
 
                   {/* Preview Items */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700">Conteúdo:</p>
-                    <div className="space-y-1">
-                      {collection.documents.slice(0, 3).map((doc, index) => (
-                        <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
-                          {getItemIcon(doc.content_type)}
-                          <span className="truncate">{doc.title}</span>
-                          <Badge 
-                            variant={doc.processing_status === 'completed' ? 'default' : 'secondary'}
-                            className="text-xs px-1 py-0"
-                          >
-                            {doc.processing_status}
-                          </Badge>
-                        </div>
-                      ))}
-                      {collection.itemCount > 3 && (
-                        <div className="text-xs text-gray-500">
-                          +{collection.itemCount - 3} mais itens
-                        </div>
-                      )}
+                  {collection.documents.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-700">Documentos recentes:</p>
+                      <div className="space-y-1">
+                        {collection.documents.slice(0, 2).map((doc, index) => (
+                          <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
+                            {getItemIcon(doc.content_type)}
+                            <span className="truncate flex-1">{doc.title}</span>
+                            <Badge 
+                              variant={doc.processing_status === 'completed' ? 'default' : 'secondary'}
+                              className="text-xs px-1 py-0"
+                            >
+                              {doc.processing_status === 'completed' ? 'OK' : doc.processing_status}
+                            </Badge>
+                          </div>
+                        ))}
+                        {collection.itemCount > 2 && (
+                          <div className="text-xs text-gray-500 pl-5">
+                            +{collection.itemCount - 2} mais
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
