@@ -218,7 +218,7 @@ export function setupAuth(app: Express, storage: IStorage) {
       return res.status(401).json({ error: "Não autenticado" });
     }
     
-    const user = req.user as SelectUser;
+    const user = req.user as User;
     res.json({
       id: user.id,
       email: user.email,
@@ -283,7 +283,7 @@ export const hasClinicAccess = (paramName: string = 'clinicId') => {
       return res.status(401).json({ error: "Não autenticado" });
     }
 
-    const user = req.user as SelectUser;
+    const user = req.user as User;
     const clinicId = parseInt(req.params[paramName]);
     
     if (!clinicId || isNaN(clinicId)) {
