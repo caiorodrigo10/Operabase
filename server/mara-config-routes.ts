@@ -64,7 +64,8 @@ export function setupMaraConfigRoutes(app: any, storage: IStorage) {
           LEFT JOIN rag_knowledge_bases kb ON mpc.knowledge_base_id = kb.id
         `);
       } catch (error) {
-        console.log('No mara_professional_configs table yet, using empty configs');
+        console.log('Error fetching mara configs:', error);
+        configs = { rows: [] };
       }
 
       // Combine professionals with their configs

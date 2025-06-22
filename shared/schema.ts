@@ -294,9 +294,6 @@ export type InsertPipelineHistory = z.infer<typeof insertPipelineHistorySchema>;
 export type PipelineActivity = typeof pipeline_activities.$inferSelect;
 export type InsertPipelineActivity = z.infer<typeof insertPipelineActivitySchema>;
 
-export type MaraProfessionalConfig = typeof mara_professional_configs.$inferSelect;
-export type InsertMaraProfessionalConfig = z.infer<typeof insertMaraProfessionalConfigSchema>;
-
 // Tabela para configurações de Mara AI por profissional
 export const mara_professional_configs = pgTable("mara_professional_configs", {
   id: serial("id").primaryKey(),
@@ -313,6 +310,9 @@ export const mara_professional_configs = pgTable("mara_professional_configs", {
 ]);
 
 export const insertMaraProfessionalConfigSchema = createInsertSchema(mara_professional_configs);
+
+export type MaraProfessionalConfig = typeof mara_professional_configs.$inferSelect;
+export type InsertMaraProfessionalConfig = z.infer<typeof insertMaraProfessionalConfigSchema>;
 
 // ================================================================
 // RAG SYSTEM TABLES (ISOLATED MODULE)
