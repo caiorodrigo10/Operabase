@@ -125,6 +125,10 @@ app.use((req, res, next) => {
   const { setupAnamnesisManagementRoutes } = await import('./anamneses-routes');
   setupAnamnesisManagementRoutes(app, storage);
   
+  // Add Mara AI routes
+  const { setupMaraRoutes } = await import('./mara-routes');
+  setupMaraRoutes(app, storage);
+  
   // Add Google Calendar authentication routes with professional validation
   const { isAuthenticated } = await import('./auth');
   const { createRequireProfessional } = await import('./middleware/professional-validation');
