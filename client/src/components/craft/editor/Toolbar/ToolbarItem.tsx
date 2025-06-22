@@ -32,7 +32,7 @@ export const ToolbarItem = ({
   const value = Array.isArray(propValue) ? propValue[index] : propValue;
 
   return (
-    <Grid item xs={full ? 12 : 6}>
+    <Grid size={full ? 12 : 6}>
       <div className="mb-2">
         {['text', 'color', 'bg', 'number'].includes(type) ? (
           <ToolbarTextInput
