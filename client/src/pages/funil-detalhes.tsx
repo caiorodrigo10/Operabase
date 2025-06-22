@@ -206,12 +206,12 @@ const mockFunilData = {
 export default function FunilDetalhes() {
   const { id } = useParams();
 
-  // Create nodes from mock data with compact spacing
+  // Create nodes from mock data with proper spacing
   const initialNodes: Node[] = useMemo(() => {
     return mockFunilData.pages.map((page, index) => ({
       id: page.id,
       type: 'funilPage',
-      position: { x: index * 180, y: 150 },
+      position: { x: index * 220, y: 150 },
       data: {
         title: page.title,
         status: page.status,
@@ -290,9 +290,9 @@ export default function FunilDetalhes() {
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{
-            padding: 0.2,
-            maxZoom: 1.0,
-            minZoom: 0.6
+            padding: 0.15,
+            maxZoom: 1.2,
+            minZoom: 0.8
           }}
           attributionPosition="top-right"
           className="bg-gray-50"
