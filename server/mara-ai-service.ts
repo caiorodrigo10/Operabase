@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { IStorage } from './storage.js';
+import { db } from './db.js';
 
 interface ContactContext {
   contact: any;
@@ -11,6 +12,18 @@ interface ContactContext {
 
 interface MaraResponse {
   response: string;
+}
+
+interface RAGResult {
+  content: string;
+  metadata: any;
+  similarity: number;
+}
+
+interface MaraConfig {
+  knowledgeBaseId?: number;
+  knowledgeBaseName?: string;
+  isActive: boolean;
 }
 
 export class MaraAIService {
@@ -49,9 +62,30 @@ export class MaraAIService {
           console.log('⚠️ Não foi possível buscar dados do usuário:', error.message);
         }
       }
+
+      // Buscar configuração Mara do profissional
+      let maraConfig: MaraConfig | null = null;
+      let ragContext = '';
       
-      // Criar prompt simples e conversacional
-      const systemPrompt = this.createSimpleSystemPrompt(context, currentUser);
+      if (userId && context.contact?.clinic_id) {
+        try {
+          maraConfig = await this.getMaraConfigForProfessional(userId, context.contact.clinic_id);
+          console.log('⚙️ Configuração Mara:', maraConfig);
+
+          // Se tiver base de conhecimento conectada, fazer busca RAG
+          if (maraConfig?.knowledgeBaseId) {
+            console.log('🔍 Buscando conhecimento na base RAG:', maraConfig.knowledgeBaseId);
+            const ragResults = await this.searchRAGKnowledge(question, maraConfig.knowledgeBaseId);
+            ragContext = this.formatRAGContext(ragResults);
+            console.log('📚 Contexto RAG obtido:', ragContext ? 'Sim' : 'Não');
+          }
+        } catch (error: any) {
+          console.log('⚠️ Erro ao buscar configuração Mara:', error.message);
+        }
+      }
+      
+      // Criar prompt com contexto híbrido (dados paciente + conhecimento RAG)
+      const systemPrompt = this.createEnhancedSystemPrompt(context, currentUser, ragContext, maraConfig);
       console.log('📝 Prompt criado, enviando para OpenAI...');
 
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -179,6 +213,150 @@ INSTRUÇÕES:
       console.error('Erro ao gerar resumo:', error);
       return "Não foi possível gerar o resumo do paciente.";
     }
+  }
+
+  // RAG Integration Methods
+  async getMaraConfigForProfessional(userId: number, clinicId: number): Promise<MaraConfig | null> {
+    try {
+      const result = await db.execute(`
+        SELECT 
+          mpc.knowledge_base_id,
+          mpc.is_active,
+          kb.name as knowledge_base_name
+        FROM mara_professional_configs mpc
+        LEFT JOIN rag_knowledge_bases kb ON mpc.knowledge_base_id = kb.id
+        WHERE mpc.professional_id = $1 AND mpc.clinic_id = $2 AND mpc.is_active = true
+      `, [userId, clinicId]);
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const config = result.rows[0];
+      return {
+        knowledgeBaseId: config.knowledge_base_id,
+        knowledgeBaseName: config.knowledge_base_name,
+        isActive: config.is_active
+      };
+    } catch (error) {
+      console.error('Error fetching Mara config:', error);
+      return null;
+    }
+  }
+
+  async searchRAGKnowledge(query: string, knowledgeBaseId: number): Promise<RAGResult[]> {
+    try {
+      // Use the existing RAG semantic search function
+      const result = await db.execute(`
+        SELECT 
+          re.content,
+          re.metadata,
+          1 - (re.embedding <=> $1::vector) as similarity
+        FROM rag_embeddings re
+        JOIN rag_documents rd ON re.document_id = rd.id
+        WHERE rd.knowledge_base_id = $2 
+          AND rd.status = 'completed'
+          AND 1 - (re.embedding <=> $1::vector) > 0.7
+        ORDER BY similarity DESC
+        LIMIT 5
+      `, [query, knowledgeBaseId]);
+
+      return result.rows.map(row => ({
+        content: row.content,
+        metadata: row.metadata,
+        similarity: parseFloat(row.similarity)
+      }));
+    } catch (error) {
+      console.error('Error searching RAG knowledge:', error);
+      return [];
+    }
+  }
+
+  formatRAGContext(ragResults: RAGResult[]): string {
+    if (ragResults.length === 0) {
+      return '';
+    }
+
+    const contextChunks = ragResults
+      .filter(result => result.similarity > 0.7)
+      .slice(0, 3) // Top 3 most relevant chunks
+      .map(result => result.content)
+      .join('\n\n');
+
+    return contextChunks;
+  }
+
+  createEnhancedSystemPrompt(context: ContactContext, currentUser: any, ragContext: string, maraConfig: MaraConfig | null): string {
+    let prompt = `Você é a Mara, uma assistente médica inteligente especializada em análise de pacientes.`;
+
+    // Add professional context
+    if (currentUser) {
+      prompt += `\n\nPROFISSIONAL:
+Nome: ${currentUser.name}
+Função: ${currentUser.role}`;
+      
+      if (maraConfig?.knowledgeBaseName) {
+        prompt += `\nBase de Conhecimento: ${maraConfig.knowledgeBaseName}`;
+      }
+    }
+
+    // Add specialized knowledge context if available
+    if (ragContext) {
+      prompt += `\n\nCONHECIMENTO ESPECIALIZADO:
+${ragContext}`;
+    }
+
+    // Add patient context (existing logic)
+    prompt += `\n\nDADOS DO PACIENTE:`;
+    
+    if (context.contact) {
+      prompt += `\nNome: ${context.contact.name}`;
+      if (context.contact.age) prompt += `\nIdade: ${context.contact.age} anos`;
+      if (context.contact.phone) prompt += `\nTelefone: ${context.contact.phone}`;
+      if (context.contact.email) prompt += `\nEmail: ${context.contact.email}`;
+      if (context.contact.notes) prompt += `\nObservações: ${context.contact.notes}`;
+    }
+
+    // Add medical history
+    if (context.appointments && context.appointments.length > 0) {
+      prompt += `\n\nHISTÓRICO DE CONSULTAS:`;
+      context.appointments.forEach((apt: any, index: number) => {
+        prompt += `\n${index + 1}. Data: ${apt.date_time} - Tipo: ${apt.appointment_type || 'Consulta'} - Status: ${apt.status}`;
+        if (apt.notes) prompt += ` - Observações: ${apt.notes}`;
+      });
+    }
+
+    if (context.medicalRecords && context.medicalRecords.length > 0) {
+      prompt += `\n\nREGISTROS MÉDICOS:`;
+      context.medicalRecords.forEach((record: any, index: number) => {
+        prompt += `\n${index + 1}. ${record.date}: ${record.description}`;
+        if (record.diagnosis) prompt += ` - Diagnóstico: ${record.diagnosis}`;
+        if (record.treatment) prompt += ` - Tratamento: ${record.treatment}`;
+      });
+    }
+
+    if (context.anamnesisResponses && context.anamnesisResponses.length > 0) {
+      prompt += `\n\nRESPOSTAS DE ANAMNESE:`;
+      context.anamnesisResponses.forEach((response: any, index: number) => {
+        prompt += `\n${index + 1}. ${response.question}: ${response.answer}`;
+      });
+    }
+
+    // Instructions
+    prompt += `\n\nINSTRUÇÕES:
+- Analise os dados do paciente de forma profissional e empática
+- Use o conhecimento especializado quando relevante, mas sempre priorize os dados específicos do paciente
+- Seja concisa mas informativa (2-4 parágrafos curtos)
+- Use quebras de linha entre parágrafos para facilitar leitura
+- Não invente informações que não estão nos dados
+- Use linguagem médica apropriada mas acessível
+- Responda diretamente o que foi perguntado`;
+
+    if (ragContext) {
+      prompt += `\n- Integre o conhecimento especializado de forma natural quando aplicável`;
+    }
+
+    return prompt;
   }
 }
 
