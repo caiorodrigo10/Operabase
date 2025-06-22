@@ -126,9 +126,11 @@ const FunilPageNode = ({ data }: { data: any }) => {
         <CardContent className="pt-0 px-3 pb-3">
           {/* Quick Actions - More Compact */}
           <div className="flex items-center justify-center space-x-0.5">
-            <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
-              <Edit3 className="h-3 w-3 text-blue-600" />
-            </Button>
+            <Link href={`/funis/1/pagina/${data.id}/editor`}>
+              <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
+                <Edit3 className="h-3 w-3 text-blue-600" />
+              </Button>
+            </Link>
             <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
               <Eye className="h-3 w-3 text-gray-600" />
             </Button>
