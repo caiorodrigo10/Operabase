@@ -29,6 +29,19 @@ export async function initializeRAGSystem() {
 }
 
 async function createRAGTables() {
+  // Bases de conhecimento RAG (separadas dos documentos)
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS rag_knowledge_bases (
+      id SERIAL PRIMARY KEY,
+      external_user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      created_by TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
   // Documentos RAG
   await db.execute(`
     CREATE TABLE IF NOT EXISTS rag_documents (
@@ -89,6 +102,8 @@ async function createRAGTables() {
 
 async function createVectorIndexes() {
   // Índices para performance
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_knowledge_bases_user ON rag_knowledge_bases(external_user_id);`);
+  await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS unique_knowledge_base_name_user ON rag_knowledge_bases(name, external_user_id);`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_documents_user ON rag_documents(external_user_id);`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_documents_status ON rag_documents(processing_status);`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_chunks_document ON rag_chunks(document_id);`);
