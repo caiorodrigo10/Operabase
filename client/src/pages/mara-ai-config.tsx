@@ -179,7 +179,7 @@ export default function MaraAIConfig() {
                               <SelectItem value="none">Nenhuma (Mara Genérica)</SelectItem>
                               {Array.isArray(knowledgeBases) && knowledgeBases.map((base: any) => (
                                 <SelectItem key={base.id} value={base.id.toString()}>
-                                  📚 {base.name} ({base.document_count || 0} docs)
+                                  📚 {base.name} ({base.documentCount || 0} docs)
                                 </SelectItem>
                               ))}
                             </SelectContent>
