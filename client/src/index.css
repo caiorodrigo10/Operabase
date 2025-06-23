@@ -41,6 +41,29 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
+/* Range Slider Styles */
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
 /* Google Calendar-style Drag and Drop with Custom Cursor */
 .drag-over-indicator {
   background: linear-gradient(45deg, hsl(207, 90%, 54%) 25%, transparent 25%), 

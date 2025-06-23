@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X, Play, Type, FileText, Palette, Layout, Square } from 'lucide-react';
 import { ColorPalettePage } from './ColorPalettePage';
 import { TextStylingPage } from './TextStylingPage';
+import { WebsiteLayoutPage } from './WebsiteLayoutPage';
 
 interface GlobalStylingSidebarProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ const MenuItem: React.FC<{
   );
 };
 
-const SidebarContent: React.FC<{ onNavigate: (page: 'menu' | 'color-palette' | 'text-styling') => void }> = ({ onNavigate }) => {
+const SidebarContent: React.FC<{ onNavigate: (page: 'menu' | 'color-palette' | 'text-styling' | 'website-layout') => void }> = ({ onNavigate }) => {
   const menuItems = [
     {
       id: 'text-styling',
@@ -90,11 +91,13 @@ const SidebarContent: React.FC<{ onNavigate: (page: 'menu' | 'color-palette' | '
     }
   ];
 
-  const handleMenuItemClick = (itemId: string, setCurrentPage: (page: 'menu' | 'color-palette' | 'text-styling') => void) => {
+  const handleMenuItemClick = (itemId: string, setCurrentPage: (page: 'menu' | 'color-palette' | 'text-styling' | 'website-layout') => void) => {
     if (itemId === 'color-palette') {
       setCurrentPage('color-palette');
     } else if (itemId === 'text-styling') {
       setCurrentPage('text-styling');
+    } else if (itemId === 'website-layout') {
+      setCurrentPage('website-layout');
     } else {
       console.log(`Navigate to ${itemId} submenu`);
       // TODO: Implement other submenus
@@ -124,7 +127,7 @@ export const GlobalStylingSidebar: React.FC<GlobalStylingSidebarProps> = ({
   onClose
 }) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const [currentPage, setCurrentPage] = useState<'menu' | 'color-palette' | 'text-styling'>('menu');
+  const [currentPage, setCurrentPage] = useState<'menu' | 'color-palette' | 'text-styling' | 'website-layout'>('menu');
 
   // Handle escape key
   useEffect(() => {
@@ -182,6 +185,8 @@ export const GlobalStylingSidebar: React.FC<GlobalStylingSidebarProps> = ({
             <ColorPalettePage onBack={() => setCurrentPage('menu')} />
           ) : currentPage === 'text-styling' ? (
             <TextStylingPage onBack={() => setCurrentPage('menu')} />
+          ) : currentPage === 'website-layout' ? (
+            <WebsiteLayoutPage onBack={() => setCurrentPage('menu')} />
           ) : null}
         </div>
       </div>
