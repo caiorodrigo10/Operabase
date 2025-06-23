@@ -563,13 +563,13 @@ router.put('/appointments',
   requireWritePermission,
   async (req: ApiKeyRequest, res: Response) => {
     try {
-      const appointmentId = parseInt(req.query.id as string);
+      const appointmentId = parseInt(req.query.appointment_id as string);
       
       if (!appointmentId || isNaN(appointmentId)) {
         return res.status(400).json({
           success: false,
           data: null,
-          error: 'Valid appointment ID is required as query parameter (?id=123)',
+          error: 'Valid appointment ID is required as query parameter (?appointment_id=123)',
           appointment_id: null,
           conflicts: null,
           next_available_slots: null

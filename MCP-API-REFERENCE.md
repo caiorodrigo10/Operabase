@@ -543,7 +543,7 @@ curl -X POST "https://your-domain.replit.app/api/mcp/appointments/create" \
 
 ### Atualizar status de uma consulta:
 ```bash
-curl -X PUT "https://your-domain.replit.app/api/mcp/appointments?id=12" \
+curl -X PUT "https://your-domain.replit.app/api/mcp/appointments?appointment_id=12" \
   -H "Authorization: Bearer tk_clinic_1_45ce00c0e7236e4d25e86936822c432c" \
   -H "Content-Type: application/json" \
   -d '{
