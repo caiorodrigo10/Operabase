@@ -8,6 +8,10 @@ interface Message {
   timestamp: string;
 }
 
+interface AICodeChatProps {
+  onMinimizedChange?: (isMinimized: boolean) => void;
+}
+
 const mockMessages: Message[] = [
   {
     id: '1',
@@ -41,7 +45,7 @@ const mockMessages: Message[] = [
   }
 ];
 
-export const AICodeChat: React.FC = () => {
+export const AICodeChat: React.FC<AICodeChatProps> = ({ onMinimizedChange }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [inputValue, setInputValue] = useState('');
@@ -93,9 +97,19 @@ export const AICodeChat: React.FC = () => {
     }
   };
 
+  const handleMinimize = () => {
+    setIsMinimized(true);
+    onMinimizedChange?.(true);
+  };
+
+  const handleMaximize = () => {
+    setIsMinimized(false);
+    onMinimizedChange?.(false);
+  };
+
   if (isMinimized) {
     return (
-      <div className="ai-chat-minimized" onClick={() => setIsMinimized(false)}>
+      <div className="ai-chat-minimized" onClick={handleMaximize}>
         <ChevronRight className="w-5 h-5 text-gray-400" />
       </div>
     );
@@ -108,7 +122,7 @@ export const AICodeChat: React.FC = () => {
         <h3 className="ai-chat-title">AI Code Assistant</h3>
         <button 
           className="ai-chat-minimize-btn"
-          onClick={() => setIsMinimized(true)}
+          onClick={handleMinimize}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>

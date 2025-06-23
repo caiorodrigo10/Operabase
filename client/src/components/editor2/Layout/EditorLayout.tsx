@@ -67,11 +67,13 @@ const ToolsSidebar: React.FC = () => {
 };
 
 export const EditorLayout: React.FC = () => {
+  const [isChatMinimized, setIsChatMinimized] = React.useState(false);
+
   return (
-    <div className="editor2-layout">
+    <div className={`editor2-layout ${isChatMinimized ? 'chat-minimized' : ''}`}>
       {/* Left Area - AI Code Chat */}
       <div className="editor2-left-area">
-        <AICodeChat />
+        <AICodeChat onMinimizedChange={setIsChatMinimized} />
       </div>
       
       {/* Center Area - Canvas */}

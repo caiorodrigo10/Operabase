@@ -15,6 +15,15 @@
   grid-template-areas: "left center";
   height: 100vh;
   gap: 0;
+  transition: grid-template-columns 0.3s ease;
+}
+
+/* When chat is minimized, change grid layout */
+.editor2-layout.chat-minimized {
+  grid-template-columns: 40px 1fr;
+}
+.editor2-layout.chat-minimized {
+  grid-template-columns: 40px 1fr;
 }
 
 /* Left Area - AI Chat */
