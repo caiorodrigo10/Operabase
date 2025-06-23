@@ -127,26 +127,66 @@ VideoComponent.craft = {
 const EditorControls = () => {
   const { query, actions } = useEditor();
   
+  // Auto-load saved state when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const savedState = localStorage.getItem('craft_editor_state');
+      if (savedState) {
+        console.log('🔄 Auto-carregando estado salvo...');
+        actions.deserialize(savedState);
+        console.log('✅ Estado auto-carregado com sucesso');
+      }
+    }, 1000); // Wait 1 second for editor to be ready
+    
+    return () => clearTimeout(timer);
+  }, [actions]);
+  
   const handleSave = () => {
     const json = query.serialize();
     localStorage.setItem('craft_editor_state', json);
-    console.log('💾 Estado salvo no localStorage');
+    console.log('💾 Estado salvo no localStorage:', json.substring(0, 100) + '...');
+    
+    // Show visual feedback
+    const button = document.querySelector('[data-save-button]') as HTMLElement;
+    if (button) {
+      const originalText = button.textContent;
+      button.textContent = 'Salvo!';
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 1500);
+    }
   };
   
-  const handleReload = () => {
-    console.log('🔄 Recarregando página...');
+  const handleLoad = () => {
+    const savedState = localStorage.getItem('craft_editor_state');
+    if (savedState) {
+      console.log('📂 Carregando estado do localStorage...');
+      actions.deserialize(savedState);
+      console.log('✅ Estado carregado com sucesso');
+    } else {
+      console.log('❌ Nenhum estado salvo encontrado');
+    }
+  };
+  
+  const handleClear = () => {
+    localStorage.removeItem('craft_editor_state');
+    console.log('🗑️ Estado salvo removido');
     window.location.reload();
   };
   
   return (
     <div className="flex items-center space-x-3">
-      <Button variant="outline" size="sm" onClick={handleSave}>
+      <Button variant="outline" size="sm" onClick={handleSave} data-save-button>
         <Save className="w-4 h-4 mr-2" />
         Salvar Estado
       </Button>
-      <Button variant="outline" size="sm" onClick={handleReload}>
+      <Button variant="outline" size="sm" onClick={handleLoad}>
         <RefreshCw className="w-4 h-4 mr-2" />
-        Recarregar
+        Carregar Estado
+      </Button>
+      <Button variant="outline" size="sm" onClick={handleClear}>
+        <RefreshCw className="w-4 h-4 mr-2" />
+        Limpar & Resetar
       </Button>
     </div>
   );
@@ -154,16 +194,6 @@ const EditorControls = () => {
 
 export default function FunilEditorLanding() {
   console.log('🔧 Abrindo editor Landing Page completo');
-  const [savedJson, setSavedJson] = useState<string | null>(null);
-  
-  // Carregar estado salvo na inicialização
-  useEffect(() => {
-    const savedState = localStorage.getItem('craft_editor_state');
-    if (savedState) {
-      console.log('📂 Carregando estado salvo do localStorage');
-      setSavedJson(savedState);
-    }
-  }, []);
 
   // Force hide Gleap widget on this page
   useEffect(() => {
@@ -211,7 +241,7 @@ export default function FunilEditorLanding() {
         </div>
         
         <div className="text-sm text-gray-500">
-          {savedJson ? 'Estado carregado do localStorage' : 'Estado padrão'} - CODE AI Ready
+          Save/Load System Ready - CODE AI Ready
         </div>
       </div>
 
@@ -236,7 +266,7 @@ export default function FunilEditorLanding() {
           </div>
           
           <Viewport>
-            <Frame data={savedJson || undefined}>
+            <Frame>
               <Element
                 canvas
                 is={Container}
@@ -312,7 +342,7 @@ export default function FunilEditorLanding() {
                   <CraftButton
                     text="Get Started"
                     background={{ r: 59, g: 130, b: 246, a: 1 }}
-                    color={{ r: '255', g: '255', b: '255', a: '1' }}
+                    color={{ r: 255, g: 255, b: 255, a: 1 }}
                   />
                 </Element>
 
