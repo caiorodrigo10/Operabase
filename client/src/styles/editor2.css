@@ -15,7 +15,7 @@
   grid-template-areas: 
     "header header header"
     "left toolbar center";
-  grid-template-rows: 56px 1fr;
+  grid-template-rows: 34px 1fr;
   height: 100vh;
   gap: 0;
   transition: grid-template-columns 0.3s ease;
@@ -644,10 +644,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 34px;
   background-color: #2d2d2d;
   color: #ffffff;
-  padding: 0 16px;
+  padding: 0 12px;
   border-bottom: 1px solid #404040;
   position: relative;
 }
@@ -675,7 +675,7 @@
   border: none;
   color: #a0a0a0;
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   border-radius: 4px;
   transition: all 0.2s ease;
   display: flex;
@@ -706,7 +706,7 @@
   border: none;
   color: #a0a0a0;
   cursor: pointer;
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-radius: 4px;
   transition: all 0.2s ease;
   display: flex;
@@ -727,10 +727,10 @@
 .step-navigation {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  padding: 6px 12px;
+  border-radius: 4px;
+  padding: 4px 8px;
 }
 
 .step-arrow {
@@ -752,7 +752,7 @@
 }
 
 .step-text {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #ffffff;
   white-space: nowrap;
