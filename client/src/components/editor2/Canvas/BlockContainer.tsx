@@ -12,7 +12,8 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
     hoveredElement,
     selectElement,
     setHoveredElement,
-    addColumn
+    addColumn,
+    setColumnCount
   } = useEditor2Store();
   
   const [showColumnOptions, setShowColumnOptions] = useState(false);
@@ -52,12 +53,7 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
   };
 
   const handleColumnOptionClick = (targetColumns: number) => {
-    if (targetColumns > block.columns.length) {
-      // Add columns to reach target
-      for (let i = block.columns.length; i < targetColumns; i++) {
-        addColumn(block.id);
-      }
-    }
+    setColumnCount(block.id, targetColumns);
     setShowColumnOptions(false);
   };
 

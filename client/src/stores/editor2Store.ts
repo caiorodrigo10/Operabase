@@ -52,6 +52,7 @@ interface EditorState {
   initializeDefaultPage: () => void;
   addBlock: (afterBlockId?: string) => void;
   addColumn: (blockId: string) => void;
+  setColumnCount: (blockId: string, targetCount: number) => void;
   selectElement: (type: 'block' | 'column' | 'widget' | null, id: string | null) => void;
   deselectAll: () => void;
   setHoveredElement: (type: 'block' | 'column' | 'widget' | null, id: string | null) => void;
@@ -247,6 +248,62 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
   
   stopResize: () => {
     set({ isResizing: false, resizingColumnId: null });
+  },
+  
+  setColumnCount: (blockId: string, targetCount: number) => {
+    const state = get();
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        const currentCount = block.columns.length;
+        
+        if (targetCount === currentCount) {
+          return block; // No change needed
+        }
+        
+        let updatedColumns = [...block.columns];
+        
+        if (targetCount > currentCount) {
+          // Add columns
+          for (let i = currentCount; i < targetCount; i++) {
+            const newColumn: Column = {
+              id: `column-${nanoid()}`,
+              type: 'column',
+              width: 50,
+              widgets: [],
+              minHeight: '200px',
+            };
+            updatedColumns.push(newColumn);
+          }
+        } else {
+          // Remove columns from the end
+          updatedColumns = updatedColumns.slice(0, targetCount);
+        }
+        
+        // Redistribute width evenly among all columns
+        if (updatedColumns.length > 0) {
+          const newWidth = Math.floor(100 / updatedColumns.length);
+          const remainder = 100 - (newWidth * updatedColumns.length);
+          
+          updatedColumns = updatedColumns.map((col, index) => ({
+            ...col,
+            width: index === 0 ? newWidth + remainder : newWidth,
+          }));
+        }
+        
+        return {
+          ...block,
+          columns: updatedColumns,
+        };
+      }
+      return block;
+    });
+    
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+      },
+    });
   },
   
   removeColumn: (blockId: string, columnId: string) => {
