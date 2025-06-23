@@ -13,6 +13,7 @@ import {
   type UpdateAppointmentDto
 } from './appointments.types';
 import type { IStorage } from '../../storage';
+import { createClient } from '@supabase/supabase-js';
 
 export class AppointmentsController {
   private service: AppointmentsService;
@@ -120,6 +121,9 @@ export class AppointmentsController {
       };
       
       const appointment = await this.service.createAppointment(createData);
+
+      // Create action notification for the conversation
+      await this.createAppointmentActionNotification(appointment);
 
       res.status(201).json(appointment);
     } catch (error: any) {
@@ -295,6 +299,85 @@ export class AppointmentsController {
     } catch (error: any) {
       console.error('Error fetching paginated appointments:', error);
       res.status(500).json({ error: error.message || 'Failed to fetch appointments' });
+    }
+  }
+
+  private async createAppointmentActionNotification(appointment: any) {
+    try {
+      const supabase = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      // Find conversation for this contact
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('contact_id', appointment.contact_id)
+        .eq('clinic_id', appointment.clinic_id)
+        .single();
+
+      if (convError || !conversation) {
+        console.log('⚠️ No conversation found for contact:', appointment.contact_id);
+        return;
+      }
+
+      // Get contact and user names for description
+      const { data: contact } = await supabase
+        .from('contacts')
+        .select('name')
+        .eq('id', appointment.contact_id)
+        .single();
+
+      const { data: user } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', appointment.user_id)
+        .single();
+
+      const formatDate = (date: string) => {
+        return new Date(date).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit'
+        });
+      };
+
+      const formatTime = (date: string) => {
+        return new Date(date).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      };
+
+      // Create action notification
+      const actionData = {
+        clinic_id: appointment.clinic_id,
+        conversation_id: conversation.id,
+        action_type: 'appointment_created',
+        title: 'Consulta agendada',
+        description: `Consulta agendada para ${formatDate(appointment.scheduled_date)} às ${formatTime(appointment.scheduled_date)} com ${user?.name || 'Dr. Caio Rodrigo'}`,
+        metadata: {
+          appointment_id: appointment.id,
+          doctor_name: user?.name || 'Dr. Caio Rodrigo',
+          date: formatDate(appointment.scheduled_date),
+          time: formatTime(appointment.scheduled_date),
+          specialty: appointment.specialty || 'Consulta'
+        },
+        related_entity_type: 'appointment',
+        related_entity_id: appointment.id
+      };
+
+      const { error: insertError } = await supabase
+        .from('conversation_actions')
+        .insert(actionData);
+
+      if (insertError) {
+        console.error('❌ Error creating action notification:', insertError);
+      } else {
+        console.log('✅ Action notification created for appointment:', appointment.id);
+      }
+    } catch (error) {
+      console.error('❌ Error in createAppointmentActionNotification:', error);
     }
   }
 }

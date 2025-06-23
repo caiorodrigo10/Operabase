@@ -2,6 +2,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PatientInfo } from "@/types/conversations";
 import { Phone, Mail, Calendar } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 
 interface PatientInfoPanelProps {
   patientInfo?: PatientInfo;
@@ -84,13 +86,7 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
         <h4 className="text-sm font-medium text-gray-700 mb-3">
           Consultas Recentes
         </h4>
-        <div className="space-y-1">
-          {patientInfo.recent_appointments.slice(0, 3).map((appointment, index) => (
-            <div key={index} className="text-sm text-gray-600 leading-relaxed">
-              {appointment.date} - {appointment.specialty}
-            </div>
-          ))}
-        </div>
+        <RecentAppointmentsList contactId={patientInfo.id} />
       </div>
 
       {/* Botão Ver Histórico Completo */}
