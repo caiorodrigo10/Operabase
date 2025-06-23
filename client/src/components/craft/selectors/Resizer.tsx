@@ -126,23 +126,24 @@ export const Resizer = ({ propKey, children, ...props }: any) => {
   });
 
   const updateInternalDimensionsInPx = useCallback(() => {
+    if (!nodeDimensions.current) return;
+    
     const { width: nodeWidth, height: nodeHeight } = nodeDimensions.current;
 
-    const width = percentToPx(
-      nodeWidth,
-      resizable.current &&
-        getElementDimensions(resizable.current.resizable.parentElement).width
-    );
-    const height = percentToPx(
-      nodeHeight,
-      resizable.current &&
-        getElementDimensions(resizable.current.resizable.parentElement).height
-    );
+    try {
+      const parentElement = resizable.current?.resizable?.parentElement;
+      const parentDimensions = parentElement ? getElementDimensions(parentElement) : { width: 0, height: 0 };
+      
+      const width = percentToPx(nodeWidth, parentDimensions.width);
+      const height = percentToPx(nodeHeight, parentDimensions.height);
 
-    setInternalDimensions({
-      width,
-      height,
-    });
+      setInternalDimensions({
+        width,
+        height,
+      });
+    } catch (error) {
+      console.warn('Error updating internal dimensions:', error);
+    }
   }, []);
 
   const updateInternalDimensionsWithOriginal = useCallback(() => {
@@ -153,9 +154,9 @@ export const Resizer = ({ propKey, children, ...props }: any) => {
     });
   }, []);
 
-  const getUpdatedDimensions = (width, height) => {
-    const dom = resizable.current.resizable;
-    if (!dom) return;
+  const getUpdatedDimensions = (width: any, height: any) => {
+    const dom = resizable.current?.resizable;
+    if (!dom || !editingDimensions.current) return { width: 0, height: 0 };
 
     const currentWidth = parseInt(editingDimensions.current.width),
       currentHeight = parseInt(editingDimensions.current.height);
@@ -211,43 +212,57 @@ export const Resizer = ({ propKey, children, ...props }: any) => {
         updateInternalDimensionsInPx();
         e.preventDefault();
         e.stopPropagation();
-        const dom = resizable.current.resizable;
-        if (!dom) return;
-        editingDimensions.current = {
-          width: dom.getBoundingClientRect().width,
-          height: dom.getBoundingClientRect().height,
-        };
-        isResizing.current = true;
+        const dom = resizable.current?.resizable;
+        if (!dom || !dom.getBoundingClientRect) return;
+        
+        try {
+          const rect = dom.getBoundingClientRect();
+          editingDimensions.current = {
+            width: rect.width,
+            height: rect.height,
+          };
+          isResizing.current = true;
+        } catch (error) {
+          console.warn('Error getting element dimensions during resize start:', error);
+          return;
+        }
       }}
       onResize={(_, __, ___, d) => {
-        const dom = resizable.current.resizable;
-        let { width, height }: any = getUpdatedDimensions(d.width, d.height);
-        if (isPercentage(nodeWidth))
-          width =
-            pxToPercent(width, getElementDimensions(dom.parentElement).width) +
-            '%';
-        else width = `${width}px`;
+        const dom = resizable.current?.resizable;
+        if (!dom) return;
+        
+        try {
+          let { width, height }: any = getUpdatedDimensions(d.width, d.height);
+          
+          if (isPercentage(nodeWidth) && dom.parentElement) {
+            const parentDimensions = getElementDimensions(dom.parentElement);
+            width = pxToPercent(width, parentDimensions.width) + '%';
+          } else {
+            width = `${width}px`;
+          }
 
-        if (isPercentage(nodeHeight))
-          height =
-            pxToPercent(
-              height,
-              getElementDimensions(dom.parentElement).height
-            ) + '%';
-        else height = `${height}px`;
+          if (isPercentage(nodeHeight) && dom.parentElement) {
+            const parentDimensions = getElementDimensions(dom.parentElement);
+            height = pxToPercent(height, parentDimensions.height) + '%';
+          } else {
+            height = `${height}px`;
+          }
 
-        if (isPercentage(width) && dom.parentElement.style.width === 'auto') {
-          width = editingDimensions.current.width + d.width + 'px';
+          if (isPercentage(width) && dom.parentElement && dom.parentElement.style.width === 'auto') {
+            width = editingDimensions.current.width + d.width + 'px';
+          }
+
+          if (isPercentage(height) && dom.parentElement && dom.parentElement.style.height === 'auto') {
+            height = editingDimensions.current.height + d.height + 'px';
+          }
+
+          setProp((prop: any) => {
+            prop[propKey.width] = width;
+            prop[propKey.height] = height;
+          }, 500);
+        } catch (error) {
+          console.warn('Error during resize:', error);
         }
-
-        if (isPercentage(height) && dom.parentElement.style.height === 'auto') {
-          height = editingDimensions.current.height + d.height + 'px';
-        }
-
-        setProp((prop: any) => {
-          prop[propKey.width] = width;
-          prop[propKey.height] = height;
-        }, 500);
       }}
       onResizeStop={() => {
         isResizing.current = false;

@@ -34,10 +34,19 @@ export const isPercentage = (value: string): boolean => {
   return value.includes('%');
 };
 
-export const getElementDimensions = (element: HTMLElement): { width: number; height: number } => {
-  const rect = element.getBoundingClientRect();
-  return {
-    width: rect.width,
-    height: rect.height
-  };
+export const getElementDimensions = (element: HTMLElement | null): { width: number; height: number } => {
+  if (!element || !element.getBoundingClientRect) {
+    return { width: 0, height: 0 };
+  }
+  
+  try {
+    const rect = element.getBoundingClientRect();
+    return {
+      width: rect.width || 0,
+      height: rect.height || 0
+    };
+  } catch (error) {
+    console.warn('Error getting element dimensions:', error);
+    return { width: 0, height: 0 };
+  }
 };
