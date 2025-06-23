@@ -8,11 +8,14 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Main Layout - 3 Column Grid */
+/* Main Layout - 3 Column Grid with Header */
 .editor2-layout {
   display: grid;
   grid-template-columns: 300px 70px 1fr;
-  grid-template-areas: "left toolbar center";
+  grid-template-areas: 
+    "header header header"
+    "left toolbar center";
+  grid-template-rows: 56px 1fr;
   height: 100vh;
   gap: 0;
   transition: grid-template-columns 0.3s ease;
@@ -21,6 +24,16 @@
 /* When chat is minimized, change grid layout */
 .editor2-layout.chat-minimized {
   grid-template-columns: 40px 70px 1fr;
+  grid-template-areas: 
+    "header header header"
+    "left toolbar center";
+}
+
+/* Header Area */
+.editor2-header-area {
+  grid-area: header;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #404040;
 }
 
 /* Left Area - AI Chat */
@@ -615,6 +628,168 @@
   .widgets-grid {
     gap: 10px;
     padding: 16px;
+  }
+}
+
+/* Editor Header Styles */
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  background-color: #2d2d2d;
+  color: #ffffff;
+  padding: 0 16px;
+  border-bottom: 1px solid #404040;
+  position: relative;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.header-button {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-button:hover {
+  background-color: #404040;
+  color: #ffffff;
+}
+
+.back-button {
+  margin-right: 8px;
+}
+
+.device-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background-color: #3a3a3a;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.device-button {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.device-button:hover {
+  color: #ffffff;
+  background-color: #4a4a4a;
+}
+
+.device-button.active {
+  background-color: #ffffff;
+  color: #2d2d2d;
+}
+
+.step-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+.step-arrow {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-arrow:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.step-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.settings-button {
+  margin-left: 8px;
+}
+
+/* Responsive design for header */
+@media (max-width: 768px) {
+  .editor-header {
+    padding: 0 12px;
+  }
+  
+  .header-left {
+    gap: 12px;
+  }
+  
+  .step-text {
+    font-size: 13px;
+  }
+  
+  .device-button {
+    padding: 5px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .editor-header {
+    padding: 0 8px;
+  }
+  
+  .header-left {
+    gap: 8px;
+  }
+  
+  .step-navigation {
+    padding: 4px 8px;
+    gap: 8px;
+  }
+  
+  .step-text {
+    font-size: 12px;
   }
 }
 

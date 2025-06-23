@@ -2,6 +2,7 @@ import React from 'react';
 import { CanvasProps } from '../../../types/editor2';
 import { AICodeChat } from '../Chat/AICodeChat';
 import { VerticalToolbar } from '../Toolbar/VerticalToolbar';
+import { EditorHeader } from '../Header/EditorHeader';
 
 const CanvasArea: React.FC<CanvasProps> = ({ content }) => {
   return (
@@ -72,6 +73,11 @@ export const EditorLayout: React.FC = () => {
 
   return (
     <div className={`editor2-layout ${isChatMinimized ? 'chat-minimized' : ''}`}>
+      {/* Header Area */}
+      <div className="editor2-header-area">
+        <EditorHeader />
+      </div>
+      
       {/* Left Area - AI Code Chat */}
       <div className="editor2-left-area">
         <AICodeChat onMinimizedChange={setIsChatMinimized} />
