@@ -29,16 +29,9 @@ export interface Message {
 export interface SystemEvent {
   id: number;
   conversation_id: number;
-  type: 'availability_check' | 'appointment_created' | 'webhook_executed' | 'medical_guidance' | 'exam_analysis' | 'priority_alert' | 'medical_triage' | 'treatment_progress' | 'appointment_reminder' | 'other';
+  type: 'availability_check' | 'appointment_created' | 'appointment_status_changed' | 'contact_created';
   content: string;
   timestamp: string;
-  metadata?: {
-    appointment_date?: string;
-    appointment_time?: string;
-    doctor_name?: string;
-    webhook_name?: string;
-    status?: 'success' | 'error';
-  };
 }
 
 export interface TimelineItem {

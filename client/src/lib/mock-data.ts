@@ -206,24 +206,22 @@ export const mockMessages: Message[] = [
 
 export const mockSystemEvents: SystemEvent[] = [
   // Conversation 1 - Maria Silva
-  { id: 1, conversation_id: 1, type: 'availability_check', content: "🔍 IA consultou horários disponíveis", timestamp: "09:19" },
-  { id: 2, conversation_id: 1, type: 'appointment_created', content: "📅 Consulta agendada: 28/06 às 14:00 - Dra. Paula", timestamp: "09:23", metadata: { appointment_date: "28/06/2025", appointment_time: "14:00", doctor_name: "Dra. Paula" } },
-  { id: 3, conversation_id: 1, type: 'webhook_executed', content: "✅ Confirmação de Agendamento enviada por SMS", timestamp: "09:26", metadata: { webhook_name: "Confirmação de Agendamento", status: "success" } },
+  { id: 1, conversation_id: 1, type: 'availability_check', content: "Consulta de disponibilidade pela IA", timestamp: "09:19" },
+  { id: 2, conversation_id: 1, type: 'appointment_created', content: "Consulta agendada", timestamp: "09:23" },
 
   // Conversation 2 - João Santos
-  { id: 4, conversation_id: 2, type: 'medical_guidance', content: "📝 Orientação médica registrada no prontuário", timestamp: "14:45" },
+  { id: 3, conversation_id: 2, type: 'contact_created', content: "Contato criado", timestamp: "14:30" },
 
   // Conversation 3 - Ana Costa
-  { id: 5, conversation_id: 3, type: 'availability_check', content: "🔍 IA consultou agenda médica", timestamp: "08:49" },
-  { id: 6, conversation_id: 3, type: 'exam_analysis', content: "🔬 IA analisou resultados dos exames", timestamp: "09:01" },
+  { id: 4, conversation_id: 3, type: 'availability_check', content: "Consulta de disponibilidade pela IA", timestamp: "08:49" },
+  { id: 5, conversation_id: 3, type: 'appointment_status_changed', content: "Consulta mudou de status: de agendada para confirmada", timestamp: "09:01" },
 
   // Conversation 4 - Carlos Oliveira
-  { id: 7, conversation_id: 4, type: 'priority_alert', content: "🚨 Alerta: Paciente relatou desconforto no peito", timestamp: "16:22" },
-  { id: 8, conversation_id: 4, type: 'medical_triage', content: "⚕️ Triagem médica iniciada - Prioridade: Moderada", timestamp: "16:23" },
+  { id: 6, conversation_id: 4, type: 'contact_created', content: "Contato criado", timestamp: "16:20" },
+  { id: 7, conversation_id: 4, type: 'appointment_created', content: "Consulta agendada", timestamp: "16:25" },
 
   // Conversation 5 - Patricia Lima
-  { id: 9, conversation_id: 5, type: 'treatment_progress', content: "📈 Progresso do tratamento registrado", timestamp: "10:37" },
-  { id: 10, conversation_id: 5, type: 'appointment_reminder', content: "📅 Lembrete agendado: Consulta sexta às 11h", timestamp: "10:41" }
+  { id: 8, conversation_id: 5, type: 'appointment_status_changed', content: "Consulta mudou de status: de pendente para confirmada", timestamp: "10:41" }
 ];
 
 export const mockPatientInfo: PatientInfo = {
