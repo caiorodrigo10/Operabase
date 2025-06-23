@@ -406,6 +406,7 @@ body.drag-active * {
   background: white;
   margin: 0;
   width: 100%;
+  box-shadow: none;
   transition: all 0.2s ease;
 }
 
