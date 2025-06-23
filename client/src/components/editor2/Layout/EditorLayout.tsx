@@ -1,5 +1,6 @@
 import React from 'react';
 import { CanvasProps } from '../../../types/editor2';
+import { AICodeChat } from '../Chat/AICodeChat';
 
 const CanvasArea: React.FC<CanvasProps> = ({ content }) => {
   return (
@@ -68,14 +69,9 @@ const ToolsSidebar: React.FC = () => {
 export const EditorLayout: React.FC = () => {
   return (
     <div className="editor2-layout">
-      {/* Left Area - Reserved for AI Chat (future implementation) */}
+      {/* Left Area - AI Code Chat */}
       <div className="editor2-left-area">
-        <div className="p-6 h-full flex items-center justify-center text-gray-500">
-          <div className="text-center">
-            <h3 className="font-medium mb-2">AI Assistant</h3>
-            <p className="text-sm">Coming soon</p>
-          </div>
-        </div>
+        <AICodeChat />
       </div>
       
       {/* Center Area - Canvas */}
