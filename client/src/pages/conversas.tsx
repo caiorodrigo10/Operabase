@@ -74,11 +74,12 @@ export default function ConversasPage() {
         data: {
           id: msg.id,
           conversation_id: msg.conversation_id,
-          type: msg.direction === 'outbound' ? 'sent_user' : 'received',
+          type: msg.sender_type === 'ai' ? 'sent_ai' : 
+                msg.sender_type === 'professional' ? 'sent_user' : 'received',
           content: msg.content || '',
           timestamp: msg.created_at,
           created_at: msg.created_at,
-          sender_name: msg.sender_name,
+          sender_name: msg.sender_type === 'ai' ? 'Mara AI' : msg.sender_name,
           sender_avatar: undefined,
           media_type: msg.message_type !== 'text' ? msg.message_type as any : undefined,
           media_url: undefined,
