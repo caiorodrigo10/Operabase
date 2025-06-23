@@ -22,9 +22,6 @@
 .editor2-layout.chat-minimized {
   grid-template-columns: 40px 1fr;
 }
-.editor2-layout.chat-minimized {
-  grid-template-columns: 40px 1fr;
-}
 
 /* Left Area - AI Chat */
 .editor2-left-area {
