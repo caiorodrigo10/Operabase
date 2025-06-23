@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Editor, Frame, Element, useEditor } from '@craftjs/core';
-import { Link } from 'wouter';
-import { ArrowLeft, Eye, Save, RefreshCw } from 'lucide-react';
+import { Viewport } from '@/components/craft/editor/Viewport';
+import { RenderNode } from '@/components/craft/editor/RenderNode';
+import { Container } from '@/components/craft/user/Container';
+import { Text } from '@/components/craft/user/Text';
+import { Button as CraftButton } from '@/components/craft/user/Button';
+import { Video } from '@/components/craft/selectors/Video';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'wouter';
 
-// Import the existing craft components that work
-import { Container, Text } from '../components/craft/selectors';
-import { Button as CraftButton } from '../components/craft/selectors/Button';
-import { Video } from '../components/craft/selectors/Video';
-import { Viewport } from '../components/craft/editor/Viewport';
-import { RenderNode } from '../components/craft/editor/RenderNode';
-
-// Custom Landing Components with proper types
+// Landing Card Component
 interface CardProps {
   background?: { r: number; g: number; b: number; a: number };
   padding?: number;
@@ -20,17 +19,21 @@ interface CardProps {
 
 const LandingCard = ({ 
   background = { r: 255, g: 255, b: 255, a: 1 }, 
-  padding = 20, 
+  padding = 20,
   children 
 }: CardProps) => {
   return (
-    <div
+    <div 
       style={{
-        background: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
+        margin: '5px 0',
         padding: `${padding}px`,
+        backgroundColor: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
         borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        margin: '10px 0',
+        minHeight: '100px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}
     >
       {children}
@@ -59,16 +62,18 @@ const HeroSection = ({
   children 
 }: HeroProps) => {
   return (
-    <div
+    <div 
       style={{
-        background: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
-        padding: '60px 40px',
-        minHeight: '300px',
+        margin: '20px 0',
+        padding: '60px 20px',
+        backgroundColor: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
+        borderRadius: '8px',
+        minHeight: '200px',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
         alignItems: 'center',
-        color: 'white',
+        justifyContent: 'center',
+        textAlign: 'center'
       }}
     >
       {children}
@@ -263,30 +268,32 @@ const EditorControls = () => {
       alert('Erro: JSON inválido. Verifique a sintaxe.');
     }
   };
-
+  
   const handleClear = () => {
     localStorage.removeItem('craft_editor_state');
-    console.log('🗑️ Estado salvo removido');
-    window.location.reload();
+    actions.clearEvents();
+    location.reload();
   };
-  
+
   return (
     <>
-      <div className="flex items-center space-x-3">
-        <Button variant="outline" size="sm" onClick={handleSave} data-save-button>
-          <Save className="w-4 h-4 mr-2" />
+      <div className="flex items-center space-x-2">
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={handleSave}
+          data-save-button
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
           Salvar Estado
         </Button>
         <Button variant="outline" size="sm" onClick={handleLoad}>
-          <RefreshCw className="w-4 h-4 mr-2" />
           Carregar Estado
         </Button>
         <Button variant="outline" size="sm" onClick={handleViewJson}>
-          <Eye className="w-4 h-4 mr-2" />
           Ver JSON
         </Button>
-        <Button variant="outline" size="sm" onClick={handleClear}>
-          <RefreshCw className="w-4 h-4 mr-2" />
+        <Button variant="outline" size="sm" onClick={handleClear} className="text-red-600 hover:text-red-700">
           Limpar & Resetar
         </Button>
       </div>
@@ -294,7 +301,7 @@ const EditorControls = () => {
       {/* JSON Modal */}
       {showJsonModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-lg p-6 w-4/5 h-4/5 flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">JSON da Página</h3>
               <Button variant="ghost" size="sm" onClick={() => setShowJsonModal(false)}>
