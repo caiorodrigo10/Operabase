@@ -3,10 +3,58 @@ import { Button } from "@/components/ui/button";
 import { PatientInfo } from "@/types/conversations";
 import { Phone, Mail, Calendar } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
 
 interface PatientInfoPanelProps {
   patientInfo?: PatientInfo;
+}
+
+function RecentAppointmentsList({ contactId }: { contactId: number }) {
+  const { data: appointments, isLoading } = useQuery({
+    queryKey: ['/api/appointments', contactId],
+    queryFn: async () => {
+      const response = await fetch(`/api/appointments?clinic_id=1&contact_id=${contactId}`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar consultas');
+      }
+      return response.json();
+    },
+    staleTime: 30000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-1">
+        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+        <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+        <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+      </div>
+    );
+  }
+
+  if (!appointments || appointments.length === 0) {
+    return (
+      <div className="text-sm text-gray-500 italic">
+        Nenhuma consulta encontrada
+      </div>
+    );
+  }
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit'
+    });
+  };
+
+  return (
+    <div className="space-y-1">
+      {appointments.slice(0, 3).map((appointment: any) => (
+        <div key={appointment.id} className="text-sm text-gray-600 leading-relaxed">
+          {formatDate(appointment.scheduled_date)} - {appointment.specialty || 'Consulta'}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
@@ -56,30 +104,26 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
         </div>
       </div>
 
-      {/* Última Consulta */}
-      {patientInfo.last_appointment && (
-        <div className="mb-8">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">
-            Última Consulta
-          </h4>
-          <div className="space-y-1 text-sm text-gray-600">
-            <p>
-              {patientInfo.last_appointment.date} - {patientInfo.last_appointment.time}
-            </p>
-            <p>
-              {patientInfo.last_appointment.doctor} - {patientInfo.last_appointment.specialty}
-            </p>
+      {/* Dados Médicos */}
+      <div className="mb-8">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">
+          Informações Médicas
+        </h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Plano de Saúde:</span>
+            <span className="text-gray-900">{patientInfo.health_plan || 'Particular'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Tipo Sanguíneo:</span>
+            <span className="text-gray-900">{patientInfo.blood_type || 'Não informado'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Alergias:</span>
+            <span className="text-gray-900">{patientInfo.allergies || 'Não informado'}</span>
           </div>
         </div>
-      )}
-
-      {/* Botão Agendar Nova Consulta */}
-      <Button 
-        className="w-full mb-8 h-10 bg-blue-600 hover:bg-blue-700 text-white font-normal"
-      >
-        <Calendar className="w-4 h-4 mr-2" />
-        Agendar Nova Consulta
-      </Button>
+      </div>
 
       {/* Consultas Recentes */}
       <div className="mb-8">

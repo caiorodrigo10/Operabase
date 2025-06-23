@@ -367,14 +367,18 @@ export class AppointmentsController {
         related_entity_id: appointment.id
       };
 
-      const { error: insertError } = await supabase
+      console.log('📝 Creating action notification with data:', actionData);
+      
+      const { data: insertData, error: insertError } = await supabase
         .from('conversation_actions')
-        .insert(actionData);
+        .insert(actionData)
+        .select();
 
       if (insertError) {
         console.error('❌ Error creating action notification:', insertError);
+        console.error('❌ Failed data:', actionData);
       } else {
-        console.log('✅ Action notification created for appointment:', appointment.id);
+        console.log('✅ Action notification created:', insertData);
       }
     } catch (error) {
       console.error('❌ Error in createAppointmentActionNotification:', error);
