@@ -1,0 +1,328 @@
+import React, { useState } from 'react';
+import { ArrowLeft, Monitor, Smartphone } from 'lucide-react';
+
+interface TextStylingPageProps {
+  onBack: () => void;
+}
+
+interface TypographyStyle {
+  fontFamily: string;
+  fontSize: string;
+  fontWeight: string;
+  lineHeight: string;
+  letterSpacing: string;
+  color: string;
+}
+
+interface TypographyState {
+  paragraph: TypographyStyle;
+  headings: {
+    h1: TypographyStyle;
+    h2: TypographyStyle;
+    h3: TypographyStyle;
+    h4: TypographyStyle;
+    h5: TypographyStyle;
+    h6: TypographyStyle;
+  };
+  quote: TypographyStyle;
+}
+
+const defaultTypography: TypographyState = {
+  paragraph: {
+    fontFamily: 'Arial',
+    fontSize: '16px',
+    fontWeight: '400',
+    lineHeight: '1.5',
+    letterSpacing: '0px',
+    color: '#374151'
+  },
+  headings: {
+    h1: {
+      fontFamily: 'Arial',
+      fontSize: '48px',
+      fontWeight: '700',
+      lineHeight: '1.2',
+      letterSpacing: '0px',
+      color: '#111827'
+    },
+    h2: {
+      fontFamily: 'Arial',
+      fontSize: '36px',
+      fontWeight: '600',
+      lineHeight: '1.3',
+      letterSpacing: '0px',
+      color: '#111827'
+    },
+    h3: {
+      fontFamily: 'Arial',
+      fontSize: '28px',
+      fontWeight: '500',
+      lineHeight: '1.3',
+      letterSpacing: '0px',
+      color: '#111827'
+    },
+    h4: {
+      fontFamily: 'Arial',
+      fontSize: '24px',
+      fontWeight: '500',
+      lineHeight: '1.4',
+      letterSpacing: '0px',
+      color: '#111827'
+    },
+    h5: {
+      fontFamily: 'Arial',
+      fontSize: '20px',
+      fontWeight: '500',
+      lineHeight: '1.4',
+      letterSpacing: '0px',
+      color: '#111827'
+    },
+    h6: {
+      fontFamily: 'Arial',
+      fontSize: '18px',
+      fontWeight: '500',
+      lineHeight: '1.4',
+      letterSpacing: '0px',
+      color: '#111827'
+    }
+  },
+  quote: {
+    fontFamily: 'Arial',
+    fontSize: '18px',
+    fontWeight: '400',
+    lineHeight: '1.6',
+    letterSpacing: '0px',
+    color: '#6B7280'
+  }
+};
+
+export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
+  const [currentDevice, setCurrentDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [typography, setTypography] = useState<TypographyState>(defaultTypography);
+  const [originalTypography] = useState<TypographyState>(defaultTypography);
+
+  const getPreviewSizes = (device: 'desktop' | 'mobile') => {
+    if (device === 'mobile') {
+      return {
+        h1: 'text-4xl',
+        h2: 'text-3xl',
+        h3: 'text-2xl',
+        h4: 'text-xl',
+        h5: 'text-lg',
+        h6: 'text-base',
+        paragraph: 'text-sm',
+        quote: 'text-base'
+      };
+    }
+    return {
+      h1: 'text-5xl',
+      h2: 'text-4xl',
+      h3: 'text-3xl',
+      h4: 'text-2xl',
+      h5: 'text-xl',
+      h6: 'text-lg',
+      paragraph: 'text-base',
+      quote: 'text-lg'
+    };
+  };
+
+  const previewSizes = getPreviewSizes(currentDevice);
+
+  const handleCancel = () => {
+    setTypography(originalTypography);
+    onBack();
+  };
+
+  const handleConfirm = () => {
+    // TODO: Save typography settings to global state
+    console.log('Saving typography settings:', typography);
+    onBack();
+  };
+
+  const handleElementClick = (elementType: string) => {
+    console.log(`Opening font editor for: ${elementType}`);
+    // TODO: Open font editor modal
+  };
+
+  return (
+    <div className="bg-white h-full flex flex-col">
+      <div className="p-6 flex-1 overflow-y-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-blue-500 hover:text-blue-600 font-medium transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Global Styling
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-semibold text-gray-900">Text Styling</h1>
+            
+            {/* Device Toggle */}
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setCurrentDevice('desktop')}
+                className={`p-2 rounded transition-colors ${
+                  currentDevice === 'desktop'
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Monitor className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCurrentDevice('mobile')}
+                className={`p-2 rounded transition-colors ${
+                  currentDevice === 'mobile'
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Smartphone className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Typography Sections */}
+        <div className="space-y-8">
+          {/* Paragraph Section */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              PARAGRAPH
+            </h3>
+            <div className="flex items-center justify-between">
+              <div className="text-lg text-gray-900 mb-2">
+                {typography.paragraph.fontFamily}
+              </div>
+              <button
+                onClick={() => handleElementClick('paragraph')}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
+              >
+                CLICK TO EDIT
+              </button>
+            </div>
+          </div>
+
+          {/* Heading 1 */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              HEADING 1
+            </h3>
+            <div
+              className={`${previewSizes.h1} font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors`}
+              onClick={() => handleElementClick('h1')}
+              style={{ fontFamily: typography.headings.h1.fontFamily }}
+            >
+              Arial
+            </div>
+          </div>
+
+          {/* Heading 2 */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              HEADING 2
+            </h3>
+            <div
+              className={`${previewSizes.h2} font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors`}
+              onClick={() => handleElementClick('h2')}
+              style={{ fontFamily: typography.headings.h2.fontFamily }}
+            >
+              Arial
+            </div>
+          </div>
+
+          {/* Heading 3 */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              HEADING 3
+            </h3>
+            <div
+              className={`${previewSizes.h3} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors`}
+              onClick={() => handleElementClick('h3')}
+              style={{ fontFamily: typography.headings.h3.fontFamily }}
+            >
+              Arial
+            </div>
+          </div>
+
+          {/* Heading 4 */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              HEADING 4
+            </h3>
+            <div
+              className={`${previewSizes.h4} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors`}
+              onClick={() => handleElementClick('h4')}
+              style={{ fontFamily: typography.headings.h4.fontFamily }}
+            >
+              Arial
+            </div>
+          </div>
+
+          {/* Heading 5 */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              HEADING 5
+            </h3>
+            <div
+              className={`${previewSizes.h5} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors`}
+              onClick={() => handleElementClick('h5')}
+              style={{ fontFamily: typography.headings.h5.fontFamily }}
+            >
+              Arial
+            </div>
+          </div>
+
+          {/* Heading 6 */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              HEADING 6
+            </h3>
+            <div
+              className={`${previewSizes.h6} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors`}
+              onClick={() => handleElementClick('h6')}
+              style={{ fontFamily: typography.headings.h6.fontFamily }}
+            >
+              Arial
+            </div>
+          </div>
+
+          {/* Quote Section */}
+          <div className="mb-8">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              QUOTE
+            </h3>
+            <div
+              className={`${previewSizes.quote} italic text-gray-700 border-l-4 border-gray-300 pl-4 cursor-pointer hover:text-blue-600 hover:border-blue-300 transition-colors`}
+              onClick={() => handleElementClick('quote')}
+              style={{ fontFamily: typography.quote.fontFamily }}
+            >
+              Arial
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-4 p-6 border-t border-gray-200">
+        <button
+          onClick={handleCancel}
+          className="px-6 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleConfirm}
+          className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded font-medium transition-colors"
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  );
+};
