@@ -248,8 +248,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div 
-                className="text-lg text-gray-900"
-                style={{ fontFamily: typography.paragraph.fontFamily }}
+                className="text-gray-900"
+                style={{ 
+                  fontFamily: typography.paragraph.fontFamily,
+                  fontSize: typography.paragraph.fontSize,
+                  fontWeight: typography.paragraph.fontWeight,
+                  lineHeight: typography.paragraph.lineHeight,
+                  letterSpacing: typography.paragraph.letterSpacing,
+                  color: typography.paragraph.color
+                }}
               >
                 {typography.paragraph.fontFamily}
               </div>
@@ -266,8 +273,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
-                className={`${previewSizes.h1} font-bold text-gray-900`}
-                style={{ fontFamily: typography.headings.h1.fontFamily }}
+                className="text-gray-900"
+                style={{ 
+                  fontFamily: typography.headings.h1.fontFamily,
+                  fontSize: typography.headings.h1.fontSize,
+                  fontWeight: typography.headings.h1.fontWeight,
+                  lineHeight: typography.headings.h1.lineHeight,
+                  letterSpacing: typography.headings.h1.letterSpacing,
+                  color: typography.headings.h1.color
+                }}
               >
                 {typography.headings.h1.fontFamily}
               </div>
@@ -284,8 +298,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
-                className={`${previewSizes.h2} font-semibold text-gray-900`}
-                style={{ fontFamily: typography.headings.h2.fontFamily }}
+                className="text-gray-900"
+                style={{ 
+                  fontFamily: typography.headings.h2.fontFamily,
+                  fontSize: typography.headings.h2.fontSize,
+                  fontWeight: typography.headings.h2.fontWeight,
+                  lineHeight: typography.headings.h2.lineHeight,
+                  letterSpacing: typography.headings.h2.letterSpacing,
+                  color: typography.headings.h2.color
+                }}
               >
                 {typography.headings.h2.fontFamily}
               </div>
@@ -302,8 +323,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
-                className={`${previewSizes.h3} font-medium text-gray-900`}
-                style={{ fontFamily: typography.headings.h3.fontFamily }}
+                className="text-gray-900"
+                style={{ 
+                  fontFamily: typography.headings.h3.fontFamily,
+                  fontSize: typography.headings.h3.fontSize,
+                  fontWeight: typography.headings.h3.fontWeight,
+                  lineHeight: typography.headings.h3.lineHeight,
+                  letterSpacing: typography.headings.h3.letterSpacing,
+                  color: typography.headings.h3.color
+                }}
               >
                 {typography.headings.h3.fontFamily}
               </div>
@@ -320,8 +348,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
-                className={`${previewSizes.h4} font-medium text-gray-900`}
-                style={{ fontFamily: typography.headings.h4.fontFamily }}
+                className="text-gray-900"
+                style={{ 
+                  fontFamily: typography.headings.h4.fontFamily,
+                  fontSize: typography.headings.h4.fontSize,
+                  fontWeight: typography.headings.h4.fontWeight,
+                  lineHeight: typography.headings.h4.lineHeight,
+                  letterSpacing: typography.headings.h4.letterSpacing,
+                  color: typography.headings.h4.color
+                }}
               >
                 {typography.headings.h4.fontFamily}
               </div>
@@ -338,8 +373,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
-                className={`${previewSizes.h5} font-medium text-gray-900`}
-                style={{ fontFamily: typography.headings.h5.fontFamily }}
+                className="text-gray-900"
+                style={{ 
+                  fontFamily: typography.headings.h5.fontFamily,
+                  fontSize: typography.headings.h5.fontSize,
+                  fontWeight: typography.headings.h5.fontWeight,
+                  lineHeight: typography.headings.h5.lineHeight,
+                  letterSpacing: typography.headings.h5.letterSpacing,
+                  color: typography.headings.h5.color
+                }}
               >
                 {typography.headings.h5.fontFamily}
               </div>
@@ -356,8 +398,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
-                className={`${previewSizes.h6} font-medium text-gray-900`}
-                style={{ fontFamily: typography.headings.h6.fontFamily }}
+                className="text-gray-900"
+                style={{ 
+                  fontFamily: typography.headings.h6.fontFamily,
+                  fontSize: typography.headings.h6.fontSize,
+                  fontWeight: typography.headings.h6.fontWeight,
+                  lineHeight: typography.headings.h6.lineHeight,
+                  letterSpacing: typography.headings.h6.letterSpacing,
+                  color: typography.headings.h6.color
+                }}
               >
                 {typography.headings.h6.fontFamily}
               </div>
@@ -374,8 +423,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
-                className={`${previewSizes.quote} italic text-gray-700 border-l-4 border-gray-300 pl-4`}
-                style={{ fontFamily: typography.quote.fontFamily }}
+                className="italic border-l-4 border-gray-300 pl-4"
+                style={{ 
+                  fontFamily: typography.quote.fontFamily,
+                  fontSize: typography.quote.fontSize,
+                  fontWeight: typography.quote.fontWeight,
+                  lineHeight: typography.quote.lineHeight,
+                  letterSpacing: typography.quote.letterSpacing,
+                  color: typography.quote.color
+                }}
               >
                 {typography.quote.fontFamily}
               </div>
