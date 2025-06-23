@@ -17,7 +17,8 @@ import {
   BarChart3,
   Home,
   Calendar,
-  Users
+  Users,
+  Activity
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +44,7 @@ const navigationItems = [
   { name: "Painel", href: "/", key: "dashboard", icon: Home },
   { name: "Agenda", href: "/consultas", key: "consultas", icon: Calendar },
   { name: "Pacientes", href: "/contatos", key: "contatos", icon: Users },
+  { name: "Logs", href: "/system-logs", key: "system-logs", icon: Activity },
 ];
 
 // Admin navigation items
@@ -198,6 +200,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   (item.key === "contatos" && location.startsWith("/contatos")) ||
                   (item.key === "consultas" && location.startsWith("/consultas")) ||
                   (item.key === "anamneses" && location.startsWith("/anamneses")) ||
+                  (item.key === "system-logs" && location.startsWith("/system-logs")) ||
                   (item.key === "admin-clinics" && location.startsWith("/admin/clinics")) ||
                   (item.key === "admin-users" && location.startsWith("/admin/users")) ||
                   (item.key === "admin-settings" && location.startsWith("/admin/settings"));

@@ -41,6 +41,7 @@ import RAGDocuments from "./pages/rag/RAGDocuments";
 import RAGUpload from "./pages/rag/RAGUpload";
 import FunisPage from "./pages/funis";
 import FunilDetalhes from "./pages/funil-detalhes";
+import SystemLogs from "./pages/SystemLogs";
 
 import FunilEditorLanding from "./pages/funil-editor-landing";
 import Editor2 from "./pages/editor2";
@@ -165,6 +166,7 @@ function Router() {
         <Route path="/rag/upload" component={RAGUpload} />
         <Route path="/funis" component={FunisPage} />
         <Route path="/funis/:id" component={FunilDetalhes} />
+        <Route path="/system-logs" component={SystemLogs} />
 
         <Route path="/editor-landing" component={FunilEditorLanding} />
 
