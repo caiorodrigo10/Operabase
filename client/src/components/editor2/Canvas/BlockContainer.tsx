@@ -50,52 +50,58 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
   };
 
   return (
-    <div
-      className={`relative bg-white transition-all duration-200 ${
-        shouldShowUI 
-          ? 'shadow-lg border border-gray-200' 
-          : ''
-      }`}
-      style={{
-        padding: block.style.padding,
-        margin: '0', // Remove side margins for full width
-        backgroundColor: block.style.backgroundColor,
-      }}
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Block Badge */}
+    <div className="relative">
+      {/* Block Badge - Outside top left */}
       {shouldShowUI && (
-        <div className="absolute top-2 left-2 bg-gray-800 text-white text-sm px-3 py-1 rounded-full z-30 transition-opacity duration-200">
+        <div className="absolute -top-8 left-2 bg-gray-700 text-white text-xs px-2 py-1 rounded z-30 transition-opacity duration-200">
           ⚙️ Bloco
         </div>
       )}
 
-      {/* Add Column Button */}
+      {/* Add Column Button - Outside top right */}
       {shouldShowUI && (
-        <div className="absolute top-2 right-2 z-30">
+        <div className="absolute -top-8 right-2 z-30">
           <button
             onClick={handleAddColumn}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200 flex items-center gap-1"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded transition-colors duration-200 flex items-center gap-1"
           >
             + Column
           </button>
         </div>
       )}
 
-      {/* Columns Container */}
-      <div className="flex min-h-[200px]">
-        {block.columns.map((column, index) => (
-          <ColumnContainer
-            key={column.id}
-            column={column}
-            blockId={block.id}
-            isLastColumn={index === block.columns.length - 1}
-            isBlockHovered={isHovered}
-            isBlockSelected={isSelected}
-          />
-        ))}
+      {/* Block Container */}
+      <div
+        className={`relative bg-white transition-all duration-200 ${
+          isSelected 
+            ? 'border-2 border-dashed border-blue-500' 
+            : shouldShowUI 
+            ? 'border-2 border-dashed border-blue-300' 
+            : ''
+        }`}
+        style={{
+          padding: block.style.padding,
+          margin: '0',
+          backgroundColor: block.style.backgroundColor,
+        }}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+
+        {/* Columns Container */}
+        <div className="flex min-h-[200px]">
+          {block.columns.map((column, index) => (
+            <ColumnContainer
+              key={column.id}
+              column={column}
+              blockId={block.id}
+              isLastColumn={index === block.columns.length - 1}
+              isBlockHovered={isHovered}
+              isBlockSelected={isSelected}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

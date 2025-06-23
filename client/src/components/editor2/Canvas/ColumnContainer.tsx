@@ -71,7 +71,7 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
       {/* Column Content Area */}
       <div className="h-full p-4">
         {column.widgets.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded">
+          <div className="h-full flex items-center justify-center text-gray-400 text-sm">
             Drop widgets here
           </div>
         ) : (

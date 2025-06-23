@@ -34,8 +34,8 @@ export const ControlsUI: React.FC = () => {
       {/* Column Counter - Top Right */}
       {columnCount > 0 && (
         <div className="fixed top-20 right-6 z-40">
-          <div className="bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
-            <span>{columnCount} Column{columnCount !== 1 ? 's' : ''}</span>
+          <div className="bg-gray-800 text-white px-3 py-1 rounded text-sm font-medium">
+            {columnCount} Column{columnCount !== 1 ? 's' : ''}
           </div>
         </div>
       )}
