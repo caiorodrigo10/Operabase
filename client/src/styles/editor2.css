@@ -47,11 +47,11 @@
 /* Toolbar Area */
 .editor2-toolbar-area {
   grid-area: toolbar;
-  background-color: #4a5568;
+  background-color: #2d2d2d;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid #2d3748;
+  border-right: 1px solid #404040;
 }
 
 /* Center Area - Canvas Preview */
@@ -375,8 +375,8 @@
   left: 60px;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(255, 255, 255, 0.95);
-  color: #3b82f6;
+  background-color: rgba(45, 45, 45, 0.95);
+  color: #ffffff;
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 12px;
