@@ -92,7 +92,7 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
         {/* Dados Básicos */}
         <h3 
           className="text-lg font-medium text-gray-900 mb-6 cursor-pointer hover:text-blue-600 transition-colors"
-          onClick={() => setLocation(`/pacientes/${patientInfo.id}`)}
+          onClick={() => setLocation(`/contatos/${patientInfo.id}`)}
         >
           {patientInfo.name}
         </h3>

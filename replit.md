@@ -157,11 +157,13 @@ SESSION_SECRET=your_session_secret
 ### June 23, 2025 - Action Notification System Implementation
 - Implemented conversation action notification system for appointment events
 - Added conversation_actions table to database schema with proper indexes
-- Created ActionNotification component with consultation popup functionality  
+- Created ActionNotification component with minimalist design using compact blue blocks
 - Integrated action notifications chronologically with message timeline
 - Added support for "appointment_created" and "appointment_status_changed" actions
 - Updated API to return action notifications alongside messages
 - Fixed Pedro Oliveira contact status to 'active' for appointment scheduling availability
+- Made patient name clickable in PatientInfoPanel to navigate to `/contatos/{id}` for patient details
+- Updated PatientInfoPanel to show real appointment data instead of mock data
 
 ### June 23, 2025 - Media Message System Completion
 - Completed media message system with audio, image, and document support
