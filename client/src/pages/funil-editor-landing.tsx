@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { Editor, Frame, Element } from '@craftjs/core';
+import React, { useEffect, useState } from 'react';
+import { Editor, Frame, Element, useEditor } from '@craftjs/core';
 import { Link } from 'wouter';
-import { ArrowLeft, Eye, Save } from 'lucide-react';
+import { ArrowLeft, Eye, Save, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Import the existing craft components that work
@@ -123,8 +123,47 @@ VideoComponent.craft = {
   },
 };
 
+// Component para botões de controle dentro do Editor
+const EditorControls = () => {
+  const { query, actions } = useEditor();
+  
+  const handleSave = () => {
+    const json = query.serialize();
+    localStorage.setItem('craft_editor_state', json);
+    console.log('💾 Estado salvo no localStorage');
+  };
+  
+  const handleReload = () => {
+    console.log('🔄 Recarregando página...');
+    window.location.reload();
+  };
+  
+  return (
+    <div className="flex items-center space-x-3">
+      <Button variant="outline" size="sm" onClick={handleSave}>
+        <Save className="w-4 h-4 mr-2" />
+        Salvar Estado
+      </Button>
+      <Button variant="outline" size="sm" onClick={handleReload}>
+        <RefreshCw className="w-4 h-4 mr-2" />
+        Recarregar
+      </Button>
+    </div>
+  );
+};
+
 export default function FunilEditorLanding() {
   console.log('🔧 Abrindo editor Landing Page completo');
+  const [savedJson, setSavedJson] = useState<string | null>(null);
+  
+  // Carregar estado salvo na inicialização
+  useEffect(() => {
+    const savedState = localStorage.getItem('craft_editor_state');
+    if (savedState) {
+      console.log('📂 Carregando estado salvo do localStorage');
+      setSavedJson(savedState);
+    }
+  }, []);
 
   // Force hide Gleap widget on this page
   useEffect(() => {
@@ -171,15 +210,8 @@ export default function FunilEditorLanding() {
           </h1>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm">
-            <Eye className="w-4 h-4 mr-2" />
-            Preview
-          </Button>
-          <Button size="sm">
-            <Save className="w-4 h-4 mr-2" />
-            Salvar
-          </Button>
+        <div className="text-sm text-gray-500">
+          {savedJson ? 'Estado carregado do localStorage' : 'Estado padrão'} - CODE AI Ready
         </div>
       </div>
 
