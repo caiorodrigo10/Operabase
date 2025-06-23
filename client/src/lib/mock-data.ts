@@ -62,7 +62,18 @@ export const mockMessages: Message[] = [
   // Conversation 1 - Maria Silva
   { id: 1, conversation_id: 1, type: 'received', content: "Bom dia, Dra. Paula! Como está?", timestamp: "09:15", sender_name: "Maria Silva" },
   { id: 2, conversation_id: 1, type: 'sent_user', content: "Bom dia, Maria! Tudo bem por aqui. Como você está se sentindo?", timestamp: "09:17", sender_name: "Dra. Paula" },
-  { id: 3, conversation_id: 1, type: 'received', content: "Estou bem, mas gostaria de remarcar minha consulta da próxima semana. Surgiu um compromisso inadiável no trabalho.", timestamp: "09:18", sender_name: "Maria Silva" },
+  { 
+    id: 3, 
+    conversation_id: 1, 
+    type: 'received', 
+    content: "Estou bem, mas gostaria de remarcar minha consulta da próxima semana. Surgiu um compromisso inadiável no trabalho. Aproveitando, posso enviar meu receituário médico atual?", 
+    timestamp: "09:18", 
+    sender_name: "Maria Silva",
+    media_type: 'document',
+    media_url: 'https://example.com/receituario.pdf',
+    media_filename: 'Receituário Médico Atual.pdf',
+    media_size: 524288
+  },
   { id: 4, conversation_id: 1, type: 'sent_user', content: "Claro! Sem problemas. Vou verificar a agenda para encontrarmos outro horário que funcione para você.", timestamp: "09:19", sender_name: "Dra. Paula" },
   { id: 5, conversation_id: 1, type: 'sent_ai', content: "Encontrei algumas opções disponíveis: terça às 14h, quarta às 10h ou quinta às 16h. Qual prefere?", timestamp: "09:20", sender_name: "IA" },
   { id: 6, conversation_id: 1, type: 'note', content: "Paciente mencionou dores de cabeça recorrentes. Investigar na próxima consulta.", timestamp: "09:20", sender_name: "Dra. Paula" },
@@ -76,7 +87,19 @@ export const mockMessages: Message[] = [
   // Conversation 2 - João Santos
   { id: 13, conversation_id: 2, type: 'received', content: "Dr. Carlos, boa tarde! Estou com uma dúvida sobre meu medicamento.", timestamp: "14:30", sender_name: "João Santos" },
   { id: 14, conversation_id: 2, type: 'sent_user', content: "Boa tarde, João! Qual é sua dúvida? Estou aqui para ajudar.", timestamp: "14:32", sender_name: "Dr. Carlos" },
-  { id: 15, conversation_id: 2, type: 'received', content: "Esqueci de tomar a metformina ontem à noite. Devo tomar uma dose dupla hoje?", timestamp: "14:33", sender_name: "João Santos" },
+  { 
+    id: 15, 
+    conversation_id: 2, 
+    type: 'received', 
+    content: "Esqueci de tomar a metformina ontem à noite. Devo tomar uma dose dupla hoje? Ah, e gravei um áudio explicando melhor minha rotina atual:", 
+    timestamp: "14:33", 
+    sender_name: "João Santos",
+    media_type: 'audio',
+    media_url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+    media_filename: 'Rotina de Medicamentos.mp3',
+    media_size: 156789,
+    media_duration: 45
+  },
   { id: 16, conversation_id: 2, type: 'sent_user', content: "Não, João! Nunca tome dose dupla. Continue com sua rotina normal e tome apenas a dose de hoje nos horários habituais.", timestamp: "14:35", sender_name: "Dr. Carlos" },
   { id: 17, conversation_id: 2, type: 'received', content: "Entendi. E como faço para não esquecer mais? Às vezes fico confuso com os horários.", timestamp: "14:36", sender_name: "João Santos" },
   { id: 18, conversation_id: 2, type: 'sent_ai', content: "Posso sugerir algumas estratégias: usar alarme no celular, deixar o medicamento sempre no mesmo local visível, ou usar um organizador de comprimidos semanal.", timestamp: "14:37", sender_name: "IA" },
@@ -96,8 +119,30 @@ export const mockMessages: Message[] = [
   { id: 30, conversation_id: 3, type: 'sent_user', content: "Traga os exames de sangue que pedimos na última consulta, se já ficaram prontos. Caso contrário, sem problemas!", timestamp: "08:54", sender_name: "Dra. Fernanda" },
   { id: 31, conversation_id: 3, type: 'received', content: "Já peguei! Hemograma e glicemia estão normais. Posso enviar por foto aqui mesmo?", timestamp: "08:55", sender_name: "Ana Costa" },
   { id: 32, conversation_id: 3, type: 'sent_user', content: "Pode sim! Mande as fotos que já vou dando uma olhada prévia.", timestamp: "08:56", sender_name: "Dra. Fernanda" },
-  { id: 33, conversation_id: 3, type: 'received', content: "[Imagem: Exame de sangue - Hemograma]", timestamp: "08:57", sender_name: "Ana Costa" },
-  { id: 34, conversation_id: 3, type: 'received', content: "[Imagem: Exame de sangue - Glicemia]", timestamp: "08:57", sender_name: "Ana Costa" },
+  { 
+    id: 33, 
+    conversation_id: 3, 
+    type: 'received', 
+    content: "Aqui estão os exames de sangue:", 
+    timestamp: "08:57", 
+    sender_name: "Ana Costa",
+    media_type: 'image',
+    media_url: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=300&fit=crop',
+    media_filename: 'Hemograma Completo.jpg',
+    media_size: 245760
+  },
+  { 
+    id: 34, 
+    conversation_id: 3, 
+    type: 'received', 
+    content: "", 
+    timestamp: "08:58", 
+    sender_name: "Ana Costa",
+    media_type: 'image',
+    media_url: 'https://images.unsplash.com/photo-1584362917165-526a968579e8?w=400&h=300&fit=crop',
+    media_filename: 'Glicemia em Jejum.jpg',
+    media_size: 198432
+  },
   { id: 35, conversation_id: 3, type: 'sent_user', content: "Exames perfeitos, Ana! Tudo dentro da normalidade. Conversamos melhor amanhã, mas pode ficar tranquila.", timestamp: "09:02", sender_name: "Dra. Fernanda" },
   { id: 36, conversation_id: 3, type: 'received', content: "Que alívio! Muito obrigada, doutora. Até amanhã! ❤️", timestamp: "09:03", sender_name: "Ana Costa" },
 

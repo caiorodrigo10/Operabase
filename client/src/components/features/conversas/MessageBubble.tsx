@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message } from "@/types/conversations";
 import { Bot, Settings, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MediaMessage } from "./MediaMessage";
 
 interface MessageBubbleProps {
   message: Message;
@@ -58,9 +59,26 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 : "bg-emerald-500 text-white rounded-tr-md"
           )}
         >
-          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-            {message.content}
-          </p>
+          {/* Media content */}
+          {message.media_type && message.media_url && (
+            <div className="mb-2">
+              <MediaMessage
+                media_type={message.media_type}
+                media_url={message.media_url}
+                media_filename={message.media_filename}
+                media_size={message.media_size}
+                media_duration={message.media_duration}
+                media_thumbnail={message.media_thumbnail}
+              />
+            </div>
+          )}
+          
+          {/* Text content */}
+          {message.content && (
+            <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+              {message.content}
+            </p>
+          )}
         </div>
         
         <span className={cn(

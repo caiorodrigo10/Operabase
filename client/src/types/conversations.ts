@@ -18,6 +18,12 @@ export interface Message {
   timestamp: string;
   sender_name?: string;
   sender_avatar?: string;
+  media_type?: 'image' | 'video' | 'audio' | 'document';
+  media_url?: string;
+  media_filename?: string;
+  media_size?: number;
+  media_duration?: number; // for audio/video in seconds
+  media_thumbnail?: string; // for video thumbnails
 }
 
 export interface SystemEvent {
