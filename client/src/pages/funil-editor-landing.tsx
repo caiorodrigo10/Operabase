@@ -306,13 +306,13 @@ export default function FunilEditorLanding() {
                     fontWeight="400"
                     text="You can define areas within your React component which users can drop other components into."
                     textAlign="center"
-                    color={{ r: 255, g: 255, b: 255, a: 1 }}
+                    color={{ r: '255', g: '255', b: '255', a: '1' }}
                     margin={['20', '0', '20', '0']}
                   />
                   <CraftButton
                     text="Get Started"
                     background={{ r: 59, g: 130, b: 246, a: 1 }}
-                    color={{ r: 255, g: 255, b: 255, a: 1 }}
+                    color={{ r: '255', g: '255', b: '255', a: '1' }}
                   />
                 </Element>
 
@@ -358,7 +358,7 @@ export default function FunilEditorLanding() {
                         fontSize="16"
                         fontWeight="500"
                         text="I'm a component that only accepts buttons."
-                        color={{ r: 255, g: 255, b: 255, a: 1 }}
+                        color={{ r: '255', g: '255', b: '255', a: '1' }}
                       />
                     </Element>
                   </Element>
@@ -382,7 +382,7 @@ export default function FunilEditorLanding() {
                         fontSize="14"
                         fontWeight="400"
                         text="You can only drop one video here."
-                        color={{ r: 255, g: 255, b: 255, a: 1 }}
+                        color={{ r: '255', g: '255', b: '255', a: '1' }}
                       />
                     </Element>
                     
