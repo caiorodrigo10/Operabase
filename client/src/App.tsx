@@ -43,6 +43,7 @@ import FunisPage from "./pages/funis";
 import FunilDetalhes from "./pages/funil-detalhes";
 
 import FunilEditorLanding from "./pages/funil-editor-landing";
+import Editor2 from "./pages/editor2";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -161,6 +162,7 @@ function Router() {
         <Route path="/funis/:id" component={FunilDetalhes} />
 
         <Route path="/editor-landing" component={FunilEditorLanding} />
+        <Route path="/editor2" component={Editor2} />
 
         <Route component={NotFound} />
       </Switch>
