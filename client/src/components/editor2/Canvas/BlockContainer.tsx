@@ -67,14 +67,14 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
     >
       {/* Block Badge */}
       {shouldShowUI && (
-        <div className="absolute -top-4 -left-2 bg-gray-800 text-white text-sm px-3 py-1 rounded-full z-30 transition-opacity duration-200">
+        <div className="absolute top-2 left-2 bg-gray-800 text-white text-sm px-3 py-1 rounded-full z-30 transition-opacity duration-200">
           🔲 Block
         </div>
       )}
 
       {/* Add Column Button */}
       {shouldShowUI && (
-        <div className="absolute -top-4 right-4 z-30">
+        <div className="absolute top-2 right-2 z-30">
           <button
             onClick={handleAddColumn}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded-full transition-colors duration-200 flex items-center gap-1"
