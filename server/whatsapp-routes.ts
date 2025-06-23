@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getStorage } from './storage';
 import { evolutionApi } from './whatsapp-evolution-service';
 import { insertWhatsAppNumberSchema } from '@shared/schema';
+import { systemLogsService } from './services/system-logs.service';
 
 const router = Router();
 

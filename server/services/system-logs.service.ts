@@ -158,6 +158,149 @@ export class SystemLogsService {
   }
 
   /**
+   * Log medical record actions (creation, updates, deletion)
+   */
+  async logMedicalRecordAction(
+    action: 'created' | 'updated' | 'deleted' | 'signed' | 'reviewed',
+    recordId: number,
+    clinicId: number,
+    actorId?: string,
+    actorType: 'professional' | 'system' = 'professional',
+    previousData?: any,
+    newData?: any,
+    context?: {
+      source?: string;
+      ip_address?: string;
+      user_agent?: string;
+      session_id?: string;
+      actor_name?: string;
+      professional_id?: number;
+      contact_id?: number;
+      appointment_id?: number;
+    }
+  ): Promise<SystemLog | null> {
+    const changes = this.calculateChanges(previousData, newData);
+
+    return this.logAction({
+      entity_type: 'medical_record',
+      entity_id: recordId,
+      action_type: action,
+      clinic_id: clinicId,
+      actor_id: actorId,
+      actor_type: actorType,
+      actor_name: context?.actor_name,
+      professional_id: context?.professional_id,
+      related_entity_id: context?.contact_id,
+      previous_data: previousData,
+      new_data: {
+        ...newData,
+        appointment_id: context?.appointment_id,
+        contact_id: context?.contact_id
+      },
+      changes,
+      source: context?.source || 'web',
+      ip_address: context?.ip_address,
+      user_agent: context?.user_agent,
+      session_id: context?.session_id,
+    });
+  }
+
+  /**
+   * Log anamnesis actions (creation, completion, review)
+   */
+  async logAnamnesisAction(
+    action: 'created' | 'updated' | 'deleted' | 'filled' | 'reviewed' | 'shared',
+    anamnesisId: number,
+    clinicId: number,
+    actorId?: string,
+    actorType: 'professional' | 'patient' | 'system' = 'professional',
+    previousData?: any,
+    newData?: any,
+    context?: {
+      source?: string;
+      ip_address?: string;
+      user_agent?: string;
+      session_id?: string;
+      actor_name?: string;
+      professional_id?: number;
+      contact_id?: number;
+      template_id?: number;
+    }
+  ): Promise<SystemLog | null> {
+    const changes = this.calculateChanges(previousData, newData);
+
+    return this.logAction({
+      entity_type: 'anamnesis',
+      entity_id: anamnesisId,
+      action_type: action,
+      clinic_id: clinicId,
+      actor_id: actorId,
+      actor_type: actorType,
+      actor_name: context?.actor_name,
+      professional_id: context?.professional_id,
+      related_entity_id: context?.contact_id,
+      previous_data: previousData,
+      new_data: {
+        ...newData,
+        template_id: context?.template_id,
+        contact_id: context?.contact_id
+      },
+      changes,
+      source: context?.source || 'web',
+      ip_address: context?.ip_address,
+      user_agent: context?.user_agent,
+      session_id: context?.session_id,
+    });
+  }
+
+  /**
+   * Log WhatsApp connection actions
+   */
+  async logWhatsAppAction(
+    action: 'connected' | 'disconnected' | 'connecting' | 'created' | 'updated' | 'deleted',
+    whatsappId: number,
+    clinicId: number,
+    actorId?: string,
+    actorType: 'professional' | 'system' = 'system',
+    previousData?: any,
+    newData?: any,
+    context?: {
+      source?: string;
+      ip_address?: string;
+      user_agent?: string;
+      session_id?: string;
+      actor_name?: string;
+      professional_id?: number;
+      instance_name?: string;
+      phone_number?: string;
+    }
+  ): Promise<SystemLog | null> {
+    const changes = this.calculateChanges(previousData, newData);
+
+    return this.logAction({
+      entity_type: 'whatsapp_number',
+      entity_id: whatsappId,
+      action_type: action,
+      clinic_id: clinicId,
+      actor_id: actorId,
+      actor_type: actorType,
+      actor_name: context?.actor_name,
+      professional_id: context?.professional_id,
+      previous_data: previousData,
+      new_data: {
+        ...newData,
+        instance_name: context?.instance_name,
+        phone_number: context?.phone_number
+      },
+      changes,
+      source: context?.source || 'whatsapp',
+      ip_address: context?.ip_address,
+      user_agent: context?.user_agent,
+      session_id: context?.session_id,
+    });
+  }
+
+  /**
    * Get patient timeline (all logs related to a contact)
    */
   async getPatientTimeline(

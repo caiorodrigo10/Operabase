@@ -237,6 +237,63 @@ async function captureOperationLog(req: any, res: Response, responseData: any) {
           ...context
         });
         break;
+
+      case 'medical_record':
+        await systemLogsService.logMedicalRecordAction(
+          actionType as any,
+          entityId,
+          clinicId,
+          userId,
+          'professional',
+          preOpData?.previousData,
+          newData,
+          {
+            ...context,
+            actor_name: userName,
+            professional_id: userId ? parseInt(userId) : undefined,
+            contact_id: newData?.contact_id || preOpData?.previousData?.contact_id,
+            appointment_id: newData?.appointment_id || preOpData?.previousData?.appointment_id
+          }
+        );
+        break;
+
+      case 'anamnesis':
+        await systemLogsService.logAnamnesisAction(
+          actionType as any,
+          entityId,
+          clinicId,
+          userId,
+          'professional',
+          preOpData?.previousData,
+          newData,
+          {
+            ...context,
+            actor_name: userName,
+            professional_id: userId ? parseInt(userId) : undefined,
+            contact_id: newData?.contact_id || preOpData?.previousData?.contact_id,
+            template_id: newData?.template_id || preOpData?.previousData?.template_id
+          }
+        );
+        break;
+
+      case 'whatsapp_number':
+        await systemLogsService.logWhatsAppAction(
+          actionType as any,
+          entityId,
+          clinicId,
+          userId,
+          'professional',
+          preOpData?.previousData,
+          newData,
+          {
+            ...context,
+            actor_name: userName,
+            professional_id: userId ? parseInt(userId) : undefined,
+            instance_name: newData?.instance_name || preOpData?.previousData?.instance_name,
+            phone_number: newData?.phone_number || preOpData?.previousData?.phone_number
+          }
+        );
+        break;
     }
 
     console.log(`📝 System log recorded: ${entityType}.${actionType} for entity ${entityId}`);
@@ -276,6 +333,30 @@ export const messageLogsMiddleware = [
  */
 export const conversationLogsMiddleware = [
   capturePreOperationData('conversation'),
+  logPostOperation()
+];
+
+/**
+ * Middleware específico para logs de prontuários médicos
+ */
+export const medicalRecordLogsMiddleware = [
+  capturePreOperationData('medical_record'),
+  logPostOperation()
+];
+
+/**
+ * Middleware específico para logs de anamneses
+ */
+export const anamnesisLogsMiddleware = [
+  capturePreOperationData('anamnesis'),
+  logPostOperation()
+];
+
+/**
+ * Middleware específico para logs de WhatsApp
+ */
+export const whatsappLogsMiddleware = [
+  capturePreOperationData('whatsapp_number'),
   logPostOperation()
 ];
 

@@ -5,6 +5,7 @@ import { db } from './db';
 import { anamnesis_templates, anamnesis_responses } from '../shared/schema';
 import { pool } from './db';
 import { isAuthenticated, hasClinicAccess } from './auth';
+import { systemLogsService } from './services/system-logs.service';
 
 // Simple authentication middleware for anamnesis routes
 const anamnesisAuth = async (req: any, res: any, next: any) => {
@@ -368,6 +369,22 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         created_by: 'system'
       }).returning();
 
+      // Log template creation
+      await systemLogsService.logAnamnesisAction(
+        'created',
+        result[0].id,
+        clinicAccess.clinicId,
+        userId,
+        'professional',
+        null,
+        result[0],
+        {
+          source: 'web',
+          actor_name: (req as any).user?.name,
+          professional_id: userId ? parseInt(userId) : undefined
+        }
+      );
+
       res.json(result[0]);
     } catch (error) {
       console.error('Error creating template:', error);
@@ -411,6 +428,22 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         expiresAt
       ]);
       client.release();
+
+      // Log anamnesis creation
+      await systemLogsService.logAnamnesisAction(
+        'created',
+        result.rows[0].id,
+        clinicAccess.clinicId,
+        'system',
+        'system',
+        null,
+        result.rows[0],
+        {
+          source: 'web',
+          contact_id: contactId,
+          template_id: parseInt(template_id)
+        }
+      );
 
       res.json(result.rows[0]);
     } catch (error) {
