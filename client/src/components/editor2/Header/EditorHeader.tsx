@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [, setLocation] = useLocation();
 
   const handleBackClick = () => {
     console.log('Navigating to funnels page');
+    setLocation('/funis/1');
   };
 
   const handleDeviceChange = (device: 'desktop' | 'tablet' | 'mobile') => {
