@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useEditor2Store, Block } from '../../../stores/editor2Store';
 import { ColumnContainer } from './ColumnContainer';
 
@@ -14,6 +14,8 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
     setHoveredElement,
     addColumn
   } = useEditor2Store();
+  
+  const [showColumnOptions, setShowColumnOptions] = useState(false);
 
   const isSelected = currentPage.selectedElement.type === 'block' && 
                     currentPage.selectedElement.id === block.id;
@@ -49,6 +51,16 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
     addColumn(block.id);
   };
 
+  const handleColumnOptionClick = (targetColumns: number) => {
+    if (targetColumns > block.columns.length) {
+      // Add columns to reach target
+      for (let i = block.columns.length; i < targetColumns; i++) {
+        addColumn(block.id);
+      }
+    }
+    setShowColumnOptions(false);
+  };
+
   return (
     <div className="relative">
       {/* Block Badge - Outside top left */}
@@ -58,15 +70,57 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
         </div>
       )}
 
-      {/* Add Column Button - Outside top right */}
+      {/* Column Counter - Compact version inside block */}
       {shouldShowUI && (
-        <div className="absolute -top-8 right-2 z-30">
-          <button
-            onClick={handleAddColumn}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded transition-colors duration-200 flex items-center gap-1"
-          >
-            + Column
-          </button>
+        <div className="absolute -top-6 right-2 z-30">
+          <div className="relative">
+            {/* Compact Column Counter */}
+            <div className="flex rounded-full overflow-hidden shadow-sm">
+              {/* Left side - Column count */}
+              <div className="bg-blue-500 text-white px-2 py-1 text-xs font-medium flex items-center gap-1">
+                <div className="w-4 h-4 bg-white text-blue-500 rounded-full flex items-center justify-center text-xs font-bold">
+                  {block.columns.length}
+                </div>
+                Column{block.columns.length !== 1 ? 's' : ''}
+              </div>
+              
+              {/* Right side - Add button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowColumnOptions(!showColumnOptions);
+                }}
+                className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 transition-colors duration-200 flex items-center justify-center"
+              >
+                <span className="text-sm font-bold">+</span>
+              </button>
+            </div>
+
+            {/* Column Options Dropdown */}
+            {showColumnOptions && (
+              <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-64">
+                <h3 className="text-gray-700 font-medium mb-2 text-center text-sm">Split the content into columns</h3>
+                <div className="flex gap-1 justify-center">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <button
+                      key={num}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleColumnOptionClick(num);
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors duration-200 ${
+                        num === block.columns.length 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -103,6 +157,14 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
           ))}
         </div>
       </div>
+
+      {/* Overlay to close dropdown when clicking outside */}
+      {showColumnOptions && (
+        <div 
+          className="fixed inset-0 z-20" 
+          onClick={() => setShowColumnOptions(false)}
+        />
+      )}
     </div>
   );
 };

@@ -42,53 +42,7 @@ export const ControlsUI: React.FC = () => {
 
   return (
     <>
-      {/* Column Counter - Top Center */}
-      {columnCount > 0 && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40">
-          <div className="relative">
-            {/* Main Column Counter */}
-            <div className="flex rounded-full overflow-hidden shadow-lg">
-              {/* Left side - Column count */}
-              <div className="bg-blue-500 text-white px-4 py-2 text-sm font-medium flex items-center gap-2">
-                <div className="w-6 h-6 bg-white text-blue-500 rounded-full flex items-center justify-center text-xs font-bold">
-                  {columnCount}
-                </div>
-                Column{columnCount !== 1 ? 's' : ''}
-              </div>
-              
-              {/* Right side - Add button */}
-              <button
-                onClick={() => setShowColumnOptions(!showColumnOptions)}
-                className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 transition-colors duration-200 flex items-center justify-center"
-              >
-                <span className="text-lg font-bold">+</span>
-              </button>
-            </div>
 
-            {/* Column Options Dropdown */}
-            {showColumnOptions && (
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
-                <h3 className="text-gray-700 font-medium mb-3 text-center">Split the content into columns</h3>
-                <div className="flex gap-2 justify-center">
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => handleColumnOptionClick(num)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors duration-200 ${
-                        num === columnCount 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Add Block Button - Bottom Center */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
