@@ -606,6 +606,10 @@ export class AppointmentMCPAgent {
         };
       });
 
+      console.log('🔍 Raw appointment data:', result[0] ? Object.keys(result[0]) : 'No data');
+      console.log('🔍 Transformed appointment data:', transformedData[0] ? Object.keys(transformedData[0]) : 'No data');
+      console.log('🔍 First appointment sample:', transformedData[0] ? JSON.stringify(transformedData[0]).substring(0, 200) : 'No data');
+
       return {
         success: true,
         data: transformedData,
