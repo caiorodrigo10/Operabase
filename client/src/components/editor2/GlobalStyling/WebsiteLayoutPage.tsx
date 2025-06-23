@@ -59,16 +59,16 @@ export const WebsiteLayoutPage: React.FC<WebsiteLayoutPageProps> = ({ onBack }) 
           </button>
           
           {/* Title */}
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Website Layout</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Layout do Site</h1>
           <p className="text-gray-600">
-            This will affect all pages and their layout appearance.
+            Isso afetará todas as páginas e sua aparência de layout.
           </p>
         </div>
 
         {/* Grid Width Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-medium text-gray-900">Grid Width</h3>
+            <h3 className="text-base font-medium text-gray-900">Largura do Grid</h3>
             <span className="text-blue-500 font-medium">{settings.gridWidth}px</span>
           </div>
           
