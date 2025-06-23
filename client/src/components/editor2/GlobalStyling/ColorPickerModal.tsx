@@ -338,7 +338,7 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
             {globalColors.map((globalColor, index) => (
               <button
                 key={index}
-                className="w-6 h-6 rounded-full border border-gray-500 hover:border-white transition-colors"
+                className="w-8 h-8 rounded-full border border-gray-500 hover:border-white transition-colors"
                 style={{ backgroundColor: globalColor }}
                 onClick={() => handleColorSelect(globalColor)}
               />

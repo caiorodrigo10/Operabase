@@ -19,8 +19,8 @@ const ColorCircle: React.FC<ColorCircleProps> = ({
   onClick,
   className = '' 
 }) => {
-  // All circles now use the same smaller size for minimalist design
-  const sizeClass = 'w-6 h-6';
+  // All circles now use the same size for minimalist design
+  const sizeClass = 'w-8 h-8';
   const borderClass = color === '#ffffff' || color === '#FFFFFF' ? 'border-gray-300' : 'border-gray-200';
   
   return (
