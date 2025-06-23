@@ -124,29 +124,103 @@ export const capturePreOperationData = (entityType: string) => {
 };
 
 /**
- * Middleware para logs pós-operação
+ * Middleware simplificado para logs pós-operação com deduplicação
  */
 export const logPostOperation = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const originalSend = res.send;
     const originalJson = res.json;
     let logCaptured = false;
 
-    // Interceptar response para capturar dados da operação apenas uma vez
-    const captureOnce = (data: any) => {
-      if (!logCaptured) {
-        logCaptured = true;
-        captureOperationLog(req, res, data);
-      }
-    };
-
-    res.send = function(data) {
-      captureOnce(data);
-      return originalSend.call(this, data);
-    };
-
     res.json = function(data) {
-      captureOnce(data);
+      if (!logCaptured && res.statusCode >= 200 && res.statusCode < 300) {
+        logCaptured = true;
+        
+        // Processar log de forma assíncrona
+        setImmediate(async () => {
+          try {
+            const entityType = req.logEntityType;
+            if (!entityType) return;
+
+            let actionType = '';
+            switch (req.method) {
+              case 'POST': actionType = 'created'; break;
+              case 'PUT':
+              case 'PATCH': actionType = 'updated'; break;
+              case 'DELETE': actionType = 'deleted'; break;
+              default: return;
+            }
+
+            let entityId = null;
+            let newData = data;
+            
+            if (newData && newData.id) {
+              entityId = newData.id;
+            } else if (req.params.id) {
+              entityId = parseInt(req.params.id);
+            }
+
+            let clinicId;
+            try {
+              clinicId = tenantContext.getClinicId();
+            } catch {
+              clinicId = newData?.clinic_id || req.body?.clinic_id;
+              if (typeof clinicId === 'string') {
+                clinicId = parseInt(clinicId);
+              }
+            }
+
+            if (!clinicId || !entityId) {
+              return;
+            }
+
+            // Verificar duplicação
+            const isDuplicate = checkAndPreventDuplication(entityType, entityId, actionType, clinicId);
+            if (isDuplicate) {
+              console.log(`🚫 Log duplicado previsto: ${entityType}.${actionType} entity ${entityId}`);
+              return;
+            }
+
+            // Registrar log baseado no tipo
+            const context = {
+              source: 'web',
+              actor_name: req.user?.name,
+              professional_id: req.user?.id ? parseInt(req.user.id) : undefined
+            };
+
+            switch (entityType) {
+              case 'appointment':
+                await systemLogsService.logAppointmentAction(
+                  actionType as any,
+                  entityId,
+                  clinicId,
+                  req.user?.id,
+                  'professional',
+                  null,
+                  newData,
+                  { ...context, related_entity_id: newData?.contact_id }
+                );
+                break;
+              case 'contact':
+                await systemLogsService.logContactAction(
+                  actionType as any,
+                  entityId,
+                  clinicId,
+                  req.user?.id,
+                  'professional',
+                  null,
+                  newData,
+                  context
+                );
+                break;
+            }
+
+            console.log(`📝 System log recorded: ${entityType}.${actionType} for entity ${entityId}`);
+          } catch (error) {
+            console.error('❌ Error recording system log:', error);
+          }
+        });
+      }
+      
       return originalJson.call(this, data);
     };
 
@@ -155,9 +229,10 @@ export const logPostOperation = () => {
 };
 
 /**
- * Capturar e registrar log da operação
+ * DEPRECATED - Função antiga removida para eliminar duplicações
+ * A lógica foi movida para o middleware simplificado acima
  */
-async function captureOperationLog(req: any, res: Response, responseData: any) {
+async function captureOperationLog_DEPRECATED(req: any, res: Response, responseData: any) {
   try {
     // Só processar se a resposta foi bem-sucedida
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -186,6 +261,12 @@ async function captureOperationLog(req: any, res: Response, responseData: any) {
         break;
       default:
         return; // Não logar operações GET
+    }
+
+    // Recuperar dados pré-operação
+    const preOpData = requestStore.get(requestId);
+    if (preOpData) {
+      requestStore.delete(requestId);
     }
 
     // Extrair dados da resposta
