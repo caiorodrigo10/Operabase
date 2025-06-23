@@ -77,6 +77,7 @@ export default function ConversasPage() {
           type: msg.direction === 'outbound' ? 'sent_user' : 'received',
           content: msg.content || '',
           timestamp: msg.created_at,
+          created_at: msg.created_at,
           sender_name: msg.sender_name,
           sender_avatar: undefined,
           media_type: msg.message_type !== 'text' ? msg.message_type as any : undefined,

@@ -82,14 +82,24 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </div>
         
         <span className={cn(
-          "text-xs text-gray-500 mt-1",
+          "text-xs text-gray-500 mt-1 block",
           isReceived ? "text-left" : "text-right"
         )}>
-          {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          }) : ''}
+          {(() => {
+            const timestamp = message.created_at || message.timestamp;
+            if (!timestamp) return '';
+            
+            try {
+              return new Date(timestamp).toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+              });
+            } catch (e) {
+              console.error('Error formatting timestamp:', timestamp, e);
+              return '';
+            }
+          })()}
         </span>
       </div>
       
