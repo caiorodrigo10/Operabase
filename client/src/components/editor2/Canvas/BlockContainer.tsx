@@ -58,7 +58,7 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
       }`}
       style={{
         padding: block.style.padding,
-        margin: block.style.margin,
+        margin: '0', // Remove side margins for full width
         backgroundColor: block.style.backgroundColor,
       }}
       onClick={handleClick}

@@ -22,12 +22,12 @@ export const CanvasContainer: React.FC = () => {
     <div className="relative w-full h-full overflow-auto">
       {/* Canvas Background */}
       <div 
-        className="min-h-full bg-gray-50 p-6"
+        className="min-h-full bg-gray-50"
         onClick={handleCanvasClick}
         style={{ backgroundColor: '#f8f9fa' }}
       >
-        {/* Blocks Container */}
-        <div className="max-w-full mx-auto">
+        {/* Blocks Container - Full Width */}
+        <div className="w-full">
           {currentPage.blocks.map((block) => (
             <BlockContainer key={block.id} block={block} />
           ))}

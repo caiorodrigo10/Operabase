@@ -97,7 +97,7 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
         style: {
           backgroundColor: '#ffffff',
           padding: '2rem',
-          margin: '1rem 0',
+          margin: '0',
         },
       };
       
@@ -131,7 +131,7 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
       style: {
         backgroundColor: '#ffffff',
         padding: '2rem',
-        margin: '1rem 0',
+        margin: '0',
       },
     };
     
