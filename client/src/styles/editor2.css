@@ -8,11 +8,11 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Main Layout - 3 Column Grid */
+/* Main Layout - 2 Column Grid */
 .editor2-layout {
   display: grid;
-  grid-template-columns: 300px 1fr 80px;
-  grid-template-areas: "left center right";
+  grid-template-columns: 300px 1fr;
+  grid-template-areas: "left center";
   height: 100vh;
   gap: 0;
 }
@@ -35,12 +35,7 @@
   padding: 20px;
 }
 
-/* Right Area - Tools Sidebar */
-.editor2-right-area {
-  grid-area: right;
-  background-color: #ffffff;
-  border-left: 1px solid #e2e8f0;
-}
+
 
 /* Canvas Component */
 .editor2-canvas {
@@ -83,83 +78,19 @@
   color: #64748b;
 }
 
-/* Tools Sidebar */
-.editor2-sidebar {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 0;
-}
 
-.editor2-sidebar-tools {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-}
-
-/* Tool Icons */
-.editor2-tool-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.editor2-tool-icon:hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-}
-
-.editor2-tool-icon.active {
-  background-color: #3b82f6;
-  border-color: #2563eb;
-  color: white;
-}
-
-.editor2-tool-icon.active:hover {
-  background-color: #2563eb;
-}
-
-.editor2-tool-icon-symbol {
-  font-size: 20px;
-  line-height: 1;
-  user-select: none;
-}
-
-.editor2-tool-icon.active .editor2-tool-icon-symbol {
-  filter: brightness(0) invert(1);
-}
 
 /* Responsive Design */
 @media (max-width: 1024px) {
   .editor2-layout {
-    grid-template-columns: 250px 1fr 70px;
-  }
-  
-  .editor2-tool-icon {
-    width: 42px;
-    height: 42px;
-  }
-  
-  .editor2-tool-icon-symbol {
-    font-size: 18px;
+    grid-template-columns: 250px 1fr;
   }
 }
 
 @media (max-width: 768px) {
   .editor2-layout {
-    grid-template-columns: 1fr 60px;
-    grid-template-areas: "center right";
+    grid-template-columns: 1fr;
+    grid-template-areas: "center";
   }
   
   .editor2-left-area {
@@ -168,23 +99,6 @@
   
   .editor2-center-area {
     padding: 12px;
-  }
-  
-  .editor2-tool-icon {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .editor2-tool-icon-symbol {
-    font-size: 16px;
-  }
-  
-  .editor2-sidebar {
-    padding: 12px 0;
-  }
-  
-  .editor2-sidebar-tools {
-    gap: 8px;
   }
 }
 

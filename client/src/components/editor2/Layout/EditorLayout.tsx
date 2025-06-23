@@ -82,11 +82,6 @@ export const EditorLayout: React.FC = () => {
       <div className="editor2-center-area">
         <CanvasArea />
       </div>
-      
-      {/* Right Area - Tools Sidebar */}
-      <div className="editor2-right-area">
-        <ToolsSidebar />
-      </div>
     </div>
   );
 };
