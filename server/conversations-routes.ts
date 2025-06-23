@@ -20,51 +20,47 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
     try {
       // Get clinic ID from authenticated user
       const user = req.user as any;
-      const clinicResult = await storage.db.execute(`
-        SELECT clinic_id FROM clinic_users WHERE user_id = ${user.id} LIMIT 1;
-      `);
+      console.log('🔍 Authenticated user:', user);
       
-      const clinicId = clinicResult.rows[0]?.clinic_id;
+      // Try to get clinic ID from user session or database
+      let clinicId = user?.clinic_id || user?.clinicId;
+      
+      if (!clinicId) {
+        const clinicResult = await storage.db.execute(`
+          SELECT clinic_id FROM clinic_users WHERE user_id = '${user.id}' LIMIT 1;
+        `);
+        clinicId = clinicResult.rows[0]?.clinic_id;
+      }
+      
+      console.log('🏥 Clinic ID found:', clinicId);
       if (!clinicId) {
         return res.status(400).json({ error: 'Clinic ID é obrigatório' });
       }
 
       const { status = 'active', limit = 50, offset = 0 } = req.query;
 
-      // Buscar conversas com informações do contato
-      const conversationsList = await storage.db
-        .select({
-          id: conversations.id,
-          clinic_id: conversations.clinic_id,
-          contact_id: conversations.contact_id,
-          professional_id: conversations.professional_id,
-          whatsapp_number_id: conversations.whatsapp_number_id,
-          status: conversations.status,
-          title: conversations.title,
-          priority: conversations.priority,
-          total_messages: conversations.total_messages,
-          unread_count: conversations.unread_count,
-          last_message_at: conversations.last_message_at,
-          last_activity_at: conversations.last_activity_at,
-          created_at: conversations.created_at,
-          updated_at: conversations.updated_at,
-          // Dados do contato
-          contact_name: sql`contacts.name`,
-          contact_phone: sql`contacts.phone`,
-          contact_email: sql`contacts.email`,
-          contact_status: sql`contacts.status`,
-        })
-        .from(conversations)
-        .leftJoin(sql`contacts`, eq(conversations.contact_id, sql`contacts.id`))
-        .where(
-          and(
-            eq(conversations.clinic_id, clinicId),
-            status !== 'all' ? eq(conversations.status, status as string) : undefined
-          )
-        )
-        .orderBy(desc(conversations.last_activity_at))
-        .limit(Number(limit))
-        .offset(Number(offset));
+      // Buscar conversas simples usando SQL direto para evitar problemas de schema
+      const conversationsResult = await storage.db.execute(`
+        SELECT 
+          c.id, c.clinic_id, c.contact_id, c.status, c.created_at, c.updated_at,
+          contacts.name as contact_name, 
+          contacts.phone as contact_phone, 
+          contacts.email as contact_email,
+          COUNT(m.id) as total_messages,
+          COUNT(CASE WHEN m.sender_type = 'patient' THEN 1 END) as unread_count
+        FROM conversations c
+        LEFT JOIN contacts ON c.contact_id = contacts.id
+        LEFT JOIN messages m ON c.id = m.conversation_id
+        WHERE c.clinic_id = ${clinicId}
+        ${status !== 'all' ? `AND c.status = '${status}'` : ''}
+        GROUP BY c.id, c.clinic_id, c.contact_id, c.status, c.created_at, c.updated_at,
+                 contacts.name, contacts.phone, contacts.email
+        ORDER BY c.created_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset};
+      `);
+      
+      const conversationsList = conversationsResult.rows;
 
       res.json({
         conversations: conversationsList,
@@ -81,56 +77,56 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
   // Buscar conversa específica com mensagens
   app.get('/api/conversations/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const clinicId = req.session.user?.clinicId;
+      const user = req.user as any;
       const conversationId = parseInt(req.params.id);
+
+      // Get clinic ID
+      let clinicId = user?.clinic_id || user?.clinicId;
+      if (!clinicId) {
+        const clinicResult = await storage.db.execute(`
+          SELECT clinic_id FROM clinic_users WHERE user_id = '${user.id}' LIMIT 1;
+        `);
+        clinicId = clinicResult.rows[0]?.clinic_id;
+      }
 
       if (!clinicId || !conversationId) {
         return res.status(400).json({ error: 'Parâmetros inválidos' });
       }
 
-      // Buscar conversa
-      const conversation = await storage.db
-        .select()
-        .from(conversations)
-        .where(
-          and(
-            eq(conversations.id, conversationId),
-            eq(conversations.clinic_id, clinicId)
-          )
-        )
-        .limit(1);
+      // Buscar conversa usando SQL direto
+      const conversationResult = await storage.db.execute(`
+        SELECT * FROM conversations 
+        WHERE id = ${conversationId} AND clinic_id = ${clinicId}
+        LIMIT 1;
+      `);
 
-      if (!conversation.length) {
+      if (!conversationResult.rows.length) {
         return res.status(404).json({ error: 'Conversa não encontrada' });
       }
 
       // Buscar mensagens da conversa
-      const messagesList = await storage.db
-        .select()
-        .from(messages)
-        .where(eq(messages.conversation_id, conversationId))
-        .orderBy(asc(messages.created_at));
+      const messagesResult = await storage.db.execute(`
+        SELECT * FROM messages 
+        WHERE conversation_id = ${conversationId}
+        ORDER BY timestamp ASC;
+      `);
 
-      // Buscar anexos das mensagens
-      const messageIds = messagesList.map(m => m.id);
-      let attachments: MessageAttachment[] = [];
-      
-      if (messageIds.length > 0) {
-        attachments = await storage.db
-          .select()
-          .from(message_attachments)
-          .where(sql`message_id = ANY(${messageIds})`);
-      }
-
-      // Organizar anexos por mensagem
-      const messageWithAttachments = messagesList.map(message => ({
-        ...message,
-        attachments: attachments.filter(att => att.message_id === message.id)
+      // Simular estrutura esperada pelo frontend
+      const messages = messagesResult.rows.map(msg => ({
+        id: msg.id,
+        conversation_id: msg.conversation_id,
+        content: msg.content,
+        sender_type: msg.sender_type,
+        sender_name: msg.sender_type === 'professional' ? user.name : 'Paciente',
+        direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
+        message_type: 'text',
+        created_at: msg.timestamp,
+        attachments: []
       }));
 
       res.json({
-        conversation: conversation[0],
-        messages: messageWithAttachments
+        conversation: conversationResult.rows[0],
+        messages: messages
       });
 
     } catch (error) {
