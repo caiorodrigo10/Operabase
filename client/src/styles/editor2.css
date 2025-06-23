@@ -28,11 +28,11 @@
 /* Center Area - Canvas Preview */
 .editor2-center-area {
   grid-area: center;
-  background-color: #f1f5f9;
+  background-color: #ffffff;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
 }
 
 
@@ -52,7 +52,7 @@
 .editor2-canvas-content {
   width: 100%;
   height: 100%;
-  padding: 40px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
