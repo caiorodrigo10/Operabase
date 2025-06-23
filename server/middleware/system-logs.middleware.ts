@@ -18,8 +18,56 @@ interface LogContext {
 // Store da requisição para comparar estados antes/depois
 const requestStore = new Map<string, any>();
 
-// Store para prevenir duplicação de logs
-const processedRequests = new Set<string>();
+// Sistema de deduplicação mais robusto
+interface LogDeduplication {
+  entity_type: string;
+  entity_id: number;
+  action_type: string;
+  clinic_id: number;
+  timestamp: number;
+}
+
+const recentLogs = new Map<string, LogDeduplication>();
+const DEDUP_WINDOW_MS = 5000; // 5 segundos para considerar duplicata
+
+/**
+ * Função para verificar e prevenir duplicação de logs
+ */
+function checkAndPreventDuplication(entityType: string, entityId: number, actionType: string, clinicId: number): boolean {
+  const now = Date.now();
+  const logKey = `${entityType}-${entityId}-${actionType}-${clinicId}`;
+  
+  // Limpar logs antigos
+  cleanupOldLogs(now);
+  
+  // Verificar se já existe um log similar recente
+  const existingLog = recentLogs.get(logKey);
+  if (existingLog && (now - existingLog.timestamp) < DEDUP_WINDOW_MS) {
+    return true; // É duplicata
+  }
+  
+  // Registrar novo log
+  recentLogs.set(logKey, {
+    entity_type: entityType,
+    entity_id: entityId,
+    action_type: actionType,
+    clinic_id: clinicId,
+    timestamp: now
+  });
+  
+  return false; // Não é duplicata
+}
+
+/**
+ * Limpar logs antigos para evitar vazamento de memória
+ */
+function cleanupOldLogs(currentTime: number): void {
+  for (const [key, log] of recentLogs.entries()) {
+    if (currentTime - log.timestamp > DEDUP_WINDOW_MS) {
+      recentLogs.delete(key);
+    }
+  }
+}
 
 /**
  * Middleware para capturar dados antes da operação
@@ -82,15 +130,23 @@ export const logPostOperation = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const originalSend = res.send;
     const originalJson = res.json;
+    let logCaptured = false;
 
-    // Interceptar response para capturar dados da operação
+    // Interceptar response para capturar dados da operação apenas uma vez
+    const captureOnce = (data: any) => {
+      if (!logCaptured) {
+        logCaptured = true;
+        captureOperationLog(req, res, data);
+      }
+    };
+
     res.send = function(data) {
-      captureOperationLog(req, res, data);
+      captureOnce(data);
       return originalSend.call(this, data);
     };
 
     res.json = function(data) {
-      captureOperationLog(req, res, data);
+      captureOnce(data);
       return originalJson.call(this, data);
     };
 
@@ -115,16 +171,12 @@ async function captureOperationLog(req: any, res: Response, responseData: any) {
       return;
     }
 
-    // Prevenir duplicação de logs para a mesma requisição
-    if (processedRequests.has(requestId)) {
+    // Sistema robusto de deduplicação baseado em conteúdo e tempo
+    const isDuplicate = checkAndPreventDuplication(entityType, entityId, actionType, clinicId);
+    if (isDuplicate) {
+      console.log(`🚫 Log duplicado previsto: ${entityType}.${actionType} entity ${entityId} clinic ${clinicId}`);
       return;
     }
-    processedRequests.add(requestId);
-
-    // Limpar processed requests antigos para evitar vazamento de memória
-    setTimeout(() => {
-      processedRequests.delete(requestId);
-    }, 60000); // Remove após 1 minuto
 
     // Recuperar dados pré-operação
     const preOpData = requestStore.get(requestId);
