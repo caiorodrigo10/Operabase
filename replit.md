@@ -154,6 +154,21 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 23, 2025 - Action Notification System Implementation
+- Implemented conversation action notification system for appointment events
+- Added conversation_actions table to database schema with proper indexes
+- Created ActionNotification component with consultation popup functionality  
+- Integrated action notifications chronologically with message timeline
+- Added support for "appointment_created" and "appointment_status_changed" actions
+- Updated API to return action notifications alongside messages
+- Fixed Pedro Oliveira contact status to 'active' for appointment scheduling availability
+
+### June 23, 2025 - Media Message System Completion
+- Completed media message system with audio, image, and document support
+- Fixed attachment loading from Supabase with proper relationship queries
+- Implemented 13 messages for Pedro including AI interactions and media files
+- Verified backend correctly loads and serves media attachments
+
 - June 23, 2025. Initial setup
 
 ## User Preferences
