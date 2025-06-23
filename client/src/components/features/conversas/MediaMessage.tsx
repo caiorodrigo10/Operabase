@@ -219,7 +219,7 @@ export function MediaMessage({
     );
   }
 
-  if (media_type === 'audio') {
+  if (actualMediaType === 'audio') {
     return (
       <div className={cn("min-w-[200px] max-w-[280px]", className)}>
         <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
@@ -310,7 +310,7 @@ export function MediaMessage({
     );
   }
 
-  if (media_type === 'document') {
+  if (actualMediaType === 'document') {
     return (
       <div className={cn("min-w-[200px] max-w-[250px]", className)}>
         <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
