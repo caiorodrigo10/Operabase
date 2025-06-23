@@ -162,8 +162,7 @@ export const GlobalStylingSidebar: React.FC<GlobalStylingSidebarProps> = ({
       className="fixed inset-0 z-50 flex"
       onClick={handleBackdropClick}
     >
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300" />
+      {/* Backdrop - Removed dark overlay */}
       
       {/* Sidebar */}
       <div
