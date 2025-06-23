@@ -16,7 +16,7 @@ export const ResizeHandle: React.FC<ResizeHandleProps> = ({
   isVisible,
   isSelected,
 }) => {
-  const { updateColumnWidth, startResize, stopResize, isResizing } = useEditor2Store();
+  const { updateColumnWidth, updateColumnWidths, startResize, stopResize, isResizing } = useEditor2Store();
   const [isDragging, setIsDragging] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const startX = useRef(0);
@@ -47,7 +47,7 @@ export const ResizeHandle: React.FC<ResizeHandleProps> = ({
       let newWidth = startWidth.current + deltaPercent;
       newWidth = Math.max(5, Math.min(95, newWidth)); // Clamp between 5% and 95%
       
-      updateColumnWidth(columnId, Math.round(newWidth));
+      updateColumnWidths(blockId, columnId, Math.round(newWidth));
     };
     
     const handleMouseUp = () => {
@@ -61,7 +61,7 @@ export const ResizeHandle: React.FC<ResizeHandleProps> = ({
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [columnId, currentWidth, startResize, stopResize, updateColumnWidth]);
+  }, [columnId, blockId, currentWidth, startResize, stopResize, updateColumnWidths]);
 
   const shouldShow = isVisible || isSelected || isDragging || isResizing;
 
@@ -76,7 +76,24 @@ export const ResizeHandle: React.FC<ResizeHandleProps> = ({
       onMouseLeave={() => !isDragging && setShowTooltip(false)}
     >
       {/* Resize Handle Line */}
-      <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-blue-500 hover:bg-blue-600" />
+      <div className={`absolute right-0 top-0 bottom-0 w-0.5 transition-all duration-200 ${
+        isDragging 
+          ? 'bg-blue-600 w-1' 
+          : showTooltip 
+          ? 'bg-blue-500 w-0.5' 
+          : 'bg-blue-400 w-0.5'
+      }`} />
+      
+      {/* Visual Drag Indicator */}
+      {(showTooltip || isDragging) && (
+        <div className="absolute right-0.5 top-1/2 transform -translate-y-1/2 -translate-x-1/2">
+          <div className="flex flex-col gap-0.5">
+            <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+            <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+            <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+          </div>
+        </div>
+      )}
       
       {/* Hover Area */}
       <div className="absolute -right-1 -left-1 top-0 bottom-0" />

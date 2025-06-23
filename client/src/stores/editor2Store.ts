@@ -57,6 +57,7 @@ interface EditorState {
   deselectAll: () => void;
   setHoveredElement: (type: 'block' | 'column' | 'widget' | null, id: string | null) => void;
   updateColumnWidth: (columnId: string, width: number) => void;
+  updateColumnWidths: (blockId: string, columnId: string, newWidth: number) => void;
   startResize: (columnId: string) => void;
   stopResize: () => void;
   removeColumn: (blockId: string, columnId: string) => void;
@@ -294,6 +295,48 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
           ...block,
           columns: updatedColumns,
         };
+      }
+      return block;
+    });
+    
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+      },
+    });
+  },
+  
+  updateColumnWidths: (blockId: string, columnId: string, newWidth: number) => {
+    const state = get();
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        const columnIndex = block.columns.findIndex(col => col.id === columnId);
+        if (columnIndex === -1) return block;
+        
+        const updatedColumns = [...block.columns];
+        const currentColumn = updatedColumns[columnIndex];
+        const oldWidth = currentColumn.width;
+        const widthDiff = newWidth - oldWidth;
+        
+        // Update current column width
+        updatedColumns[columnIndex] = { ...currentColumn, width: newWidth };
+        
+        // Find adjacent column to adjust (prioritize right, then left)
+        let adjacentIndex = -1;
+        if (columnIndex + 1 < updatedColumns.length) {
+          adjacentIndex = columnIndex + 1; // Right column
+        } else if (columnIndex - 1 >= 0) {
+          adjacentIndex = columnIndex - 1; // Left column
+        }
+        
+        if (adjacentIndex !== -1) {
+          const adjacentColumn = updatedColumns[adjacentIndex];
+          const newAdjacentWidth = Math.max(5, adjacentColumn.width - widthDiff);
+          updatedColumns[adjacentIndex] = { ...adjacentColumn, width: newAdjacentWidth };
+        }
+        
+        return { ...block, columns: updatedColumns };
       }
       return block;
     });
