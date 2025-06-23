@@ -10,7 +10,7 @@ const SidebarHeader: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div className="border-b border-gray-200 pb-4 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-semibold text-gray-900">Global Styling</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Estilo Global</h2>
         <button
           onClick={onClose}
           className="p-1 hover:bg-gray-100 rounded-md transition-colors"
@@ -20,12 +20,12 @@ const SidebarHeader: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </button>
       </div>
       <p className="text-sm text-gray-500 mb-4">
-        Changing the global settings will affect the styling on all pages.
+        Alterar as configurações globais afetará o estilo de todas as páginas.
       </p>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">Need help?</span>
+        <span className="text-sm text-gray-600">Precisa de ajuda?</span>
         <button className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors">
-          <span>Play Video</span>
+          <span>Assistir Vídeo</span>
           <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
             <Play className="w-3 h-3 text-white fill-white" />
           </div>
@@ -60,12 +60,12 @@ const SidebarContent: React.FC = () => {
     {
       id: 'text-styling',
       icon: <Type className="w-5 h-5" />,
-      label: 'Text Styling'
+      label: 'Estilo de Texto'
     },
     {
       id: 'add-fonts',
       icon: <FileText className="w-5 h-5" />,
-      label: 'Add Fonts'
+      label: 'Adicionar Fontes'
     },
     {
       id: 'color-palette',
@@ -74,17 +74,17 @@ const SidebarContent: React.FC = () => {
         <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
         <div className="w-2 h-2 bg-green-400 rounded-full"></div>
       </div>,
-      label: 'Color Palette'
+      label: 'Paleta de Cores'
     },
     {
       id: 'website-layout',
       icon: <Layout className="w-5 h-5" />,
-      label: 'Website Layout'
+      label: 'Layout do Site'
     },
     {
       id: 'page-styling',
       icon: <Square className="w-5 h-5" />,
-      label: 'Page Styling'
+      label: 'Estilo da Página'
     }
   ];
 
@@ -108,21 +108,7 @@ const SidebarContent: React.FC = () => {
 };
 
 const SidebarFooter: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  return (
-    <div className="border-t border-gray-200 pt-4 mt-6">
-      <div className="flex gap-3">
-        <button
-          onClick={onClose}
-          className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </button>
-        <button className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
-          Confirm
-        </button>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 export const GlobalStylingSidebar: React.FC<GlobalStylingSidebarProps> = ({
