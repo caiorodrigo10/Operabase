@@ -23,9 +23,9 @@ interface ConversationDetailResponse {
 
 export function useConversations(status: string = 'active', limit: number = 50) {
   return useQuery({
-    queryKey: ['/api/conversations', status, limit],
+    queryKey: ['/api/conversations-simple', status, limit],
     queryFn: async () => {
-      const response = await fetch(`/api/conversations?status=${status}&limit=${limit}`);
+      const response = await fetch(`/api/conversations-simple?status=${status}&limit=${limit}`);
       if (!response.ok) {
         throw new Error('Erro ao buscar conversas');
       }
@@ -37,10 +37,10 @@ export function useConversations(status: string = 'active', limit: number = 50) 
 
 export function useConversationDetail(conversationId: number | null) {
   return useQuery({
-    queryKey: ['/api/conversations', conversationId],
+    queryKey: ['/api/conversations-simple', conversationId],
     queryFn: async () => {
       if (!conversationId) return null;
-      const response = await fetch(`/api/conversations/${conversationId}`);
+      const response = await fetch(`/api/conversations-simple/${conversationId}`);
       if (!response.ok) {
         throw new Error('Erro ao buscar conversa');
       }
@@ -74,20 +74,29 @@ export function useSendMessage() {
   return useMutation({
     mutationFn: async ({ conversationId, message }: { 
       conversationId: number; 
-      message: Omit<InsertMessage, 'conversation_id' | 'clinic_id'> 
+      message: { content: string } 
     }) => {
-      return apiRequest(`/api/conversations/${conversationId}/messages`, {
+      const response = await fetch(`/api/conversations-simple/${conversationId}/messages`, {
         method: 'POST',
-        body: JSON.stringify(message),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: message.content }),
       });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao enviar mensagem');
+      }
+      
+      return response.json();
     },
     onSuccess: (_, variables) => {
       // Invalidar mensagens da conversa específica
       queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations', variables.conversationId] 
+        queryKey: ['/api/conversations-simple', variables.conversationId] 
       });
       // Invalidar lista de conversas para atualizar contadores
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
     },
   });
 }

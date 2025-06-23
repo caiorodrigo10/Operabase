@@ -130,10 +130,7 @@ export default function ConversasPage() {
       await sendMessage.mutateAsync({
         conversationId: selectedConversationId,
         message: {
-          content: message,
-          sender_type: isNote ? 'system' : 'professional',
-          message_type: 'text',
-          direction: 'outbound'
+          content: message
         }
       });
       

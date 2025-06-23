@@ -357,6 +357,10 @@ app.use((req, res, next) => {
   const { setupConversationsRoutes } = await import('./conversations-routes');
   setupConversationsRoutes(app, storage);
   
+  // Add Simple Conversations routes for testing
+  const { setupSimpleConversationsRoutes } = await import('./conversations-simple-routes');
+  setupSimpleConversationsRoutes(app, storage);
+  
   // Initialize anamnesis system
   try {
     const { initializeAnamnesisSystem } = await import('./anamnesis-setup');
