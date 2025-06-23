@@ -47,6 +47,8 @@ export const appointment_tags = pgTable("appointment_tags", {
   index("idx_appointment_tags_clinic").on(table.clinic_id),
 ]);
 
+
+
 // Tabela para métricas e analytics
 export const analytics_metrics = pgTable("analytics_metrics", {
   id: serial("id").primaryKey(),

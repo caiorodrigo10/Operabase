@@ -81,34 +81,35 @@ export function ActionNotification({ action }: ActionNotificationProps) {
   );
 
   return (
-    <div className={`p-3 rounded-lg border-2 ${getActionColor()} mb-2`}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3 flex-1">
-          <div className="flex-shrink-0 mt-0.5">
-            {getActionIcon()}
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mx-4 my-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-3 h-3 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-medium text-gray-900">
-                {action.title}
-              </p>
-              <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-blue-800">
+                {action.description}
+              </span>
+              <span className="text-xs text-gray-500">
                 {formatTime(action.created_at)}
               </span>
             </div>
-            <p className="text-sm text-gray-600 mb-2">
-              {action.description}
-            </p>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-xs">
-                  Ver consulta
-                </Button>
-              </DialogTrigger>
-              <AppointmentPopup />
-            </Dialog>
           </div>
         </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-3 h-7 px-2 text-xs bg-white border-blue-300 text-blue-700 hover:bg-blue-50 flex-shrink-0"
+            >
+              Ver consulta
+            </Button>
+          </DialogTrigger>
+          <AppointmentPopup />
+        </Dialog>
       </div>
     </div>
   );

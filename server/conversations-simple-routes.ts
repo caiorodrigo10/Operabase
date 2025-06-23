@@ -123,44 +123,99 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('📨 Found messages:', messages?.length || 0);
       console.log('📎 Found attachments:', allAttachments.length);
 
-      // Get action notifications for this conversation
+      // Get action notifications from database
       let actionNotifications = [];
-      if (conversationId === 4) { // Pedro's conversation - add sample actions
-        actionNotifications = [
-          {
-            id: 1,
-            conversation_id: 4,
-            action_type: 'appointment_created',
-            title: 'Consulta agendada',
-            description: 'Consulta agendada para 25/06 às 10:00 com Dr. Caio Rodrigo',
-            metadata: {
-              appointment_id: 123,
-              doctor_name: 'Dr. Caio Rodrigo',
-              date: '25/06/2025',
-              time: '10:00',
-              specialty: 'Clínico Geral'
-            },
-            related_entity_type: 'appointment',
-            related_entity_id: 123,
-            created_at: new Date('2025-06-23T20:30:00Z').toISOString()
-          },
-          {
-            id: 2,
-            conversation_id: 4,
-            action_type: 'appointment_status_changed',
-            title: 'Status da consulta alterado',
-            description: 'Status da consulta alterado de Agendada para Confirmada',
-            metadata: {
-              appointment_id: 123,
-              old_status: 'Agendada',
-              new_status: 'Confirmada',
-              doctor_name: 'Dr. Caio Rodrigo'
-            },
-            related_entity_type: 'appointment',
-            related_entity_id: 123,
-            created_at: new Date('2025-06-23T20:35:00Z').toISOString()
+      try {
+        // Try to load from database first
+        const { data: actionData, error: actionError } = await supabase
+          .from('conversation_actions')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .eq('clinic_id', conversation.clinic_id)
+          .order('created_at', { ascending: true });
+
+        if (actionError && actionError.code === '42P01') {
+          // Table doesn't exist, create it first
+          console.log('🔧 Creating conversation_actions table...');
+          
+          const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS conversation_actions (
+              id SERIAL PRIMARY KEY,
+              clinic_id INTEGER NOT NULL,
+              conversation_id INTEGER NOT NULL,
+              action_type VARCHAR(50) NOT NULL,
+              title VARCHAR(255) NOT NULL,
+              description TEXT,
+              metadata JSONB DEFAULT '{}',
+              related_entity_type VARCHAR(50),
+              related_entity_id INTEGER,
+              created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE INDEX IF NOT EXISTS idx_conversation_actions_conversation ON conversation_actions(conversation_id);
+            CREATE INDEX IF NOT EXISTS idx_conversation_actions_clinic ON conversation_actions(clinic_id);
+          `;
+
+          // Execute via RPC call
+          const { error: createError } = await supabase.rpc('exec', { 
+            sql: createTableQuery 
+          });
+
+          if (!createError) {
+            // Insert initial sample data for Pedro's conversation
+            if (conversationId === 4) {
+              const sampleActions = [
+                {
+                  clinic_id: 1,
+                  conversation_id: 4,
+                  action_type: 'appointment_created',
+                  title: 'Consulta agendada',
+                  description: 'Consulta agendada para 25/06 às 10:00 com Dr. Caio Rodrigo',
+                  metadata: {
+                    appointment_id: 123,
+                    doctor_name: 'Dr. Caio Rodrigo',
+                    date: '25/06',
+                    time: '10:00',
+                    specialty: 'Clínico Geral'
+                  },
+                  related_entity_type: 'appointment',
+                  related_entity_id: 123,
+                  created_at: '2025-06-23T20:30:00Z'
+                },
+                {
+                  clinic_id: 1,
+                  conversation_id: 4,
+                  action_type: 'appointment_status_changed',
+                  title: 'Status da consulta alterado',
+                  description: 'Status da consulta alterado de Agendada para Confirmada',
+                  metadata: {
+                    appointment_id: 123,
+                    old_status: 'Agendada',
+                    new_status: 'Confirmada',
+                    doctor_name: 'Dr. Caio Rodrigo'
+                  },
+                  related_entity_type: 'appointment',
+                  related_entity_id: 123,
+                  created_at: '2025-06-23T20:35:00Z'
+                }
+              ];
+
+              const { data: insertData } = await supabase
+                .from('conversation_actions')
+                .insert(sampleActions)
+                .select();
+
+              actionNotifications = insertData || [];
+            }
           }
-        ];
+        } else if (!actionError) {
+          actionNotifications = actionData || [];
+        }
+      } catch (error) {
+        console.error('❌ Error handling action notifications:', error);
+        // Fallback to empty array
+        actionNotifications = [];
       }
 
       console.log('📋 Found actions:', actionNotifications.length);
