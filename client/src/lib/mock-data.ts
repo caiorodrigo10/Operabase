@@ -111,17 +111,17 @@ export const mockMessages: Message[] = [
   { id: 24, conversation_id: 2, type: 'received', content: "Perfeito! Obrigado pelas orientações, doutor. Vou anotar tudo certinho.", timestamp: "14:45", sender_name: "João Santos" },
 
   // Conversation 3 - Ana Costa
-  { id: 24, conversation_id: 3, type: 'received', content: "Dra. Fernanda, bom dia! Tudo bem?", timestamp: "08:45", sender_name: "Ana Costa" },
-  { id: 25, conversation_id: 3, type: 'sent_user', content: "Bom dia, Ana! Tudo ótimo por aqui. Como você e o bebê estão?", timestamp: "08:47", sender_name: "Dra. Fernanda" },
-  { id: 26, conversation_id: 3, type: 'received', content: "Estamos bem! O bebê está mexendo bastante hoje. 😊 Queria confirmar se minha consulta do pré-natal continua para amanhã.", timestamp: "08:48", sender_name: "Ana Costa" },
-  { id: 27, conversation_id: 3, type: 'sent_user', content: "Que bom saber que vocês estão bem! Vou verificar sua consulta na agenda.", timestamp: "08:49", sender_name: "Dra. Fernanda" },
-  { id: 28, conversation_id: 3, type: 'sent_ai', content: "Sua consulta está confirmada para amanhã às 15h30. É recomendado chegar 15 minutos antes para a coleta de urina de rotina.", timestamp: "08:50", sender_name: "IA" },
-  { id: 29, conversation_id: 3, type: 'received', content: "Perfeito! Já estava com saudades de escutar o coraçãozinho dele. Preciso levar algum exame específico?", timestamp: "08:52", sender_name: "Ana Costa" },
-  { id: 30, conversation_id: 3, type: 'sent_user', content: "Traga os exames de sangue que pedimos na última consulta, se já ficaram prontos. Caso contrário, sem problemas!", timestamp: "08:54", sender_name: "Dra. Fernanda" },
-  { id: 31, conversation_id: 3, type: 'received', content: "Já peguei! Hemograma e glicemia estão normais. Posso enviar por foto aqui mesmo?", timestamp: "08:55", sender_name: "Ana Costa" },
-  { id: 32, conversation_id: 3, type: 'sent_user', content: "Pode sim! Mande as fotos que já vou dando uma olhada prévia.", timestamp: "08:56", sender_name: "Dra. Fernanda" },
+  { id: 25, conversation_id: 3, type: 'received', content: "Dra. Fernanda, bom dia! Tudo bem?", timestamp: "08:45", sender_name: "Ana Costa" },
+  { id: 26, conversation_id: 3, type: 'sent_user', content: "Bom dia, Ana! Tudo ótimo por aqui. Como você e o bebê estão?", timestamp: "08:47", sender_name: "Dra. Fernanda" },
+  { id: 27, conversation_id: 3, type: 'received', content: "Estamos bem! O bebê está mexendo bastante hoje. 😊 Queria confirmar se minha consulta do pré-natal continua para amanhã.", timestamp: "08:48", sender_name: "Ana Costa" },
+  { id: 28, conversation_id: 3, type: 'sent_user', content: "Que bom saber que vocês estão bem! Vou verificar sua consulta na agenda.", timestamp: "08:49", sender_name: "Dra. Fernanda" },
+  { id: 29, conversation_id: 3, type: 'sent_ai', content: "Sua consulta está confirmada para amanhã às 15h30. É recomendado chegar 15 minutos antes para a coleta de urina de rotina.", timestamp: "08:50", sender_name: "IA" },
+  { id: 30, conversation_id: 3, type: 'received', content: "Perfeito! Já estava com saudades de escutar o coraçãozinho dele. Preciso levar algum exame específico?", timestamp: "08:52", sender_name: "Ana Costa" },
+  { id: 31, conversation_id: 3, type: 'sent_user', content: "Traga os exames de sangue que pedimos na última consulta, se já ficaram prontos. Caso contrário, sem problemas!", timestamp: "08:54", sender_name: "Dra. Fernanda" },
+  { id: 32, conversation_id: 3, type: 'received', content: "Já peguei! Hemograma e glicemia estão normais. Posso enviar por foto aqui mesmo?", timestamp: "08:55", sender_name: "Ana Costa" },
+  { id: 33, conversation_id: 3, type: 'sent_user', content: "Pode sim! Mande as fotos que já vou dando uma olhada prévia.", timestamp: "08:56", sender_name: "Dra. Fernanda" },
   { 
-    id: 33, 
+    id: 34, 
     conversation_id: 3, 
     type: 'received', 
     content: "Aqui estão os exames de sangue:", 
@@ -133,7 +133,7 @@ export const mockMessages: Message[] = [
     media_size: 245760
   },
   { 
-    id: 34, 
+    id: 35, 
     conversation_id: 3, 
     type: 'received', 
     content: "", 
@@ -144,14 +144,14 @@ export const mockMessages: Message[] = [
     media_filename: 'Glicemia em Jejum.jpg',
     media_size: 198432
   },
-  { id: 35, conversation_id: 3, type: 'sent_user', content: "Exames perfeitos, Ana! Tudo dentro da normalidade. Conversamos melhor amanhã, mas pode ficar tranquila.", timestamp: "09:02", sender_name: "Dra. Fernanda" },
-  { id: 36, conversation_id: 3, type: 'received', content: "Que alívio! Muito obrigada, doutora. Até amanhã! ❤️", timestamp: "09:03", sender_name: "Ana Costa" },
+  { id: 36, conversation_id: 3, type: 'sent_user', content: "Exames perfeitos, Ana! Tudo dentro da normalidade. Conversamos melhor amanhã, mas pode ficar tranquila.", timestamp: "09:02", sender_name: "Dra. Fernanda" },
+  { id: 37, conversation_id: 3, type: 'received', content: "Que alívio! Muito obrigada, doutora. Até amanhã! ❤️", timestamp: "09:03", sender_name: "Ana Costa" },
 
   // Conversation 4 - Carlos Oliveira
-  { id: 37, conversation_id: 4, type: 'received', content: "Dr. Roberto, preciso de ajuda urgente!", timestamp: "16:20", sender_name: "Carlos Oliveira" },
-  { id: 38, conversation_id: 4, type: 'sent_user', content: "Carlos, o que está acontecendo? Me conte os detalhes.", timestamp: "16:21", sender_name: "Dr. Roberto" },
+  { id: 38, conversation_id: 4, type: 'received', content: "Dr. Roberto, preciso de ajuda urgente!", timestamp: "16:20", sender_name: "Carlos Oliveira" },
+  { id: 39, conversation_id: 4, type: 'sent_user', content: "Carlos, o que está acontecendo? Me conte os detalhes.", timestamp: "16:21", sender_name: "Dr. Roberto" },
   { 
-    id: 39, 
+    id: 40, 
     conversation_id: 4, 
     type: 'received', 
     content: "Estou sentindo um desconforto no peito desde o almoço. Não é dor forte, mas estou preocupado. Tirei uma foto do meu eletrocardiograma caseiro:", 
@@ -162,15 +162,15 @@ export const mockMessages: Message[] = [
     media_filename: 'ECG Caseiro.jpg',
     media_size: 312456
   },
-  { id: 40, conversation_id: 4, type: 'sent_user', content: "Entendo sua preocupação. Esse desconforto irradia para braço, pescoço ou costas? Está com falta de ar?", timestamp: "16:23", sender_name: "Dr. Roberto" },
-  { id: 41, conversation_id: 4, type: 'received', content: "Não irradia, não. E não estou com falta de ar. É mais como uma pressão leve no peito.", timestamp: "16:24", sender_name: "Carlos Oliveira" },
-  { id: 42, conversation_id: 4, type: 'sent_user', content: "Tomou todos os medicamentos hoje? E como está a pressão arterial?", timestamp: "16:25", sender_name: "Dr. Roberto" },
+  { id: 41, conversation_id: 4, type: 'sent_user', content: "Entendo sua preocupação. Esse desconforto irradia para braço, pescoço ou costas? Está com falta de ar?", timestamp: "16:23", sender_name: "Dr. Roberto" },
+  { id: 42, conversation_id: 4, type: 'received', content: "Não irradia, não. E não estou com falta de ar. É mais como uma pressão leve no peito.", timestamp: "16:24", sender_name: "Carlos Oliveira" },
+  { id: 43, conversation_id: 4, type: 'sent_user', content: "Tomou todos os medicamentos hoje? E como está a pressão arterial?", timestamp: "16:25", sender_name: "Dr. Roberto" },
 
   // Conversation 5 - Patricia Lima
-  { id: 43, conversation_id: 5, type: 'received', content: "Dra. Lucia, bom dia! Como está?", timestamp: "10:30", sender_name: "Patricia Lima" },
-  { id: 44, conversation_id: 5, type: 'sent_user', content: "Bom dia, Patricia! Estou bem, obrigada. Como você está se sentindo com o novo tratamento?", timestamp: "10:32", sender_name: "Dra. Lucia" },
+  { id: 44, conversation_id: 5, type: 'received', content: "Dra. Lucia, bom dia! Como está?", timestamp: "10:30", sender_name: "Patricia Lima" },
+  { id: 45, conversation_id: 5, type: 'sent_user', content: "Bom dia, Patricia! Estou bem, obrigada. Como você está se sentindo com o novo tratamento?", timestamp: "10:32", sender_name: "Dra. Lucia" },
   { 
-    id: 45, 
+    id: 46, 
     conversation_id: 5, 
     type: 'received', 
     content: "Muito melhor! A ansiedade diminuiu bastante desde que comecei a tomar o medicamento. Gravei um vídeo mostrando como faço os exercícios de respiração:", 
@@ -183,15 +183,15 @@ export const mockMessages: Message[] = [
     media_duration: 120,
     media_thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop'
   },
-  { id: 46, conversation_id: 5, type: 'sent_user', content: "Que ótima notícia! E os exercícios de respiração que conversamos? Está conseguindo praticar?", timestamp: "10:35", sender_name: "Dra. Lucia" },
-  { id: 47, conversation_id: 5, type: 'received', content: "Sim! Faço todos os dias pela manhã. Realmente ajuda muito a começar o dia mais calma.", timestamp: "10:36", sender_name: "Patricia Lima" },
-  { id: 48, conversation_id: 5, type: 'sent_ai', content: "Excelente progresso! Manter a rotina de exercícios respiratórios potencializa os efeitos da medicação.", timestamp: "10:37", sender_name: "IA" },
-  { id: 49, conversation_id: 5, type: 'received', content: "Queria tirar uma dúvida: posso tomar um chá de camomila junto com o medicamento?", timestamp: "10:38", sender_name: "Patricia Lima" },
-  { id: 50, conversation_id: 5, type: 'sent_user', content: "Pode sim! Camomila é um excelente complemento natural. Inclusive pode potencializar o efeito relaxante.", timestamp: "10:39", sender_name: "Dra. Lucia" },
-  { id: 51, conversation_id: 5, type: 'received', content: "Perfeito! E sobre a nossa próxima consulta, pode ser na mesma data?", timestamp: "10:40", sender_name: "Patricia Lima" },
-  { id: 52, conversation_id: 5, type: 'sent_user', content: "Mantemos na sexta às 11h então. Vou anotar seu progresso no prontuário.", timestamp: "10:41", sender_name: "Dra. Lucia" },
+  { id: 47, conversation_id: 5, type: 'sent_user', content: "Que ótima notícia! E os exercícios de respiração que conversamos? Está conseguindo praticar?", timestamp: "10:35", sender_name: "Dra. Lucia" },
+  { id: 48, conversation_id: 5, type: 'received', content: "Sim! Faço todos os dias pela manhã. Realmente ajuda muito a começar o dia mais calma.", timestamp: "10:36", sender_name: "Patricia Lima" },
+  { id: 49, conversation_id: 5, type: 'sent_ai', content: "Excelente progresso! Manter a rotina de exercícios respiratórios potencializa os efeitos da medicação.", timestamp: "10:37", sender_name: "IA" },
+  { id: 50, conversation_id: 5, type: 'received', content: "Queria tirar uma dúvida: posso tomar um chá de camomila junto com o medicamento?", timestamp: "10:38", sender_name: "Patricia Lima" },
+  { id: 51, conversation_id: 5, type: 'sent_user', content: "Pode sim! Camomila é um excelente complemento natural. Inclusive pode potencializar o efeito relaxante.", timestamp: "10:39", sender_name: "Dra. Lucia" },
+  { id: 52, conversation_id: 5, type: 'received', content: "Perfeito! E sobre a nossa próxima consulta, pode ser na mesma data?", timestamp: "10:40", sender_name: "Patricia Lima" },
+  { id: 53, conversation_id: 5, type: 'sent_user', content: "Mantemos na sexta às 11h então. Vou anotar seu progresso no prontuário.", timestamp: "10:41", sender_name: "Dra. Lucia" },
   { 
-    id: 53, 
+    id: 54, 
     conversation_id: 5, 
     type: 'received', 
     content: "Obrigada! Já estou me sentindo melhor seguindo suas orientações. Anexei meu relatório de progresso:", 
