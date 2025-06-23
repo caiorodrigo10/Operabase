@@ -17,13 +17,20 @@ import {
 import { cn } from "@/lib/utils";
 
 interface MediaMessageProps {
-  media_type: 'image' | 'video' | 'audio' | 'document';
+  media_type: string; // Accept any string (file_type from database)
   media_url: string;
   media_filename?: string;
   media_size?: number;
   media_duration?: number;
   media_thumbnail?: string;
   className?: string;
+}
+
+function getMediaTypeFromMimeType(mimeType: string): 'image' | 'video' | 'audio' | 'document' {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  return 'document';
 }
 
 function formatFileSize(bytes?: number): string {
@@ -81,6 +88,8 @@ export function MediaMessage({
   media_thumbnail,
   className 
 }: MediaMessageProps) {
+  // Convert MIME type to media category
+  const actualMediaType = getMediaTypeFromMimeType(media_type);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -143,7 +152,7 @@ export function MediaMessage({
     };
   }, []);
 
-  if (media_type === 'image') {
+  if (actualMediaType === 'image') {
     return (
       <div className={cn("max-w-[200px]", className)}>
         <Dialog>
@@ -181,7 +190,7 @@ export function MediaMessage({
     );
   }
 
-  if (media_type === 'video') {
+  if (actualMediaType === 'video') {
     return (
       <div className={cn("max-w-[250px]", className)}>
         <div className="relative">

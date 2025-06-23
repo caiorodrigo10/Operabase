@@ -60,16 +60,19 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           )}
         >
           {/* Media content */}
-          {message.media_type && message.media_url && (
+          {message.attachments && message.attachments.length > 0 && (
             <div className="mb-2">
-              <MediaMessage
-                media_type={message.media_type}
-                media_url={message.media_url}
-                media_filename={message.media_filename}
-                media_size={message.media_size}
-                media_duration={message.media_duration}
-                media_thumbnail={message.media_thumbnail}
-              />
+              {message.attachments.map((attachment, index) => (
+                <MediaMessage
+                  key={index}
+                  media_type={attachment.file_type}
+                  media_url={attachment.file_url || attachment.whatsapp_media_url}
+                  media_filename={attachment.file_name}
+                  media_size={attachment.file_size}
+                  media_duration={attachment.duration}
+                  media_thumbnail={attachment.thumbnail_url}
+                />
+              ))}
             </div>
           )}
           
