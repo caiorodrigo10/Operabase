@@ -406,7 +406,7 @@ export class SystemLogsService {
         .where(
           and(
             eq(system_logs.clinic_id, clinicId),
-            sql`created_at >= NOW() - INTERVAL '${days} days'`
+            sql`created_at >= (CURRENT_TIMESTAMP - INTERVAL '30 days')`
           )
         )
         .groupBy(

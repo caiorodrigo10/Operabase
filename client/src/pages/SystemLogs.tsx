@@ -135,7 +135,7 @@ export default function SystemLogs() {
   });
 
   // Filter logs based on search and filters
-  const filteredLogs = recentLogs.filter(log => {
+  const filteredLogs = (Array.isArray(recentLogs) ? recentLogs : []).filter(log => {
     const matchesSearch = !searchTerm || 
       log.actor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.entity_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
