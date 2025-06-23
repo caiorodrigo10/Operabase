@@ -37,33 +37,21 @@ export const ResizeHandle: React.FC<ResizeHandleProps> = ({
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return;
       
-      // Find the block container by looking for the flex container with columns
-      const blockContainer = containerRef.current.closest('[data-block-id]') || 
-                            containerRef.current.closest('.flex.min-h-\\[200px\\]')?.parentElement;
+      // Find the columns container
+      const columnsContainer = containerRef.current.closest('[data-block-id]');
       
-      if (!blockContainer) {
-        console.warn('Block container not found for resize');
+      if (!columnsContainer) {
         return;
       }
       
-      const containerWidth = blockContainer.getBoundingClientRect().width;
+      const containerWidth = columnsContainer.getBoundingClientRect().width;
       const deltaX = e.clientX - startX.current;
       const deltaPercent = (deltaX / containerWidth) * 100;
       
       let newWidth = startWidth.current + deltaPercent;
-      newWidth = Math.max(10, Math.min(90, newWidth)); // Clamp between 10% and 90%
+      newWidth = Math.max(10, Math.min(90, newWidth));
       
-      console.log('Resizing column:', {
-        columnId,
-        blockId,
-        oldWidth: startWidth.current,
-        newWidth: Math.round(newWidth),
-        deltaX,
-        deltaPercent,
-        containerWidth
-      });
-      
-      updateColumnWidths(blockId, columnId, Math.round(newWidth));
+      updateColumnWidths(blockId, columnId, newWidth);
     };
     
     const handleMouseUp = () => {

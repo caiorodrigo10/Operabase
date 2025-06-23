@@ -141,7 +141,7 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
         )}
 
         {/* Columns Container */}
-        <div className="flex min-h-[200px]">
+        <div className="flex min-h-[200px]" data-block-id={block.id}>
           {block.columns.map((column, index) => (
             <ColumnContainer
               key={column.id}

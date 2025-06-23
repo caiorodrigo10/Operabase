@@ -322,18 +322,12 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
         // Update current column width
         updatedColumns[columnIndex] = { ...currentColumn, width: newWidth };
         
-        // Find adjacent column to adjust (prioritize right, then left)
-        let adjacentIndex = -1;
-        if (columnIndex + 1 < updatedColumns.length) {
-          adjacentIndex = columnIndex + 1; // Right column
-        } else if (columnIndex - 1 >= 0) {
-          adjacentIndex = columnIndex - 1; // Left column
-        }
-        
-        if (adjacentIndex !== -1) {
-          const adjacentColumn = updatedColumns[adjacentIndex];
-          const newAdjacentWidth = Math.max(5, adjacentColumn.width - widthDiff);
-          updatedColumns[adjacentIndex] = { ...adjacentColumn, width: newAdjacentWidth };
+        // Find the next column (to the right) to adjust
+        const nextColumnIndex = columnIndex + 1;
+        if (nextColumnIndex < updatedColumns.length) {
+          const nextColumn = updatedColumns[nextColumnIndex];
+          const newNextWidth = Math.max(10, nextColumn.width - widthDiff);
+          updatedColumns[nextColumnIndex] = { ...nextColumn, width: newNextWidth };
         }
         
         return { ...block, columns: updatedColumns };
