@@ -248,10 +248,9 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
                 ref={opacityRef}
                 className="h-5 relative cursor-pointer rounded"
                 style={{
-                  background: `linear-gradient(to right, transparent, ${currentColor})`,
-                  backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
-                  backgroundSize: '8px 8px',
-                  backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+                  backgroundImage: `linear-gradient(to right, transparent, ${currentColor}), linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
+                  backgroundSize: '100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px',
+                  backgroundPosition: '0 0, 0 0, 0 4px, 4px -4px, -4px 0px'
                 }}
                 onClick={handleOpacityClick}
               >
