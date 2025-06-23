@@ -100,23 +100,10 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         return res.status(404).json({ error: 'Conversa não encontrada' });
       }
 
-      // Get messages with attachments
+      // Get messages first
       const { data: messages, error: msgError } = await supabase
         .from('messages')
-        .select(`
-          *,
-          message_attachments (
-            id,
-            file_name,
-            file_type,
-            file_size,
-            file_url,
-            thumbnail_url,
-            duration,
-            width,
-            height
-          )
-        `)
+        .select('*')
         .eq('conversation_id', conversationId)
         .order('timestamp', { ascending: true });
 
@@ -125,14 +112,26 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         return res.status(500).json({ error: 'Erro ao buscar mensagens' });
       }
 
+      // Get all attachments for this conversation
+      const { data: attachments, error: attachError } = await supabase
+        .from('message_attachments')
+        .select('*')
+        .eq('clinic_id', 1); // Get all attachments for clinic
+      
+      const allAttachments = attachments || [];
+
       console.log('📨 Found messages:', messages?.length || 0);
+      console.log('📎 Found attachments:', allAttachments.length);
 
       // Format messages for frontend
       const formattedMessages = (messages || []).map(msg => {
+        // Find attachments for this message
+        const msgAttachments = allAttachments.filter(att => att.message_id === msg.id);
+        
         // Determine message type based on attachments
         let messageType = 'text';
-        if (msg.message_attachments && msg.message_attachments.length > 0) {
-          const attachment = msg.message_attachments[0];
+        if (msgAttachments.length > 0) {
+          const attachment = msgAttachments[0];
           if (attachment.file_type.startsWith('image/')) messageType = 'image';
           else if (attachment.file_type.startsWith('audio/')) messageType = 'audio';
           else if (attachment.file_type.startsWith('video/')) messageType = 'video';
@@ -149,7 +148,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
           message_type: messageType,
           created_at: msg.timestamp,
-          attachments: msg.message_attachments || []
+          attachments: msgAttachments
         };
       });
 
