@@ -173,18 +173,14 @@ export const AICodeChat = () => {
         actions.deserialize(newJSONString);
         console.log('✅ Changes applied to editor');
         
-        // Force editor refresh after changes
+        // Save and reload page to ensure visual update
         setTimeout(() => {
-          console.log('🔄 Verifying changes...');
-          const updatedState = query.serialize();
-          const updatedJSON = typeof updatedState === 'string' ? JSON.parse(updatedState) : updatedState;
-          console.log('📊 Final editor state:', updatedJSON);
-          
-          const newElements = Object.keys(updatedJSON).filter(key => 
-            key !== 'ROOT' && !Object.keys(currentJSON).includes(key)
-          );
-          console.log('🆕 New elements created:', newElements.length);
-        }, 100);
+          console.log('💾 Saving editor state...');
+          const finalState = query.serialize();
+          localStorage.setItem('craft_editor_state', finalState);
+          console.log('🔄 Reloading page to show changes...');
+          window.location.reload();
+        }, 500);
         
       } catch (deserializeError) {
         console.error('❌ Failed to deserialize:', deserializeError);
