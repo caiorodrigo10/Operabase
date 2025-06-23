@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Editor, Frame, Element, useEditor } from '@craftjs/core';
-import { Viewport } from '@/components/craft/editor/Viewport';
-import { RenderNode } from '@/components/craft/editor/RenderNode';
-import { Container } from '@/components/craft/user/Container';
-import { Text } from '@/components/craft/user/Text';
-import { Button as CraftButton } from '@/components/craft/user/Button';
-import { Video } from '@/components/craft/selectors/Video';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
+import { ArrowLeft, Eye, Save, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-// Landing Card Component
+// Import the existing craft components that work
+import { Container, Text } from '../components/craft/selectors';
+import { Button as CraftButton } from '../components/craft/selectors/Button';
+import { Video } from '../components/craft/selectors/Video';
+import { Viewport } from '../components/craft/editor/Viewport';
+import { RenderNode } from '../components/craft/editor/RenderNode';
+
+// Custom Landing Components with proper types
 interface CardProps {
   background?: { r: number; g: number; b: number; a: number };
   padding?: number;
@@ -19,21 +20,17 @@ interface CardProps {
 
 const LandingCard = ({ 
   background = { r: 255, g: 255, b: 255, a: 1 }, 
-  padding = 20,
+  padding = 20, 
   children 
 }: CardProps) => {
   return (
-    <div 
+    <div
       style={{
-        margin: '5px 0',
+        background: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
         padding: `${padding}px`,
-        backgroundColor: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
         borderRadius: '8px',
-        minHeight: '100px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        margin: '10px 0',
       }}
     >
       {children}
@@ -62,18 +59,16 @@ const HeroSection = ({
   children 
 }: HeroProps) => {
   return (
-    <div 
+    <div
       style={{
-        margin: '20px 0',
-        padding: '60px 20px',
-        backgroundColor: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
-        borderRadius: '8px',
-        minHeight: '200px',
+        background: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
+        padding: '60px 40px',
+        minHeight: '300px',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         justifyContent: 'center',
-        textAlign: 'center'
+        alignItems: 'center',
+        color: 'white',
       }}
     >
       {children}
@@ -172,19 +167,13 @@ const EditorControls = () => {
     }
     
     // Show visual feedback
-    try {
-      const button = document.querySelector('[data-save-button]') as HTMLElement;
-      if (button && button.textContent) {
-        const originalText = button.textContent;
-        button.textContent = 'Salvo!';
-        setTimeout(() => {
-          if (button && originalText) {
-            button.textContent = originalText;
-          }
-        }, 1500);
-      }
-    } catch (feedbackError) {
-      console.log('Feedback error (não crítico):', feedbackError);
+    const button = document.querySelector('[data-save-button]') as HTMLElement;
+    if (button) {
+      const originalText = button.textContent;
+      button.textContent = 'Salvo!';
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 1500);
     }
   };
   
@@ -246,19 +235,13 @@ const EditorControls = () => {
         setShowJsonModal(false);
         
         // Show success feedback
-        try {
-          const button = document.querySelector('[data-save-json-button]') as HTMLElement;
-          if (button && button.textContent) {
-            const originalText = button.textContent;
-            button.textContent = 'Salvo!';
-            setTimeout(() => {
-              if (button && originalText) {
-                button.textContent = originalText;
-              }
-            }, 1500);
-          }
-        } catch (feedbackError) {
-          console.log('Feedback error (não crítico):', feedbackError);
+        const button = document.querySelector('[data-save-json-button]') as HTMLElement;
+        if (button) {
+          const originalText = button.textContent;
+          button.textContent = 'Salvo!';
+          setTimeout(() => {
+            button.textContent = originalText;
+          }, 1500);
         }
       } else {
         console.error('❌ Erro ao salvar JSON no servidor');
@@ -268,32 +251,30 @@ const EditorControls = () => {
       alert('Erro: JSON inválido. Verifique a sintaxe.');
     }
   };
-  
+
   const handleClear = () => {
     localStorage.removeItem('craft_editor_state');
-    actions.clearEvents();
-    location.reload();
+    console.log('🗑️ Estado salvo removido');
+    window.location.reload();
   };
-
+  
   return (
     <>
-      <div className="flex items-center space-x-2">
-        <Button 
-          variant="default" 
-          size="sm" 
-          onClick={handleSave}
-          data-save-button
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
+      <div className="flex items-center space-x-3">
+        <Button variant="outline" size="sm" onClick={handleSave} data-save-button>
+          <Save className="w-4 h-4 mr-2" />
           Salvar Estado
         </Button>
         <Button variant="outline" size="sm" onClick={handleLoad}>
+          <RefreshCw className="w-4 h-4 mr-2" />
           Carregar Estado
         </Button>
         <Button variant="outline" size="sm" onClick={handleViewJson}>
+          <Eye className="w-4 h-4 mr-2" />
           Ver JSON
         </Button>
-        <Button variant="outline" size="sm" onClick={handleClear} className="text-red-600 hover:text-red-700">
+        <Button variant="outline" size="sm" onClick={handleClear}>
+          <RefreshCw className="w-4 h-4 mr-2" />
           Limpar & Resetar
         </Button>
       </div>
@@ -301,7 +282,7 @@ const EditorControls = () => {
       {/* JSON Modal */}
       {showJsonModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-4/5 h-4/5 flex flex-col">
+          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">JSON da Página</h3>
               <Button variant="ghost" size="sm" onClick={() => setShowJsonModal(false)}>
@@ -476,39 +457,48 @@ export default function FunilEditorLanding() {
               <Element
                 canvas
                 is={Container}
-                background="#ffffff"
-                padding={40}
+                width="800px"
+                height="auto"
+                background={{ r: 255, g: 255, b: 255, a: 1 }}
+                padding={['40', '40', '40', '40']}
                 custom={{ displayName: 'App' }}
               >
                 {/* Introduction Section */}
                 <Element
                   canvas
                   is={Container}
-                  background="#ffffff"
-                  padding={40}
+                  flexDirection="row"
+                  width="100%"
+                  height="auto"
+                  padding={['40', '40', '40', '40']}
+                  margin={['0', '0', '40', '0']}
                   custom={{ displayName: 'Introduction' }}
                 >
                   <Element
                     canvas
                     is={Container}
-                    background="#ffffff"
-                    padding={20}
+                    width="40%"
+                    height="100%"
+                    padding={['0', '20', '0', '20']}
                     custom={{ displayName: 'Heading' }}
                   >
                     <Text
-                      fontSize={23}
+                      fontSize="23"
+                      fontWeight="400"
                       text="Craft.js is a React framework for building powerful &amp; feature-rich drag-n-drop page editors."
                     />
                   </Element>
                   <Element
                     canvas
                     is={Container}
-                    background="#ffffff"
-                    padding={20}
+                    width="60%"
+                    height="100%"
+                    padding={['0', '20', '0', '20']}
                     custom={{ displayName: 'Description' }}
                   >
                     <Text
-                      fontSize={14}
+                      fontSize="14"
+                      fontWeight="400"
                       text="Everything you see here, including the editor, itself is made of React components. Craft.js comes only with the building blocks for a page editor; it provides a drag-n-drop system and handles the way user components should be rendered, updated and moved, among other things."
                     />
                   </Element>
@@ -522,21 +512,24 @@ export default function FunilEditorLanding() {
                   custom={{ displayName: 'Hero Section' }}
                 >
                   <Text
-                    fontSize={28}
+                    fontSize="28"
+                    fontWeight="700"
                     text="Design complex components"
                     textAlign="center"
-                    color="#ffffff"
+                    color={{ r: '255', g: '255', b: '255', a: '1' }}
                   />
                   <Text
-                    fontSize={16}
+                    fontSize="16"
+                    fontWeight="400"
                     text="You can define areas within your React component which users can drop other components into."
                     textAlign="center"
-                    color="#ffffff"
+                    color={{ r: '255', g: '255', b: '255', a: '1' }}
+                    margin={['20', '0', '20', '0']}
                   />
                   <CraftButton
-                    children="Get Started"
-                    backgroundColor="#3b82f6"
-                    textColor="#ffffff"
+                    text="Get Started"
+                    background={{ r: 59, g: 130, b: 246, a: 1 }}
+                    color={{ r: 255, g: 255, b: 255, a: 1 }}
                   />
                 </Element>
 
@@ -544,24 +537,32 @@ export default function FunilEditorLanding() {
                 <Element
                   canvas
                   is={Container}
-                  background="#ffffff"
-                  padding={40}
+                  flexDirection="row"
+                  width="100%"
+                  height="auto"
+                  padding={['40', '40', '40', '40']}
+                  margin={['40', '0', '0', '0']}
                   custom={{ displayName: 'Content Section' }}
                 >
                   <Element
                     canvas
                     is={Container}
-                    background="#ffffff"
-                    padding={20}
+                    width="45%"
+                    height="100%"
+                    padding={['0', '20', '0', '0']}
                     custom={{ displayName: 'Left Content' }}
                   >
                     <Text
-                      fontSize={20}
+                      fontSize="20"
+                      fontWeight="600"
                       text="Programmatic drag &amp; drop"
+                      margin={['0', '0', '15', '0']}
                     />
                     <Text
-                      fontSize={14}
+                      fontSize="14"
+                      fontWeight="400"
                       text="Govern what goes in and out of your components"
+                      margin={['0', '0', '20', '0']}
                     />
                     <Element
                       canvas
@@ -571,9 +572,10 @@ export default function FunilEditorLanding() {
                       custom={{ displayName: 'Green Card' }}
                     >
                       <Text
-                        fontSize={16}
+                        fontSize="16"
+                        fontWeight="500"
                         text="I'm a component that only accepts buttons."
-                        color="#ffffff"
+                        color={{ r: '255', g: '255', b: '255', a: '1' }}
                       />
                     </Element>
                   </Element>
@@ -581,8 +583,9 @@ export default function FunilEditorLanding() {
                   <Element
                     canvas
                     is={Container}
-                    background="#ffffff"
-                    padding={20}
+                    width="55%"
+                    height="100%"
+                    padding={['0', '0', '0', '20']}
                     custom={{ displayName: 'Right Content' }}
                   >
                     <Element
@@ -593,9 +596,10 @@ export default function FunilEditorLanding() {
                       custom={{ displayName: 'Gray Card' }}
                     >
                       <Text
-                        fontSize={14}
+                        fontSize="14"
+                        fontWeight="400"
                         text="You can only drop one video here."
-                        color="#ffffff"
+                        color={{ r: '255', g: '255', b: '255', a: '1' }}
                       />
                     </Element>
                     
