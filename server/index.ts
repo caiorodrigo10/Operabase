@@ -13,6 +13,8 @@ import { setupOptimizedRoutes } from "./optimized-routes.js";
 import { performanceOptimizer } from "./performance-optimizer.js";
 import { initGoogleCalendarAuth, handleGoogleCalendarCallback } from './calendar-routes';
 import http from "http";
+import fs from 'fs/promises';
+import path from 'path';
 
 const app = express();
 app.use(express.json({ 
@@ -286,6 +288,53 @@ app.use((req, res, next) => {
     }
   });
   
+  // Add page JSON save endpoint
+  app.post('/api/save-page-json', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { pageId, jsonData } = req.body;
+      
+      if (!pageId || !jsonData) {
+        return res.status(400).json({ error: 'pageId and jsonData are required' });
+      }
+      
+      // Save JSON to a file specific to this page
+      const jsonFilePath = path.join(process.cwd(), `client/src/data/${pageId}.json`);
+      
+      // Ensure directory exists
+      await fs.mkdir(path.dirname(jsonFilePath), { recursive: true });
+      
+      // Save the JSON data
+      await fs.writeFile(jsonFilePath, jsonData, 'utf8');
+      
+      console.log(`✅ Page JSON saved: ${pageId}`);
+      res.json({ success: true, message: 'Page JSON saved successfully' });
+    } catch (error) {
+      console.error('Error saving page JSON:', error);
+      res.status(500).json({ error: 'Failed to save page JSON' });
+    }
+  });
+
+  // Add page JSON load endpoint (no auth required for loading)
+  app.get('/api/load-page-json/:pageId', async (req: Request, res: Response) => {
+    try {
+      const { pageId } = req.params;
+      const jsonFilePath = path.join(process.cwd(), `client/src/data/${pageId}.json`);
+      
+      try {
+        const jsonData = await fs.readFile(jsonFilePath, 'utf8');
+        console.log(`📂 Page JSON loaded: ${pageId}`);
+        res.json({ success: true, data: jsonData });
+      } catch (fileError) {
+        // File doesn't exist, return empty
+        console.log(`📄 No saved JSON found for: ${pageId}`);
+        res.json({ success: true, data: null });
+      }
+    } catch (error) {
+      console.error('Error loading page JSON:', error);
+      res.status(500).json({ error: 'Failed to load page JSON' });
+    }
+  });
+
   // Add WhatsApp Webhook routes first (to avoid conflicts)
   const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
   setupWhatsAppWebhookRoutes(app, storage);

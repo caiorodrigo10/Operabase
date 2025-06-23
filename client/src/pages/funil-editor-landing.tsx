@@ -129,10 +129,32 @@ const EditorControls = () => {
   const [showJsonModal, setShowJsonModal] = useState(false);
   const [currentJson, setCurrentJson] = useState('');
   
-  const handleSave = () => {
+  const handleSave = async () => {
     const json = query.serialize();
     localStorage.setItem('craft_editor_state', json);
     console.log('💾 Estado salvo no localStorage:', json.substring(0, 100) + '...');
+    
+    // Enviar JSON para salvar no arquivo
+    try {
+      const response = await fetch('/api/save-page-json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pageId: 'funil-editor-landing',
+          jsonData: json
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ JSON salvo no arquivo do servidor');
+      } else {
+        console.error('❌ Erro ao salvar JSON no servidor');
+      }
+    } catch (error) {
+      console.error('❌ Erro na requisição:', error);
+    }
     
     // Show visual feedback
     const button = document.querySelector('[data-save-button]') as HTMLElement;
@@ -222,14 +244,43 @@ const EditorControls = () => {
 export default function FunilEditorLanding() {
   console.log('🔧 Abrindo editor Landing Page completo');
   const [initialJson, setInitialJson] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Carregar estado salvo ANTES do Frame renderizar
+  // Carregar estado salvo do servidor ANTES do Frame renderizar
   useEffect(() => {
-    const savedState = localStorage.getItem('craft_editor_state');
-    if (savedState) {
-      console.log('📂 Carregando estado inicial do localStorage');
-      setInitialJson(savedState);
-    }
+    const loadPageData = async () => {
+      try {
+        // Primeiro tenta carregar do servidor
+        const response = await fetch('/api/load-page-json/funil-editor-landing');
+        const result = await response.json();
+        
+        console.log('🔍 Resposta do servidor:', result);
+        
+        if (result.success && result.data) {
+          console.log('📂 Carregando estado do servidor');
+          setInitialJson(result.data);
+        } else {
+          // Fallback para localStorage se não houver no servidor
+          const savedState = localStorage.getItem('craft_editor_state');
+          if (savedState) {
+            console.log('📂 Carregando estado do localStorage (fallback)');
+            setInitialJson(savedState);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        // Fallback para localStorage em caso de erro
+        const savedState = localStorage.getItem('craft_editor_state');
+        if (savedState) {
+          console.log('📂 Carregando estado do localStorage (erro)');
+          setInitialJson(savedState);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadPageData();
   }, []);
 
   // Force hide Gleap widget on this page
@@ -261,6 +312,17 @@ export default function FunilEditorLanding() {
     return () => clearInterval(interval);
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando editor...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -278,7 +340,7 @@ export default function FunilEditorLanding() {
         </div>
         
         <div className="text-sm text-gray-500">
-          Save/Load System Ready - CODE AI Ready
+          {initialJson ? 'Conteúdo Salvo Carregado' : 'Conteúdo Padrão'} - CODE AI Ready
         </div>
       </div>
 
