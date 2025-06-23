@@ -128,6 +128,7 @@ const EditorControls = () => {
   const { query, actions } = useEditor();
   const [showJsonModal, setShowJsonModal] = useState(false);
   const [currentJson, setCurrentJson] = useState('');
+  const [editableJson, setEditableJson] = useState('');
   
   const handleSave = async () => {
     const json = query.serialize();
@@ -189,8 +190,66 @@ const EditorControls = () => {
   
   const handleViewJson = () => {
     const json = query.serialize();
-    setCurrentJson(JSON.stringify(JSON.parse(json), null, 2));
+    const formattedJson = JSON.stringify(JSON.parse(json), null, 2);
+    setCurrentJson(formattedJson);
+    setEditableJson(formattedJson);
     setShowJsonModal(true);
+  };
+
+  const handleSaveJsonFromModal = async () => {
+    try {
+      // Parse and validate JSON first
+      const parsedJson = JSON.parse(editableJson);
+      const jsonString = JSON.stringify(parsedJson);
+      
+      // Apply the JSON to the editor
+      actions.deserialize(jsonString);
+      console.log('✅ JSON aplicado ao editor');
+      
+      // Save to localStorage
+      localStorage.setItem('craft_editor_state', jsonString);
+      console.log('💾 Estado salvo no localStorage');
+      
+      // Save to server
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL!,
+        import.meta.env.VITE_SUPABASE_ANON_KEY!
+      );
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch('/api/save-page-json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          pageId: 'funil-editor-landing',
+          jsonData: jsonString
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ JSON salvo no servidor');
+        setShowJsonModal(false);
+        
+        // Show success feedback
+        const button = document.querySelector('[data-save-json-button]') as HTMLElement;
+        if (button) {
+          const originalText = button.textContent;
+          button.textContent = 'Salvo!';
+          setTimeout(() => {
+            button.textContent = originalText;
+          }, 1500);
+        }
+      } else {
+        console.error('❌ Erro ao salvar JSON no servidor');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao processar JSON:', error);
+      alert('Erro: JSON inválido. Verifique a sintaxe.');
+    }
   };
 
   const handleClear = () => {
@@ -231,17 +290,37 @@ const EditorControls = () => {
               </Button>
             </div>
             <div className="flex-1 overflow-auto">
-              <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
-                {currentJson}
-              </pre>
+              <textarea
+                className="w-full h-full bg-gray-100 p-4 rounded text-sm font-mono resize-none border border-gray-300 focus:border-blue-500 focus:outline-none"
+                value={editableJson}
+                onChange={(e) => setEditableJson(e.target.value)}
+                placeholder="Cole aqui o JSON da página..."
+                style={{ minHeight: '400px' }}
+              />
             </div>
-            <div className="mt-4 flex justify-end space-x-2">
-              <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(currentJson)}>
-                Copiar JSON
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowJsonModal(false)}>
-                Fechar
-              </Button>
+            <div className="mt-4 flex justify-between">
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(editableJson)}>
+                  Copiar JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setEditableJson(currentJson)}>
+                  Resetar
+                </Button>
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={handleSaveJsonFromModal}
+                  data-save-json-button
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Salvar JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowJsonModal(false)}>
+                  Fechar
+                </Button>
+              </div>
             </div>
           </div>
         </div>
