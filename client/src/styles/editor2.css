@@ -319,6 +319,25 @@
   background: rgba(255, 255, 255, 0.5);
 }
 
+/* Global Styling Sidebar Animations */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 /* Vertical Toolbar Styles */
 .vertical-toolbar {
   display: flex;

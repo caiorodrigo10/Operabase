@@ -2,16 +2,24 @@ import React, { useState } from 'react';
 import { ToolButton } from './ToolButton';
 import { Grid3X3, Palette, Settings } from 'lucide-react';
 import { WidgetsPanel } from '../Widgets/WidgetsPanel';
+import { GlobalStylingSidebar } from '../GlobalStyling/GlobalStylingSidebar';
 
 export const VerticalToolbar: React.FC = () => {
   const [activeButton, setActiveButton] = useState<string>('widgets');
   const [isWidgetsPanelOpen, setIsWidgetsPanelOpen] = useState<boolean>(false);
+  const [isGlobalStylingOpen, setIsGlobalStylingOpen] = useState<boolean>(false);
 
   const handleButtonClick = (buttonId: string, label: string) => {
     setActiveButton(buttonId);
     
+    // Close all panels first
+    setIsWidgetsPanelOpen(false);
+    setIsGlobalStylingOpen(false);
+    
     if (buttonId === 'widgets') {
       setIsWidgetsPanelOpen(true);
+    } else if (buttonId === 'styles') {
+      setIsGlobalStylingOpen(true);
     } else {
       console.log(`Opening ${label.toLowerCase()} panel`);
     }
@@ -45,6 +53,11 @@ export const VerticalToolbar: React.FC = () => {
       <WidgetsPanel 
         isOpen={isWidgetsPanelOpen} 
         onClose={() => setIsWidgetsPanelOpen(false)} 
+      />
+      
+      <GlobalStylingSidebar 
+        isOpen={isGlobalStylingOpen} 
+        onClose={() => setIsGlobalStylingOpen(false)} 
       />
     </>
   );
