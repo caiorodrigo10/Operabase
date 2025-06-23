@@ -616,3 +616,41 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type MessageAttachment = typeof message_attachments.$inferSelect;
 export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSchema>;
+
+// Tabela para ações/notificações nas conversas (agendamentos, mudanças de status, etc)
+export const conversation_actions = pgTable("conversation_actions", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  conversation_id: integer("conversation_id").notNull(),
+  
+  // Tipo de ação
+  action_type: varchar("action_type", { length: 50 }).notNull(), // appointment_created, appointment_status_changed, etc
+  title: varchar("title", { length: 255 }).notNull(), // "Consulta agendada"
+  description: text("description").notNull(), // "Consulta agendada para 28/06 às 14:00 com Dra. Paula"
+  
+  // Metadata da ação (dados específicos para cada tipo)
+  metadata: jsonb("metadata"), // { appointment_id, doctor_name, date, time, old_status, new_status, etc }
+  
+  // Referência para entidade relacionada (ex: appointment_id)
+  related_entity_type: varchar("related_entity_type", { length: 50 }), // appointment, contact, etc
+  related_entity_id: integer("related_entity_id"),
+  
+  // Timestamps
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_conversation_actions_conversation").on(table.conversation_id, table.created_at),
+  index("idx_conversation_actions_clinic").on(table.clinic_id, table.created_at),
+  index("idx_conversation_actions_type").on(table.action_type),
+]);
+
+export const insertConversationActionSchema = createInsertSchema(conversation_actions).omit({
+  id: true,
+  created_at: true,
+}).extend({
+  action_type: z.enum(['appointment_created', 'appointment_status_changed', 'appointment_cancelled', 'contact_created']),
+  clinic_id: z.number().min(1),
+  conversation_id: z.number().min(1),
+});
+
+export type ConversationAction = typeof conversation_actions.$inferSelect;
+export type InsertConversationAction = z.infer<typeof insertConversationActionSchema>;
