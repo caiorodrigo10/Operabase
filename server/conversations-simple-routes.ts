@@ -80,28 +80,42 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       console.log('🔍 Fetching conversation detail:', conversationId);
 
-      // Get conversation
-      const conversationResult = await storage.db.execute(`
-        SELECT * FROM conversations 
-        WHERE id = ${conversationId} AND clinic_id = ${clinicId}
-        LIMIT 1;
-      `);
+      // Use direct Supabase client
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
 
-      if (!conversationResult.rows.length) {
+      // Get conversation
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('id', conversationId)
+        .eq('clinic_id', clinicId)
+        .single();
+
+      if (convError || !conversation) {
+        console.error('❌ Conversation not found:', convError);
         return res.status(404).json({ error: 'Conversa não encontrada' });
       }
 
       // Get messages
-      const messagesResult = await storage.db.execute(`
-        SELECT * FROM messages 
-        WHERE conversation_id = ${conversationId}
-        ORDER BY timestamp ASC;
-      `);
+      const { data: messages, error: msgError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('timestamp', { ascending: true });
 
-      console.log('📨 Found messages:', messagesResult.rows.length);
+      if (msgError) {
+        console.error('❌ Error fetching messages:', msgError);
+        return res.status(500).json({ error: 'Erro ao buscar mensagens' });
+      }
+
+      console.log('📨 Found messages:', messages?.length || 0);
 
       // Format messages for frontend
-      const messages = messagesResult.rows.map(msg => ({
+      const formattedMessages = (messages || []).map(msg => ({
         id: msg.id,
         conversation_id: msg.conversation_id,
         content: msg.content,
@@ -114,8 +128,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       }));
 
       res.json({
-        conversation: conversationResult.rows[0],
-        messages: messages
+        conversation: conversation,
+        messages: formattedMessages
       });
 
     } catch (error) {
@@ -136,28 +150,45 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       console.log('📤 Sending message to conversation:', conversationId);
 
-      // Insert message
-      const messageResult = await storage.db.execute(`
-        INSERT INTO messages (conversation_id, sender_type, content, timestamp)
-        VALUES (${conversationId}, 'professional', '${content.replace(/'/g, "''")}', NOW())
-        RETURNING *;
-      `);
+      // Use direct Supabase client
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
 
-      const newMessage = {
-        id: messageResult.rows[0].id,
+      // Insert message
+      const { data: newMessage, error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_type: 'professional',
+          content: content,
+          timestamp: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error inserting message:', error);
+        return res.status(500).json({ error: 'Erro ao enviar mensagem' });
+      }
+
+      const formattedMessage = {
+        id: newMessage.id,
         conversation_id: conversationId,
         content: content,
         sender_type: 'professional',
         sender_name: 'Caio Rodrigo',
         direction: 'outbound',
         message_type: 'text',
-        created_at: messageResult.rows[0].timestamp,
+        created_at: newMessage.timestamp,
         attachments: []
       };
 
       console.log('✅ Message sent successfully');
 
-      res.status(201).json({ message: newMessage });
+      res.status(201).json({ message: formattedMessage });
 
     } catch (error) {
       console.error('❌ Error sending message:', error);
