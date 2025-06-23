@@ -247,7 +247,10 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
             <div 
               className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
-              <div className="text-lg text-gray-900">
+              <div 
+                className="text-lg text-gray-900"
+                style={{ fontFamily: typography.paragraph.fontFamily }}
+              >
                 {typography.paragraph.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('paragraph')} />
@@ -266,7 +269,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 className={`${previewSizes.h1} font-bold text-gray-900`}
                 style={{ fontFamily: typography.headings.h1.fontFamily }}
               >
-                Arial
+                {typography.headings.h1.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('h1')} />
             </div>
@@ -284,7 +287,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 className={`${previewSizes.h2} font-semibold text-gray-900`}
                 style={{ fontFamily: typography.headings.h2.fontFamily }}
               >
-                Arial
+                {typography.headings.h2.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('h2')} />
             </div>
@@ -302,7 +305,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 className={`${previewSizes.h3} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h3.fontFamily }}
               >
-                Arial
+                {typography.headings.h3.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('h3')} />
             </div>
@@ -320,7 +323,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 className={`${previewSizes.h4} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h4.fontFamily }}
               >
-                Arial
+                {typography.headings.h4.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('h4')} />
             </div>
@@ -338,7 +341,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 className={`${previewSizes.h5} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h5.fontFamily }}
               >
-                Arial
+                {typography.headings.h5.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('h5')} />
             </div>
@@ -356,7 +359,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 className={`${previewSizes.h6} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h6.fontFamily }}
               >
-                Arial
+                {typography.headings.h6.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('h6')} />
             </div>
@@ -374,7 +377,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 className={`${previewSizes.quote} italic text-gray-700 border-l-4 border-gray-300 pl-4`}
                 style={{ fontFamily: typography.quote.fontFamily }}
               >
-                Arial
+                {typography.quote.fontFamily}
               </div>
               <EditButton onClick={() => handleElementClick('quote')} />
             </div>
