@@ -1,9 +1,7 @@
 import { z } from 'zod';
-import { eq, and, gte, lte, between } from 'drizzle-orm';
-import { db } from '../db';
-import { appointments, contacts, users, appointment_tags } from '../../shared/schema';
-import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
+import { db } from '../db';
+import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { appointments } from '../domains/appointments/appointments.schema';
 import { contacts } from '../domains/contacts/contacts.schema';
 import { users } from '../domains/auth/auth.schema';
@@ -600,9 +598,20 @@ export class AppointmentMCPAgent {
         .where(and(...conditions))
         .orderBy(appointments.scheduled_date);
 
+      // Transform the data to change "id" to "appointment_id"
+      const transformedData = result.map((row) => {
+        const { appointments: appointment, contacts: contact } = row;
+        return {
+          ...appointment,
+          appointment_id: appointment.id,
+          id: undefined, // Remove the original id field
+          contacts: contact
+        };
+      });
+
       return {
         success: true,
-        data: result,
+        data: transformedData,
         error: null,
         appointment_id: null,
         conflicts: null,
