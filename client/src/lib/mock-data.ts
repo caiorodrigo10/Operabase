@@ -149,7 +149,18 @@ export const mockMessages: Message[] = [
   // Conversation 4 - Carlos Oliveira
   { id: 37, conversation_id: 4, type: 'received', content: "Dr. Roberto, preciso de ajuda urgente!", timestamp: "16:20", sender_name: "Carlos Oliveira" },
   { id: 38, conversation_id: 4, type: 'sent_user', content: "Carlos, o que está acontecendo? Me conte os detalhes.", timestamp: "16:21", sender_name: "Dr. Roberto" },
-  { id: 39, conversation_id: 4, type: 'received', content: "Estou sentindo um desconforto no peito desde o almoço. Não é dor forte, mas estou preocupado.", timestamp: "16:22", sender_name: "Carlos Oliveira" },
+  { 
+    id: 39, 
+    conversation_id: 4, 
+    type: 'received', 
+    content: "Estou sentindo um desconforto no peito desde o almoço. Não é dor forte, mas estou preocupado. Tirei uma foto do meu eletrocardiograma caseiro:", 
+    timestamp: "16:22", 
+    sender_name: "Carlos Oliveira",
+    media_type: 'image',
+    media_url: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=300&fit=crop',
+    media_filename: 'ECG Caseiro.jpg',
+    media_size: 312456
+  },
   { id: 40, conversation_id: 4, type: 'sent_user', content: "Entendo sua preocupação. Esse desconforto irradia para braço, pescoço ou costas? Está com falta de ar?", timestamp: "16:23", sender_name: "Dr. Roberto" },
   { id: 41, conversation_id: 4, type: 'received', content: "Não irradia, não. E não estou com falta de ar. É mais como uma pressão leve no peito.", timestamp: "16:24", sender_name: "Carlos Oliveira" },
   { id: 42, conversation_id: 4, type: 'sent_user', content: "Tomou todos os medicamentos hoje? E como está a pressão arterial?", timestamp: "16:25", sender_name: "Dr. Roberto" },
@@ -157,7 +168,20 @@ export const mockMessages: Message[] = [
   // Conversation 5 - Patricia Lima
   { id: 43, conversation_id: 5, type: 'received', content: "Dra. Lucia, bom dia! Como está?", timestamp: "10:30", sender_name: "Patricia Lima" },
   { id: 44, conversation_id: 5, type: 'sent_user', content: "Bom dia, Patricia! Estou bem, obrigada. Como você está se sentindo com o novo tratamento?", timestamp: "10:32", sender_name: "Dra. Lucia" },
-  { id: 45, conversation_id: 5, type: 'received', content: "Muito melhor! A ansiedade diminuiu bastante desde que comecei a tomar o medicamento.", timestamp: "10:33", sender_name: "Patricia Lima" },
+  { 
+    id: 45, 
+    conversation_id: 5, 
+    type: 'received', 
+    content: "Muito melhor! A ansiedade diminuiu bastante desde que comecei a tomar o medicamento. Gravei um vídeo mostrando como faço os exercícios de respiração:", 
+    timestamp: "10:33", 
+    sender_name: "Patricia Lima",
+    media_type: 'video',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    media_filename: 'Exercícios de Respiração.mp4',
+    media_size: 2048576,
+    media_duration: 120,
+    media_thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop'
+  },
   { id: 46, conversation_id: 5, type: 'sent_user', content: "Que ótima notícia! E os exercícios de respiração que conversamos? Está conseguindo praticar?", timestamp: "10:35", sender_name: "Dra. Lucia" },
   { id: 47, conversation_id: 5, type: 'received', content: "Sim! Faço todos os dias pela manhã. Realmente ajuda muito a começar o dia mais calma.", timestamp: "10:36", sender_name: "Patricia Lima" },
   { id: 48, conversation_id: 5, type: 'sent_ai', content: "Excelente progresso! Manter a rotina de exercícios respiratórios potencializa os efeitos da medicação.", timestamp: "10:37", sender_name: "IA" },
@@ -165,7 +189,18 @@ export const mockMessages: Message[] = [
   { id: 50, conversation_id: 5, type: 'sent_user', content: "Pode sim! Camomila é um excelente complemento natural. Inclusive pode potencializar o efeito relaxante.", timestamp: "10:39", sender_name: "Dra. Lucia" },
   { id: 51, conversation_id: 5, type: 'received', content: "Perfeito! E sobre a nossa próxima consulta, pode ser na mesma data?", timestamp: "10:40", sender_name: "Patricia Lima" },
   { id: 52, conversation_id: 5, type: 'sent_user', content: "Mantemos na sexta às 11h então. Vou anotar seu progresso no prontuário.", timestamp: "10:41", sender_name: "Dra. Lucia" },
-  { id: 53, conversation_id: 5, type: 'received', content: "Obrigada! Já estou me sentindo melhor seguindo suas orientações.", timestamp: "11:40", sender_name: "Patricia Lima" }
+  { 
+    id: 53, 
+    conversation_id: 5, 
+    type: 'received', 
+    content: "Obrigada! Já estou me sentindo melhor seguindo suas orientações. Anexei meu relatório de progresso:", 
+    timestamp: "11:40", 
+    sender_name: "Patricia Lima",
+    media_type: 'document',
+    media_url: 'https://example.com/relatorio-progresso.docx',
+    media_filename: 'Relatório de Progresso - Ansiedade.docx',
+    media_size: 45678
+  }
 ];
 
 export const mockSystemEvents: SystemEvent[] = [
