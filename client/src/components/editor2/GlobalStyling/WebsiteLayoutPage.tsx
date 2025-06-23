@@ -48,10 +48,13 @@ export const WebsiteLayoutPage: React.FC<WebsiteLayoutPageProps> = ({ onBack }) 
   };
 
   const handleLayoutStyleChange = (style: 'full-width' | 'boxed') => {
-    setSettings(prev => ({
-      ...prev,
+    const newSettings = {
+      ...settings,
       layoutStyle: style
-    }));
+    };
+    setSettings(newSettings);
+    // Update global settings in real-time for preview
+    updateGlobalSettings(newSettings);
   };
 
   return (
