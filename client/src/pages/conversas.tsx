@@ -64,31 +64,55 @@ export default function ConversasPage() {
     }));
   };
 
-  // Convert backend messages to timeline format
+  // Convert backend messages and actions to timeline format
   useEffect(() => {
     if (conversationDetail?.messages) {
-      const timeline: TimelineItem[] = conversationDetail.messages.map(msg => ({
-        id: msg.id,
-        type: 'message',
-        timestamp: msg.created_at,
-        data: {
+      const timeline: TimelineItem[] = [];
+      
+      // Add messages to timeline
+      conversationDetail.messages.forEach(msg => {
+        timeline.push({
           id: msg.id,
-          conversation_id: msg.conversation_id,
-          type: msg.sender_type === 'ai' ? 'sent_ai' : 
-                msg.sender_type === 'professional' ? 'sent_user' : 'received',
-          content: msg.content || '',
+          type: 'message',
           timestamp: msg.created_at,
-          created_at: msg.created_at,
-          sender_name: msg.sender_type === 'ai' ? 'Mara AI' : msg.sender_name,
-          sender_avatar: undefined,
-          media_type: msg.message_type !== 'text' ? msg.message_type as any : undefined,
-          media_url: msg.attachments?.[0]?.file_url || undefined,
-          media_filename: msg.attachments?.[0]?.file_name || undefined,
-          media_size: msg.attachments?.[0]?.file_size || undefined,
-          media_duration: msg.attachments?.[0]?.duration || undefined,
-          media_thumbnail: msg.attachments?.[0]?.thumbnail_url || undefined
-        }
-      }));
+          data: {
+            id: msg.id,
+            conversation_id: msg.conversation_id,
+            type: msg.sender_type === 'ai' ? 'sent_ai' : 
+                  msg.sender_type === 'professional' ? 'sent_user' : 'received',
+            content: msg.content || '',
+            timestamp: msg.created_at,
+            created_at: msg.created_at,
+            sender_name: msg.sender_type === 'ai' ? 'Mara AI' : msg.sender_name,
+            sender_avatar: undefined,
+            media_type: msg.message_type !== 'text' ? msg.message_type as any : undefined,
+            media_url: msg.attachments?.[0]?.file_url || undefined,
+            media_filename: msg.attachments?.[0]?.file_name || undefined,
+            media_size: msg.attachments?.[0]?.file_size || undefined,
+            media_duration: msg.attachments?.[0]?.duration || undefined,
+            media_thumbnail: msg.attachments?.[0]?.thumbnail_url || undefined
+          }
+        });
+      });
+
+      // Add action notifications to timeline
+      if (conversationDetail.actions) {
+        conversationDetail.actions.forEach(action => {
+          timeline.push({
+            id: action.id + 10000, // Offset to avoid ID conflicts
+            type: 'action',
+            timestamp: action.created_at,
+            data: action
+          });
+        });
+      }
+      
+      // Sort timeline by timestamp
+      timeline.sort((a, b) => {
+        const timeA = new Date(a.timestamp).getTime();
+        const timeB = new Date(b.timestamp).getTime();
+        return timeA - timeB;
+      });
       
       setTimelineItems(timeline);
     }

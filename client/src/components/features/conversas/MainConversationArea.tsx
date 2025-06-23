@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
+import { ActionNotification } from "./ActionNotification";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
 import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -82,6 +83,8 @@ export function MainConversationArea({
               <div key={item.id}>
                 {item.type === 'message' ? (
                   <MessageBubble message={item.data as any} />
+                ) : item.type === 'action' ? (
+                  <ActionNotification action={item.data as any} />
                 ) : (
                   <EventMarker event={item.data as any} />
                 )}
