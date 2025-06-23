@@ -230,8 +230,13 @@ export default function FunilEditorLanding() {
           enabled={true}
           onRender={RenderNode}
         >
+          {/* Controls bar inside Editor context */}
+          <div className="bg-white border-b border-gray-200 px-6 py-3">
+            <EditorControls />
+          </div>
+          
           <Viewport>
-            <Frame>
+            <Frame json={savedJson}>
               <Element
                 canvas
                 is={Container}
