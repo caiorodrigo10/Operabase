@@ -1,6 +1,7 @@
 import React from 'react';
 import { CanvasProps } from '../../../types/editor2';
 import { AICodeChat } from '../Chat/AICodeChat';
+import { VerticalToolbar } from '../Toolbar/VerticalToolbar';
 
 const CanvasArea: React.FC<CanvasProps> = ({ content }) => {
   return (
@@ -74,6 +75,11 @@ export const EditorLayout: React.FC = () => {
       {/* Left Area - AI Code Chat */}
       <div className="editor2-left-area">
         <AICodeChat onMinimizedChange={setIsChatMinimized} />
+      </div>
+      
+      {/* Toolbar Area - Vertical Tools */}
+      <div className="editor2-toolbar-area">
+        <VerticalToolbar />
       </div>
       
       {/* Center Area - Canvas */}
