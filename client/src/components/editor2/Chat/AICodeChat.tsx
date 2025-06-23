@@ -46,7 +46,7 @@ const mockMessages: Message[] = [
 ];
 
 export const AICodeChat: React.FC<AICodeChatProps> = ({ onMinimizedChange }) => {
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);

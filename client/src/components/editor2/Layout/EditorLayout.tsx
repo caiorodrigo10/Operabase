@@ -69,7 +69,7 @@ const ToolsSidebar: React.FC = () => {
 };
 
 export const EditorLayout: React.FC = () => {
-  const [isChatMinimized, setIsChatMinimized] = React.useState(false);
+  const [isChatMinimized, setIsChatMinimized] = React.useState(true);
 
   return (
     <div className={`editor2-layout ${isChatMinimized ? 'chat-minimized' : ''}`}>
