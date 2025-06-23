@@ -9,6 +9,29 @@ import { TimelineItem, PatientInfo } from "@/types/conversations";
 import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Helper function to format date as "23 de Junho"
+const formatDateLabel = (date: string) => {
+  const messageDate = new Date(date);
+  return messageDate.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long'
+  });
+};
+
+// Helper function to check if item should show date header
+const shouldShowDateHeader = (currentItem: TimelineItem, previousItem?: TimelineItem): boolean => {
+  if (!currentItem.data?.timestamp && !currentItem.data?.created_at) return false;
+  
+  const currentDate = new Date(currentItem.data?.timestamp || currentItem.data?.created_at);
+  
+  if (!previousItem) return true; // First item always shows date
+  
+  const prevDate = new Date(previousItem.data?.timestamp || previousItem.data?.created_at || '');
+  
+  // Show date header if it's a different day
+  return currentDate.toDateString() !== prevDate.toDateString();
+};
+
 interface MainConversationAreaProps {
   timelineItems: TimelineItem[];
   patientInfo?: PatientInfo;
@@ -79,17 +102,33 @@ export function MainConversationArea({
           </div>
         ) : (
           <>
-            {timelineItems.map((item) => (
-              <div key={item.id}>
-                {item.type === 'message' ? (
-                  <MessageBubble message={item.data as any} />
-                ) : item.type === 'action' ? (
-                  <ActionNotification action={item.data as any} />
-                ) : (
-                  <EventMarker event={item.data as any} />
-                )}
-              </div>
-            ))}
+            {timelineItems.map((item, index) => {
+              const previousItem = index > 0 ? timelineItems[index - 1] : undefined;
+              const showDateHeader = shouldShowDateHeader(item, previousItem);
+              const dateToShow = item.data?.timestamp || item.data?.created_at;
+
+              return (
+                <div key={item.id}>
+                  {/* Date Header */}
+                  {showDateHeader && dateToShow && (
+                    <div className="flex justify-center my-4">
+                      <div className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+                        {formatDateLabel(dateToShow)}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Timeline Item */}
+                  {item.type === 'message' ? (
+                    <MessageBubble message={item.data as any} />
+                  ) : item.type === 'action' ? (
+                    <ActionNotification action={item.data as any} />
+                  ) : (
+                    <EventMarker event={item.data as any} />
+                  )}
+                </div>
+              );
+            })}
             {/* Scroll anchor - invisible element at the end */}
             <div ref={messagesEndRef} />
           </>
