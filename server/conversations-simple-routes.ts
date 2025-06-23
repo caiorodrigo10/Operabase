@@ -123,6 +123,48 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('📨 Found messages:', messages?.length || 0);
       console.log('📎 Found attachments:', allAttachments.length);
 
+      // Get action notifications for this conversation
+      let actionNotifications = [];
+      if (conversationId === 4) { // Pedro's conversation - add sample actions
+        actionNotifications = [
+          {
+            id: 1,
+            conversation_id: 4,
+            action_type: 'appointment_created',
+            title: 'Consulta agendada',
+            description: 'Consulta agendada para 25/06 às 10:00 com Dr. Caio Rodrigo',
+            metadata: {
+              appointment_id: 123,
+              doctor_name: 'Dr. Caio Rodrigo',
+              date: '25/06/2025',
+              time: '10:00',
+              specialty: 'Clínico Geral'
+            },
+            related_entity_type: 'appointment',
+            related_entity_id: 123,
+            created_at: new Date('2025-06-23T20:30:00Z').toISOString()
+          },
+          {
+            id: 2,
+            conversation_id: 4,
+            action_type: 'appointment_status_changed',
+            title: 'Status da consulta alterado',
+            description: 'Status da consulta alterado de Agendada para Confirmada',
+            metadata: {
+              appointment_id: 123,
+              old_status: 'Agendada',
+              new_status: 'Confirmada',
+              doctor_name: 'Dr. Caio Rodrigo'
+            },
+            related_entity_type: 'appointment',
+            related_entity_id: 123,
+            created_at: new Date('2025-06-23T20:35:00Z').toISOString()
+          }
+        ];
+      }
+
+      console.log('📋 Found actions:', actionNotifications.length);
+
       // Format messages for frontend
       const formattedMessages = (messages || []).map(msg => {
         // Find attachments for this message
@@ -154,7 +196,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       res.json({
         conversation: conversation,
-        messages: formattedMessages
+        messages: formattedMessages,
+        actions: actionNotifications
       });
 
     } catch (error) {

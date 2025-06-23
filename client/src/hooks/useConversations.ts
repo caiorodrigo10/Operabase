@@ -19,6 +19,14 @@ interface ConversationDetailResponse {
   messages: (Message & {
     attachments: any[];
   })[];
+  actions: {
+    id: number;
+    action_type: string;
+    title: string;
+    description: string;
+    metadata: any;
+    created_at: string;
+  }[];
 }
 
 export function useConversations(status: string = 'active', limit: number = 50) {
