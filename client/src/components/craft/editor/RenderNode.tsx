@@ -31,7 +31,7 @@ const Btn = styled.a`
   }
 `;
 
-export const RenderNode = ({ render }) => {
+export const RenderNode = ({ render }: { render: React.ReactNode }) => {
   const { id } = useNode();
   const { actions, query, isActive } = useEditor((_, query) => ({
     isActive: query.getEvent('selected').contains(id),
@@ -89,9 +89,11 @@ export const RenderNode = ({ render }) => {
     }
 
     try {
-      const { top, left } = getPos(dom);
-      currentDOM.style.top = top;
-      currentDOM.style.left = left;
+      if (dom) {
+        const { top, left } = getPos(dom);
+        currentDOM.style.top = top;
+        currentDOM.style.left = left;
+      }
     } catch (error) {
       console.warn('Error in scroll positioning:', error);
     }
