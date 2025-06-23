@@ -1,7 +1,11 @@
 import { z } from 'zod';
-import { eq, and, gte, lte, between } from 'drizzle-orm';
+import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { format, parse, addMinutes, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
+import { appointments } from '../domains/appointments/appointments.schema';
+import { contacts } from '../domains/contacts/contacts.schema';
+import { users } from '../domains/auth/auth.schema';
+import { appointment_tags } from '../../shared/schema';
 
 // Valid appointment statuses as defined in the platform
 export const VALID_APPOINTMENT_STATUSES = [
