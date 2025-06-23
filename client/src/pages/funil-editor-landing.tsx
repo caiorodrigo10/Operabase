@@ -126,20 +126,8 @@ VideoComponent.craft = {
 // Component para botões de controle dentro do Editor
 const EditorControls = () => {
   const { query, actions } = useEditor();
-  
-  // Auto-load saved state when component mounts
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const savedState = localStorage.getItem('craft_editor_state');
-      if (savedState) {
-        console.log('🔄 Auto-carregando estado salvo...');
-        actions.deserialize(savedState);
-        console.log('✅ Estado auto-carregado com sucesso');
-      }
-    }, 1000); // Wait 1 second for editor to be ready
-    
-    return () => clearTimeout(timer);
-  }, [actions]);
+  const [showJsonModal, setShowJsonModal] = useState(false);
+  const [currentJson, setCurrentJson] = useState('');
   
   const handleSave = () => {
     const json = query.serialize();
@@ -168,6 +156,12 @@ const EditorControls = () => {
     }
   };
   
+  const handleViewJson = () => {
+    const json = query.serialize();
+    setCurrentJson(JSON.stringify(JSON.parse(json), null, 2));
+    setShowJsonModal(true);
+  };
+
   const handleClear = () => {
     localStorage.removeItem('craft_editor_state');
     console.log('🗑️ Estado salvo removido');
@@ -175,25 +169,68 @@ const EditorControls = () => {
   };
   
   return (
-    <div className="flex items-center space-x-3">
-      <Button variant="outline" size="sm" onClick={handleSave} data-save-button>
-        <Save className="w-4 h-4 mr-2" />
-        Salvar Estado
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleLoad}>
-        <RefreshCw className="w-4 h-4 mr-2" />
-        Carregar Estado
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleClear}>
-        <RefreshCw className="w-4 h-4 mr-2" />
-        Limpar & Resetar
-      </Button>
-    </div>
+    <>
+      <div className="flex items-center space-x-3">
+        <Button variant="outline" size="sm" onClick={handleSave} data-save-button>
+          <Save className="w-4 h-4 mr-2" />
+          Salvar Estado
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleLoad}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Carregar Estado
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleViewJson}>
+          <Eye className="w-4 h-4 mr-2" />
+          Ver JSON
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleClear}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Limpar & Resetar
+        </Button>
+      </div>
+
+      {/* JSON Modal */}
+      {showJsonModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">JSON da Página</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowJsonModal(false)}>
+                ✕
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+                {currentJson}
+              </pre>
+            </div>
+            <div className="mt-4 flex justify-end space-x-2">
+              <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(currentJson)}>
+                Copiar JSON
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowJsonModal(false)}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
 export default function FunilEditorLanding() {
   console.log('🔧 Abrindo editor Landing Page completo');
+  const [initialJson, setInitialJson] = useState<string | null>(null);
+  
+  // Carregar estado salvo ANTES do Frame renderizar
+  useEffect(() => {
+    const savedState = localStorage.getItem('craft_editor_state');
+    if (savedState) {
+      console.log('📂 Carregando estado inicial do localStorage');
+      setInitialJson(savedState);
+    }
+  }, []);
 
   // Force hide Gleap widget on this page
   useEffect(() => {
@@ -266,7 +303,7 @@ export default function FunilEditorLanding() {
           </div>
           
           <Viewport>
-            <Frame>
+            <Frame data={initialJson || undefined}>
               <Element
                 canvas
                 is={Container}
