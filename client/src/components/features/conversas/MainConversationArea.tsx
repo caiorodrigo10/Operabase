@@ -112,7 +112,7 @@ export function MainConversationArea({
                   {/* Date Header */}
                   {showDateHeader && dateToShow && (
                     <div className="flex justify-center my-4">
-                      <div className="bg-gray-100 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+                      <div className="bg-blue-500 text-white text-sm font-medium px-3 py-1 rounded-full">
                         {formatDateLabel(dateToShow)}
                       </div>
                     </div>
