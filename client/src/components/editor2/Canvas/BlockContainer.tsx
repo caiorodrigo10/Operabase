@@ -51,10 +51,10 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
 
   return (
     <div
-      className={`relative bg-white rounded-lg transition-all duration-200 ${
+      className={`relative bg-white transition-all duration-200 ${
         shouldShowUI 
           ? 'shadow-lg border border-gray-200' 
-          : 'shadow-md hover:shadow-lg'
+          : ''
       }`}
       style={{
         padding: block.style.padding,
