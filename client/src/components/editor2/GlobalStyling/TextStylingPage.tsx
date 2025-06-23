@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Monitor, Smartphone } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Edit3 } from 'lucide-react';
 import { FontEditorModal } from './FontEditorModal';
 
 interface TextStylingPageProps {
@@ -8,9 +8,10 @@ interface TextStylingPageProps {
 
 const EditButton: React.FC = () => (
   <button
-    className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-medium text-xs transition-all opacity-0 group-hover:opacity-100 ml-4"
+    className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-medium text-xs transition-all opacity-0 group-hover:opacity-100 ml-4 flex items-center gap-1"
   >
-    CLIQUE PARA EDITAR
+    <Edit3 size={12} />
+    Editar
   </button>
 );
 
