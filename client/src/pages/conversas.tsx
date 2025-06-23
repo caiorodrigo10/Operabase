@@ -82,11 +82,11 @@ export default function ConversasPage() {
           sender_name: msg.sender_type === 'ai' ? 'Mara AI' : msg.sender_name,
           sender_avatar: undefined,
           media_type: msg.message_type !== 'text' ? msg.message_type as any : undefined,
-          media_url: undefined,
-          media_filename: undefined,
-          media_size: undefined,
-          media_duration: undefined,
-          media_thumbnail: undefined
+          media_url: msg.attachments?.[0]?.file_url || undefined,
+          media_filename: msg.attachments?.[0]?.file_name || undefined,
+          media_size: msg.attachments?.[0]?.file_size || undefined,
+          media_duration: msg.attachments?.[0]?.duration || undefined,
+          media_thumbnail: msg.attachments?.[0]?.thumbnail_url || undefined
         }
       }));
       

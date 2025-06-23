@@ -100,10 +100,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         return res.status(404).json({ error: 'Conversa não encontrada' });
       }
 
-      // Get messages
+      // Get messages with attachments
       const { data: messages, error: msgError } = await supabase
         .from('messages')
-        .select('*')
+        .select(`
+          *,
+          message_attachments (
+            id,
+            file_name,
+            file_type,
+            file_size,
+            file_url,
+            thumbnail_url,
+            duration,
+            width,
+            height
+          )
+        `)
         .eq('conversation_id', conversationId)
         .order('timestamp', { ascending: true });
 
@@ -115,17 +128,30 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('📨 Found messages:', messages?.length || 0);
 
       // Format messages for frontend
-      const formattedMessages = (messages || []).map(msg => ({
-        id: msg.id,
-        conversation_id: msg.conversation_id,
-        content: msg.content,
-        sender_type: msg.sender_type,
-        sender_name: msg.sender_type === 'professional' ? 'Caio Rodrigo' : 'Paciente',
-        direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
-        message_type: 'text',
-        created_at: msg.timestamp,
-        attachments: []
-      }));
+      const formattedMessages = (messages || []).map(msg => {
+        // Determine message type based on attachments
+        let messageType = 'text';
+        if (msg.message_attachments && msg.message_attachments.length > 0) {
+          const attachment = msg.message_attachments[0];
+          if (attachment.file_type.startsWith('image/')) messageType = 'image';
+          else if (attachment.file_type.startsWith('audio/')) messageType = 'audio';
+          else if (attachment.file_type.startsWith('video/')) messageType = 'video';
+          else messageType = 'document';
+        }
+
+        return {
+          id: msg.id,
+          conversation_id: msg.conversation_id,
+          content: msg.content,
+          sender_type: msg.sender_type,
+          sender_name: msg.sender_type === 'professional' ? 'Caio Rodrigo' : 
+                      msg.sender_type === 'ai' ? 'Mara AI' : 'Paciente',
+          direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
+          message_type: messageType,
+          created_at: msg.timestamp,
+          attachments: msg.message_attachments || []
+        };
+      });
 
       res.json({
         conversation: conversation,
