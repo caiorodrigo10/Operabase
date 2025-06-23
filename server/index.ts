@@ -353,6 +353,10 @@ app.use((req, res, next) => {
   const systemLogsRoutes = await import('./routes/system-logs.routes');
   app.use('/api', systemLogsRoutes.default);
   
+  // Add Conversations routes
+  const { setupConversationsRoutes } = await import('./conversations-routes');
+  setupConversationsRoutes(app, storage);
+  
   // Initialize anamnesis system
   try {
     const { initializeAnamnesisSystem } = await import('./anamnesis-setup');
