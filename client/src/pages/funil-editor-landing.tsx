@@ -502,8 +502,7 @@ export default function FunilEditorLanding() {
                     custom={{ displayName: 'Heading' }}
                   >
                     <Text
-                      fontSize="23"
-                      fontWeight="400"
+                      fontSize={23}
                       text="Craft.js is a React framework for building powerful &amp; feature-rich drag-n-drop page editors."
                     />
                   </Element>
@@ -516,8 +515,7 @@ export default function FunilEditorLanding() {
                     custom={{ displayName: 'Description' }}
                   >
                     <Text
-                      fontSize="14"
-                      fontWeight="400"
+                      fontSize={14}
                       text="Everything you see here, including the editor, itself is made of React components. Craft.js comes only with the building blocks for a page editor; it provides a drag-n-drop system and handles the way user components should be rendered, updated and moved, among other things."
                     />
                   </Element>
@@ -531,24 +529,21 @@ export default function FunilEditorLanding() {
                   custom={{ displayName: 'Hero Section' }}
                 >
                   <Text
-                    fontSize="28"
-                    fontWeight="700"
+                    fontSize={28}
                     text="Design complex components"
                     textAlign="center"
-                    color={{ r: '255', g: '255', b: '255', a: '1' }}
+                    color="#ffffff"
                   />
                   <Text
-                    fontSize="16"
-                    fontWeight="400"
+                    fontSize={16}
                     text="You can define areas within your React component which users can drop other components into."
                     textAlign="center"
-                    color={{ r: '255', g: '255', b: '255', a: '1' }}
-                    margin={['20', '0', '20', '0']}
+                    color="#ffffff"
                   />
                   <CraftButton
-                    text="Get Started"
-                    background={{ r: 59, g: 130, b: 246, a: 1 }}
-                    color={{ r: 255, g: 255, b: 255, a: 1 }}
+                    children="Get Started"
+                    backgroundColor="#3b82f6"
+                    textColor="#ffffff"
                   />
                 </Element>
 
@@ -572,16 +567,12 @@ export default function FunilEditorLanding() {
                     custom={{ displayName: 'Left Content' }}
                   >
                     <Text
-                      fontSize="20"
-                      fontWeight="600"
+                      fontSize={20}
                       text="Programmatic drag &amp; drop"
-                      margin={['0', '0', '15', '0']}
                     />
                     <Text
-                      fontSize="14"
-                      fontWeight="400"
+                      fontSize={14}
                       text="Govern what goes in and out of your components"
-                      margin={['0', '0', '20', '0']}
                     />
                     <Element
                       canvas
@@ -591,10 +582,9 @@ export default function FunilEditorLanding() {
                       custom={{ displayName: 'Green Card' }}
                     >
                       <Text
-                        fontSize="16"
-                        fontWeight="500"
+                        fontSize={16}
                         text="I'm a component that only accepts buttons."
-                        color={{ r: '255', g: '255', b: '255', a: '1' }}
+                        color="#ffffff"
                       />
                     </Element>
                   </Element>
@@ -615,10 +605,9 @@ export default function FunilEditorLanding() {
                       custom={{ displayName: 'Gray Card' }}
                     >
                       <Text
-                        fontSize="14"
-                        fontWeight="400"
+                        fontSize={14}
                         text="You can only drop one video here."
-                        color={{ r: '255', g: '255', b: '255', a: '1' }}
+                        color="#ffffff"
                       />
                     </Element>
                     
