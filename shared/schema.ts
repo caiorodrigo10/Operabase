@@ -473,3 +473,146 @@ export const insertSystemLogSchema = createInsertSchema(system_logs).omit({
 // Types para TypeScript
 export type SystemLog = typeof system_logs.$inferSelect;
 export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
+
+// ================================================================
+// CONVERSATIONS SYSTEM - NEW SUPABASE INTEGRATION
+// ================================================================
+
+// Tabela principal de conversas
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  contact_id: integer("contact_id").notNull(),
+  professional_id: integer("professional_id"), // Profissional responsável
+  whatsapp_number_id: integer("whatsapp_number_id"), // Número do WhatsApp usado
+  
+  // Status e metadata
+  status: varchar("status", { length: 50 }).notNull().default("active"), // active, archived, closed
+  title: varchar("title", { length: 255 }), // Título customizado da conversa
+  priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, urgent
+  
+  // Contadores para performance
+  total_messages: integer("total_messages").default(0),
+  unread_count: integer("unread_count").default(0),
+  
+  // Timestamps importantes
+  last_message_at: timestamp("last_message_at"),
+  last_activity_at: timestamp("last_activity_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_conversations_clinic").on(table.clinic_id),
+  index("idx_conversations_contact").on(table.contact_id),
+  index("idx_conversations_professional").on(table.professional_id),
+  index("idx_conversations_activity").on(table.clinic_id, table.last_activity_at),
+  index("idx_conversations_status").on(table.clinic_id, table.status),
+]);
+
+// Tabela de mensagens
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversation_id: integer("conversation_id").notNull(),
+  clinic_id: integer("clinic_id").notNull(),
+  
+  // Origem da mensagem
+  sender_type: varchar("sender_type", { length: 50 }).notNull(), // professional, patient, system, ai
+  sender_id: varchar("sender_id", { length: 255 }), // ID do remetente (user_id, contact phone, etc)
+  sender_name: varchar("sender_name", { length: 255 }),
+  
+  // Conteúdo da mensagem
+  content: text("content"),
+  message_type: varchar("message_type", { length: 50 }).notNull().default("text"), // text, image, document, audio, video, location, contact
+  
+  // Dados específicos do WhatsApp/N8N
+  external_id: varchar("external_id", { length: 255 }), // ID da mensagem no WhatsApp
+  whatsapp_data: jsonb("whatsapp_data"), // Dados completos do webhook do WhatsApp
+  
+  // Status da mensagem
+  status: varchar("status", { length: 50 }).notNull().default("sent"), // sent, delivered, read, failed
+  direction: varchar("direction", { length: 20 }).notNull(), // inbound, outbound
+  
+  // Resposta da AI (se aplicável)
+  ai_generated: boolean("ai_generated").default(false),
+  ai_context: jsonb("ai_context"), // Contexto usado pela AI para gerar a resposta
+  
+  // Timestamps
+  sent_at: timestamp("sent_at"),
+  delivered_at: timestamp("delivered_at"),
+  read_at: timestamp("read_at"),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_messages_conversation").on(table.conversation_id, table.created_at),
+  index("idx_messages_clinic").on(table.clinic_id, table.created_at),
+  index("idx_messages_external").on(table.external_id),
+  index("idx_messages_status").on(table.status, table.direction),
+]);
+
+// Tabela de anexos
+export const message_attachments = pgTable("message_attachments", {
+  id: serial("id").primaryKey(),
+  message_id: integer("message_id").notNull(),
+  clinic_id: integer("clinic_id").notNull(),
+  
+  // Informações do arquivo
+  file_name: varchar("file_name", { length: 255 }).notNull(),
+  file_type: varchar("file_type", { length: 100 }).notNull(), // mime type
+  file_size: integer("file_size"), // em bytes
+  file_url: text("file_url"), // URL do arquivo (local ou cloud)
+  
+  // Dados do WhatsApp
+  whatsapp_media_id: varchar("whatsapp_media_id", { length: 255 }),
+  whatsapp_media_url: text("whatsapp_media_url"),
+  
+  // Metadata
+  thumbnail_url: text("thumbnail_url"),
+  duration: integer("duration"), // para áudio/vídeo em segundos
+  width: integer("width"), // para imagens/vídeos
+  height: integer("height"), // para imagens/vídeos
+  
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_attachments_message").on(table.message_id),
+  index("idx_attachments_clinic").on(table.clinic_id),
+]);
+
+// Zod schemas para validação
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  status: z.enum(['active', 'archived', 'closed']).default('active'),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+  clinic_id: z.number().min(1),
+  contact_id: z.number().min(1),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  created_at: true,
+}).extend({
+  sender_type: z.enum(['professional', 'patient', 'system', 'ai']),
+  message_type: z.enum(['text', 'image', 'document', 'audio', 'video', 'location', 'contact']).default('text'),
+  status: z.enum(['sent', 'delivered', 'read', 'failed']).default('sent'),
+  direction: z.enum(['inbound', 'outbound']),
+  clinic_id: z.number().min(1),
+  conversation_id: z.number().min(1),
+});
+
+export const insertMessageAttachmentSchema = createInsertSchema(message_attachments).omit({
+  id: true,
+  created_at: true,
+}).extend({
+  clinic_id: z.number().min(1),
+  message_id: z.number().min(1),
+});
+
+// Types para TypeScript
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type MessageAttachment = typeof message_attachments.$inferSelect;
+export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSchema>;
