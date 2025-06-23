@@ -27,6 +27,11 @@ export interface Block {
   };
 }
 
+export interface GlobalSettings {
+  gridWidth: number;
+  layoutStyle: 'full-width' | 'boxed';
+}
+
 export interface PageData {
   id: string;
   blocks: Block[];
@@ -39,6 +44,9 @@ export interface PageData {
 interface EditorState {
   // Page structure
   currentPage: PageData;
+  
+  // Global settings
+  globalSettings: GlobalSettings;
   
   // UI state
   isResizing: boolean;
@@ -62,6 +70,7 @@ interface EditorState {
   stopResize: () => void;
   removeColumn: (blockId: string, columnId: string) => void;
   removeBlock: (blockId: string) => void;
+  updateGlobalSettings: (settings: Partial<GlobalSettings>) => void;
 }
 
 export const useEditor2Store = create<EditorState>((set, get) => ({
@@ -72,6 +81,11 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
       type: null,
       id: null,
     },
+  },
+  
+  globalSettings: {
+    gridWidth: 1100,
+    layoutStyle: 'full-width',
   },
   
   isResizing: false,
@@ -386,6 +400,16 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
         ...state.currentPage,
         blocks: updatedBlocks,
         selectedElement: { type: null, id: null },
+      },
+    });
+  },
+  
+  updateGlobalSettings: (settings: Partial<GlobalSettings>) => {
+    const state = get();
+    set({
+      globalSettings: {
+        ...state.globalSettings,
+        ...settings,
       },
     });
   },

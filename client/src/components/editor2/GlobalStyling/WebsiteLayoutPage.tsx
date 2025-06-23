@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
+import { useEditor2Store } from '../../../stores/editor2Store';
 
 interface WebsiteLayoutPageProps {
   onBack: () => void;
@@ -16,25 +17,34 @@ const defaultSettings: LayoutSettings = {
 };
 
 export const WebsiteLayoutPage: React.FC<WebsiteLayoutPageProps> = ({ onBack }) => {
-  const [settings, setSettings] = useState<LayoutSettings>(defaultSettings);
-  const [originalSettings] = useState<LayoutSettings>(defaultSettings);
+  const { globalSettings, updateGlobalSettings } = useEditor2Store();
+  const [settings, setSettings] = useState<LayoutSettings>(globalSettings);
+  const [originalSettings] = useState<LayoutSettings>(globalSettings);
+
+  // Update settings when global settings change
+  useEffect(() => {
+    setSettings(globalSettings);
+  }, [globalSettings]);
 
   const handleCancel = () => {
     setSettings(originalSettings);
+    updateGlobalSettings(originalSettings);
     onBack();
   };
 
   const handleConfirm = () => {
-    // TODO: Save layout settings to global state
-    console.log('Saving layout settings:', settings);
+    updateGlobalSettings(settings);
     onBack();
   };
 
   const handleGridWidthChange = (value: number) => {
-    setSettings(prev => ({
-      ...prev,
+    const newSettings = {
+      ...settings,
       gridWidth: value
-    }));
+    };
+    setSettings(newSettings);
+    // Update global settings in real-time for preview
+    updateGlobalSettings(newSettings);
   };
 
   const handleLayoutStyleChange = (style: 'full-width' | 'boxed') => {

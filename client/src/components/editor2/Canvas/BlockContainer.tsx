@@ -9,6 +9,7 @@ interface BlockContainerProps {
 export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
   const { 
     currentPage, 
+    globalSettings,
     hoveredElement,
     selectElement,
     setHoveredElement,
@@ -142,15 +143,25 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
 
         {/* Columns Container - Full width block with centered content */}
         <div className="w-full flex justify-center relative">
-          {/* Left boundary indicator */}
+          {/* Boundary indicators based on global grid width */}
           {shouldShowUI && (
             <>
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300 opacity-50 z-10" style={{ marginLeft: '-550px' }} />
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300 opacity-50 z-10" style={{ marginLeft: '550px' }} />
+              <div 
+                className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300 opacity-50 z-10" 
+                style={{ marginLeft: `-${globalSettings.gridWidth / 2}px` }} 
+              />
+              <div 
+                className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300 opacity-50 z-10" 
+                style={{ marginLeft: `${globalSettings.gridWidth / 2}px` }} 
+              />
             </>
           )}
           
-          <div className="flex min-h-[200px] w-full max-w-[1100px] relative" data-block-id={block.id}>
+          <div 
+            className="flex min-h-[200px] w-full relative" 
+            style={{ maxWidth: `${globalSettings.gridWidth}px` }}
+            data-block-id={block.id}
+          >
             {block.columns.map((column, index) => (
               <ColumnContainer
                 key={column.id}
