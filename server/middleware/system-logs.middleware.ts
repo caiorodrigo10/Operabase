@@ -18,6 +18,9 @@ interface LogContext {
 // Store da requisição para comparar estados antes/depois
 const requestStore = new Map<string, any>();
 
+// Store para prevenir duplicação de logs
+const processedRequests = new Set<string>();
+
 /**
  * Middleware para capturar dados antes da operação
  */
@@ -111,6 +114,17 @@ async function captureOperationLog(req: any, res: Response, responseData: any) {
     if (!requestId || !entityType) {
       return;
     }
+
+    // Prevenir duplicação de logs para a mesma requisição
+    if (processedRequests.has(requestId)) {
+      return;
+    }
+    processedRequests.add(requestId);
+
+    // Limpar processed requests antigos para evitar vazamento de memória
+    setTimeout(() => {
+      processedRequests.delete(requestId);
+    }, 60000); // Remove após 1 minuto
 
     // Recuperar dados pré-operação
     const preOpData = requestStore.get(requestId);
