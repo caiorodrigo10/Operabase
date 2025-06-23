@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ColorPickerModalProps {
   color: string;
@@ -189,12 +190,14 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
   const pureHue = hsvToRgb(hsv.h, 1, 1);
   const pureHueHex = rgbToHex(pureHue.r, pureHue.g, pureHue.b);
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
       onClick={handleBackdropClick}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >
-      <div className="bg-gray-700 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-700 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+           style={{ zIndex: 10000 }}>
         {/* Main Color Picker Area */}
         <div className="flex gap-4 mb-6">
           {/* Saturation/Value Square */}
@@ -365,4 +368,6 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
