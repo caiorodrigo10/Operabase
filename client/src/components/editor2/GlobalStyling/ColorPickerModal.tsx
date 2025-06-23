@@ -196,15 +196,15 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
       onClick={handleBackdropClick}
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >
-      <div className="bg-gray-700 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+      <div className="bg-gray-700 rounded-lg p-4 max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl"
            style={{ zIndex: 10000 }}>
         {/* Main Color Picker Area */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-3 mb-4">
           {/* Saturation/Value Square */}
           <div className="relative">
             <div
               ref={saturationRef}
-              className="w-80 h-48 relative cursor-crosshair rounded"
+              className="w-48 h-32 relative cursor-crosshair rounded"
               style={{
                 background: `linear-gradient(to right, white, ${pureHueHex}), linear-gradient(to bottom, transparent, black)`
               }}
@@ -212,7 +212,7 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
             >
               {/* Cursor */}
               <div
-                className="absolute w-4 h-4 border-2 border-white rounded-full transform -translate-x-2 -translate-y-2 pointer-events-none"
+                className="absolute w-3 h-3 border-2 border-white rounded-full transform -translate-x-1.5 -translate-y-1.5 pointer-events-none"
                 style={{
                   left: `${hsv.s * 100}%`,
                   top: `${(1 - hsv.v) * 100}%`
@@ -225,7 +225,7 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
           <div className="relative">
             <div
               ref={hueRef}
-              className="w-5 h-48 cursor-pointer rounded"
+              className="w-4 h-32 cursor-pointer rounded"
               style={{
                 background: 'linear-gradient(to bottom, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)'
               }}
@@ -233,7 +233,7 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
             >
               {/* Cursor */}
               <div
-                className="absolute w-5 h-1 border border-white bg-white transform -translate-y-0.5 pointer-events-none"
+                className="absolute w-4 h-0.5 border border-white bg-white transform -translate-y-0.25 pointer-events-none"
                 style={{
                   top: `${(hsv.h / 360) * 100}%`
                 }}
@@ -243,23 +243,23 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
         </div>
 
         {/* Opacity Slider */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3">
-            <span className="text-white text-sm w-16">Opacity</span>
+        <div className="mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-white text-xs w-12">Opacity</span>
             <div className="flex-1 relative">
               <div
                 ref={opacityRef}
-                className="h-5 relative cursor-pointer rounded"
+                className="h-4 relative cursor-pointer rounded"
                 style={{
                   backgroundImage: `linear-gradient(to right, transparent, ${currentColor}), linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
-                  backgroundSize: '100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px',
-                  backgroundPosition: '0 0, 0 0, 0 4px, 4px -4px, -4px 0px'
+                  backgroundSize: '100% 100%, 6px 6px, 6px 6px, 6px 6px, 6px 6px',
+                  backgroundPosition: '0 0, 0 0, 0 3px, 3px -3px, -3px 0px'
                 }}
                 onClick={handleOpacityClick}
               >
                 {/* Cursor */}
                 <div
-                  className="absolute w-1 h-5 border border-white bg-white transform -translate-x-0.5 pointer-events-none"
+                  className="absolute w-0.5 h-4 border border-white bg-white transform -translate-x-0.25 pointer-events-none"
                   style={{
                     left: `${opacity * 100}%`
                   }}
@@ -270,79 +270,75 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
         </div>
 
         {/* Color Info Panel */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          {/* RGB Inputs */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-4 gap-2">
-              <div>
-                <label className="text-white text-xs">R</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="255"
-                  value={rgb.r}
-                  onChange={(e) => handleInputChange('r', e.target.value)}
-                  className="w-full bg-gray-600 text-white text-sm p-1 rounded"
-                />
-              </div>
-              <div>
-                <label className="text-white text-xs">G</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="255"
-                  value={rgb.g}
-                  onChange={(e) => handleInputChange('g', e.target.value)}
-                  className="w-full bg-gray-600 text-white text-sm p-1 rounded"
-                />
-              </div>
-              <div>
-                <label className="text-white text-xs">B</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="255"
-                  value={rgb.b}
-                  onChange={(e) => handleInputChange('b', e.target.value)}
-                  className="w-full bg-gray-600 text-white text-sm p-1 rounded"
-                />
-              </div>
-              <div>
-                <label className="text-white text-xs">A</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={opacity}
-                  onChange={(e) => setOpacity(parseFloat(e.target.value))}
-                  className="w-full bg-gray-600 text-white text-sm p-1 rounded"
-                />
-              </div>
+        <div className="mb-4">
+          {/* RGB/Hex Inputs - Horizontal Layout */}
+          <div className="grid grid-cols-5 gap-2 mb-3">
+            <div>
+              <label className="text-white text-xs block mb-1">R</label>
+              <input
+                type="number"
+                min="0"
+                max="255"
+                value={rgb.r}
+                onChange={(e) => handleInputChange('r', e.target.value)}
+                className="w-full bg-gray-600 text-white text-xs p-1.5 rounded"
+              />
             </div>
-          </div>
-
-          {/* Hex Input */}
-          <div>
-            <label className="text-white text-xs">#</label>
-            <input
-              type="text"
-              value={currentColor.replace('#', '')}
-              onChange={(e) => handleInputChange('hex', '#' + e.target.value)}
-              className="w-full bg-gray-600 text-white text-sm p-1 rounded uppercase"
-              maxLength={6}
-            />
+            <div>
+              <label className="text-white text-xs block mb-1">G</label>
+              <input
+                type="number"
+                min="0"
+                max="255"
+                value={rgb.g}
+                onChange={(e) => handleInputChange('g', e.target.value)}
+                className="w-full bg-gray-600 text-white text-xs p-1.5 rounded"
+              />
+            </div>
+            <div>
+              <label className="text-white text-xs block mb-1">B</label>
+              <input
+                type="number"
+                min="0"
+                max="255"
+                value={rgb.b}
+                onChange={(e) => handleInputChange('b', e.target.value)}
+                className="w-full bg-gray-600 text-white text-xs p-1.5 rounded"
+              />
+            </div>
+            <div>
+              <label className="text-white text-xs block mb-1">A</label>
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={opacity}
+                onChange={(e) => setOpacity(parseFloat(e.target.value))}
+                className="w-full bg-gray-600 text-white text-xs p-1.5 rounded"
+              />
+            </div>
+            <div>
+              <label className="text-white text-xs block mb-1">#</label>
+              <input
+                type="text"
+                value={currentColor.replace('#', '')}
+                onChange={(e) => handleInputChange('hex', '#' + e.target.value)}
+                className="w-full bg-gray-600 text-white text-xs p-1.5 rounded uppercase"
+                maxLength={6}
+              />
+            </div>
           </div>
         </div>
 
         {/* Global Colors */}
-        <div className="mb-6">
-          <h3 className="text-white text-sm mb-3">Global Colors</h3>
-          <div className="grid grid-cols-6 gap-2">
+        <div className="mb-4">
+          <h3 className="text-white text-xs mb-2">Global Colors</h3>
+          <div className="grid grid-cols-6 gap-1.5">
             {globalColors.map((globalColor, index) => (
               <button
                 key={index}
-                className="w-8 h-8 rounded border-2 border-gray-500 hover:border-white transition-colors"
+                className="w-6 h-6 rounded border border-gray-500 hover:border-white transition-colors"
                 style={{ backgroundColor: globalColor }}
                 onClick={() => handleColorSelect(globalColor)}
               />
@@ -351,16 +347,16 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="px-3 py-1.5 text-gray-300 hover:text-white transition-colors text-sm"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
           >
             Confirm
           </button>
