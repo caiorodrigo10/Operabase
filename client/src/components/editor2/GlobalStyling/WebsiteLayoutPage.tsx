@@ -91,9 +91,9 @@ export const WebsiteLayoutPage: React.FC<WebsiteLayoutPageProps> = ({ onBack }) 
 
         {/* Layout Style Section */}
         <div className="mb-8">
-          <h3 className="text-base font-medium text-gray-900 mb-2">Layout Style</h3>
+          <h3 className="text-base font-medium text-gray-900 mb-2">Estilo do Layout</h3>
           <p className="text-gray-600 text-sm mb-4">
-            This will affect all website pages
+            Isso afetará todas as páginas do site
           </p>
           
           {/* Layout Options */}
@@ -108,7 +108,7 @@ export const WebsiteLayoutPage: React.FC<WebsiteLayoutPageProps> = ({ onBack }) 
               onClick={() => handleLayoutStyleChange('full-width')}
             >
               <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-900">Full Width</span>
+                <span className="font-medium text-gray-900">Largura Total</span>
                 {settings.layoutStyle === 'full-width' && (
                   <Check className="w-5 h-5 text-blue-500" />
                 )}
@@ -125,7 +125,7 @@ export const WebsiteLayoutPage: React.FC<WebsiteLayoutPageProps> = ({ onBack }) 
               onClick={() => handleLayoutStyleChange('boxed')}
             >
               <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-900">Boxed</span>
+                <span className="font-medium text-gray-900">Encaixotado</span>
                 {settings.layoutStyle === 'boxed' && (
                   <Check className="w-5 h-5 text-blue-500" />
                 )}
@@ -141,13 +141,13 @@ export const WebsiteLayoutPage: React.FC<WebsiteLayoutPageProps> = ({ onBack }) 
           onClick={handleCancel}
           className="px-6 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
         >
-          Cancel
+          Cancelar
         </button>
         <button
           onClick={handleConfirm}
           className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded font-medium transition-colors"
         >
-          Confirm
+          Confirmar
         </button>
       </div>
     </div>

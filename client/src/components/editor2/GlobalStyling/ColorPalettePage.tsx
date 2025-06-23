@@ -98,16 +98,16 @@ export const ColorPalettePage: React.FC<ColorPalettePageProps> = ({ onBack }) =>
             Global Styling
           </button>
           
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Color Palette</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Paleta de Cores</h1>
           <p className="text-gray-500 text-sm">
-            Changing the global colors will affect all the places where you've used it in your pages.
+            Alterar as cores globais afetará todos os lugares onde você as usou em suas páginas.
           </p>
         </div>
 
         {/* Primary Color */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Primary Color</h2>
-          <p className="text-sm text-gray-500 mb-4">Used as theme color in all major places</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Cor Primária</h2>
+          <p className="text-sm text-gray-500 mb-4">Usada como cor do tema em todos os lugares principais</p>
           <div className="flex items-center gap-3">
             <ColorCircle 
               color={colors.primary} 
@@ -120,7 +120,7 @@ export const ColorPalettePage: React.FC<ColorPalettePageProps> = ({ onBack }) =>
         {/* Secondary Colors */}
         <div className="mb-8">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-            SECONDARY COLORS
+            CORES SECUNDÁRIAS
           </h2>
           <div className="flex gap-4">
             {colors.secondary.map((color, index) => (
@@ -136,8 +136,8 @@ export const ColorPalettePage: React.FC<ColorPalettePageProps> = ({ onBack }) =>
 
         {/* Background Color */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Background Color</h2>
-          <p className="text-sm text-gray-500 mb-4">The main color for all pages</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Cor de Fundo</h2>
+          <p className="text-sm text-gray-500 mb-4">A cor principal para todas as páginas</p>
           <div className="flex items-center gap-3">
             <ColorCircle 
               color={colors.background} 
@@ -149,8 +149,8 @@ export const ColorPalettePage: React.FC<ColorPalettePageProps> = ({ onBack }) =>
 
         {/* Main Text Color */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Main Text Color</h2>
-          <p className="text-sm text-gray-500 mb-4">Used for portfolio, blog titles, etc.</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Cor do Texto Principal</h2>
+          <p className="text-sm text-gray-500 mb-4">Usada para portfólio, títulos de blog, etc.</p>
           <div className="flex items-center gap-3">
             <ColorCircle 
               color={colors.mainText} 
@@ -168,10 +168,10 @@ export const ColorPalettePage: React.FC<ColorPalettePageProps> = ({ onBack }) =>
             onClick={onBack}
             className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
-            Cancel
+            Cancelar
           </button>
           <button className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
-            Confirm
+            Confirmar
           </button>
         </div>
       </div>
