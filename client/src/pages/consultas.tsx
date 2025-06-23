@@ -921,18 +921,41 @@ export function Consultas() {
 
   // Separate effect for date/time changes - with debounce
   useEffect(() => {
-    if (!watchedProfessionalId) return;
+    console.log('🔍 Verificando disponibilidade - valores:', {
+      profissionalId: watchedProfessionalId,
+      data: watchedDate,
+      hora: watchedTime,
+      duracao: watchedDuration
+    });
+
+    if (!watchedProfessionalId) {
+      console.log('❌ Sem profissional selecionado');
+      return;
+    }
     
     const professionalName = getProfessionalNameById(watchedProfessionalId);
-    if (!professionalName) return;
+    if (!professionalName) {
+      console.log('❌ Nome do profissional não encontrado');
+      return;
+    }
+
+    console.log('✅ Profissional encontrado:', professionalName);
 
     const timeoutId = setTimeout(() => {
       if (watchedDate && watchedTime && watchedDuration) {
+        console.log('🚀 Executando verificação de disponibilidade');
         checkAvailability(watchedDate, watchedTime, watchedDuration, professionalName);
         checkWorkingHours(watchedDate, watchedTime);
+      } else {
+        console.log('⏸️ Campos incompletos para verificação:', {
+          temData: !!watchedDate,
+          temHora: !!watchedTime,
+          temDuracao: !!watchedDuration
+        });
       }
       
       if (watchedDate && watchedDuration && !watchedTime) {
+        console.log('🔍 Buscando horários disponíveis');
         findAvailableSlots(watchedDate, watchedDuration, professionalName);
       }
     }, 500);
