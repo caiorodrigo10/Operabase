@@ -1,6 +1,7 @@
 
 import { Router } from 'express';
 import { AppointmentsController } from './appointments.controller';
+import { appointmentLogsMiddleware } from '../../middleware/system-logs.middleware';
 import { isAuthenticated } from '../../auth';
 import type { IStorage } from '../../storage';
 
@@ -20,17 +21,17 @@ export function createAppointmentsRoutes(storage: IStorage): Router {
   // Get appointments by contact
   router.get('/contacts/:contactId/appointments', controller.getAppointmentsByContact.bind(controller));
 
-  // Create appointment
-  router.post('/appointments', controller.createAppointment.bind(controller));
+  // Create appointment (with logging)
+  router.post('/appointments', ...appointmentLogsMiddleware, controller.createAppointment.bind(controller));
 
-  // Update appointment
-  router.put('/appointments/:id', controller.updateAppointment.bind(controller));
+  // Update appointment (with logging)
+  router.put('/appointments/:id', ...appointmentLogsMiddleware, controller.updateAppointment.bind(controller));
 
-  // Update appointment status (PATCH)
-  router.patch('/appointments/:id', controller.updateAppointmentStatus.bind(controller));
+  // Update appointment status (with logging)
+  router.patch('/appointments/:id', ...appointmentLogsMiddleware, controller.updateAppointmentStatus.bind(controller));
 
-  // Delete appointment
-  router.delete('/appointments/:id', controller.deleteAppointment.bind(controller));
+  // Delete appointment (with logging)
+  router.delete('/appointments/:id', ...appointmentLogsMiddleware, controller.deleteAppointment.bind(controller));
 
   // Availability endpoints
   router.post('/availability/check', controller.checkAvailability.bind(controller));

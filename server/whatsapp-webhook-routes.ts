@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { IStorage } from './storage';
+import { systemLogsService } from './services/system-logs.service';
 
 interface WebhookConnectionUpdate {
   instanceName: string;

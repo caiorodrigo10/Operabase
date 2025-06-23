@@ -1,0 +1,304 @@
+import { Request, Response, NextFunction } from 'express';
+import { systemLogsService } from '../services/system-logs.service';
+import { tenantContext } from '../shared/tenant-context.provider';
+
+/**
+ * Middleware para capturar automaticamente logs de ações do sistema
+ * Implementação da Fase 1 - Logs Críticos
+ */
+
+interface LogContext {
+  entityType: 'contact' | 'appointment' | 'message' | 'conversation';
+  action: string;
+  entityId?: number;
+  previousData?: any;
+  newData?: any;
+}
+
+// Store da requisição para comparar estados antes/depois
+const requestStore = new Map<string, any>();
+
+/**
+ * Middleware para capturar dados antes da operação
+ */
+export const capturePreOperationData = (entityType: string) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const requestId = `${req.method}-${req.path}-${Date.now()}-${Math.random()}`;
+      req.logRequestId = requestId;
+      req.logEntityType = entityType;
+
+      // Capturar dados existentes para operações de UPDATE/DELETE
+      if ((req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE') && req.params.id) {
+        const entityId = parseInt(req.params.id);
+        if (!isNaN(entityId)) {
+          try {
+            const storage = req.app.get('storage');
+            let previousData = null;
+
+            // Buscar dados existentes baseado no tipo de entidade
+            switch (entityType) {
+              case 'contact':
+                previousData = await storage.getContact(entityId);
+                break;
+              case 'appointment':
+                previousData = await storage.getAppointment(entityId);
+                break;
+              case 'message':
+                previousData = await storage.getMessage(entityId);
+                break;
+              case 'conversation':
+                previousData = await storage.getConversation(entityId);
+                break;
+            }
+
+            requestStore.set(requestId, {
+              entityType,
+              entityId,
+              previousData,
+              timestamp: Date.now()
+            });
+          } catch (error) {
+            console.error('❌ Error capturing pre-operation data:', error);
+          }
+        }
+      }
+
+      next();
+    } catch (error) {
+      console.error('❌ Error in capturePreOperationData middleware:', error);
+      next();
+    }
+  };
+};
+
+/**
+ * Middleware para logs pós-operação
+ */
+export const logPostOperation = () => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const originalSend = res.send;
+    const originalJson = res.json;
+
+    // Interceptar response para capturar dados da operação
+    res.send = function(data) {
+      captureOperationLog(req, res, data);
+      return originalSend.call(this, data);
+    };
+
+    res.json = function(data) {
+      captureOperationLog(req, res, data);
+      return originalJson.call(this, data);
+    };
+
+    next();
+  };
+};
+
+/**
+ * Capturar e registrar log da operação
+ */
+async function captureOperationLog(req: any, res: Response, responseData: any) {
+  try {
+    // Só processar se a resposta foi bem-sucedida
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      return;
+    }
+
+    const requestId = req.logRequestId;
+    const entityType = req.logEntityType;
+    
+    if (!requestId || !entityType) {
+      return;
+    }
+
+    // Recuperar dados pré-operação
+    const preOpData = requestStore.get(requestId);
+    if (preOpData) {
+      requestStore.delete(requestId); // Limpar para evitar vazamentos de memória
+    }
+
+    // Determinar tipo de ação baseado no método HTTP
+    let actionType = '';
+    switch (req.method) {
+      case 'POST':
+        actionType = 'created';
+        break;
+      case 'PUT':
+      case 'PATCH':
+        actionType = 'updated';
+        break;
+      case 'DELETE':
+        actionType = 'deleted';
+        break;
+      default:
+        return; // Não logar operações GET
+    }
+
+    // Extrair dados da resposta
+    let newData = null;
+    let entityId = null;
+
+    try {
+      if (typeof responseData === 'string') {
+        const parsed = JSON.parse(responseData);
+        newData = parsed.data || parsed;
+      } else {
+        newData = responseData.data || responseData;
+      }
+
+      // Extrair ID da entidade
+      if (newData && newData.id) {
+        entityId = newData.id;
+      } else if (req.params.id) {
+        entityId = parseInt(req.params.id);
+      }
+    } catch (error) {
+      console.error('❌ Error parsing response data for logging:', error);
+      return;
+    }
+
+    // Obter contexto do usuário e clínica
+    const clinicId = tenantContext.getClinicId();
+    const userId = req.user?.id;
+    const userName = req.user?.name;
+
+    if (!clinicId || !entityId) {
+      return; // Não conseguiu obter informações necessárias
+    }
+
+    // Extrair contexto da requisição
+    const context = systemLogsService.extractRequestContext(req);
+
+    // Registrar log baseado no tipo de entidade
+    switch (entityType) {
+      case 'contact':
+        await systemLogsService.logContactAction(
+          actionType as any,
+          entityId,
+          clinicId,
+          userId,
+          'professional',
+          preOpData?.previousData,
+          newData,
+          { ...context, actor_name: userName }
+        );
+        break;
+
+      case 'appointment':
+        await systemLogsService.logAppointmentAction(
+          actionType as any,
+          entityId,
+          clinicId,
+          userId,
+          'professional',
+          preOpData?.previousData,
+          newData,
+          {
+            ...context,
+            actor_name: userName,
+            professional_id: userId ? parseInt(userId) : undefined,
+            related_entity_id: newData?.contact_id
+          }
+        );
+        break;
+
+      case 'message':
+        await systemLogsService.logMessageAction(
+          actionType === 'created' ? 'sent' : actionType as any,
+          entityId,
+          clinicId,
+          newData?.conversation_id || preOpData?.previousData?.conversation_id,
+          userId,
+          'professional',
+          {
+            ...context,
+            actor_name: userName,
+            professional_id: userId ? parseInt(userId) : undefined,
+            contact_id: newData?.contact_id || preOpData?.previousData?.contact_id
+          }
+        );
+        break;
+
+      case 'conversation':
+        await systemLogsService.logAction({
+          entity_type: 'conversation',
+          entity_id: entityId,
+          action_type: actionType,
+          clinic_id: clinicId,
+          actor_id: userId,
+          actor_type: 'professional',
+          actor_name: userName,
+          professional_id: userId ? parseInt(userId) : undefined,
+          related_entity_id: newData?.contact_id || preOpData?.previousData?.contact_id,
+          previous_data: preOpData?.previousData,
+          new_data: newData,
+          changes: systemLogsService['calculateChanges'](preOpData?.previousData, newData),
+          ...context
+        });
+        break;
+    }
+
+    console.log(`📝 System log recorded: ${entityType}.${actionType} for entity ${entityId}`);
+
+  } catch (error) {
+    console.error('❌ Error recording system log:', error);
+    // Não falhar a requisição por causa de erro no log
+  }
+}
+
+/**
+ * Middleware específico para logs de contatos
+ */
+export const contactLogsMiddleware = [
+  capturePreOperationData('contact'),
+  logPostOperation()
+];
+
+/**
+ * Middleware específico para logs de agendamentos
+ */
+export const appointmentLogsMiddleware = [
+  capturePreOperationData('appointment'),
+  logPostOperation()
+];
+
+/**
+ * Middleware específico para logs de mensagens
+ */
+export const messageLogsMiddleware = [
+  capturePreOperationData('message'),
+  logPostOperation()
+];
+
+/**
+ * Middleware específico para logs de conversas
+ */
+export const conversationLogsMiddleware = [
+  capturePreOperationData('conversation'),
+  logPostOperation()
+];
+
+/**
+ * Cleanup de dados antigos do requestStore (executado periodicamente)
+ */
+setInterval(() => {
+  const now = Date.now();
+  const maxAge = 5 * 60 * 1000; // 5 minutos
+
+  for (const [key, data] of requestStore.entries()) {
+    if (now - data.timestamp > maxAge) {
+      requestStore.delete(key);
+    }
+  }
+}, 60 * 1000); // Executar a cada minuto
+
+// Extend Request interface for TypeScript
+declare global {
+  namespace Express {
+    interface Request {
+      logRequestId?: string;
+      logEntityType?: string;
+    }
+  }
+}

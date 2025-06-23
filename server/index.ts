@@ -12,6 +12,8 @@ import { tenantContext } from "./shared/tenant-context.provider";
 import { setupOptimizedRoutes } from "./optimized-routes.js";
 import { performanceOptimizer } from "./performance-optimizer.js";
 import { initGoogleCalendarAuth, handleGoogleCalendarCallback } from './calendar-routes';
+import { initSystemLogsTable } from './init-system-logs';
+import { systemLogsService } from './services/system-logs.service';
 import http from "http";
 import fs from 'fs/promises';
 import path from 'path';
@@ -363,6 +365,14 @@ app.use((req, res, next) => {
     console.log('✅ RAG system initialized');
   } catch (error) {
     console.error('❌ Error initializing RAG system:', error);
+  }
+
+  // Initialize System Logs
+  try {
+    await initSystemLogsTable();
+    console.log('✅ System Logs initialized');
+  } catch (error) {
+    console.error('❌ Error initializing System Logs:', error);
   }
 
   // Initialize WhatsApp table
