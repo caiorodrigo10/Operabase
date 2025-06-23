@@ -39,7 +39,7 @@
 /* Left Area - AI Chat */
 .editor2-left-area {
   grid-area: left;
-  background-color: #1a1a1a;
+  background-color: #ffffff;
   position: relative;
   transition: all 0.3s ease;
 }
@@ -287,8 +287,8 @@
 .ai-chat-minimized {
   width: 40px;
   height: 100%;
-  background-color: #1a1a1a;
-  border-right: 1px solid #404040;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -297,7 +297,7 @@
 }
 
 .ai-chat-minimized:hover {
-  background-color: #2d2d2d;
+  background-color: #f9fafb;
 }
 
 /* Scrollbar Styling for Messages */
@@ -306,16 +306,16 @@
 }
 
 .ai-chat-messages::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: #f9fafb;
 }
 
 .ai-chat-messages::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: #d1d5db;
   border-radius: 3px;
 }
 
 .ai-chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #555555;
+  background: #9ca3af;
 }
 
 /* Vertical Toolbar Styles */
