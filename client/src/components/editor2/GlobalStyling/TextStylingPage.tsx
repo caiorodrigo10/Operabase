@@ -235,7 +235,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 {typography.paragraph.fontFamily}
               </div>
               <button
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-medium text-xs transition-all opacity-0 group-hover:opacity-100"
               >
                 CLIQUE PARA EDITAR
               </button>
@@ -258,7 +258,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 Arial
               </div>
               <button
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-medium text-xs transition-all opacity-0 group-hover:opacity-100"
               >
                 CLIQUE PARA EDITAR
               </button>
@@ -281,7 +281,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 Arial
               </div>
               <button
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-medium text-xs transition-all opacity-0 group-hover:opacity-100"
               >
                 CLIQUE PARA EDITAR
               </button>
@@ -304,7 +304,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
                 Arial
               </div>
               <button
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-medium text-xs transition-all opacity-0 group-hover:opacity-100"
               >
                 CLIQUE PARA EDITAR
               </button>
