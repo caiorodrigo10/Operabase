@@ -598,24 +598,22 @@ export class AppointmentMCPAgent {
         .where(and(...conditions))
         .orderBy(appointments.scheduled_date);
 
-      // Transform the data to change "id" to "appointment_id"
+      // Transform the data to change "id" to "appointment_id" and clean up redundant info
       const transformedData = result.map((row) => {
         const { appointments: appointment, contacts: contact } = row;
         return {
           ...appointment,
           appointment_id: appointment.id,
           id: undefined, // Remove the original id field
-          contacts: contact
+          contact_name: contact?.name || null,
+          contact_phone: contact?.phone || null
         };
       });
 
       return {
         success: true,
         data: transformedData,
-        error: null,
-        appointment_id: null,
-        conflicts: null,
-        next_available_slots: null
+        error: null
       };
 
     } catch (error) {
