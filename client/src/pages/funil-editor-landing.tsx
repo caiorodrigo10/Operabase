@@ -236,7 +236,7 @@ export default function FunilEditorLanding() {
           </div>
           
           <Viewport>
-            <Frame json={savedJson}>
+            <Frame data={savedJson || undefined}>
               <Element
                 canvas
                 is={Container}
@@ -299,7 +299,7 @@ export default function FunilEditorLanding() {
                     fontWeight="700"
                     text="Design complex components"
                     textAlign="center"
-                    color={{ r: 255, g: 255, b: 255, a: 1 }}
+                    color={{ r: '255', g: '255', b: '255', a: '1' }}
                   />
                   <Text
                     fontSize="16"
