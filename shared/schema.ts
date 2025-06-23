@@ -408,3 +408,68 @@ export type InsertRagEmbedding = z.infer<typeof insertRagEmbeddingSchema>;
 
 export type RagQuery = typeof rag_queries.$inferSelect;
 export type InsertRagQuery = z.infer<typeof insertRagQuerySchema>;
+
+// ================================================================
+// SYSTEM LOGS - CENTRALIZED AUDIT TRAIL (PHASE 1)
+// ================================================================
+
+// Tabela principal para logs do sistema
+export const system_logs = pgTable("system_logs", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  
+  // Identificação da ação
+  entity_type: varchar("entity_type", { length: 50 }).notNull(), // 'contact', 'appointment', 'message', 'conversation', 'medical_record'
+  entity_id: integer("entity_id"),
+  action_type: varchar("action_type", { length: 100 }).notNull(), // 'created', 'updated', 'deleted', 'status_changed', 'sent', 'received'
+  
+  // Quem fez a ação
+  actor_id: uuid("actor_id"), // ID do usuário que fez a ação
+  actor_type: varchar("actor_type", { length: 50 }), // 'professional', 'patient', 'system', 'ai'
+  actor_name: varchar("actor_name", { length: 255 }), // Nome para facilitar consultas
+  
+  // Contexto adicional para sistema médico
+  professional_id: integer("professional_id"), // Para isolamento por profissional
+  related_entity_id: integer("related_entity_id"), // Para relacionamentos (ex: appointment_id em medical_record)
+  
+  // Dados da ação
+  previous_data: jsonb("previous_data"), // Estado anterior
+  new_data: jsonb("new_data"), // Estado novo
+  changes: jsonb("changes"), // Diff específico das mudanças
+  
+  // Contexto adicional
+  source: varchar("source", { length: 50 }), // 'web', 'whatsapp', 'api', 'mobile'
+  ip_address: varchar("ip_address", { length: 45 }), // IPv4/IPv6
+  user_agent: text("user_agent"),
+  session_id: varchar("session_id", { length: 255 }),
+  
+  // Timestamps
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  // Índices para performance otimizada
+  index("idx_logs_clinic_entity").on(table.clinic_id, table.entity_type, table.entity_id),
+  index("idx_logs_actor").on(table.clinic_id, table.actor_id, table.created_at),
+  index("idx_logs_timeline").on(table.clinic_id, table.created_at),
+  index("idx_logs_professional").on(table.clinic_id, table.professional_id, table.created_at),
+  index("idx_logs_entity_type").on(table.entity_type, table.action_type),
+]);
+
+// Zod schemas para validação
+export const insertSystemLogSchema = createInsertSchema(system_logs).omit({
+  id: true,
+  created_at: true,
+}).extend({
+  entity_type: z.enum(['contact', 'appointment', 'message', 'conversation', 'medical_record', 'anamnesis', 'whatsapp_number']),
+  action_type: z.enum([
+    'created', 'updated', 'deleted', 'status_changed', 
+    'sent', 'received', 'ai_response', 'filled', 'reviewed',
+    'rescheduled', 'no_show', 'completed', 'cancelled',
+    'connected', 'disconnected', 'archived'
+  ]),
+  actor_type: z.enum(['professional', 'patient', 'system', 'ai']).optional(),
+  clinic_id: z.number().min(1, "Clinic ID é obrigatório"),
+});
+
+// Types para TypeScript
+export type SystemLog = typeof system_logs.$inferSelect;
+export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
