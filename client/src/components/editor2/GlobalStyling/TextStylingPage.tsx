@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Monitor, Smartphone } from 'lucide-react';
+import { FontEditorModal } from './FontEditorModal';
 
 interface TextStylingPageProps {
   onBack: () => void;
@@ -100,6 +101,8 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
   const [currentDevice, setCurrentDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [typography, setTypography] = useState<TypographyState>(defaultTypography);
   const [originalTypography] = useState<TypographyState>(defaultTypography);
+  const [isFontEditorOpen, setIsFontEditorOpen] = useState(false);
+  const [editingElement, setEditingElement] = useState<string>('');
 
   const getPreviewSizes = (device: 'desktop' | 'mobile') => {
     if (device === 'mobile') {
@@ -140,8 +143,37 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
   };
 
   const handleElementClick = (elementType: string) => {
-    console.log(`Opening font editor for: ${elementType}`);
-    // TODO: Open font editor modal
+    setEditingElement(elementType);
+    setIsFontEditorOpen(true);
+  };
+
+  const handleFontSave = (values: any) => {
+    setTypography(prev => {
+      const newTypography = { ...prev };
+      
+      if (editingElement === 'paragraph') {
+        newTypography.paragraph = { ...newTypography.paragraph, ...values };
+      } else if (editingElement === 'quote') {
+        newTypography.quote = { ...newTypography.quote, ...values };
+      } else if (editingElement.startsWith('h')) {
+        const headingLevel = editingElement as keyof typeof newTypography.headings;
+        newTypography.headings[headingLevel] = { ...newTypography.headings[headingLevel], ...values };
+      }
+      
+      return newTypography;
+    });
+  };
+
+  const getCurrentElementValues = () => {
+    if (editingElement === 'paragraph') {
+      return typography.paragraph;
+    } else if (editingElement === 'quote') {
+      return typography.quote;
+    } else if (editingElement.startsWith('h')) {
+      const headingLevel = editingElement as keyof typeof typography.headings;
+      return typography.headings[headingLevel];
+    }
+    return typography.paragraph;
   };
 
   return (
@@ -160,7 +192,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
           
           {/* Title and Device Toggle */}
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-semibold text-gray-900">Text Styling</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Estilo de Texto</h1>
             
             {/* Device Toggle */}
             <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
@@ -193,7 +225,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
           {/* Paragraph Section */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              PARAGRAPH
+              PARÁGRAFO
             </h3>
             <div 
               className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
@@ -205,7 +237,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               <button
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
               >
-                CLICK TO EDIT
+                CLIQUE PARA EDITAR
               </button>
             </div>
           </div>
@@ -213,112 +245,161 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
           {/* Heading 1 */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              HEADING 1
+              TÍTULO 1
             </h3>
-            <div className="relative">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
+              onClick={() => handleElementClick('h1')}
+            >
               <div
-                className={`${previewSizes.h1} font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-gray-50`}
-                onClick={() => handleElementClick('h1')}
+                className={`${previewSizes.h1} font-bold text-gray-900`}
                 style={{ fontFamily: typography.headings.h1.fontFamily }}
               >
                 Arial
               </div>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+              >
+                CLIQUE PARA EDITAR
+              </button>
             </div>
           </div>
 
           {/* Heading 2 */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              HEADING 2
+              TÍTULO 2
             </h3>
-            <div className="relative">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
+              onClick={() => handleElementClick('h2')}
+            >
               <div
-                className={`${previewSizes.h2} font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-gray-50`}
-                onClick={() => handleElementClick('h2')}
+                className={`${previewSizes.h2} font-semibold text-gray-900`}
                 style={{ fontFamily: typography.headings.h2.fontFamily }}
               >
                 Arial
               </div>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+              >
+                CLIQUE PARA EDITAR
+              </button>
             </div>
           </div>
 
           {/* Heading 3 */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              HEADING 3
+              TÍTULO 3
             </h3>
-            <div className="relative">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
+              onClick={() => handleElementClick('h3')}
+            >
               <div
-                className={`${previewSizes.h3} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-gray-50`}
-                onClick={() => handleElementClick('h3')}
+                className={`${previewSizes.h3} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h3.fontFamily }}
               >
                 Arial
               </div>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+              >
+                CLIQUE PARA EDITAR
+              </button>
             </div>
           </div>
 
           {/* Heading 4 */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              HEADING 4
+              TÍTULO 4
             </h3>
-            <div className="relative">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
+              onClick={() => handleElementClick('h4')}
+            >
               <div
-                className={`${previewSizes.h4} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-gray-50`}
-                onClick={() => handleElementClick('h4')}
+                className={`${previewSizes.h4} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h4.fontFamily }}
               >
                 Arial
               </div>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+              >
+                CLIQUE PARA EDITAR
+              </button>
             </div>
           </div>
 
           {/* Heading 5 */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              HEADING 5
+              TÍTULO 5
             </h3>
-            <div className="relative">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
+              onClick={() => handleElementClick('h5')}
+            >
               <div
-                className={`${previewSizes.h5} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-gray-50`}
-                onClick={() => handleElementClick('h5')}
+                className={`${previewSizes.h5} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h5.fontFamily }}
               >
                 Arial
               </div>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+              >
+                CLIQUE PARA EDITAR
+              </button>
             </div>
           </div>
 
           {/* Heading 6 */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              HEADING 6
+              TÍTULO 6
             </h3>
-            <div className="relative">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
+              onClick={() => handleElementClick('h6')}
+            >
               <div
-                className={`${previewSizes.h6} font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-gray-50`}
-                onClick={() => handleElementClick('h6')}
+                className={`${previewSizes.h6} font-medium text-gray-900`}
                 style={{ fontFamily: typography.headings.h6.fontFamily }}
               >
                 Arial
               </div>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+              >
+                CLIQUE PARA EDITAR
+              </button>
             </div>
           </div>
 
           {/* Quote Section */}
           <div className="mb-8 group">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              QUOTE
+              CITAÇÃO
             </h3>
-            <div className="relative">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
+              onClick={() => handleElementClick('quote')}
+            >
               <div
-                className={`${previewSizes.quote} italic text-gray-700 border-l-4 border-gray-300 pl-4 cursor-pointer hover:text-blue-600 hover:border-blue-300 transition-colors p-2 rounded hover:bg-gray-50`}
-                onClick={() => handleElementClick('quote')}
+                className={`${previewSizes.quote} italic text-gray-700 border-l-4 border-gray-300 pl-4`}
                 style={{ fontFamily: typography.quote.fontFamily }}
               >
                 Arial
               </div>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm transition-all opacity-0 group-hover:opacity-100"
+              >
+                CLIQUE PARA EDITAR
+              </button>
             </div>
           </div>
         </div>
@@ -330,13 +411,13 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
           onClick={handleCancel}
           className="px-6 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
         >
-          Cancel
+          Cancelar
         </button>
         <button
           onClick={handleConfirm}
           className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded font-medium transition-colors"
         >
-          Confirm
+          Confirmar
         </button>
       </div>
     </div>
