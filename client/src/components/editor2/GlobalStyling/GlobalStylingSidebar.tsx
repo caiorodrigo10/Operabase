@@ -8,26 +8,26 @@ interface GlobalStylingSidebarProps {
 
 const SidebarHeader: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
-    <div className="border-b border-gray-200 pb-4 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-semibold text-gray-900">Estilo Global</h2>
+    <div className="border-b border-gray-200 pb-3 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-medium text-gray-900">Estilo Global</h2>
         <button
           onClick={onClose}
           className="p-1 hover:bg-gray-100 rounded-md transition-colors"
           aria-label="Close sidebar"
         >
-          <X className="w-5 h-5 text-gray-500" />
+          <X className="w-4 h-4 text-gray-500" />
         </button>
       </div>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-xs text-gray-500 mb-3">
         Alterar as configurações globais afetará o estilo de todas as páginas.
       </p>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">Precisa de ajuda?</span>
-        <button className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors">
+        <span className="text-xs text-gray-600">Precisa de ajuda?</span>
+        <button className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors">
           <span>Assistir Vídeo</span>
-          <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-            <Play className="w-3 h-3 text-white fill-white" />
+          <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+            <Play className="w-2.5 h-2.5 text-white fill-white" />
           </div>
         </button>
       </div>
@@ -43,12 +43,12 @@ const MenuItem: React.FC<{
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 hover:shadow-sm rounded-lg transition-all group border-l-2 border-transparent hover:border-blue-500"
+      className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-50 hover:shadow-sm rounded-md transition-all group border-l-2 border-transparent hover:border-blue-500"
     >
       <div className="text-gray-600 group-hover:text-blue-600 transition-colors">
         {icon}
       </div>
-      <span className="text-base font-medium text-gray-700 group-hover:text-gray-900">
+      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
         {label}
       </span>
     </button>
@@ -59,12 +59,12 @@ const SidebarContent: React.FC = () => {
   const menuItems = [
     {
       id: 'text-styling',
-      icon: <Type className="w-5 h-5" />,
+      icon: <Type className="w-4 h-4" />,
       label: 'Estilo de Texto'
     },
     {
       id: 'add-fonts',
-      icon: <FileText className="w-5 h-5" />,
+      icon: <FileText className="w-4 h-4" />,
       label: 'Adicionar Fontes'
     },
     {
@@ -78,12 +78,12 @@ const SidebarContent: React.FC = () => {
     },
     {
       id: 'website-layout',
-      icon: <Layout className="w-5 h-5" />,
+      icon: <Layout className="w-4 h-4" />,
       label: 'Layout do Site'
     },
     {
       id: 'page-styling',
-      icon: <Square className="w-5 h-5" />,
+      icon: <Square className="w-4 h-4" />,
       label: 'Estilo da Página'
     }
   ];
@@ -94,7 +94,7 @@ const SidebarContent: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 space-y-2">
+    <div className="flex-1 space-y-1">
       {menuItems.map((item) => (
         <MenuItem
           key={item.id}
@@ -162,7 +162,7 @@ export const GlobalStylingSidebar: React.FC<GlobalStylingSidebarProps> = ({
         }}
         tabIndex={-1}
       >
-        <div className="p-6 flex flex-col h-full">
+        <div className="p-4 flex flex-col h-full">
           <SidebarHeader onClose={onClose} />
           <SidebarContent />
           <SidebarFooter onClose={onClose} />
