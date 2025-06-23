@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -87,6 +87,7 @@ export function MediaMessage({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcription, setTranscription] = useState<string | null>(null);
   const [showTranscription, setShowTranscription] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleTranscribe = async () => {
     setIsTranscribing(true);
@@ -97,6 +98,50 @@ export function MediaMessage({
       setShowTranscription(true);
     }, 2000);
   };
+
+  const stopPlayback = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setIsPlaying(false);
+  };
+
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      setIsPlaying(true);
+      const duration = media_duration || 45;
+      
+      intervalRef.current = setInterval(() => {
+        setCurrentTime(prev => {
+          const newTime = prev + 1;
+          if (newTime >= duration) {
+            stopPlayback();
+            return duration;
+          }
+          return newTime;
+        });
+        setProgress(prev => {
+          const newProgress = prev + (100 / duration);
+          if (newProgress >= 100) {
+            return 100;
+          }
+          return newProgress;
+        });
+      }, 1000);
+    }
+  };
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   if (media_type === 'image') {
     return (
@@ -174,7 +219,7 @@ export function MediaMessage({
               variant="ghost"
               size="sm"
               className="w-8 h-8 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={handlePlayPause}
             >
               {isPlaying ? (
                 <Pause className="w-4 h-4" />
@@ -183,22 +228,24 @@ export function MediaMessage({
               )}
             </Button>
             <div className="flex-1">
-              <div className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                {media_filename || "Áudio"}
+              <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                Áudio
               </div>
               <div className="text-xs text-gray-500">
                 {formatDuration(currentTime)} / {formatDuration(media_duration)}
               </div>
             </div>
           </div>
-          <Progress value={progress} className="h-1" />
-          <audio
-            src={media_url}
-            className="hidden"
-            onTimeUpdate={(e) => {
-              const audio = e.target as HTMLAudioElement;
-              setCurrentTime(audio.currentTime);
-              setProgress((audio.currentTime / audio.duration) * 100);
+          <Progress 
+            value={progress} 
+            className="h-1 cursor-pointer" 
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const percentage = (x / rect.width) * 100;
+              const newTime = (percentage / 100) * (media_duration || 45);
+              setCurrentTime(newTime);
+              setProgress(percentage);
             }}
           />
         </div>
