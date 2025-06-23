@@ -19,7 +19,8 @@ const ColorCircle: React.FC<ColorCircleProps> = ({
   onClick,
   className = '' 
 }) => {
-  const sizeClass = size === 'large' ? 'w-16 h-16' : 'w-12 h-12';
+  // All circles now use the same smaller size for minimalist design
+  const sizeClass = 'w-6 h-6';
   const borderClass = color === '#ffffff' || color === '#FFFFFF' ? 'border-gray-300' : 'border-gray-200';
   
   return (
@@ -40,7 +41,7 @@ interface ColorItemProps {
 const ColorItem: React.FC<ColorItemProps> = ({ color, hex, onClick }) => {
   return (
     <div className="flex flex-col items-center">
-      <ColorCircle color={color} size="small" onClick={onClick} />
+      <ColorCircle color={color} onClick={onClick} />
       <span className="text-xs text-gray-600 mt-1">{hex}</span>
     </div>
   );
