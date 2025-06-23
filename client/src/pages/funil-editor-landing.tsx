@@ -136,10 +136,19 @@ const EditorControls = () => {
     
     // Enviar JSON para salvar no arquivo
     try {
+      // Get auth token from Supabase
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL!,
+        import.meta.env.VITE_SUPABASE_ANON_KEY!
+      );
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch('/api/save-page-json', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({
           pageId: 'funil-editor-landing',
