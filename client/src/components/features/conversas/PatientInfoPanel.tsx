@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { PatientInfo } from "@/types/conversations";
 import { Phone, Mail, Calendar } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 
 interface PatientInfoPanelProps {
   patientInfo?: PatientInfo;
@@ -58,6 +59,7 @@ function RecentAppointmentsList({ contactId }: { contactId: number }) {
 }
 
 export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
+  const [, setLocation] = useLocation();
   if (!patientInfo) {
     return (
       <div className="w-full h-full bg-white p-5 overflow-y-auto">
@@ -88,7 +90,10 @@ export function PatientInfoPanel({ patientInfo }: PatientInfoPanelProps) {
         </Avatar>
         
         {/* Dados Básicos */}
-        <h3 className="text-lg font-medium text-gray-900 mb-6">
+        <h3 
+          className="text-lg font-medium text-gray-900 mb-6 cursor-pointer hover:text-blue-600 transition-colors"
+          onClick={() => setLocation(`/pacientes/${patientInfo.id}`)}
+        >
           {patientInfo.name}
         </h3>
         
