@@ -11,7 +11,8 @@ import {
   Play,
   Pause,
   Download,
-  ZoomIn
+  ZoomIn,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +84,19 @@ export function MediaMessage({
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcription, setTranscription] = useState<string | null>(null);
+  const [showTranscription, setShowTranscription] = useState(false);
+
+  const handleTranscribe = async () => {
+    setIsTranscribing(true);
+    // Simulate transcription process
+    setTimeout(() => {
+      setTranscription("Olá doutor, estava pensando sobre o que conversamos na última consulta e gostaria de saber se posso continuar tomando o medicamento no mesmo horário ou se preciso fazer algum ajuste na dosagem.");
+      setIsTranscribing(false);
+      setShowTranscription(true);
+    }, 2000);
+  };
 
   if (media_type === 'image') {
     return (
@@ -153,7 +167,7 @@ export function MediaMessage({
 
   if (media_type === 'audio') {
     return (
-      <div className={cn("min-w-[200px] max-w-[250px]", className)}>
+      <div className={cn("min-w-[200px] max-w-[280px]", className)}>
         <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
           <div className="flex items-center gap-3 mb-2">
             <Button
@@ -188,6 +202,51 @@ export function MediaMessage({
             }}
           />
         </div>
+        
+        {/* Transcription Section */}
+        <div className="mt-2 space-y-2">
+          {!showTranscription && !transcription && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleTranscribe}
+              disabled={isTranscribing}
+              className="h-7 px-3 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950"
+            >
+              {isTranscribing ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Transcrevendo...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-3 h-3 mr-1" />
+                  Transcrever
+                </>
+              )}
+            </Button>
+          )}
+          
+          {showTranscription && transcription && (
+            <div className="bg-blue-50 dark:bg-blue-950/50 p-2 rounded border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Transcrição:</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTranscription(false)}
+                  className="h-5 w-5 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                >
+                  ×
+                </Button>
+              </div>
+              <p className="text-xs text-blue-900 dark:text-blue-100 leading-relaxed">
+                {transcription}
+              </p>
+            </div>
+          )}
+        </div>
+        
         {media_size && (
           <p className="text-xs text-gray-400 mt-1">{formatFileSize(media_size)}</p>
         )}
