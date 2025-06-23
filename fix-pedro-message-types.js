@@ -24,7 +24,7 @@ async function fixPedroMessageTypes() {
       .from('messages')
       .select('*')
       .eq('conversation_id', 4)
-      .order('created_at', { ascending: true });
+      .order('timestamp', { ascending: true });
 
     if (fetchError) {
       console.error('❌ Erro ao buscar mensagens:', fetchError);
@@ -37,36 +37,34 @@ async function fixPedroMessageTypes() {
     const corrections = [];
 
     messages.forEach(msg => {
-      let newType = msg.message_type;
       let newContent = msg.content;
+      let needsUpdate = false;
 
-      // Detectar mensagens de áudio (que têm 🎤)
+      // Detectar mensagens de áudio (que têm 🎤) e formatar corretamente
       if (msg.content && msg.content.includes('🎤')) {
-        newType = 'audio';
-        // Remover o emoji e deixar apenas o texto descritivo
-        newContent = msg.content.replace('🎤 ', '');
+        // Remover emoji e formatar como áudio
+        newContent = `[ÁUDIO] ${msg.content.replace('🎤 ', '')}`;
+        needsUpdate = true;
       }
       
-      // Detectar mensagens de imagem (que têm 📷)
+      // Detectar mensagens de imagem (que têm 📷) e formatar corretamente
       else if (msg.content && msg.content.includes('📷')) {
-        newType = 'image';
-        // Remover o emoji e deixar apenas o texto descritivo
-        newContent = msg.content.replace('📷 ', '');
+        // Remover emoji e formatar como imagem
+        newContent = `[IMAGEM] ${msg.content.replace('📷 ', '')}`;
+        needsUpdate = true;
       }
       
-      // Detectar mensagens de documento (que têm 📎)
+      // Detectar mensagens de documento (que têm 📎) e formatar corretamente
       else if (msg.content && msg.content.includes('📎')) {
-        newType = 'document';
-        // Remover o emoji e deixar apenas o texto descritivo
-        newContent = msg.content.replace('📎 ', '');
+        // Remover emoji e formatar como documento
+        newContent = `[DOCUMENTO] ${msg.content.replace('📎 ', '')}`;
+        needsUpdate = true;
       }
 
       // Se houve mudança, adicionar à lista de correções
-      if (newType !== msg.message_type || newContent !== msg.content) {
+      if (needsUpdate) {
         corrections.push({
           id: msg.id,
-          oldType: msg.message_type,
-          newType: newType,
           oldContent: msg.content,
           newContent: newContent
         });
@@ -82,12 +80,13 @@ async function fixPedroMessageTypes() {
 
     // Aplicar as correções
     for (const correction of corrections) {
-      console.log(`📝 Corrigindo mensagem ${correction.id}: ${correction.oldType} → ${correction.newType}`);
+      console.log(`📝 Corrigindo mensagem ${correction.id}`);
+      console.log(`   De: ${correction.oldContent}`);
+      console.log(`   Para: ${correction.newContent}`);
       
       const { error: updateError } = await supabase
-        .from('conversation_messages')
+        .from('messages')
         .update({
-          message_type: correction.newType,
           content: correction.newContent
         })
         .eq('id', correction.id);
@@ -102,20 +101,25 @@ async function fixPedroMessageTypes() {
     console.log('🎉 Correções aplicadas com sucesso!');
     
     // Verificar o resultado final
-    console.log('\n📊 Resumo final dos tipos de mensagem:');
+    console.log('\n📊 Resumo final:');
     const { data: finalMessages } = await supabase
-      .from('conversation_messages')
-      .select('message_type')
+      .from('messages')
+      .select('content')
       .eq('conversation_id', 4);
 
-    const typeCounts = finalMessages.reduce((acc, msg) => {
-      acc[msg.message_type] = (acc[msg.message_type] || 0) + 1;
-      return acc;
-    }, {});
+    if (finalMessages) {
+      const typeCounts = finalMessages.reduce((acc, msg) => {
+        if (msg.content.startsWith('[ÁUDIO]')) acc.audio = (acc.audio || 0) + 1;
+        else if (msg.content.startsWith('[IMAGEM]')) acc.image = (acc.image || 0) + 1;
+        else if (msg.content.startsWith('[DOCUMENTO]')) acc.document = (acc.document || 0) + 1;
+        else acc.text = (acc.text || 0) + 1;
+        return acc;
+      }, {});
 
-    Object.entries(typeCounts).forEach(([type, count]) => {
-      console.log(`  ${type}: ${count} mensagens`);
-    });
+      Object.entries(typeCounts).forEach(([type, count]) => {
+        console.log(`  ${type}: ${count} mensagens`);
+      });
+    }
 
   } catch (error) {
     console.error('❌ Erro geral:', error);
