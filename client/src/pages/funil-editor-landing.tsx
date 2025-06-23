@@ -476,29 +476,23 @@ export default function FunilEditorLanding() {
               <Element
                 canvas
                 is={Container}
-                width="800px"
-                height="auto"
-                background={{ r: 255, g: 255, b: 255, a: 1 }}
-                padding={['40', '40', '40', '40']}
+                background="#ffffff"
+                padding={40}
                 custom={{ displayName: 'App' }}
               >
                 {/* Introduction Section */}
                 <Element
                   canvas
                   is={Container}
-                  flexDirection="row"
-                  width="100%"
-                  height="auto"
-                  padding={['40', '40', '40', '40']}
-                  margin={['0', '0', '40', '0']}
+                  background="#ffffff"
+                  padding={40}
                   custom={{ displayName: 'Introduction' }}
                 >
                   <Element
                     canvas
                     is={Container}
-                    width="40%"
-                    height="100%"
-                    padding={['0', '20', '0', '20']}
+                    background="#ffffff"
+                    padding={20}
                     custom={{ displayName: 'Heading' }}
                   >
                     <Text
@@ -509,9 +503,8 @@ export default function FunilEditorLanding() {
                   <Element
                     canvas
                     is={Container}
-                    width="60%"
-                    height="100%"
-                    padding={['0', '20', '0', '20']}
+                    background="#ffffff"
+                    padding={20}
                     custom={{ displayName: 'Description' }}
                   >
                     <Text
@@ -551,19 +544,15 @@ export default function FunilEditorLanding() {
                 <Element
                   canvas
                   is={Container}
-                  flexDirection="row"
-                  width="100%"
-                  height="auto"
-                  padding={['40', '40', '40', '40']}
-                  margin={['40', '0', '0', '0']}
+                  background="#ffffff"
+                  padding={40}
                   custom={{ displayName: 'Content Section' }}
                 >
                   <Element
                     canvas
                     is={Container}
-                    width="45%"
-                    height="100%"
-                    padding={['0', '20', '0', '0']}
+                    background="#ffffff"
+                    padding={20}
                     custom={{ displayName: 'Left Content' }}
                   >
                     <Text
@@ -592,9 +581,8 @@ export default function FunilEditorLanding() {
                   <Element
                     canvas
                     is={Container}
-                    width="55%"
-                    height="100%"
-                    padding={['0', '0', '0', '20']}
+                    background="#ffffff"
+                    padding={20}
                     custom={{ displayName: 'Right Content' }}
                   >
                     <Element
