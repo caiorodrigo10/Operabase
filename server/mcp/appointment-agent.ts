@@ -546,11 +546,13 @@ export class AppointmentMCPAgent {
         .orderBy(appointments.scheduled_date);
       
       // Transform the data to change "id" to "appointment_id"
-      const transformedData = appointmentList.map((appointment) => ({
-        ...appointment,
-        appointment_id: appointment.id,
-        id: undefined // Remove the original id field
-      }));
+      const transformedData = appointmentList.map((appointment) => {
+        const { id, ...appointmentData } = appointment;
+        return {
+          ...appointmentData,
+          appointment_id: id
+        };
+      });
       
       return {
         success: true,

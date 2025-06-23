@@ -591,22 +591,18 @@ export class AppointmentMCPAgent {
         conditions.push(eq(appointments.contact_id, filters.contactId));
       }
 
-      // Execute query with basic Drizzle syntax
+      // Execute query - select only appointment data without contacts
       const result = await db.select()
         .from(appointments)
-        .leftJoin(contacts, eq(appointments.contact_id, contacts.id))
         .where(and(...conditions))
         .orderBy(appointments.scheduled_date);
 
-      // Transform the data to change "id" to "appointment_id" and clean up redundant info
-      const transformedData = result.map((row) => {
-        const { appointments: appointment, contacts: contact } = row;
+      // Transform the data to change "id" to "appointment_id"
+      const transformedData = result.map((appointment) => {
+        const { id, ...appointmentData } = appointment;
         return {
-          ...appointment,
-          appointment_id: appointment.id,
-          id: undefined, // Remove the original id field
-          contact_name: contact?.name || null,
-          contact_phone: contact?.phone || null
+          ...appointmentData,
+          appointment_id: id
         };
       });
 
