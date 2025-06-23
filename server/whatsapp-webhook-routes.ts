@@ -94,6 +94,33 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
           if (webhookData.profileName) {
             console.log(`👤 Nome do perfil: ${webhookData.profileName}`);
           }
+
+          // Log WhatsApp connection status change
+          if (updated.id) {
+            const actionType = isConnected ? 'connected' : 
+                             status === 'connecting' ? 'connecting' : 
+                             'disconnected';
+            
+            await systemLogsService.logWhatsAppAction(
+              actionType as any,
+              updated.id,
+              updated.clinic_id,
+              undefined,
+              'system',
+              null,
+              {
+                ...updated,
+                status,
+                phone_number: webhookData.phoneNumber,
+                profile_name: webhookData.profileName
+              },
+              {
+                source: 'whatsapp',
+                instance_name: webhookData.instanceName,
+                phone_number: webhookData.phoneNumber
+              }
+            );
+          }
           
           res.status(200).json({ 
             success: true, 

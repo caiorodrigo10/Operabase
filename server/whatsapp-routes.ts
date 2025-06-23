@@ -62,6 +62,22 @@ router.post('/api/whatsapp/connect', async (req, res) => {
       status: 'connecting'
     });
 
+    // Log WhatsApp number creation
+    await systemLogsService.logWhatsAppAction(
+      'created',
+      whatsappNumber.id,
+      clinicId,
+      parsedUserId?.toString(),
+      'professional',
+      null,
+      whatsappNumber,
+      {
+        source: 'web',
+        instance_name: result.instanceName,
+        professional_id: parsedUserId
+      }
+    );
+
     res.json({
       id: whatsappNumber.id,
       instanceName: result.instanceName,

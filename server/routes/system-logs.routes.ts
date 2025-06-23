@@ -198,4 +198,85 @@ router.post('/system-logs/test', isAuthenticated, async (req: Request, res: Resp
   }
 });
 
+// Test endpoint for Phase 2 features
+router.post('/system-logs/test-phase2', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const clinicId = tenantContext.getClinicId();
+    const userId = (req as any).user?.id;
+    const userName = (req as any).user?.name;
+
+    if (!clinicId) {
+      return res.status(400).json({ error: 'Clinic context required' });
+    }
+
+    const testResults = [];
+
+    // Test medical record log
+    const medicalRecordLog = await systemLogsService.logMedicalRecordAction(
+      'created',
+      999,
+      clinicId,
+      userId,
+      'professional',
+      null,
+      { test: true, content: 'Test medical record', contact_id: 1 },
+      {
+        source: 'web',
+        actor_name: userName,
+        professional_id: userId ? parseInt(userId) : undefined,
+        contact_id: 1,
+        appointment_id: 1
+      }
+    );
+    testResults.push({ type: 'medical_record', id: medicalRecordLog?.id });
+
+    // Test anamnesis log
+    const anamnesisLog = await systemLogsService.logAnamnesisAction(
+      'filled',
+      999,
+      clinicId,
+      'patient123',
+      'patient',
+      null,
+      { test: true, responses: { question1: 'answer1' }, contact_id: 1 },
+      {
+        source: 'web',
+        actor_name: 'Test Patient',
+        contact_id: 1,
+        template_id: 1
+      }
+    );
+    testResults.push({ type: 'anamnesis', id: anamnesisLog?.id });
+
+    // Test WhatsApp log
+    const whatsappLog = await systemLogsService.logWhatsAppAction(
+      'connected',
+      999,
+      clinicId,
+      userId,
+      'system',
+      null,
+      { test: true, instance_name: 'test-instance', phone_number: '+5511999999999' },
+      {
+        source: 'whatsapp',
+        actor_name: 'System',
+        instance_name: 'test-instance',
+        phone_number: '+5511999999999'
+      }
+    );
+    testResults.push({ type: 'whatsapp', id: whatsappLog?.id });
+
+    res.json({
+      success: true,
+      message: 'Phase 2 system logs test completed successfully',
+      testResults,
+      clinicId,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    console.error('Error testing Phase 2 system logs:', error);
+    res.status(500).json({ error: 'Phase 2 system logs test failed' });
+  }
+});
+
 export default router;
