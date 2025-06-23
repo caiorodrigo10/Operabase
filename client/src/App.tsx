@@ -63,6 +63,11 @@ function Router() {
     return <ResetPassword />;
   }
 
+  // Handle editor routes outside layout system (fullscreen editors)
+  if (user && location === '/editor2') {
+    return <Editor2 />;
+  }
+
   const getCurrentPage = () => {
     if (location === "/") return "dashboard";
     return location.substring(1);
@@ -162,7 +167,6 @@ function Router() {
         <Route path="/funis/:id" component={FunilDetalhes} />
 
         <Route path="/editor-landing" component={FunilEditorLanding} />
-        <Route path="/editor2" component={Editor2} />
 
         <Route component={NotFound} />
       </Switch>
@@ -173,10 +177,11 @@ function Router() {
 function GleapWrapper() {
   const [location] = useLocation();
 
-  // Don't initialize Gleap for public anamnesis pages or landing editor
+  // Don't initialize Gleap for public anamnesis pages or editors
   const isPublicPage = location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/');
   const isLandingEditor = location === '/editor-landing';
-  const shouldInitializeGleap = !isPublicPage && !isLandingEditor;
+  const isEditor2 = location === '/editor2';
+  const shouldInitializeGleap = !isPublicPage && !isLandingEditor && !isEditor2;
 
   // Always call useGleap hook, but pass condition to control initialization
   useGleap(shouldInitializeGleap);
