@@ -206,22 +206,88 @@ export const mockMessages: Message[] = [
 
 export const mockSystemEvents: SystemEvent[] = [
   // Conversation 1 - Maria Silva
-  { id: 1, conversation_id: 1, type: 'availability_check', content: "Consulta de disponibilidade pela IA", timestamp: "09:19" },
-  { id: 2, conversation_id: 1, type: 'appointment_created', content: "Consulta agendada", timestamp: "09:23" },
+  { 
+    id: 1, 
+    conversation_id: 1, 
+    type: 'availability_check', 
+    content: "Consulta de disponibilidade pela IA", 
+    timestamp: "09:19" 
+  },
+  { 
+    id: 2, 
+    conversation_id: 1, 
+    type: 'appointment_created', 
+    content: "Consulta agendada para 28/06 às 14:00 com Dra. Paula", 
+    timestamp: "09:23",
+    metadata: { 
+      appointment_date: "28/06/2025", 
+      appointment_time: "14:00", 
+      doctor_name: "Dra. Paula" 
+    }
+  },
 
   // Conversation 2 - João Santos
-  { id: 3, conversation_id: 2, type: 'contact_created', content: "Contato criado", timestamp: "14:30" },
+  { 
+    id: 3, 
+    conversation_id: 2, 
+    type: 'contact_created', 
+    content: "Novo contato criado no sistema", 
+    timestamp: "14:30" 
+  },
 
   // Conversation 3 - Ana Costa
-  { id: 4, conversation_id: 3, type: 'availability_check', content: "Consulta de disponibilidade pela IA", timestamp: "08:49" },
-  { id: 5, conversation_id: 3, type: 'appointment_status_changed', content: "Consulta mudou de status: de agendada para confirmada", timestamp: "09:01" },
+  { 
+    id: 4, 
+    conversation_id: 3, 
+    type: 'availability_check', 
+    content: "Consulta de disponibilidade pela IA", 
+    timestamp: "08:49" 
+  },
+  { 
+    id: 5, 
+    conversation_id: 3, 
+    type: 'appointment_status_changed', 
+    content: "Status da consulta alterado de agendada para confirmada", 
+    timestamp: "09:01",
+    metadata: { 
+      old_status: "agendada", 
+      new_status: "confirmada" 
+    }
+  },
 
   // Conversation 4 - Carlos Oliveira
-  { id: 6, conversation_id: 4, type: 'contact_created', content: "Contato criado", timestamp: "16:20" },
-  { id: 7, conversation_id: 4, type: 'appointment_created', content: "Consulta agendada", timestamp: "16:25" },
+  { 
+    id: 6, 
+    conversation_id: 4, 
+    type: 'contact_created', 
+    content: "Novo contato criado no sistema", 
+    timestamp: "16:20" 
+  },
+  { 
+    id: 7, 
+    conversation_id: 4, 
+    type: 'appointment_created', 
+    content: "Consulta agendada para 24/06 às 16:30 com Dr. Roberto", 
+    timestamp: "16:25",
+    metadata: { 
+      appointment_date: "24/06/2025", 
+      appointment_time: "16:30", 
+      doctor_name: "Dr. Roberto" 
+    }
+  },
 
   // Conversation 5 - Patricia Lima
-  { id: 8, conversation_id: 5, type: 'appointment_status_changed', content: "Consulta mudou de status: de pendente para confirmada", timestamp: "10:41" }
+  { 
+    id: 8, 
+    conversation_id: 5, 
+    type: 'appointment_status_changed', 
+    content: "Status da consulta alterado de pendente para confirmada", 
+    timestamp: "10:41",
+    metadata: { 
+      old_status: "pendente", 
+      new_status: "confirmada" 
+    }
+  }
 ];
 
 export const mockPatientInfo: PatientInfo = {

@@ -32,6 +32,13 @@ export interface SystemEvent {
   type: 'availability_check' | 'appointment_created' | 'appointment_status_changed' | 'contact_created';
   content: string;
   timestamp: string;
+  metadata?: {
+    appointment_date?: string;
+    appointment_time?: string;
+    doctor_name?: string;
+    old_status?: string;
+    new_status?: string;
+  };
 }
 
 export interface TimelineItem {
