@@ -18,7 +18,13 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
   // Listar todas as conversas da clínica
   app.get('/api/conversations', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const clinicId = req.session.user?.clinicId;
+      // Get clinic ID from authenticated user
+      const user = req.user as any;
+      const clinicResult = await storage.db.execute(`
+        SELECT clinic_id FROM clinic_users WHERE user_id = ${user.id} LIMIT 1;
+      `);
+      
+      const clinicId = clinicResult.rows[0]?.clinic_id;
       if (!clinicId) {
         return res.status(400).json({ error: 'Clinic ID é obrigatório' });
       }
