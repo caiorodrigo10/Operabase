@@ -157,4 +157,45 @@ router.get('/system-logs/filter', isAuthenticated, async (req: Request, res: Res
   }
 });
 
+// Test endpoint to validate logging system
+router.post('/system-logs/test', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const clinicId = tenantContext.getClinicId();
+    const userId = (req as any).user?.id;
+    const userName = (req as any).user?.name;
+
+    if (!clinicId) {
+      return res.status(400).json({ error: 'Clinic context required' });
+    }
+
+    // Create a test log entry
+    const testLog = await systemLogsService.logAction({
+      entity_type: 'contact',
+      entity_id: 999,
+      action_type: 'created',
+      clinic_id: clinicId,
+      actor_id: userId,
+      actor_type: 'professional',
+      actor_name: userName,
+      new_data: { test: true, message: 'System logs test entry' },
+      source: 'web'
+    });
+
+    if (testLog) {
+      res.json({
+        success: true,
+        message: 'System logs test completed successfully',
+        testLogId: testLog.id,
+        clinicId,
+        timestamp: testLog.created_at
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to create test log' });
+    }
+  } catch (error) {
+    console.error('Error testing system logs:', error);
+    res.status(500).json({ error: 'System logs test failed' });
+  }
+});
+
 export default router;

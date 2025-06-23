@@ -349,6 +349,10 @@ app.use((req, res, next) => {
   const ragRoutes = await import('./rag-routes');
   app.use('/api/rag', ragRoutes.default);
   
+  // Add System Logs routes
+  const systemLogsRoutes = await import('./routes/system-logs.routes');
+  app.use('/api', systemLogsRoutes.default);
+  
   // Initialize anamnesis system
   try {
     const { initializeAnamnesisSystem } = await import('./anamnesis-setup');
