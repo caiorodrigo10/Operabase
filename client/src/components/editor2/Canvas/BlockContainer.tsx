@@ -140,18 +140,28 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
           </div>
         )}
 
-        {/* Columns Container */}
-        <div className="flex min-h-[200px]" data-block-id={block.id}>
-          {block.columns.map((column, index) => (
-            <ColumnContainer
-              key={column.id}
-              column={column}
-              blockId={block.id}
-              isLastColumn={index === block.columns.length - 1}
-              isBlockHovered={isHovered}
-              isBlockSelected={isSelected}
-            />
-          ))}
+        {/* Columns Container - Full width block with centered content */}
+        <div className="w-full flex justify-center relative">
+          {/* Left boundary indicator */}
+          {shouldShowUI && (
+            <>
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300 opacity-50 z-10" style={{ marginLeft: '-550px' }} />
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300 opacity-50 z-10" style={{ marginLeft: '550px' }} />
+            </>
+          )}
+          
+          <div className="flex min-h-[200px] w-full max-w-[1100px] relative" data-block-id={block.id}>
+            {block.columns.map((column, index) => (
+              <ColumnContainer
+                key={column.id}
+                column={column}
+                blockId={block.id}
+                isLastColumn={index === block.columns.length - 1}
+                isBlockHovered={isHovered}
+                isBlockSelected={isSelected}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
