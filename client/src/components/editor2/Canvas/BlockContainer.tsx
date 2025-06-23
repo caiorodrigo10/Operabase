@@ -68,7 +68,7 @@ export const BlockContainer: React.FC<BlockContainerProps> = ({ block }) => {
       {/* Block Badge */}
       {shouldShowUI && (
         <div className="absolute top-2 left-2 bg-gray-800 text-white text-sm px-3 py-1 rounded-full z-30 transition-opacity duration-200">
-          🔲 Block
+          ⚙️ Bloco
         </div>
       )}
 
