@@ -26,14 +26,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const isNote = message.type === 'note';
   const isSent = !isReceived && !isNote;
   
-  // Debug: Log messages with attachments
-  if (message.attachments && message.attachments.length > 0) {
-    console.log('📎 Message with attachments:', {
-      id: message.id,
-      content: message.content,
-      attachments: message.attachments
-    });
-  }
+
   
   return (
     <div className={cn("flex mb-3", isReceived ? "justify-start" : "justify-end")}>
@@ -75,7 +68,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 <MediaMessage
                   key={index}
                   media_type={attachment.file_type}
-                  media_url={attachment.file_url || attachment.whatsapp_media_url}
+                  media_url={attachment.file_url || attachment.whatsapp_media_url || ''}
                   media_filename={attachment.file_name}
                   media_size={attachment.file_size}
                   media_duration={attachment.duration}

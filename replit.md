@@ -165,6 +165,15 @@ SESSION_SECRET=your_session_secret
 - Made patient name clickable in PatientInfoPanel to navigate to `/contatos/{id}` for patient details
 - Updated PatientInfoPanel to show real appointment data instead of mock data
 
+### June 23, 2025 - Media Message System with Database Attachments
+- Implemented proper message attachment system using message_attachments table
+- Created 3 media attachments for Pedro Oliveira conversation: PDF document, MP3 audio, JPEG image
+- Fixed message content to remove emoji prefixes and store clean text
+- Updated API to load and associate attachments with messages correctly
+- Enhanced MessageBubble component to render MediaMessage components for attachments
+- Added support for MIME type detection and proper media categorization (audio/mp3 → audio, image/jpeg → image, application/pdf → document)
+- Backend now returns 6 total attachments across all conversations with proper file metadata
+
 ### June 23, 2025 - Media Message System Completion
 - Completed media message system with audio, image, and document support
 - Fixed attachment loading from Supabase with proper relationship queries
