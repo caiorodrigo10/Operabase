@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Play, Type, FileText, Palette, Layout, Square } from 'lucide-react';
+import { ColorPalettePage } from './ColorPalettePage';
 
 interface GlobalStylingSidebarProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ const MenuItem: React.FC<{
   );
 };
 
-const SidebarContent: React.FC = () => {
+const SidebarContent: React.FC<{ onNavigate: (page: 'menu' | 'color-palette') => void }> = ({ onNavigate }) => {
   const menuItems = [
     {
       id: 'text-styling',
@@ -88,9 +89,13 @@ const SidebarContent: React.FC = () => {
     }
   ];
 
-  const handleMenuItemClick = (itemId: string) => {
-    console.log(`Navigate to ${itemId} submenu`);
-    // TODO: Implement submenu navigation
+  const handleMenuItemClick = (itemId: string, setCurrentPage: (page: 'menu' | 'color-palette') => void) => {
+    if (itemId === 'color-palette') {
+      setCurrentPage('color-palette');
+    } else {
+      console.log(`Navigate to ${itemId} submenu`);
+      // TODO: Implement other submenus
+    }
   };
 
   return (
@@ -100,7 +105,7 @@ const SidebarContent: React.FC = () => {
           key={item.id}
           icon={item.icon}
           label={item.label}
-          onClick={() => handleMenuItemClick(item.id)}
+          onClick={() => handleMenuItemClick(item.id, onNavigate)}
         />
       ))}
     </div>
@@ -116,6 +121,7 @@ export const GlobalStylingSidebar: React.FC<GlobalStylingSidebarProps> = ({
   onClose
 }) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState<'menu' | 'color-palette'>('menu');
 
   // Handle escape key
   useEffect(() => {
@@ -163,9 +169,15 @@ export const GlobalStylingSidebar: React.FC<GlobalStylingSidebarProps> = ({
         tabIndex={-1}
       >
         <div className="p-4 flex flex-col h-full">
-          <SidebarHeader onClose={onClose} />
-          <SidebarContent />
-          <SidebarFooter onClose={onClose} />
+          {currentPage === 'menu' ? (
+            <>
+              <SidebarHeader onClose={onClose} />
+              <SidebarContent onNavigate={setCurrentPage} />
+              <SidebarFooter onClose={onClose} />
+            </>
+          ) : (
+            <ColorPalettePage onBack={() => setCurrentPage('menu')} />
+          )}
         </div>
       </div>
       
