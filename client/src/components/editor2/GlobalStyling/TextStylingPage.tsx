@@ -6,8 +6,16 @@ interface TextStylingPageProps {
   onBack: () => void;
 }
 
-const EditButton: React.FC = () => (
+interface EditButtonProps {
+  onClick: () => void;
+}
+
+const EditButton: React.FC<EditButtonProps> = ({ onClick }) => (
   <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
     className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-medium text-xs transition-all opacity-0 group-hover:opacity-100 ml-4 flex items-center gap-1"
   >
     <Edit3 size={12} />
@@ -237,13 +245,12 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               PARÁGRAFO
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('paragraph')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div className="text-lg text-gray-900">
                 {typography.paragraph.fontFamily}
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('paragraph')} />
             </div>
           </div>
 
@@ -253,8 +260,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               TÍTULO 1
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('h1')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
                 className={`${previewSizes.h1} font-bold text-gray-900`}
@@ -262,7 +268,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               >
                 Arial
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('h1')} />
             </div>
           </div>
 
@@ -272,8 +278,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               TÍTULO 2
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('h2')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
                 className={`${previewSizes.h2} font-semibold text-gray-900`}
@@ -281,7 +286,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               >
                 Arial
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('h2')} />
             </div>
           </div>
 
@@ -291,8 +296,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               TÍTULO 3
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('h3')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
                 className={`${previewSizes.h3} font-medium text-gray-900`}
@@ -300,7 +304,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               >
                 Arial
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('h3')} />
             </div>
           </div>
 
@@ -310,8 +314,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               TÍTULO 4
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('h4')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
                 className={`${previewSizes.h4} font-medium text-gray-900`}
@@ -319,7 +322,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               >
                 Arial
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('h4')} />
             </div>
           </div>
 
@@ -329,8 +332,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               TÍTULO 5
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('h5')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
                 className={`${previewSizes.h5} font-medium text-gray-900`}
@@ -338,7 +340,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               >
                 Arial
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('h5')} />
             </div>
           </div>
 
@@ -348,8 +350,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               TÍTULO 6
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('h6')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
                 className={`${previewSizes.h6} font-medium text-gray-900`}
@@ -357,7 +358,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               >
                 Arial
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('h6')} />
             </div>
           </div>
 
@@ -367,8 +368,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               CITAÇÃO
             </h3>
             <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded hover:bg-gray-50 transition-colors"
-              onClick={() => handleElementClick('quote')}
+              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors"
             >
               <div
                 className={`${previewSizes.quote} italic text-gray-700 border-l-4 border-gray-300 pl-4`}
@@ -376,7 +376,7 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
               >
                 Arial
               </div>
-              <EditButton />
+              <EditButton onClick={() => handleElementClick('quote')} />
             </div>
           </div>
         </div>
@@ -397,6 +397,15 @@ export const TextStylingPage: React.FC<TextStylingPageProps> = ({ onBack }) => {
           Confirmar
         </button>
       </div>
+
+      {/* Font Editor Modal */}
+      <FontEditorModal
+        isOpen={isFontEditorOpen}
+        elementType={editingElement}
+        initialValues={getCurrentElementValues()}
+        onClose={() => setIsFontEditorOpen(false)}
+        onSave={handleFontSave}
+      />
     </div>
   );
 };
