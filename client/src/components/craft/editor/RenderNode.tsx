@@ -65,25 +65,36 @@ export const RenderNode = ({ render }) => {
   }, [dom, isActive, isHover]);
 
   const getPos = React.useCallback((dom: HTMLElement) => {
-    const { top, left, bottom } = dom
-      ? dom.getBoundingClientRect()
-      : { top: 0, left: 0, bottom: 0 };
-    return {
-      top: `${top > 0 ? top : bottom}px`,
-      left: `${left}px`,
-    };
+    if (!dom || !dom.getBoundingClientRect) {
+      return { top: '0px', left: '0px' };
+    }
+    
+    try {
+      const { top, left, bottom } = dom.getBoundingClientRect();
+      return {
+        top: `${top > 0 ? top : bottom}px`,
+        left: `${left}px`,
+      };
+    } catch (error) {
+      console.warn('Error getting bounding rect:', error);
+      return { top: '0px', left: '0px' };
+    }
   }, []);
 
   const scroll = React.useCallback(() => {
     const { current: currentDOM } = currentRef;
 
-    if (!currentDOM) {
+    if (!currentDOM || !dom) {
       return;
     }
 
-    const { top, left } = getPos(dom);
-    currentDOM.style.top = top;
-    currentDOM.style.left = left;
+    try {
+      const { top, left } = getPos(dom);
+      currentDOM.style.top = top;
+      currentDOM.style.left = left;
+    } catch (error) {
+      console.warn('Error in scroll positioning:', error);
+    }
   }, [dom, getPos]);
 
   React.useEffect(() => {

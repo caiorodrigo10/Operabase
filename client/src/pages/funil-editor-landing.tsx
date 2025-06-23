@@ -202,49 +202,63 @@ const EditorControls = () => {
       const parsedJson = JSON.parse(editableJson);
       const jsonString = JSON.stringify(parsedJson);
       
-      // Apply the JSON to the editor
-      actions.deserialize(jsonString);
-      console.log('✅ JSON aplicado ao editor');
+      // Apply the JSON to the editor with error handling
+      try {
+        actions.deserialize(jsonString);
+        console.log('✅ JSON aplicado ao editor');
+      } catch (deserializeError) {
+        console.error('❌ Erro ao aplicar JSON ao editor:', deserializeError);
+        alert('Erro: Não foi possível aplicar o JSON ao editor. Verifique a estrutura.');
+        return;
+      }
       
       // Save to localStorage
       localStorage.setItem('craft_editor_state', jsonString);
       console.log('💾 Estado salvo no localStorage');
       
       // Save to server
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL!,
-        import.meta.env.VITE_SUPABASE_ANON_KEY!
-      );
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch('/api/save-page-json', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({
-          pageId: 'funil-editor-landing',
-          jsonData: jsonString
-        })
-      });
-      
-      if (response.ok) {
-        console.log('✅ JSON salvo no servidor');
-        setShowJsonModal(false);
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          import.meta.env.VITE_SUPABASE_URL!,
+          import.meta.env.VITE_SUPABASE_ANON_KEY!
+        );
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Show success feedback
-        const button = document.querySelector('[data-save-json-button]') as HTMLElement;
-        if (button) {
-          const originalText = button.textContent;
-          button.textContent = 'Salvo!';
+        const response = await fetch('/api/save-page-json', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            pageId: 'funil-editor-landing',
+            jsonData: jsonString
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ JSON salvo no servidor');
+          setShowJsonModal(false);
+          
+          // Show success feedback with null check
           setTimeout(() => {
-            button.textContent = originalText;
-          }, 1500);
+            const button = document.querySelector('[data-save-json-button]') as HTMLElement;
+            if (button) {
+              const originalText = button.textContent;
+              button.textContent = 'Salvo!';
+              setTimeout(() => {
+                if (button && button.textContent === 'Salvo!') {
+                  button.textContent = originalText;
+                }
+              }, 1500);
+            }
+          }, 100);
+        } else {
+          console.error('❌ Erro ao salvar JSON no servidor');
         }
-      } else {
-        console.error('❌ Erro ao salvar JSON no servidor');
+      } catch (serverError) {
+        console.error('❌ Erro na comunicação com servidor:', serverError);
       }
     } catch (error) {
       console.error('❌ Erro ao processar JSON:', error);
@@ -333,6 +347,7 @@ export default function FunilEditorLanding() {
   console.log('🔧 Abrindo editor Landing Page completo');
   const [initialJson, setInitialJson] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [editorReady, setEditorReady] = useState(false);
   
   // Carregar estado salvo do servidor ANTES do Frame renderizar
   useEffect(() => {
@@ -370,6 +385,16 @@ export default function FunilEditorLanding() {
     
     loadPageData();
   }, []);
+
+  // Add delay to ensure editor is fully mounted
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setEditorReady(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   // Force hide Gleap widget on this page
   useEffect(() => {
