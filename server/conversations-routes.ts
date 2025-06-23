@@ -239,7 +239,7 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
         .where(eq(conversations.id, conversationId));
 
       // Log da mensagem
-      await systemLogService.log({
+      await systemLogsService.logAction({
         clinic_id: clinicId,
         entity_type: 'message',
         entity_id: newMessage[0].id,
@@ -343,7 +343,7 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
         .where(eq(conversations.id, conversation[0].id));
 
       // Log da mensagem recebida
-      await systemLogService.log({
+      await systemLogsService.logAction({
         clinic_id: clinicId,
         entity_type: 'message',
         entity_id: newMessage[0].id,
