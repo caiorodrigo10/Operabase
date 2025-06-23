@@ -171,19 +171,6 @@ async function captureOperationLog(req: any, res: Response, responseData: any) {
       return;
     }
 
-    // Sistema robusto de deduplicação baseado em conteúdo e tempo
-    const isDuplicate = checkAndPreventDuplication(entityType, entityId, actionType, clinicId);
-    if (isDuplicate) {
-      console.log(`🚫 Log duplicado previsto: ${entityType}.${actionType} entity ${entityId} clinic ${clinicId}`);
-      return;
-    }
-
-    // Recuperar dados pré-operação
-    const preOpData = requestStore.get(requestId);
-    if (preOpData) {
-      requestStore.delete(requestId); // Limpar para evitar vazamentos de memória
-    }
-
     // Determinar tipo de ação baseado no método HTTP
     let actionType = '';
     switch (req.method) {
@@ -249,6 +236,13 @@ async function captureOperationLog(req: any, res: Response, responseData: any) {
         queryClinicId: req.query.clinic_id
       });
       return; // Não conseguiu obter informações necessárias
+    }
+
+    // Sistema robusto de deduplicação baseado em conteúdo e tempo
+    const isDuplicate = checkAndPreventDuplication(entityType, entityId, actionType, clinicId);
+    if (isDuplicate) {
+      console.log(`🚫 Log duplicado previsto: ${entityType}.${actionType} entity ${entityId} clinic ${clinicId}`);
+      return;
     }
 
     // Extrair contexto da requisição
