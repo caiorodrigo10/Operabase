@@ -3,41 +3,71 @@ import { IStorage } from './storage';
 
 export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   
-  // Simple conversations list - hardcoded clinic ID for testing
+  // Simple conversations list with real contact data
   app.get('/api/conversations-simple', async (req: Request, res: Response) => {
     try {
       const clinicId = 1; // Hardcoded for testing
       
       console.log('🔍 Fetching conversations for clinic:', clinicId);
       
-      const conversationsResult = await storage.db.execute(`
-        SELECT 
-          c.id, c.clinic_id, c.contact_id, c.status, c.created_at, c.updated_at,
-          contacts.name as contact_name, 
-          contacts.phone as contact_phone, 
-          contacts.email as contact_email,
-          COUNT(m.id) as total_messages,
-          COUNT(CASE WHEN m.sender_type = 'patient' THEN 1 END) as unread_count
-        FROM conversations c
-        LEFT JOIN contacts ON c.contact_id = contacts.id
-        LEFT JOIN messages m ON c.id = m.conversation_id
-        WHERE c.clinic_id = ${clinicId}
-        GROUP BY c.id, c.clinic_id, c.contact_id, c.status, c.created_at, c.updated_at,
-                 contacts.name, contacts.phone, contacts.email
-        ORDER BY c.created_at DESC
-        LIMIT 50;
-      `);
+      // Use direct Supabase client to get conversations with contact info
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
       
-      console.log('📊 Found conversations:', conversationsResult.rows.length);
+      // Get conversations with contact information
+      const { data: conversationsData, error } = await supabase
+        .from('conversations')
+        .select(`
+          id,
+          clinic_id,
+          contact_id,
+          status,
+          created_at,
+          updated_at,
+          contacts (
+            name,
+            phone,
+            email
+          )
+        `)
+        .eq('clinic_id', clinicId)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+      
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        return res.status(500).json({ error: 'Erro ao buscar conversas' });
+      }
+      
+      console.log('📊 Found conversations:', conversationsData?.length || 0);
+      
+      // Format for frontend
+      const formattedConversations = (conversationsData || []).map(conv => ({
+        id: conv.id,
+        clinic_id: conv.clinic_id,
+        contact_id: conv.contact_id,
+        status: conv.status || 'active',
+        created_at: conv.created_at,
+        updated_at: conv.updated_at,
+        contact_name: conv.contacts?.name || `Contato ${conv.contact_id}`,
+        contact_phone: conv.contacts?.phone || '',
+        contact_email: conv.contacts?.email || '',
+        total_messages: 0,
+        unread_count: 0
+      }));
       
       res.json({
-        conversations: conversationsResult.rows,
-        total: conversationsResult.rows.length,
+        conversations: formattedConversations,
+        total: formattedConversations.length,
         hasMore: false
       });
 
     } catch (error) {
       console.error('❌ Error fetching conversations:', error);
+      console.error('❌ Error details:', error.message);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   });
