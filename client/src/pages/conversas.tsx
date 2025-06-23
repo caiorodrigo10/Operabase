@@ -54,9 +54,10 @@ export default function ConversasPage() {
       id: conv.id,
       patient_name: conv.contact_name || 'Contato sem nome',
       patient_avatar: undefined,
-      last_message: conversationDetail?.messages[conversationDetail.messages.length - 1]?.content || 'Sem mensagens',
-      timestamp: new Date(conv.last_activity_at || conv.created_at).toISOString(),
-      unread_count: conv.unread_count,
+      last_message: 'Toque para ver a conversa',
+      timestamp: conv.updated_at,
+      updated_at: conv.updated_at,
+      unread_count: conv.unread_count || 0,
       status: conv.status === 'active' ? 'active' : 'inactive',
       ai_active: false,
       has_pending_appointment: false

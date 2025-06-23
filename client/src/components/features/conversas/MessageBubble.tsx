@@ -85,7 +85,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           "text-xs text-gray-500 mt-1",
           isReceived ? "text-left" : "text-right"
         )}>
-          {message.timestamp}
+          {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          }) : ''}
         </span>
       </div>
       
