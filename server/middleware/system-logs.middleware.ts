@@ -159,11 +159,29 @@ async function captureOperationLog(req: any, res: Response, responseData: any) {
     }
 
     // Obter contexto do usuário e clínica
-    const clinicId = tenantContext.getClinicId();
+    let clinicId;
+    try {
+      clinicId = tenantContext.getClinicId();
+    } catch {
+      // Fallback: extrair clinic_id dos dados da resposta ou parâmetros
+      clinicId = newData?.clinic_id || req.query.clinic_id || req.body?.clinic_id;
+      if (typeof clinicId === 'string') {
+        clinicId = parseInt(clinicId);
+      }
+    }
+    
     const userId = req.user?.id;
     const userName = req.user?.name;
 
     if (!clinicId || !entityId) {
+      console.log(`⚠️ Skipping log - missing data:`, { 
+        clinicId, 
+        entityId, 
+        hasNewData: !!newData,
+        newDataKeys: newData ? Object.keys(newData) : [],
+        bodyClinicId: req.body?.clinic_id,
+        queryClinicId: req.query.clinic_id
+      });
       return; // Não conseguiu obter informações necessárias
     }
 
