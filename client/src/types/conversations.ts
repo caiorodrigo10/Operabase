@@ -10,6 +10,23 @@ export interface Conversation {
   has_pending_appointment?: boolean;
 }
 
+export interface MessageAttachment {
+  id: number;
+  message_id: number;
+  clinic_id: number;
+  file_name: string;
+  file_type: string;
+  file_size?: number;
+  file_url?: string;
+  whatsapp_media_id?: string;
+  whatsapp_media_url?: string;
+  thumbnail_url?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  created_at: string;
+}
+
 export interface Message {
   id: number;
   conversation_id: number;
@@ -24,6 +41,7 @@ export interface Message {
   media_size?: number;
   media_duration?: number; // for audio/video in seconds
   media_thumbnail?: string; // for video thumbnails
+  attachments?: MessageAttachment[];
 }
 
 export interface SystemEvent {

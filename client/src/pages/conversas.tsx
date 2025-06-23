@@ -90,7 +90,8 @@ export default function ConversasPage() {
             media_filename: msg.attachments?.[0]?.file_name || undefined,
             media_size: msg.attachments?.[0]?.file_size || undefined,
             media_duration: msg.attachments?.[0]?.duration || undefined,
-            media_thumbnail: msg.attachments?.[0]?.thumbnail_url || undefined
+            media_thumbnail: msg.attachments?.[0]?.thumbnail_url || undefined,
+            attachments: msg.attachments || []
           }
         });
       });

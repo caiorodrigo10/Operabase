@@ -90,6 +90,14 @@ export function MediaMessage({
 }: MediaMessageProps) {
   // Convert MIME type to media category
   const actualMediaType = getMediaTypeFromMimeType(media_type);
+  
+  // Debug log
+  console.log('🎬 MediaMessage rendered:', {
+    media_type,
+    actualMediaType,
+    media_url,
+    media_filename
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
