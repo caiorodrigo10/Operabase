@@ -167,13 +167,19 @@ const EditorControls = () => {
     }
     
     // Show visual feedback
-    const button = document.querySelector('[data-save-button]') as HTMLElement;
-    if (button) {
-      const originalText = button.textContent;
-      button.textContent = 'Salvo!';
-      setTimeout(() => {
-        button.textContent = originalText;
-      }, 1500);
+    try {
+      const button = document.querySelector('[data-save-button]') as HTMLElement;
+      if (button && button.textContent) {
+        const originalText = button.textContent;
+        button.textContent = 'Salvo!';
+        setTimeout(() => {
+          if (button && originalText) {
+            button.textContent = originalText;
+          }
+        }, 1500);
+      }
+    } catch (feedbackError) {
+      console.log('Feedback error (não crítico):', feedbackError);
     }
   };
   
@@ -235,13 +241,19 @@ const EditorControls = () => {
         setShowJsonModal(false);
         
         // Show success feedback
-        const button = document.querySelector('[data-save-json-button]') as HTMLElement;
-        if (button) {
-          const originalText = button.textContent;
-          button.textContent = 'Salvo!';
-          setTimeout(() => {
-            button.textContent = originalText;
-          }, 1500);
+        try {
+          const button = document.querySelector('[data-save-json-button]') as HTMLElement;
+          if (button && button.textContent) {
+            const originalText = button.textContent;
+            button.textContent = 'Salvo!';
+            setTimeout(() => {
+              if (button && originalText) {
+                button.textContent = originalText;
+              }
+            }, 1500);
+          }
+        } catch (feedbackError) {
+          console.log('Feedback error (não crítico):', feedbackError);
         }
       } else {
         console.error('❌ Erro ao salvar JSON no servidor');
