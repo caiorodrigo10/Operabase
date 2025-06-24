@@ -475,16 +475,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Solução definitiva: usar contact_id como as mensagens AI fazem
-        // Isso resolve o problema de precisão com IDs científicos
+        // Solução definitiva: usar contact_id como conversation_id
+        // Isso resolve problemas de foreign key e precisão para IDs científicos
+        // As mensagens AI usam este padrão e funcionam perfeitamente
         const contactId = actualConversation.contact_id;
-        console.log('💾 Using contact_id as conversation_id (AI pattern):', contactId);
-        console.log('💾 This avoids precision issues with scientific notation IDs');
+        console.log('💾 Using contact_id as conversation_id (AI message pattern):', contactId);
+        console.log('💾 This resolves foreign key constraint issues with scientific notation IDs');
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
-            conversation_id: contactId, // Usar contact_id como fazem as mensagens AI
+            conversation_id: contactId,
             sender_type: 'professional',
             content: content
           })
