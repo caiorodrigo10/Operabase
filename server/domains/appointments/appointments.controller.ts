@@ -14,6 +14,7 @@ import {
 } from './appointments.types';
 import type { IStorage } from '../../storage';
 import { createClient } from '@supabase/supabase-js';
+import { systemLogsService } from '../../services/system-logs.service';
 
 export class AppointmentsController {
   private service: AppointmentsService;
@@ -122,8 +123,37 @@ export class AppointmentsController {
       
       const appointment = await this.service.createAppointment(createData);
 
+      // Log the appointment creation
+      const userId = (req as any).user?.id;
+      const userName = (req as any).user?.name;
+      console.log('📝 Logging appointment creation with user:', { userId, userName });
+      
+      try {
+        await systemLogsService.logAppointmentAction(
+          'created',
+          appointment.id,
+          appointment.clinic_id,
+          userId,
+          'professional',
+          null,
+          appointment,
+          {
+            source: 'web',
+            actor_name: userName,
+            professional_id: appointment.user_id,
+            related_entity_id: appointment.contact_id,
+            ip_address: req.ip,
+            user_agent: req.headers['user-agent'],
+            session_id: req.sessionID
+          }
+        );
+        console.log('✅ Appointment log created successfully');
+      } catch (logError) {
+        console.error('❌ Error logging appointment:', logError);
+      }
+
       // Create action notification for the conversation
-      await this.createAppointmentActionNotification(appointment);
+      await this.createAppointmentActionNotification(appointment, userName);
 
       res.status(201).json(appointment);
     } catch (error: any) {
