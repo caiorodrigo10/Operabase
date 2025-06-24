@@ -53,10 +53,11 @@ export function MainConversationArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
     if (messagesEndRef.current && timelineItems.length > 0) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      // Posicionamento instantâneo sem animação
+      messagesEndRef.current.scrollIntoView({ behavior: "instant" });
     }
   }, [timelineItems]);
 
@@ -64,7 +65,10 @@ export function MainConversationArea({
     if (message.trim() && onSendMessage) {
       onSendMessage(message.trim(), isNoteMode);
       setMessage("");
-      // Keep note mode active after sending
+      // Scroll suave apenas para novas mensagens enviadas
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     }
   };
 
