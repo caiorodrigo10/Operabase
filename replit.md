@@ -182,6 +182,15 @@ SESSION_SECRET=your_session_secret
 - All appointments now display correctly with full width regardless of time positioning
 - Fixed multiple appointments (Caio Apfelbaum4, Lucas Ferreira, Maria Oliveira, etc.) that were appearing truncated
 
+### June 24, 2025 - Application Startup Issues Fixed
+- Fixed TypeScript compilation errors preventing app from starting
+- Added missing mockAppointments and mockContacts exports to mock-data.ts
+- Converted useAvailabilityCheck hook to properly return useMutation with mutateAsync support
+- Fixed AppointmentForm schema to handle tag_id type conversion from string to number
+- Updated availability check function calls to use correct parameter structure
+- Added proper error handling with fallback values for professionalName parameter
+- Application now starts successfully with all systems operational
+
 ### June 23, 2025 - Media Message System Completion
 - Completed media message system with audio, image, and document support
 - Fixed attachment loading from Supabase with proper relationship queries
