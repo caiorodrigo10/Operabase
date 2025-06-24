@@ -46,8 +46,17 @@ export const EditorHeader: React.FC = () => {
 
   const handlePreview = async () => {
     try {
-      // Primeiro salva a página
-      await savePageToServer();
+      // Salva no localStorage primeiro (garantindo dados para preview)
+      const pageJson = serializeToJSON();
+      const jsonString = JSON.stringify(pageJson, null, 2);
+      localStorage.setItem('editor2_page_state', jsonString);
+      
+      // Tenta salvar no servidor (mas não bloqueia se falhar)
+      try {
+        await savePageToServer();
+      } catch (error) {
+        console.warn('Could not save to server, using localStorage for preview:', error);
+      }
       
       // Abre a página de preview em nova aba
       const previewUrl = `/preview/editor2`;

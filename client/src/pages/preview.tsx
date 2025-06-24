@@ -44,7 +44,28 @@ export const PreviewPage: React.FC<PreviewPageProps> = ({ pageId = 'editor2' }) 
             const pageJson: Editor2PageJSON = JSON.parse(savedState);
             setPageData(pageJson);
           } else {
-            setError('Nenhuma página encontrada para preview');
+            // Create empty page structure for preview
+            const emptyPage: Editor2PageJSON = {
+              id: 'editor2',
+              version: '1.0.0',
+              metadata: {
+                title: 'Página de Preview',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              layout: {
+                type: 'grid',
+                columns: 3,
+                gap: 20,
+              },
+              globalSettings: {
+                backgroundColor: '#ffffff',
+                textColor: '#333333',
+                fontFamily: 'Arial, sans-serif',
+              },
+              blocks: [],
+            };
+            setPageData(emptyPage);
           }
         }
       } catch (err) {

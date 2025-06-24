@@ -62,6 +62,11 @@ function Router() {
     return <AnamnesisPublica />;
   }
 
+  // Handle preview routes (public access)
+  if (location === '/preview/editor2') {
+    return <PreviewPage pageId="editor2" />;
+  }
+
   if (location === '/reset-password') {
     return <ResetPassword />;
   }
