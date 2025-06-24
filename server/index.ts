@@ -15,6 +15,7 @@ import { initGoogleCalendarAuth, handleGoogleCalendarCallback } from './calendar
 import { initSystemLogsTable } from './init-system-logs';
 import { systemLogsService } from './services/system-logs.service';
 import { WebSocketServer } from './websocket-server';
+import { redisCacheService } from './services/redis-cache.service';
 import http from "http";
 import fs from 'fs/promises';
 import path from 'path';
@@ -362,6 +363,14 @@ app.use((req, res, next) => {
   const { setupConversationsRoutes } = await import('./conversations-routes');
   setupConversationsRoutes(app, storage);
   
+  // ETAPA 3: Initialize Redis Cache Service
+  try {
+    await redisCacheService.warmCache();
+    console.log('✅ Redis Cache Service initialized');
+  } catch (error) {
+    console.warn('⚠️ Redis Cache Service failed to initialize, continuing without cache:', error);
+  }
+
   // ETAPA 2: Inicializar WebSocket Server
   const webSocketServer = new WebSocketServer(httpServer, storage);
   app.set('webSocketServer', webSocketServer);
@@ -460,7 +469,11 @@ app.use((req, res, next) => {
   
   app.get('/api/metrics', (req, res) => {
     const metrics = performanceMonitor.getMetrics();
-    res.json(metrics);
+    const cacheMetrics = redisCacheService.getHealthStatus();
+    res.json({
+      performance: metrics,
+      cache: cacheMetrics
+    });
   });
   
   // Create HTTP server

@@ -1,15 +1,25 @@
 import { Request, Response } from 'express';
 import { IStorage } from './storage';
+import { redisCacheService } from './services/redis-cache.service';
 
 export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   
   // ETAPA 2: Obter referência do WebSocket server
   const getWebSocketServer = () => app.get('webSocketServer');
   
-  // Simple conversations list with real contact data
+  // ETAPA 3: Enhanced conversations list with Redis cache
   app.get('/api/conversations-simple', async (req: Request, res: Response) => {
     try {
       const clinicId = 1; // Hardcoded for testing
+      
+      // ETAPA 3: Try cache first
+      const cachedConversations = await redisCacheService.getCachedConversations(clinicId);
+      if (cachedConversations) {
+        console.log('🎯 Cache HIT: conversations list');
+        return res.json({ conversations: cachedConversations });
+      }
+      
+      console.log('💽 Cache MISS: fetching conversations from database');
       
       console.log('🔍 Fetching conversations for clinic:', clinicId);
       

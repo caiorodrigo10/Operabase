@@ -1,6 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { IStorage } from './storage';
+import { redisCacheService } from './services/redis-cache.service';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -179,6 +180,10 @@ export class WebSocketServer {
         unread_count: 1 // Será calculado dinamicamente
       });
 
+      // ETAPA 3: Invalidate cache after WebSocket emission
+      await redisCacheService.invalidateConversationDetail(conversationId);
+      await redisCacheService.invalidateConversationCache(clinicId);
+      
       console.log(`📨 New message emitted to conversation: ${conversationId}`);
     } catch (error) {
       console.error('❌ Error emitting new message:', error);
