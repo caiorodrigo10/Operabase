@@ -17,7 +17,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
       
-      // Get conversations with contact information
+      // ETAPA 1: Query otimizada - elimina N+1 queries
+      // Single query com joins para carregar dados relacionados
       const { data: conversationsData, error } = await supabase
         .from('conversations')
         .select(`
@@ -27,10 +28,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           status,
           created_at,
           updated_at,
-          contacts (
+          unread_count,
+          contacts!inner (
             name,
             phone,
-            email
+            email,
+            status
           )
         `)
         .eq('clinic_id', clinicId)
@@ -44,7 +47,26 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       console.log('📊 Found conversations:', conversationsData?.length || 0);
       
-      // Format for frontend
+      // ETAPA 1: Batch query para última mensagem e contagens
+      // Evita N+1 queries por conversa individual
+      const conversationIds = (conversationsData || []).map(c => c.id);
+      
+      // Batch load últimas mensagens
+      const { data: lastMessages } = await supabase
+        .from('messages')
+        .select('conversation_id, content, created_at')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: false });
+      
+      // Agrupa por conversation_id para pegar a última mensagem
+      const lastMessageMap = {};
+      lastMessages?.forEach(msg => {
+        if (!lastMessageMap[msg.conversation_id]) {
+          lastMessageMap[msg.conversation_id] = msg;
+        }
+      });
+
+      // Format for frontend com dados otimizados
       const formattedConversations = (conversationsData || []).map(conv => ({
         id: conv.id,
         clinic_id: conv.clinic_id,
@@ -55,8 +77,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         contact_name: conv.contacts?.name || `Contato ${conv.contact_id}`,
         contact_phone: conv.contacts?.phone || '',
         contact_email: conv.contacts?.email || '',
-        total_messages: 0,
-        unread_count: 0
+        contact_status: conv.contacts?.status || 'active',
+        last_message: lastMessageMap[conv.id]?.content || '',
+        last_message_at: lastMessageMap[conv.id]?.created_at || conv.updated_at,
+        total_messages: 0, // Será calculado se necessário
+        unread_count: conv.unread_count || 0
       }));
       
       res.json({
@@ -100,23 +125,30 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         return res.status(404).json({ error: 'Conversa não encontrada' });
       }
 
-      // Get messages first
+      // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
+      // Elimina problema de performance com conversas muito longas
       const { data: messages, error: msgError } = await supabase
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId)
-        .order('timestamp', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(50); // Paginação: apenas últimas 50 mensagens
 
       if (msgError) {
         console.error('❌ Error fetching messages:', msgError);
         return res.status(500).json({ error: 'Erro ao buscar mensagens' });
       }
 
-      // Get all attachments for this conversation
+      // Reordena mensagens para exibição cronológica
+      const sortedMessages = (messages || []).reverse();
+
+      // ETAPA 1: Batch load attachments - elimina N+1 queries
+      // Single query para todos attachments da conversa
       const { data: attachments, error: attachError } = await supabase
         .from('message_attachments')
         .select('*')
-        .eq('clinic_id', 1); // Get all attachments for clinic
+        .in('message_id', sortedMessages.map(m => m.id))
+        .eq('clinic_id', clinicId);
       
       const allAttachments = attachments || [];
 
