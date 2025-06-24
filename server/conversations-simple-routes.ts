@@ -180,10 +180,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
       // Elimina problema de performance com conversas muito longas
+      console.log('🔍 Querying messages for conversation_id:', actualConversationId, 'type:', typeof actualConversationId);
+      
+      // Para IDs científicos do Igor, usar o ID original da conversa
+      const queryConversationId = isScientificNotation ? conversation.id : actualConversationId;
+      console.log('🔍 Using queryConversationId:', queryConversationId);
+      
       const { data: messages, error: msgError } = await supabase
         .from('messages')
         .select('*')
-        .eq('conversation_id', actualConversationId)
+        .eq('conversation_id', queryConversationId)
         .order('timestamp', { ascending: false })
         .limit(50); // Paginação: apenas últimas 50 mensagens
 
@@ -225,14 +231,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         const { data: actionData, error: actionError } = await supabase
           .from('conversation_actions')
           .select('*')
-          .eq('conversation_id', actualConversationId)
+          .eq('conversation_id', queryConversationId)
           .eq('clinic_id', conversation.clinic_id)
           .order('timestamp', { ascending: true });
 
         if (actionError && (actionError.code === '42P01' || actionError.message?.includes('does not exist'))) {
           console.log('🔧 Table conversation_actions does not exist, creating sample actions...');
           
-          if (actualConversationId === 4) {
+          if (queryConversationId === 4) {
             actionNotifications = [
               {
                 id: 1,
