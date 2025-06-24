@@ -1069,80 +1069,21 @@ export function Consultas() {
       return isSameDay(aptDate, targetDate);
     });
 
-    // Early return for single or no appointments
-    if (dayAppointments.length <= 1) {
-      const layoutMap = new Map<string, { width: number; left: number; group: number }>();
-      if (dayAppointments.length === 1) {
-        layoutMap.set(dayAppointments[0].id.toString(), { width: 100, left: 0, group: 0 });
-      }
-      layoutCache.set(dateKey, layoutMap);
-      return layoutMap;
-    }
-
-    // Create collision groups - events that overlap with each other
-    const collisionGroups: Appointment[][] = [];
-    const processedEvents = new Set<string>();
-
-    dayAppointments.forEach(appointment => {
-      if (processedEvents.has(appointment.id.toString())) return;
-
-      const collisionGroup = [appointment];
-      processedEvents.add(appointment.id.toString());
-
-      // Find all events that overlap with this event
-      dayAppointments.forEach(otherAppointment => {
-        if (processedEvents.has(otherAppointment.id.toString())) return;
-        if (appointment.id === otherAppointment.id) return; // Skip self
-        
-        // Check if this event overlaps with the current appointment
-        if (checkEventsOverlap(appointment, otherAppointment)) {
-          collisionGroup.push(otherAppointment);
-          processedEvents.add(otherAppointment.id.toString());
-        }
-      });
-
-      collisionGroups.push(collisionGroup);
-    });
-
-    // Calculate layout for each event based on collision groups
     const layoutMap = new Map<string, { width: number; left: number; group: number }>();
 
-    collisionGroups.forEach((group, groupIndex) => {
-      const groupSize = group.length;
-      
-      if (groupSize === 1) {
-        // No collision, use full width
-        layoutMap.set(group[0].id.toString(), {
-          width: 100,
-          left: 0,
-          group: groupIndex
-        });
-      } else {
-        // Multiple events, distribute horizontally
-        const eventWidth = (100 / groupSize) - 0.5; // Small gap between events
-        
-        // Sort events by start time for consistent ordering
-        const sortedGroup = [...group].sort((a, b) => {
-          const timeA = new Date(a.scheduled_date!).getTime();
-          const timeB = new Date(b.scheduled_date!).getTime();
-          return timeA - timeB;
-        });
-        
-        sortedGroup.forEach((appointment, index) => {
-          const leftPosition = (index * (100 / groupSize)) + 0.25; // Small margin
-          layoutMap.set(appointment.id.toString(), {
-            width: eventWidth,
-            left: leftPosition,
-            group: groupIndex
-          });
-        });
-      }
+    // For each appointment, give it full width by default
+    dayAppointments.forEach((appointment, index) => {
+      layoutMap.set(appointment.id.toString(), {
+        width: 100,
+        left: 0,
+        group: index
+      });
     });
 
     // Cache the result for future use
     layoutCache.set(dateKey, layoutMap);
     return layoutMap;
-  }, [checkEventsOverlap, layoutCache]);
+  }, [layoutCache]);
 
   // Check if appointment spans multiple hours
   const getAppointmentEndHour = (appointment: Appointment): number => {
