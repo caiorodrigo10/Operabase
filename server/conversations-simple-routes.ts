@@ -476,18 +476,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const { messages } = await import('../../shared/schema');
       
       try {
+        // Converter ID para string para evitar problemas de precisão
+        const conversationIdStr = actualConversationId.toString();
+        console.log('💾 Using conversation ID as string:', conversationIdStr);
+        
+        // Usar o target contact_id como conversation_id temporariamente
+        const targetContactId = actualConversation.contact_id;
+        
         const [newMessage] = await db.insert(messages).values({
-          conversation_id: actualConversationId,
+          conversation_id: targetContactId.toString(),
+          clinic_id: 1,
           sender_type: 'professional',
           content: content,
+          direction: 'outbound',
           device_type: 'system',
-          timestamp: new Date()
-        }).returning({
-          id: messages.id,
-          content: messages.content,
-          sender_type: messages.sender_type,
-          timestamp: messages.timestamp
-        });
+          sent_at: new Date(),
+          created_at: new Date()
+        }).returning();
         
         console.log('✅ Message inserted successfully:', newMessage.id);
 
@@ -513,7 +518,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       // ETAPA 3: Invalidate cache after new message
       const clinicId = 1; // Define clinic ID for cache invalidation
-      await redisCacheService.invalidateConversationDetail(conversationId);
+      const requestedConversationId = req.params.id;
+      await redisCacheService.invalidateConversationDetail(requestedConversationId);
       await redisCacheService.invalidateConversationCache(clinicId);
       console.log('🧹 Cache invalidated after new message');
 
@@ -549,9 +555,9 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               content: content.substring(0, 50) + '...'
             });
             
-            const evolutionUrl = process.env.EVOLUTION_API_URL;
+            const evolutionUrl = 'https://n8n-evolution-api.4gmy9o.easypanel.host';
             const evolutionApiKey = process.env.EVOLUTION_API_KEY;
-            const instanceName = process.env.EVOLUTION_INSTANCE || 'Igor Avantto';
+            const instanceName = 'Igor Avantto';
             
             // Usar formato exato do N8N
             const response = await fetch(`${evolutionUrl}/message/sendText/${instanceName}`, {
