@@ -45,29 +45,29 @@ export async function initSystemLogsTable() {
       );
     `);
 
-    // Create optimized indexes for performance
+    // Create optimized indexes for performance (without CONCURRENTLY for startup)
     await db.execute(sql`
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_clinic_entity 
+      CREATE INDEX IF NOT EXISTS idx_logs_clinic_entity 
       ON system_logs (clinic_id, entity_type, entity_id);
     `);
 
     await db.execute(sql`
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_actor 
+      CREATE INDEX IF NOT EXISTS idx_logs_actor 
       ON system_logs (clinic_id, actor_id, created_at);
     `);
 
     await db.execute(sql`
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_timeline 
+      CREATE INDEX IF NOT EXISTS idx_logs_timeline 
       ON system_logs (clinic_id, created_at DESC);
     `);
 
     await db.execute(sql`
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_professional 
+      CREATE INDEX IF NOT EXISTS idx_logs_professional 
       ON system_logs (clinic_id, professional_id, created_at);
     `);
 
     await db.execute(sql`
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_logs_entity_type 
+      CREATE INDEX IF NOT EXISTS idx_logs_entity_type 
       ON system_logs (entity_type, action_type);
     `);
 
