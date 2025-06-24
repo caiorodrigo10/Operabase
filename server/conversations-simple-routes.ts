@@ -446,64 +446,68 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       console.log('✅ Message saved to database with ID:', newMessage.id);
 
-      // Step 2: Send message via Evolution API (using existing VPS configuration)
+      // Step 2: Send message via Evolution API (using database configuration)
       try {
-        // Use existing environment variables that are already configured
-        const evolutionApiUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
-        const evolutionApiKey = process.env.EVOLUTION_API_KEY;
-        const evolutionInstance = process.env.EVOLUTION_INSTANCE || 'default';
+        // Get Evolution API configuration from database
+        const { data: evolutionConfig, error: configError } = await supabase
+          .from('evolution_api_settings')
+          .select('api_url, api_key, instance_name')
+          .eq('clinic_id', clinicId)
+          .eq('is_active', true)
+          .single();
 
-        if (!evolutionApiKey) {
-          console.error('❌ Evolution API key not configured');
-          return res.status(500).json({ error: 'WhatsApp API não configurado' });
-        }
-
-        const whatsappPayload = {
-          number: phoneNumber,
-          text: content
-        };
-
-        console.log('📡 Sending to Evolution API:', `${evolutionApiUrl}/message/sendText/${evolutionInstance}`);
-        console.log('📋 Payload:', whatsappPayload);
-
-        const whatsappResponse = await fetch(
-          `${evolutionApiUrl}/message/sendText/${evolutionInstance}`,
-          {
-            method: 'POST',
-            headers: {
-              'apikey': evolutionApiKey,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(whatsappPayload)
-          }
-        );
-
-        if (whatsappResponse.ok) {
-          const whatsappResult = await whatsappResponse.json();
-          console.log('✅ WhatsApp message sent successfully:', whatsappResult);
-          
-          // Update message status to indicate WhatsApp delivery
-          await supabase
-            .from('messages')
-            .update({ 
-              status: 'sent_whatsapp',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', newMessage.id);
-            
+        if (configError || !evolutionConfig) {
+          console.error('❌ Evolution API not configured in database');
+          // Don't fail the request - message is already saved
         } else {
-          const whatsappError = await whatsappResponse.text();
-          console.error('❌ WhatsApp API error:', whatsappResponse.status, whatsappError);
-          
-          // Update message status to indicate WhatsApp failure
-          await supabase
-            .from('messages')
-            .update({ 
-              status: 'failed_whatsapp',
-              error_message: whatsappError,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', newMessage.id);
+
+          const whatsappPayload = {
+            number: phoneNumber,
+            text: content
+          };
+
+          console.log('📡 Sending to Evolution API:', `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`);
+          console.log('📋 Payload:', whatsappPayload);
+
+          const whatsappResponse = await fetch(
+            `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`,
+            {
+              method: 'POST',
+              headers: {
+                'apikey': evolutionConfig.api_key,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(whatsappPayload)
+            }
+          );
+
+          if (whatsappResponse.ok) {
+            const whatsappResult = await whatsappResponse.json();
+            console.log('✅ WhatsApp message sent successfully:', whatsappResult);
+            
+            // Update message status to indicate WhatsApp delivery
+            await supabase
+              .from('messages')
+              .update({ 
+                status: 'sent_whatsapp',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', newMessage.id);
+              
+          } else {
+            const whatsappError = await whatsappResponse.text();
+            console.error('❌ WhatsApp API error:', whatsappResponse.status, whatsappError);
+            
+            // Update message status to indicate WhatsApp failure
+            await supabase
+              .from('messages')
+              .update({ 
+                status: 'failed_whatsapp',
+                error_message: whatsappError,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', newMessage.id);
+          }
         }
 
       } catch (whatsappError) {
