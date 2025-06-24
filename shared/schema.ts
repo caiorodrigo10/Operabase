@@ -533,6 +533,9 @@ export const messages = pgTable("messages", {
   status: varchar("status", { length: 50 }).notNull().default("sent"), // sent, delivered, read, failed
   direction: varchar("direction", { length: 20 }).notNull(), // inbound, outbound
   
+  // Device type para identificar origem do envio
+  device_type: varchar("device_type", { length: 20 }).notNull().default("manual"), // system, manual
+  
   // Resposta da AI (se aplicável)
   ai_generated: boolean("ai_generated").default(false),
   ai_context: jsonb("ai_context"), // Contexto usado pela AI para gerar a resposta
@@ -597,6 +600,7 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   message_type: z.enum(['text', 'image', 'document', 'audio', 'video', 'location', 'contact']).default('text'),
   status: z.enum(['sent', 'delivered', 'read', 'failed']).default('sent'),
   direction: z.enum(['inbound', 'outbound']),
+  device_type: z.enum(['system', 'manual']).default('manual'),
   clinic_id: z.number().min(1),
   conversation_id: z.bigint(),
 });

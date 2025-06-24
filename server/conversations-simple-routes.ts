@@ -377,6 +377,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           conversation_id: actualConversationId,
           sender_type: 'professional',
           content: content,
+          device_type: 'system', // Identificar como enviado pelo sistema
           timestamp: new Date().toISOString()
         })
         .select()
