@@ -475,14 +475,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Usar o target contact_id como conversation_id (padrão atual)
-        const targetContactId = actualConversation.contact_id;
-        console.log('💾 Attempting insert with targetContactId:', targetContactId);
+        // Usar o ID correto da conversa conforme foreign key constraint
+        const conversationIdForDB = actualConversation.id;
+        console.log('💾 Using correct conversation_id for foreign key:', conversationIdForDB);
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
-            conversation_id: targetContactId,
+            conversation_id: conversationIdForDB,
             sender_type: 'professional',
             content: content
           })
@@ -519,7 +519,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           sender_name: 'Caio Rodrigo',
           direction: 'outbound',
           message_type: 'text',
-          timestamp: newMessage.timestamp.toISOString(),
+          timestamp: new Date(newMessage.timestamp).toISOString(),
           attachments: []
         };
         
