@@ -824,17 +824,17 @@ export function Consultas() {
 
     try {
       const result = await availabilityCheck.mutateAsync({
-        user_id: parseInt(professionalName), // Convert to number
+        user_id: parseInt(professionalName || '4'), // Convert to number with fallback
         scheduled_date: date,
         scheduled_time: time,
         duration: durationMinutes
       });
 
-      if (result.conflict) {
+      if (result.conflict?.hasConflict) {
         setAvailabilityConflict({
           hasConflict: true,
-          message: formatConflictMessage(result.conflictType!, result.conflictDetails!),
-          conflictType: result.conflictType
+          message: result.conflict.message,
+          conflictType: result.conflict.conflictType
         });
       } else {
         setAvailabilityConflict({
@@ -866,13 +866,13 @@ export function Consultas() {
         const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
 
         const result = await availabilityCheck.mutateAsync({
-          user_id: parseInt(professionalName), // Convert to number
+          user_id: parseInt(professionalName || '4'), // Convert to number with fallback
           scheduled_date: date,
           scheduled_time: slot.value,
           duration: durationMinutes
         });
 
-        if (!result.conflict) {
+        if (!result.conflict?.hasConflict) {
           availableSlots.push({
             date: date,
             time: slot.value,
