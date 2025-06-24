@@ -80,11 +80,21 @@
 }
 
 .header-button.save-button {
-  background-color: #0066cc;
+  background-color: #10b981;
+  color: white;
 }
 
 .header-button.save-button:hover {
-  background-color: #0052a3;
+  background-color: #059669;
+}
+
+.header-button.preview-button {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.header-button.preview-button:hover {
+  background-color: #2563eb;
 }
 
 .device-toggle-group {

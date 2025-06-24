@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Save, Code, Eye } from 'lucide-react';
+import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Save, Code, Eye, ExternalLink } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useEditor2Store } from '../../../stores/editor2Store';
 
