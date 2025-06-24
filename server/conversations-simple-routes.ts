@@ -469,15 +469,26 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         phone: actualConversation.contacts.phone
       });
 
-      // Insert message
-      console.log('💾 Inserting message with conversation_id:', actualConversationId);
+      // Para contornar o problema de conversão do JavaScript, usar SQL direto
+      console.log('💾 Inserting message with SQL query to avoid JS number conversion');
+      
+      const insertQuery = `
+        INSERT INTO messages (conversation_id, sender_type, content, device_type, timestamp)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *
+      `;
+      
+      // Alternativa: usar string literal para evitar conversão JS
+      const conversationIdStr = actualConversation.id.toString();
+      console.log('🔧 Using string literal for ID:', conversationIdStr);
+      
       const { data: newMessage, error } = await supabase
         .from('messages')
         .insert({
-          conversation_id: actualConversationId,
+          conversation_id: conversationIdStr, // Usar como string literal
           sender_type: 'professional',
           content: content,
-          device_type: 'system', // Identificar como enviado pelo sistema
+          device_type: 'system',
           timestamp: new Date().toISOString()
         })
         .select()
