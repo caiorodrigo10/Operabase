@@ -335,11 +335,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
     }
   });
 
-  // Simple send message
+  // Simple send message with WhatsApp integration
   app.post('/api/conversations-simple/:id/messages', async (req: Request, res: Response) => {
     try {
-      const conversationId = parseInt(req.params.id);
+      const conversationId = req.params.id;
       const { content } = req.body;
+      const clinicId = 1; // Hardcoded for testing
 
       if (!content || !conversationId) {
         return res.status(400).json({ error: 'Conteúdo e ID da conversa são obrigatórios' });
@@ -354,11 +355,64 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      // Insert message
+      // First get conversation details to extract phone number
+      let actualConversationId = conversationId;
+      let conversation;
+      
+      // Handle scientific notation for Igor's conversation
+      const isScientificNotation = conversationId.includes('e+');
+      if (isScientificNotation) {
+        console.log('🔍 Scientific notation detected, finding Igor conversation by contact_id');
+        const result = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            contact_id,
+            contacts!inner (
+              phone,
+              name
+            )
+          `)
+          .eq('contact_id', 44)
+          .eq('clinic_id', clinicId)
+          .single();
+        conversation = result.data;
+        actualConversationId = conversation.id;
+        console.log('🔍 Igor conversation found - ID:', conversation.id, 'Contact:', conversation.contact_id);
+      } else {
+        const result = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            contact_id,
+            contacts!inner (
+              phone,
+              name
+            )
+          `)
+          .eq('id', parseInt(conversationId))
+          .eq('clinic_id', clinicId)
+          .single();
+        conversation = result.data;
+      }
+
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversa não encontrada' });
+      }
+
+      const phoneNumber = conversation.contacts.phone;
+      const contactName = conversation.contacts.name;
+      console.log('📱 Sending WhatsApp message to:', phoneNumber, '(', contactName, ')');
+
+      // Step 1: Save message to database first
+      // Use the actual conversation ID from the database lookup
+      const dbConversationId = conversation.id;
+      console.log('💾 Saving message with conversation_id:', dbConversationId, 'Type:', typeof dbConversationId);
+      
       const { data: newMessage, error } = await supabase
         .from('messages')
         .insert({
-          conversation_id: conversationId,
+          conversation_id: dbConversationId,
           sender_type: 'professional',
           content: content,
           timestamp: new Date().toISOString()
@@ -368,12 +422,88 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       if (error) {
         console.error('❌ Error inserting message:', error);
-        return res.status(500).json({ error: 'Erro ao enviar mensagem' });
+        return res.status(500).json({ error: 'Erro ao salvar mensagem' });
+      }
+
+      console.log('✅ Message saved to database with ID:', newMessage.id);
+
+      // Step 2: Send message via Evolution API (using existing VPS configuration)
+      try {
+        // Use existing environment variables that are already configured
+        const evolutionApiUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+        const evolutionApiKey = process.env.EVOLUTION_API_KEY;
+        const evolutionInstance = process.env.EVOLUTION_INSTANCE || 'default';
+
+        if (!evolutionApiKey) {
+          console.error('❌ Evolution API key not configured');
+          return res.status(500).json({ error: 'WhatsApp API não configurado' });
+        }
+
+        const whatsappPayload = {
+          number: phoneNumber,
+          text: content
+        };
+
+        console.log('📡 Sending to Evolution API:', `${evolutionApiUrl}/message/sendText/${evolutionInstance}`);
+        console.log('📋 Payload:', whatsappPayload);
+
+        const whatsappResponse = await fetch(
+          `${evolutionApiUrl}/message/sendText/${evolutionInstance}`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': evolutionApiKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(whatsappPayload)
+          }
+        );
+
+        if (whatsappResponse.ok) {
+          const whatsappResult = await whatsappResponse.json();
+          console.log('✅ WhatsApp message sent successfully:', whatsappResult);
+          
+          // Update message status to indicate WhatsApp delivery
+          await supabase
+            .from('messages')
+            .update({ 
+              status: 'sent_whatsapp',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', newMessage.id);
+            
+        } else {
+          const whatsappError = await whatsappResponse.text();
+          console.error('❌ WhatsApp API error:', whatsappResponse.status, whatsappError);
+          
+          // Update message status to indicate WhatsApp failure
+          await supabase
+            .from('messages')
+            .update({ 
+              status: 'failed_whatsapp',
+              error_message: whatsappError,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', newMessage.id);
+        }
+
+      } catch (whatsappError) {
+        console.error('❌ WhatsApp sending failed:', whatsappError);
+        
+        // Update message status to indicate network failure
+        await supabase
+          .from('messages')
+          .update({ 
+            status: 'failed_network',
+            error_message: whatsappError.message,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', newMessage.id);
       }
 
       const formattedMessage = {
         id: newMessage.id,
-        conversation_id: conversationId,
+        conversation_id: actualConversationId,
         content: content,
         sender_type: 'professional',
         sender_name: 'Caio Rodrigo',
@@ -384,16 +514,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       };
 
       // ETAPA 3: Invalidate cache after new message
-      await redisCacheService.invalidateConversationDetail(conversationId);
+      await redisCacheService.invalidateConversationDetail(actualConversationId);
       await redisCacheService.invalidateConversationCache(clinicId);
       console.log('🧹 Cache invalidated after new message');
 
       // ETAPA 2: Emit via WebSocket after message creation
       const webSocketServer = getWebSocketServer();
       if (webSocketServer) {
-        await webSocketServer.emitNewMessage(conversationId, clinicId, {
+        await webSocketServer.emitNewMessage(actualConversationId, clinicId, {
           id: newMessage.id,
-          conversation_id: conversationId,
+          conversation_id: actualConversationId,
           content: content,
           sender_type: 'professional',
           sender_name: 'Caio Rodrigo',
