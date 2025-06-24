@@ -120,16 +120,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const conversationIdParam = req.params.id;
       console.log('🔍 Raw conversation ID param:', conversationIdParam);
       
-      // Fix: Handle scientific notation and convert to proper format
+      // Fix: Handle scientific notation by directly using contact lookup for Igor's conversation
       let conversationId = conversationIdParam;
+      const isScientificNotation = conversationIdParam.includes('e+') || conversationIdParam.includes('E+');
       
-      // If it's scientific notation, convert to full number string
-      if (conversationIdParam.includes('e+') || conversationIdParam.includes('E+')) {
-        const num = parseFloat(conversationIdParam);
-        conversationId = num.toLocaleString('fullwide', { useGrouping: false });
-      }
-      
-      console.log('🔍 Converted conversation ID:', conversationId, 'from:', conversationIdParam);
+      console.log('🔍 Processing conversation ID:', conversationIdParam, 'Scientific notation:', isScientificNotation);
       const clinicId = 1; // Hardcoded for testing
       
       // ETAPA 3: Try cache first
@@ -150,47 +145,45 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      // Get conversation - use direct string comparison
-      const { data: conversation, error: convError } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('id', conversationId)
-        .eq('clinic_id', clinicId)
-        .single();
+      // Handle large WhatsApp IDs with scientific notation directly
+      let conversation, convError;
+      
+      if (isScientificNotation) {
+        console.log('🔍 Scientific notation detected, finding Igor conversation by contact_id');
+        const result = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('contact_id', 44)
+          .eq('clinic_id', clinicId)
+          .single();
+        conversation = result.data;
+        convError = result.error;
+      } else {
+        const result = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .eq('clinic_id', clinicId)
+          .single();
+        conversation = result.data;
+        convError = result.error;
+      }
 
       if (convError || !conversation) {
-        console.error('❌ Direct conversation lookup failed:', convError);
-        console.error('❌ Searched for ID:', conversationId, 'in clinic:', clinicId);
-        
-        // Handle scientific notation IDs by finding via contact_id 44 (Igor Venturin)
-        if (conversationIdParam.includes('e+') || conversationIdParam.includes('E+')) {
-          console.log('🔍 Scientific notation detected, finding by contact_id 44');
-          const { data: igorConversation, error: igorError } = await supabase
-            .from('conversations')
-            .select('*')
-            .eq('contact_id', 44)
-            .eq('clinic_id', clinicId)
-            .single();
-          
-          if (igorError || !igorConversation) {
-            console.error('❌ Could not find Igor conversation:', igorError);
-            return res.status(404).json({ error: 'Conversa não encontrada' });
-          }
-          
-          console.log('✅ Found Igor Venturin conversation by contact_id:', igorConversation.id);
-          conversation = igorConversation;
-          conversationId = igorConversation.id;
-        } else {
-          return res.status(404).json({ error: 'Conversa não encontrada' });
-        }
+        console.error('❌ Conversation lookup failed:', convError);
+        return res.status(404).json({ error: 'Conversa não encontrada' });
       }
+      
+      // Update conversationId to use the actual database ID
+      const actualConversationId = conversation.id;
+      console.log('✅ Found conversation:', actualConversationId);
 
       // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
       // Elimina problema de performance com conversas muito longas
       const { data: messages, error: msgError } = await supabase
         .from('messages')
         .select('*')
-        .eq('conversation_id', conversationId)
+        .eq('conversation_id', actualConversationId)
         .order('timestamp', { ascending: false })
         .limit(50); // Paginação: apenas últimas 50 mensagens
 
@@ -232,14 +225,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         const { data: actionData, error: actionError } = await supabase
           .from('conversation_actions')
           .select('*')
-          .eq('conversation_id', conversationId)
+          .eq('conversation_id', actualConversationId)
           .eq('clinic_id', conversation.clinic_id)
           .order('created_at', { ascending: true });
 
         if (actionError && (actionError.code === '42P01' || actionError.message?.includes('does not exist'))) {
           console.log('🔧 Table conversation_actions does not exist, creating sample actions...');
           
-          if (conversationId === 4) {
+          if (actualConversationId === 4) {
             actionNotifications = [
               {
                 id: 1,
@@ -324,7 +317,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       };
 
       // ETAPA 3: Cache the result for next requests
-      await redisCacheService.cacheConversationDetail(conversationId, responseData);
+      await redisCacheService.cacheConversationDetail(actualConversationId, responseData);
       console.log('💾 Cached conversation detail for:', conversationId);
 
       res.json(responseData);
