@@ -95,6 +95,10 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         total_messages: 0, // Será calculado se necessário
         unread_count: 0 // Será calculado dinamicamente quando necessário
       }));
+
+      // ETAPA 3: Cache the result for next requests
+      await redisCacheService.cacheConversations(clinicId, formattedConversations);
+      console.log('💾 Cached conversations list for clinic:', clinicId);
       
       res.json({
         conversations: formattedConversations,
@@ -109,11 +113,20 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
     }
   });
 
-  // Simple conversation detail
+  // ETAPA 3: Enhanced conversation detail with Redis cache
   app.get('/api/conversations-simple/:id', async (req: Request, res: Response) => {
     try {
       const conversationId = parseInt(req.params.id);
       const clinicId = 1; // Hardcoded for testing
+      
+      // ETAPA 3: Try cache first
+      const cachedDetail = await redisCacheService.getCachedConversationDetail(conversationId);
+      if (cachedDetail) {
+        console.log('🎯 Cache HIT: conversation detail', conversationId);
+        return res.json(cachedDetail);
+      }
+      
+      console.log('💽 Cache MISS: fetching conversation detail from database');
 
       console.log('🔍 Fetching conversation detail:', conversationId);
 
@@ -269,11 +282,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         };
       });
 
-      res.json({
+      const responseData = {
         conversation: conversation,
         messages: finalFormattedMessages,
         actions: actionNotifications
-      });
+      };
+
+      // ETAPA 3: Cache the result for next requests
+      await redisCacheService.cacheConversationDetail(conversationId, responseData);
+      console.log('💾 Cached conversation detail for:', conversationId);
+
+      res.json(responseData);
 
     } catch (error) {
       console.error('❌ Error fetching conversation detail:', error);
@@ -328,6 +347,27 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         created_at: newMessage.timestamp,
         attachments: []
       };
+
+      // ETAPA 3: Invalidate cache after new message
+      await redisCacheService.invalidateConversationDetail(conversationId);
+      await redisCacheService.invalidateConversationCache(clinicId);
+      console.log('🧹 Cache invalidated after new message');
+
+      // ETAPA 2: Emit via WebSocket after message creation
+      const webSocketServer = getWebSocketServer();
+      if (webSocketServer) {
+        await webSocketServer.emitNewMessage(conversationId, clinicId, {
+          id: newMessage.id,
+          conversation_id: conversationId,
+          content: content,
+          sender_type: 'professional',
+          sender_name: 'Caio Rodrigo',
+          message_type: 'text',
+          created_at: newMessage.timestamp,
+          attachments: []
+        });
+        console.log('🔗 Message emitted via WebSocket');
+      }
 
       console.log('✅ Message sent successfully');
 
