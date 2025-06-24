@@ -215,18 +215,19 @@ SESSION_SECRET=your_session_secret
 - Timeline now positions at bottom instantly for better user experience
 - Smooth scroll only used for new incoming messages during active chat
 
-### June 24, 2025 - Database Schema Fix: conversation_id Type Change - Manual Step Required
-- Updated all Drizzle schema files to support bigint conversation_id
-- Added bigint import and updated foreign key references
-- Updated Zod validation schemas to use z.bigint()
-- **Manual step required**: Execute SQL in Supabase Dashboard > SQL Editor:
+### June 24, 2025 - Database Schema Fix: conversation_id Type Change - ISSUE IDENTIFIED
+- **Problem**: Field conversation_id does not exist in conversations table in Supabase
+- **Error**: "violates foreign key constraint messages_conversation_id_fkey" because conversations table missing conversation_id column
+- **Root Cause**: Schema changes applied to code but not to actual database
+- **Required Action**: Execute complete SQL script in Supabase Dashboard > SQL Editor:
   ```sql
-  ALTER TABLE conversations ADD COLUMN conversation_id bigint;
-  CREATE UNIQUE INDEX idx_conversations_conversation_id ON conversations(conversation_id);
-  ALTER TABLE messages ALTER COLUMN conversation_id TYPE bigint;
+  ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_conversation_id_fkey;
+  ALTER TABLE conversations ADD COLUMN IF NOT EXISTS conversation_id bigint;
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_conversation_id ON conversations(conversation_id);
+  ALTER TABLE messages ALTER COLUMN conversation_id TYPE bigint USING conversation_id::bigint;
   ALTER TABLE messages ADD CONSTRAINT messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id);
   ```
-- Once executed, will support large numeric IDs like 5598876940345511948922493 for WhatsApp integration
+- Once executed manually, will support large WhatsApp IDs like 5598876940345511948922493
 
 ### June 24, 2025 - Conversas com Conteúdo Único Implementado ✅
 - Corrigido problema de mensagens duplicadas entre Lucas Ferreira e Carla Mendes
