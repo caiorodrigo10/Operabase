@@ -469,23 +469,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         phone: actualConversation.contacts.phone
       });
 
-      // Usar Drizzle ORM para inserir mensagem
-      console.log('💾 Inserting message with Drizzle ORM');
-      
-      const { db } = await import('./db');
-      const { messages } = await import('../shared/schema');
+      // Usar padrão das mensagens da AI (sem clinic_id)
+      console.log('💾 Inserting message following AI message pattern');
       
       let formattedMessage;
       
       try {
-        // Converter ID para string para evitar problemas de precisão
-        const conversationIdStr = actualConversationId.toString();
-        console.log('💾 Using conversation ID as string:', conversationIdStr);
-        
-        // Usar o target contact_id como conversation_id temporariamente
+        // Usar o target contact_id como conversation_id (padrão atual)
         const targetContactId = actualConversation.contact_id;
-        
-        // Use direct SQL for actual database schema compatibility
         console.log('💾 Attempting insert with targetContactId:', targetContactId);
         
         const { data: insertResult, error: insertError } = await supabase
@@ -499,13 +490,20 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .single();
         
         console.log('💾 Insert result:', { insertResult, insertError });
+        console.log('💾 Insert error details:', JSON.stringify(insertError, null, 2));
         
         if (insertError) {
-          console.error('❌ Supabase insert error:', insertError);
-          throw new Error(`Database error: ${insertError.message}`);
+          console.error('❌ Supabase insert error details:', {
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint,
+            code: insertError.code
+          });
+          throw new Error(`Database error: ${insertError.message} - ${insertError.details || ''}`);
         }
         
         if (!insertResult) {
+          console.error('❌ No result but no error - unexpected');
           throw new Error('No result returned from insert');
         }
         

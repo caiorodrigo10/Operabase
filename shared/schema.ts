@@ -514,7 +514,6 @@ export const conversations = pgTable("conversations", {
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.conversation_id),
-  clinic_id: integer("clinic_id").notNull(),
   
   // Origem da mensagem
   sender_type: varchar("sender_type", { length: 50 }).notNull(), // professional, patient, system, ai
@@ -547,7 +546,6 @@ export const messages = pgTable("messages", {
   created_at: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_messages_conversation").on(table.conversation_id, table.created_at),
-  index("idx_messages_clinic").on(table.clinic_id, table.created_at),
   index("idx_messages_external").on(table.external_id),
   index("idx_messages_status").on(table.status, table.direction),
 ]);
@@ -601,7 +599,6 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   status: z.enum(['sent', 'delivered', 'read', 'failed']).default('sent'),
   direction: z.enum(['inbound', 'outbound']),
   device_type: z.enum(['system', 'manual']).default('manual'),
-  clinic_id: z.number().min(1),
   conversation_id: z.bigint(),
 });
 
