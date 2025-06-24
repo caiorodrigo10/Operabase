@@ -172,6 +172,8 @@ function Router() {
         <Route path="/system-logs" component={SystemLogs} />
 
         <Route path="/editor-landing" component={FunilEditorLanding} />
+        <Route path="/editor2" component={Editor2} />
+        <Route path="/preview/editor2" component={() => <PreviewPage pageId="editor2" />} />
 
         <Route component={NotFound} />
       </Switch>
