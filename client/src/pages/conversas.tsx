@@ -3,8 +3,10 @@ import { ConversationsSidebar } from "@/components/features/conversas/Conversati
 import { MainConversationArea } from "@/components/features/conversas/MainConversationArea";
 import { PatientInfoPanel } from "@/components/features/conversas/PatientInfoPanel";
 import { WebSocketStatus } from "@/components/WebSocketStatus";
+import { CacheStatus } from "@/components/CacheStatus";
 import { useConversations, useConversationDetail, useSendMessage, useMarkAsRead } from '@/hooks/useConversations';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useOptimisticMarkAsRead } from '@/hooks/useOptimisticConversations';
 import { Conversation, TimelineItem, PatientInfo } from "@/types/conversations";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -30,6 +32,9 @@ export default function ConversasPage() {
   
   // ETAPA 2: WebSocket integration for real-time communication
   const webSocket = useWebSocket();
+  
+  // ETAPA 3: Optimistic mutations for instant UX
+  const optimisticMarkAsRead = useOptimisticMarkAsRead();
 
   // Handle responsive layout
   useEffect(() => {

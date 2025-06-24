@@ -222,6 +222,15 @@ SESSION_SECRET=your_session_secret
 - Melhorada exibição de últimas mensagens na lista de conversas
 - Sistema WebSocket funcional com fallback gracioso para polling
 
+### June 24, 2025 - ETAPA 3 Cache Redis e Optimistic Updates Implementado ✅
+- Implementado RedisCacheService com cache-aside pattern e fallback gracioso para BD
+- Cache inteligente: conversations (5min), details (2min), sessions (30min), patients (10min)
+- Sistema de invalidação automática via WebSocket para manter dados frescos
+- Framework de optimistic updates com rollback automático e visual feedback
+- Métricas de cache em tempo real com hit/miss rate e health monitoring
+- Redução esperada de 60% nas queries ao Supabase com response <50ms para cache hits
+- Performance das ETAPAS 1-2 preservada com sistema funcionando mesmo sem Redis
+
 ### June 24, 2025 - ETAPA 2 WebSocket Sistema de Tempo Real Implementado ✅
 - Implementado Socket.IO server com namespaces por clínica para isolamento multi-tenant
 - Criado sistema de autenticação WebSocket com tokens JWT simulados

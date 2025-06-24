@@ -160,7 +160,7 @@ export class WebSocketServer {
   }
 
   // Método para emitir nova mensagem (chamado pelo webhook)
-  public emitNewMessage(conversationId: number, clinicId: number, message: WebSocketMessage) {
+  public async emitNewMessage(conversationId: number, clinicId: number, message: WebSocketMessage) {
     try {
       const conversationRoom = `conversation:${conversationId}`;
       const clinicRoom = `clinic:${clinicId}`;
@@ -191,7 +191,7 @@ export class WebSocketServer {
   }
 
   // Método para emitir atualização de conversa
-  public emitConversationUpdate(conversationId: number, clinicId: number, updateData: any) {
+  public async emitConversationUpdate(conversationId: number, clinicId: number, updateData: any) {
     try {
       const conversationRoom = `conversation:${conversationId}`;
       const clinicRoom = `clinic:${clinicId}`;
