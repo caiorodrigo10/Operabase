@@ -437,4 +437,106 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
       },
     });
   },
+
+  // JSON Management Actions
+  serializeToJSON: () => {
+    const state = get();
+    const pageJson: Editor2PageJSON = {
+      id: state.currentPage.id,
+      version: '1.0.0',
+      metadata: {
+        title: 'Página de Obrigado',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      layout: {
+        type: 'grid',
+        columns: 3,
+        gap: 20,
+      },
+      globalSettings: state.globalSettings,
+      blocks: state.currentPage.blocks,
+    };
+    return pageJson;
+  },
+
+  deserializeFromJSON: (json: Editor2PageJSON) => {
+    set(state => ({
+      currentPage: {
+        ...state.currentPage,
+        id: json.id,
+        blocks: json.blocks,
+        selectedElement: { type: null, id: null },
+      },
+      globalSettings: json.globalSettings,
+    }));
+  },
+
+  loadPageFromServer: async () => {
+    try {
+      const response = await fetch('/api/load-page-json/editor2');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const pageJson: Editor2PageJSON = JSON.parse(result.data);
+        get().deserializeFromJSON(pageJson);
+        console.log('📂 Editor2 page loaded from server');
+        return true;
+      } else {
+        // Try localStorage fallback
+        const savedState = localStorage.getItem('editor2_page_state');
+        if (savedState) {
+          const pageJson: Editor2PageJSON = JSON.parse(savedState);
+          get().deserializeFromJSON(pageJson);
+          console.log('📂 Editor2 page loaded from localStorage');
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error loading Editor2 page:', error);
+      return false;
+    }
+  },
+
+  savePageToServer: async () => {
+    try {
+      const pageJson = get().serializeToJSON();
+      const jsonString = JSON.stringify(pageJson, null, 2);
+      
+      // Save to localStorage first
+      localStorage.setItem('editor2_page_state', jsonString);
+      
+      // Get auth token
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL!,
+        import.meta.env.VITE_SUPABASE_ANON_KEY!
+      );
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch('/api/save-page-json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          pageId: 'editor2',
+          jsonData: jsonString
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ Editor2 page saved to server');
+        return true;
+      } else {
+        console.error('❌ Failed to save Editor2 page to server');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error saving Editor2 page:', error);
+      return false;
+    }
+  },
 }));
