@@ -1027,6 +1027,9 @@ export function Consultas() {
   const checkEventsOverlap = React.useCallback((event1: Appointment, event2: Appointment): boolean => {
     if (!event1.scheduled_date || !event2.scheduled_date) return false;
     
+    // Same event cannot overlap with itself
+    if (event1.id === event2.id) return false;
+    
     // Use cache key based on appointment IDs to avoid duplicate calculations
     const cacheKey = `${Math.min(event1.id, event2.id)}-${Math.max(event1.id, event2.id)}`;
     
@@ -1040,6 +1043,20 @@ export function Consultas() {
     const end2 = start2 + (getAppointmentDuration(event2) * 60 * 1000);
     
     const overlaps = start1 < end2 && start2 < end1;
+    
+    // Debug logging for Caio Apfelbaum4 overlaps
+    if ((event1.contact_id === 1 || event2.contact_id === 1) && 
+        (event1.scheduled_date.includes('2025-06-26') || event2.scheduled_date.includes('2025-06-26'))) {
+      console.log('🔍 Overlap check for Caio:', {
+        event1: { id: event1.id, contact_id: event1.contact_id, date: event1.scheduled_date },
+        event2: { id: event2.id, contact_id: event2.contact_id, date: event2.scheduled_date },
+        start1: new Date(start1),
+        end1: new Date(end1),
+        start2: new Date(start2),
+        end2: new Date(end2),
+        overlaps
+      });
+    }
     
     // Cache the result to avoid recalculation
     collisionCache.set(cacheKey, overlaps);
@@ -1911,21 +1928,36 @@ export function Consultas() {
                           // Calculate left position based on day column and collision layout
                           const timeColumnWidth = 48; // w-12 = 48px for time column
                           const containerWidth = `calc(100% - ${timeColumnWidth}px)`;
-                          const dayColumnWidthPercent = 100 / 7; // Each day takes 1/7 of remaining width
                           const baseDayPosition = `calc(${timeColumnWidth}px + (${containerWidth} * ${dayIndex} / 7))`;
                           
-                          // Apply collision layout within the day column
-                          const eventWidth = `calc((${containerWidth} / 7) * ${layout.width / 100})`;
-                          const eventLeftOffset = `calc((${containerWidth} / 7) * ${layout.left / 100})`;
-                          const finalLeftPosition = `calc(${baseDayPosition} + ${eventLeftOffset})`;
+                          // Apply collision layout within the day column - Fixed calculation
+                          const dayColumnWidth = `calc((100% - ${timeColumnWidth}px) / 7)`;
+                          const eventWidth = `calc(${dayColumnWidth} * ${layout.width / 100} - 4px)`;
+                          const eventLeftOffset = `calc(${dayColumnWidth} * ${layout.left / 100})`;
+                          const finalLeftPosition = `calc(${baseDayPosition} + ${eventLeftOffset} + 2px)`;
+                          
+                          // Debug logging for Caio Apfelbaum4 appointment
+                          if (patientName.includes('Caio') && format(aptStart, 'yyyy-MM-dd') === '2025-06-26') {
+                            console.log('🔍 Caio Apfelbaum4 appointment debug:', {
+                              patientName,
+                              dayIndex,
+                              startHour,
+                              startMinutes,
+                              topPosition,
+                              height,
+                              layout,
+                              finalLeftPosition,
+                              eventWidth
+                            });
+                          }
                           
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
                               <div
                                 style={{ 
                                   top: `${topPosition}px`,
-                                  left: `calc(${finalLeftPosition} + 2px)`,
-                                  width: `calc(${eventWidth} - 4px)`,
+                                  left: finalLeftPosition,
+                                  width: eventWidth,
                                   height: `${height}px`,
                                   zIndex: 10 + layout.group
                                 }}
