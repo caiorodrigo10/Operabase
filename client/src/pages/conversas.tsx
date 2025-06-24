@@ -59,7 +59,7 @@ export default function ConversasPage() {
       id: conv.id,
       patient_name: conv.contact_name || 'Contato sem nome',
       patient_avatar: undefined,
-      last_message: 'Toque para ver a conversa',
+      last_message: conv.last_message || 'Toque para ver a conversa',
       timestamp: conv.updated_at,
       updated_at: conv.updated_at,
       unread_count: conv.unread_count || 0,
@@ -72,6 +72,7 @@ export default function ConversasPage() {
   // ETAPA 1: Process conversation detail with optimized checks
   useEffect(() => {
     if (conversationDetail?.messages && conversationDetail.conversation.id === selectedConversationId) {
+      console.log('📊 Processing timeline for conversation:', selectedConversationId, 'with', conversationDetail.messages.length, 'messages');
       const timeline: TimelineItem[] = [];
       
       // Add messages to timeline

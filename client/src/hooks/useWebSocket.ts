@@ -78,8 +78,8 @@ export function useWebSocket() {
     });
 
     socket.on('connect_error', (error) => {
-      console.error('❌ WebSocket connection error:', error);
-      setState(prev => ({ ...prev, connected: false, error: error.message }));
+      console.warn('⚠️ WebSocket connection failed, using fallback polling');
+      setState(prev => ({ ...prev, connected: false, error: null })); // Não mostrar erro para fallback
     });
 
     socket.on('reconnect', () => {

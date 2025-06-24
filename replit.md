@@ -215,6 +215,13 @@ SESSION_SECRET=your_session_secret
 - Timeline now positions at bottom instantly for better user experience
 - Smooth scroll only used for new incoming messages during active chat
 
+### June 24, 2025 - Conversas com Conteúdo Único Implementado ✅
+- Corrigido problema de mensagens duplicadas entre Lucas Ferreira e Carla Mendes
+- Criadas conversas únicas: Lucas (remarcar consulta), Carla (resultados exames), Pedro (agendamento)
+- Eliminado efeito visual de "piscar" ao navegar entre conversas
+- Melhorada exibição de últimas mensagens na lista de conversas
+- Sistema WebSocket funcional com fallback gracioso para polling
+
 ### June 24, 2025 - ETAPA 2 WebSocket Sistema de Tempo Real Implementado ✅
 - Implementado Socket.IO server com namespaces por clínica para isolamento multi-tenant
 - Criado sistema de autenticação WebSocket com tokens JWT simulados

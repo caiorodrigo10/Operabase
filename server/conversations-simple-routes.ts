@@ -80,7 +80,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         contact_phone: conv.contacts?.phone || '',
         contact_email: conv.contacts?.email || '',
         contact_status: conv.contacts?.status || 'active',
-        last_message: lastMessageMap[conv.id]?.content || '',
+        last_message: lastMessageMap[conv.id]?.content || 'Nenhuma mensagem ainda',
         last_message_at: lastMessageMap[conv.id]?.timestamp || conv.updated_at,
         total_messages: 0, // Será calculado se necessário
         unread_count: 0 // Será calculado dinamicamente quando necessário
