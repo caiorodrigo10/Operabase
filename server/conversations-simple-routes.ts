@@ -116,7 +116,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   // ETAPA 3: Enhanced conversation detail with Redis cache
   app.get('/api/conversations-simple/:id', async (req: Request, res: Response) => {
     try {
-      const conversationId = parseInt(req.params.id);
+      // Fix: Handle large WhatsApp IDs properly
+      const conversationIdParam = req.params.id;
+      console.log('🔍 Raw conversation ID param:', conversationIdParam);
+      
+      // Fix: Use the raw string directly for database query to avoid parsing issues
+      const conversationId = conversationIdParam;
+      
+      console.log('🔍 Using conversation ID as string:', conversationId);
       const clinicId = 1; // Hardcoded for testing
       
       // ETAPA 3: Try cache first
@@ -137,7 +144,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      // Get conversation
+      // Get conversation - use direct string comparison
       const { data: conversation, error: convError } = await supabase
         .from('conversations')
         .select('*')

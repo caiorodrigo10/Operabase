@@ -130,7 +130,7 @@ export default function ConversasPage() {
     }
   }, [conversationDetail, selectedConversationId]);
 
-  const handleConversationSelect = async (conversationId: number) => {
+  const handleConversationSelect = async (conversationId: number | string) => {
     // Prevent selecting the same conversation
     if (conversationId === selectedConversationId) {
       return;
