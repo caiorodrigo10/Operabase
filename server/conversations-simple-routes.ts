@@ -239,9 +239,47 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .order('timestamp', { ascending: true });
 
         if (actionError && (actionError.code === '42P01' || actionError.message?.includes('does not exist'))) {
-          console.log('🔧 Table conversation_actions does not exist, creating sample actions...');
+          console.log('🔧 Table conversation_actions does not exist, generating from appointment logs...');
           
-          if (queryConversationId === 4) {
+          // Generate actions from appointment logs for this contact
+          const { data: appointmentLogs } = await supabase
+            .from('system_logs')
+            .select('*')
+            .eq('entity_type', 'appointment')
+            .eq('related_entity_id', conversation.contact_id)
+            .eq('clinic_id', conversation.clinic_id)
+            .eq('action_type', 'created')
+            .order('created_at', { ascending: true });
+
+          if (appointmentLogs && appointmentLogs.length > 0) {
+            actionNotifications = appointmentLogs.map((log, index) => {
+              const appointmentData = log.new_data;
+              const scheduledDate = new Date(appointmentData.scheduled_date);
+              
+              return {
+                id: `log_${log.id}`,
+                clinic_id: log.clinic_id,
+                conversation_id: queryConversationId,
+                action_type: 'appointment_created',
+                title: 'Consulta agendada',
+                description: `Consulta agendada para ${scheduledDate.toLocaleDateString('pt-BR')} às ${scheduledDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - ${appointmentData.specialty || 'Consulta médica'}`,
+                metadata: {
+                  appointment_id: appointmentData.id,
+                  doctor_name: 'Dr. João Silva',
+                  date: scheduledDate.toLocaleDateString('pt-BR'),
+                  time: scheduledDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                  specialty: appointmentData.specialty || 'Consulta médica'
+                },
+                related_entity_type: 'appointment',
+                related_entity_id: appointmentData.id,
+                timestamp: log.created_at
+              };
+            });
+            console.log(`✅ Generated ${actionNotifications.length} actions from appointment logs for contact ${conversation.contact_id}`);
+          }
+          
+          // Keep sample actions for Pedro conversation (ID 4) as fallback if no logs
+          if (queryConversationId === 4 && actionNotifications.length === 0) {
             actionNotifications = [
               {
                 id: 1,
