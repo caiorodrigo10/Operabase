@@ -469,67 +469,47 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         phone: actualConversation.contacts.phone
       });
 
-      // Solução robusta: usar contact_id para buscar conversa e inserir mensagem
-      console.log('🎯 Robust solution: Insert message using contact_id lookup');
+      // Usar Drizzle ORM para inserir mensagem
+      console.log('💾 Inserting message with Drizzle ORM');
       
-      const targetContactId = actualConversation.contact_id;
-      console.log('📋 Target contact ID:', targetContactId);
+      const { db } = await import('../db');
+      const { messages } = await import('../../shared/schema');
       
-      // Inserir mensagem diretamente na conversa do contato
-      const { data: insertedMessage, error: insertError } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: targetContactId, // Usar contact_id temporariamente
+      try {
+        const [newMessage] = await db.insert(messages).values({
+          conversation_id: actualConversationId,
           sender_type: 'professional',
           content: content,
           device_type: 'system',
-          timestamp: new Date().toISOString()
-        })
-        .select('id, content, sender_type, timestamp')
-        .single();
+          timestamp: new Date()
+        }).returning({
+          id: messages.id,
+          content: messages.content,
+          sender_type: messages.sender_type,
+          timestamp: messages.timestamp
+        });
+        
+        console.log('✅ Message inserted successfully:', newMessage.id);
 
-      if (insertError) {
-        // Fallback: usar conversation_id real da lookup anterior
-        console.log('⚠️ Direct insert failed, using actual conversation ID:', actualConversationId);
+        const formattedMessage = {
+          id: newMessage.id,
+          conversation_id: actualConversationId,
+          content: content,
+          sender_type: 'professional',
+          sender_name: 'Caio Rodrigo',
+          direction: 'outbound',
+          message_type: 'text',
+          timestamp: newMessage.timestamp.toISOString(),
+          attachments: []
+        };
         
-        const { data: retryMessage, error: retryError } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: actualConversationId,
-            sender_type: 'professional',
-            content: content,
-            device_type: 'system',
-            timestamp: new Date().toISOString()
-          })
-          .select('id, content, sender_type, timestamp')
-          .single();
-        
-        if (retryError) {
-          console.error('❌ Retry failed:', retryError.message);
-          return res.status(500).json({ 
-            error: 'Erro ao salvar mensagem',
-            details: retryError.message
-          });
-        }
-        
-        var newMessage = retryMessage;
-      } else {
-        var newMessage = insertedMessage;
+      } catch (dbError) {
+        console.error('❌ Database insert error:', dbError);
+        return res.status(500).json({ 
+          error: 'Erro ao salvar mensagem',
+          details: dbError.message
+        });
       }
-
-      console.log('✅ Message insert SUCCESS!', newMessage.id);
-
-      const formattedMessage = {
-        id: newMessage.id,
-        conversation_id: actualConversationId,
-        content: content,
-        sender_type: 'professional',
-        sender_name: 'Caio Rodrigo',
-        direction: 'outbound',
-        message_type: 'text',
-        timestamp: newMessage.timestamp.toISOString(),
-        attachments: []
-      };
 
       // ETAPA 3: Invalidate cache after new message
       const clinicId = 1; // Define clinic ID for cache invalidation
@@ -560,42 +540,45 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         }
       });
 
-      // Enviar para Evolution API em background
+      // Enviar para Evolution API em background usando referência do N8N
       if (actualConversation?.contacts?.phone) {
         setImmediate(async () => {
           try {
-            console.log('📤 Sending to Evolution API...', {
+            console.log('📤 Sending to Evolution API with N8N format...', {
               phone: actualConversation.contacts.phone,
               content: content.substring(0, 50) + '...'
             });
             
             const evolutionUrl = process.env.EVOLUTION_API_URL;
             const evolutionApiKey = process.env.EVOLUTION_API_KEY;
-            const instanceName = 'Igor Avantto';
+            const instanceName = process.env.EVOLUTION_INSTANCE || 'Igor Avantto';
             
-            const evolutionPayload = {
-              number: actualConversation.contacts.phone,
-              text: content
-            };
-
+            // Usar formato exato do N8N
             const response = await fetch(`${evolutionUrl}/message/sendText/${instanceName}`, {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                'apikey': evolutionApiKey
+                'apikey': evolutionApiKey,
+                'Content-Type': 'application/json'
               },
-              body: JSON.stringify(evolutionPayload)
+              body: JSON.stringify({
+                number: actualConversation.contacts.phone,
+                text: content
+              })
             });
 
             if (response.ok) {
               const result = await response.json();
-              console.log('✅ WhatsApp message sent successfully:', result);
+              console.log('✅ Evolution API success:', result);
             } else {
-              const error = await response.text();
-              console.error('❌ Evolution API error:', error);
+              const errorText = await response.text();
+              console.error('❌ Evolution API error:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorText
+              });
             }
           } catch (error) {
-            console.error('❌ Evolution API send error:', error);
+            console.error('❌ Evolution API network error:', error.message);
           }
         });
       }
