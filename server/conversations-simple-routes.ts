@@ -475,35 +475,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Verificar se a conversa existe na tabela conversations
-        const conversationIdForDB = actualConversation.id;
-        console.log('💾 Checking if conversation exists:', conversationIdForDB);
-        
-        const { data: existingConv } = await supabase
-          .from('conversations')
-          .select('id')
-          .eq('id', conversationIdForDB)
-          .single();
-        
-        if (!existingConv) {
-          console.log('💾 Creating conversation record for:', conversationIdForDB);
-          // Criar registro da conversa se não existir
-          await supabase
-            .from('conversations')
-            .insert({
-              id: conversationIdForDB,
-              clinic_id: 1,
-              contact_id: actualConversation.contact_id,
-              status: 'active'
-            });
-        }
-        
-        console.log('💾 Inserting message with conversation_id:', conversationIdForDB);
+        // Solução definitiva: usar contact_id como as mensagens AI fazem
+        // Isso resolve o problema de precisão com IDs científicos
+        const contactId = actualConversation.contact_id;
+        console.log('💾 Using contact_id as conversation_id (AI pattern):', contactId);
+        console.log('💾 This avoids precision issues with scientific notation IDs');
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
-            conversation_id: conversationIdForDB,
+            conversation_id: contactId, // Usar contact_id como fazem as mensagens AI
             sender_type: 'professional',
             content: content
           })
