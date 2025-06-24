@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { ConversationsSidebar } from "@/components/features/conversas/ConversationsSidebar";
 import { MainConversationArea } from "@/components/features/conversas/MainConversationArea";
 import { PatientInfoPanel } from "@/components/features/conversas/PatientInfoPanel";
+import { WebSocketStatus } from "@/components/WebSocketStatus";
 import { useConversations, useConversationDetail, useSendMessage, useMarkAsRead } from '@/hooks/useConversations';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { Conversation, TimelineItem, PatientInfo } from "@/types/conversations";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -25,6 +27,9 @@ export default function ConversasPage() {
   const { data: conversationDetail, isLoading: loadingDetail } = useConversationDetail(selectedConversationId || null);
   const sendMessage = useSendMessage();
   const markAsRead = useMarkAsRead();
+  
+  // ETAPA 2: WebSocket integration for real-time communication
+  const webSocket = useWebSocket();
 
   // Handle responsive layout
   useEffect(() => {
@@ -128,6 +133,11 @@ export default function ConversasPage() {
     // ETAPA 2: Leave previous conversation and join new one
     if (selectedConversationId && webSocket.connected) {
       webSocket.leaveConversation(selectedConversationId);
+    }
+    
+    // ETAPA 2: Join new conversation for real-time updates
+    if (webSocket.connected) {
+      webSocket.joinConversation(conversationId);
     }
     
     // ETAPA 1: Clear state efficiently before transition

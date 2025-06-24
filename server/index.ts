@@ -362,7 +362,11 @@ app.use((req, res, next) => {
   const { setupConversationsRoutes } = await import('./conversations-routes');
   setupConversationsRoutes(app, storage);
   
-  // Add Simple Conversations routes for testing
+  // ETAPA 2: Inicializar WebSocket Server
+  const webSocketServer = new WebSocketServer(httpServer, storage);
+  app.set('webSocketServer', webSocketServer);
+
+  // Add Simple Conversations routes with WebSocket integration
   const { setupSimpleConversationsRoutes } = await import('./conversations-simple-routes');
   setupSimpleConversationsRoutes(app, storage);
   

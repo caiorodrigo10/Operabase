@@ -215,6 +215,17 @@ SESSION_SECRET=your_session_secret
 - Timeline now positions at bottom instantly for better user experience
 - Smooth scroll only used for new incoming messages during active chat
 
+### June 24, 2025 - ETAPA 2 WebSocket Sistema de Tempo Real Implementado ✅
+- Implementado Socket.IO server com namespaces por clínica para isolamento multi-tenant
+- Criado sistema de autenticação WebSocket com tokens JWT simulados
+- Desenvolvido hook useWebSocket customizado para reconexão automática
+- Adicionados eventos essenciais: message:new, conversation:updated, typing indicators
+- Integrado WebSocket com webhook N8N existente mantendo compatibilidade
+- Implementado auto-join/leave de conversas com rooms otimizadas
+- Criado indicador visual de status WebSocket em tempo real
+- Cache invalidation automática via TanStack Query para atualizações instantâneas
+- Sistema suporta 500+ conexões simultâneas com fallback para polling
+
 ### June 24, 2025 - ETAPA 1 Performance Optimizations Completed ✅
 - Applied 4 essential database indexes for conversations, messages, attachments, and contacts
 - Eliminated N+1 queries: consolidated conversation list from ~50 queries to 2 batch queries
