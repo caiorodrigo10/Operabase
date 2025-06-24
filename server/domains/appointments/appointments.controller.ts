@@ -332,7 +332,7 @@ export class AppointmentsController {
     }
   }
 
-  private async createAppointmentActionNotification(appointment: any) {
+  private async createAppointmentActionNotification(appointment: any, currentUserName?: string) {
     try {
       const supabase = createClient(
         process.env.SUPABASE_URL!,
@@ -385,10 +385,10 @@ export class AppointmentsController {
         conversation_id: conversation.id,
         action_type: 'appointment_created',
         title: 'Consulta agendada',
-        description: `Consulta agendada para ${formatDate(appointment.scheduled_date)} às ${formatTime(appointment.scheduled_date)} com ${user?.name || 'Dr. Caio Rodrigo'}`,
+        description: `Consulta agendada para ${formatDate(appointment.scheduled_date)} às ${formatTime(appointment.scheduled_date)} com ${user?.name || currentUserName || 'Dr. Caio Rodrigo'}`,
         metadata: {
           appointment_id: appointment.id,
-          doctor_name: user?.name || 'Dr. Caio Rodrigo',
+          doctor_name: user?.name || currentUserName || 'Dr. Caio Rodrigo',
           date: formatDate(appointment.scheduled_date),
           time: formatTime(appointment.scheduled_date),
           specialty: appointment.specialty || 'Consulta'
