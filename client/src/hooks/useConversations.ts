@@ -115,7 +115,12 @@ export function useSendMessage() {
       });
     },
     onError: (error) => {
-      console.error('❌ Error sending message:', error);
+      console.error('❌ Error sending message details:', {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause,
+        name: error.name
+      });
     },
   });
 }

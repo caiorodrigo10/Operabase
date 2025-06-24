@@ -284,6 +284,13 @@ export default function ConversasPage() {
       ));
 
     } catch (error) {
+      console.error('❌ Full error details:', {
+        error,
+        message: error?.message,
+        stack: error?.stack,
+        cause: error?.cause
+      });
+
       // 4. Em caso de erro, marcar mensagem com erro
       setTimelineItems(prev => prev.map(item => 
         item.id === tempId ? {
@@ -297,7 +304,7 @@ export default function ConversasPage() {
 
       toast({
         title: "Erro",
-        description: "Não foi possível enviar a mensagem",
+        description: `Não foi possível enviar a mensagem: ${error?.message || 'Erro desconhecido'}`,
         variant: "destructive"
       });
     }

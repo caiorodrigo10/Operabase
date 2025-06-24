@@ -407,13 +407,22 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       let actualConversationId;
       if (isScientificNotation) {
-        // For Igor, use the real database ID
-        actualConversationId = '5598876940345511948922493';
+        // Para Caio Rodrigo com ID científico
+        if (conversationId === '5.511965860124552e+24') {
+          actualConversationId = '5511965860124551948922493'; // ID real do Caio
+        } else if (conversationId === '5.598876940345512e+24') {
+          actualConversationId = '5598876940345511948922493'; // ID real do Igor
+        } else {
+          actualConversationId = conversationId;
+        }
       } else {
         actualConversationId = conversationId;
       }
+      
+      console.log('🔄 Conversation ID mapping:', conversationId, '->', actualConversationId);
 
       // Insert message
+      console.log('💾 Inserting message with conversation_id:', actualConversationId);
       const { data: newMessage, error } = await supabase
         .from('messages')
         .insert({
@@ -519,8 +528,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       });
 
     } catch (error) {
-      console.error('❌ Error sending message:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
+      console.error('❌ Error sending message details:', {
+        message: error.message,
+        stack: error.stack,
+        conversationId,
+        content
+      });
+      res.status(500).json({ 
+        error: 'Erro interno do servidor', 
+        details: error.message,
+        conversationId 
+      });
     }
   });
 
