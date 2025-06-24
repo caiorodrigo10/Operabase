@@ -485,16 +485,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         // Usar o target contact_id como conversation_id temporariamente
         const targetContactId = actualConversation.contact_id;
         
-        const [newMessage] = await db.insert(messages).values({
-          conversation_id: targetContactId.toString(),
-          clinic_id: 1,
-          sender_type: 'professional',
-          content: content,
-          direction: 'outbound',
-          device_type: 'system',
-          sent_at: new Date(),
-          created_at: new Date()
-        }).returning();
+        // Use direct SQL instead of Drizzle for compatibility with actual schema
+        const { data: insertResult } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: targetContactId,
+            sender_type: 'professional',
+            content: content,
+            timestamp: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (!insertResult) {
+          throw new Error('Failed to insert message');
+        }
+        
+        const newMessage = insertResult;
         
         console.log('✅ Message inserted successfully:', newMessage.id);
 
