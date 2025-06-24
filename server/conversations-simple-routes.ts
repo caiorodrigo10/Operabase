@@ -405,22 +405,69 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const isScientificNotation = typeof conversationId === 'string' && 
         conversationId.includes('e+');
       
-      let actualConversationId;
+      // Buscar a conversa real no banco usando o mesmo método do GET
+      console.log('🔍 Looking up conversation in database for ID:', conversationId);
+      
+      let actualConversation;
+      
       if (isScientificNotation) {
-        // Para IDs científicos, usar o ID real da conversa no banco
-        if (conversationId === '5.511965860124552e+24') {
-          actualConversationId = '5511965860124552000000000'; // ID científico do Caio
-        } else if (conversationId === '5.598876940345512e+24') {
-          actualConversationId = '5598876940345512000000000'; // ID científico do Igor
-        } else {
-          // Converter notação científica para número inteiro
-          actualConversationId = parseFloat(conversationId).toString();
+        // Para IDs científicos, usar o mesmo método do GET endpoint
+        console.log('🔍 Scientific notation detected, finding conversation by robust matching');
+        const { data: allConversations } = await supabase
+          .from('conversations')
+          .select('id, contact_id, contacts!inner(name, phone)')
+          .eq('clinic_id', 1);
+        
+        const paramIdNum = parseFloat(conversationId);
+        
+        actualConversation = allConversations?.find(conv => {
+          const convIdStr = conv.id.toString();
+          const convIdNum = parseFloat(convIdStr);
+          
+          // Mesma estratégia de match do GET
+          if (Math.abs(convIdNum - paramIdNum) < 1) return true;
+          if (convIdStr === conversationId) return true;
+          
+          try {
+            const convExp = parseFloat(convIdStr).toExponential();
+            const paramExp = parseFloat(conversationId).toExponential();
+            if (convExp === paramExp) return true;
+          } catch (e) {}
+          
+          return false;
+        });
+        
+        if (!actualConversation) {
+          console.error('❌ Conversation not found for scientific notation ID:', conversationId);
+          return res.status(404).json({ error: 'Conversa não encontrada' });
         }
+        
+        console.log('✅ Found conversation via robust matching:', actualConversation.id);
       } else {
-        actualConversationId = conversationId;
+        // Para IDs normais, buscar diretamente
+        const { data: directConv } = await supabase
+          .from('conversations')
+          .select('id, contact_id, contacts!inner(name, phone)')
+          .eq('id', conversationId)
+          .eq('clinic_id', 1)
+          .single();
+        
+        actualConversation = directConv;
+        
+        if (!actualConversation) {
+          console.error('❌ Conversation not found for ID:', conversationId);
+          return res.status(404).json({ error: 'Conversa não encontrada' });
+        }
       }
       
-      console.log('🔄 Conversation ID mapping:', conversationId, '->', actualConversationId);
+      const actualConversationId = actualConversation.id;
+      console.log('✅ Using conversation:', {
+        requestedId: conversationId,
+        actualId: actualConversationId,
+        actualIdType: typeof actualConversationId,
+        contact: actualConversation.contacts.name,
+        phone: actualConversation.contacts.phone
+      });
 
       // Insert message
       console.log('💾 Inserting message with conversation_id:', actualConversationId);
@@ -495,18 +542,20 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       });
 
       // Enviar para Evolution API em background
-      let whatsappSent = false;
-      if (conversation?.contacts?.phone) {
+      if (actualConversation?.contacts?.phone) {
         setImmediate(async () => {
           try {
-            console.log('📤 Sending to Evolution API...');
+            console.log('📤 Sending to Evolution API...', {
+              phone: actualConversation.contacts.phone,
+              content: content.substring(0, 50) + '...'
+            });
             
             const evolutionUrl = process.env.EVOLUTION_API_URL;
             const evolutionApiKey = process.env.EVOLUTION_API_KEY;
             const instanceName = 'Igor Avantto';
             
             const evolutionPayload = {
-              number: conversation.contacts.phone,
+              number: actualConversation.contacts.phone,
               text: content
             };
 
@@ -537,7 +586,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       res.status(201).json({ 
         success: true,
         message: formattedMessage,
-        sent_to_whatsapp: !!conversation?.contacts?.phone
+        sent_to_whatsapp: !!actualConversation?.contacts?.phone
       });
 
     } catch (error) {
