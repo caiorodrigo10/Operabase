@@ -1771,42 +1771,19 @@ export function Consultas() {
                               >
                                 {/* 15-minute clickable slots */}
                                 {[0, 15, 30, 45].map((minute) => {
-                                  const slotAnalysis = analyzeTimeSlot(day, hour, minute);
+                                  const isSlotAvailable = isTimeSlotAvailable(day, hour, minute);
                                   const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                                  
-                                  // Get availability status message
-                                  const getAvailabilityMessage = () => {
-                                    if (!slotAnalysis.isClickable) {
-                                      return "Horário ocupado";
-                                    }
-                                    if (slotAnalysis.hasWarning) {
-                                      switch (slotAnalysis.warningType) {
-                                        case 'non-working-day':
-                                          return "Fora do expediente (dia)";
-                                        case 'outside-hours':
-                                          return "Fora do horário comercial";
-                                        case 'lunch-time':
-                                          return "Horário de almoço";
-                                        default:
-                                          return "Disponível com aviso";
-                                      }
-                                    }
-                                    return "Horário disponível";
-                                  };
-
-                                  const availabilityMessage = getAvailabilityMessage();
-                                  const isOptimal = slotAnalysis.isOptimal;
                                   
                                   return (
                                     <div
                                       key={`${minute}`}
-                                      className={`absolute left-0 right-0 group ${slotAnalysis.isClickable ? 'cursor-crosshair hover:bg-blue-50' : 'cursor-not-allowed'}`}
+                                      className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
                                       style={{ 
                                         top: `${(minute / 60) * PIXELS_PER_HOUR}px`, 
                                         height: `${PIXELS_PER_QUARTER}px` 
                                       }}
                                       onClick={() => {
-                                        if (slotAnalysis.isClickable) {
+                                        if (isSlotAvailable) {
                                           handleQuickCreateAppointment(day, hour, minute);
                                         }
                                       }}
@@ -1816,21 +1793,14 @@ export function Consultas() {
                                         <div className="absolute top-0 left-0 right-0 border-t border-slate-100" />
                                       )}
                                       
-                                      {/* Enhanced availability indicator with longer hover time */}
-                                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:delay-100 flex items-center justify-center z-10">
-                                        <div className={`
-                                          px-3 py-2 rounded-lg text-sm font-medium shadow-lg border-2 min-w-max
-                                          ${!slotAnalysis.isClickable 
-                                            ? 'bg-red-100 border-red-300 text-red-800' 
-                                            : slotAnalysis.hasWarning 
-                                              ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
-                                              : 'bg-green-100 border-green-300 text-green-800'
-                                          }
-                                        `}>
-                                          <div className="font-semibold">{timeLabel}</div>
-                                          <div className="text-xs mt-1">{availabilityMessage}</div>
+                                      {/* Time indicator on hover */}
+                                      {isSlotAvailable && (
+                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                          <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
+                                            {timeLabel}
+                                          </div>
                                         </div>
-                                      </div>
+                                      )}
                                     </div>
                                   );
                                 })}
