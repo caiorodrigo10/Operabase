@@ -305,7 +305,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                       msg.sender_type === 'ai' ? 'Mara AI' : 'Paciente',
           direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
           message_type: messageType,
-          created_at: msg.timestamp,
+          timestamp: msg.timestamp,
           attachments: msgAttachments
         };
       });
