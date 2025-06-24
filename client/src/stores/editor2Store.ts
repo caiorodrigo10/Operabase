@@ -25,6 +25,8 @@ export interface TitleWidget extends Widget {
     textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
     textDecoration: 'none' | 'underline' | 'line-through';
     backgroundColor: string;
+    fontStyle: 'normal' | 'italic';
+    textShadow: string;
   };
 }
 
