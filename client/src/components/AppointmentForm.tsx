@@ -24,7 +24,7 @@ const appointmentFormSchema = z.object({
   scheduled_date: z.string().min(1, "Data é obrigatória"),
   scheduled_time: z.string().min(1, "Horário é obrigatório"),
   duration: z.string().min(1, "Duração é obrigatória"),
-  tag_id: z.string().optional(),
+  tag_id: z.union([z.string(), z.number()]).optional().transform(val => val ? (typeof val === 'string' ? parseInt(val) : val) : undefined),
   notes: z.string().optional(),
 });
 

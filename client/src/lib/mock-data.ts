@@ -349,6 +349,64 @@ export const conversationFilters = [
   { type: 'manual' as const, label: 'Manual' }
 ];
 
+// Mock appointments data for calendar functionality
+export const mockAppointments = [
+  {
+    id: 1,
+    contact_id: 1,
+    clinic_id: 1,
+    user_id: 4,
+    doctor_name: "Dr. João Silva",
+    specialty: "Cardiologia",
+    appointment_type: "consulta",
+    scheduled_date: "2025-06-24 10:00:00",
+    duration_minutes: 60,
+    status: "agendada",
+    payment_status: "pendente",
+    created_at: "2025-06-20 10:00:00",
+    updated_at: "2025-06-20 10:00:00"
+  },
+  {
+    id: 2,
+    contact_id: 2,
+    clinic_id: 1,
+    user_id: 4,
+    doctor_name: "Dr. João Silva",
+    specialty: "Clínico Geral",
+    appointment_type: "consulta",
+    scheduled_date: "2025-06-24 14:00:00",
+    duration_minutes: 30,
+    status: "agendada",
+    payment_status: "pendente",
+    created_at: "2025-06-20 14:00:00",
+    updated_at: "2025-06-20 14:00:00"
+  }
+];
+
+// Mock contacts data for appointments
+export const mockContacts = [
+  {
+    id: 1,
+    name: "Maria Silva",
+    email: "maria@email.com",
+    phone: "(11) 99999-9999",
+    clinic_id: 1,
+    status: "active",
+    created_at: "2025-06-20 10:00:00",
+    updated_at: "2025-06-20 10:00:00"
+  },
+  {
+    id: 2,
+    name: "João Santos",
+    email: "joao@email.com",
+    phone: "(11) 88888-8888",
+    clinic_id: 1,
+    status: "active",
+    created_at: "2025-06-20 11:00:00",
+    updated_at: "2025-06-20 11:00:00"
+  }
+];
+
 // Dashboard mock data exports - Comprehensive medical clinic data
 export const mockMetrics = {
   // Main metrics for cards

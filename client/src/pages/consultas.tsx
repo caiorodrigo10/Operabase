@@ -824,9 +824,10 @@ export function Consultas() {
 
     try {
       const result = await availabilityCheck.mutateAsync({
-        startDateTime: startDateTime.toISOString(),
-        endDateTime: endDateTime.toISOString(),
-        professionalName: professionalName
+        user_id: parseInt(professionalName), // Convert to number
+        scheduled_date: date,
+        scheduled_time: time,
+        duration: durationMinutes
       });
 
       if (result.conflict) {
@@ -865,9 +866,10 @@ export function Consultas() {
         const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
 
         const result = await availabilityCheck.mutateAsync({
-          startDateTime: startDateTime.toISOString(),
-          endDateTime: endDateTime.toISOString(),
-          professionalName: professionalName
+          user_id: parseInt(professionalName), // Convert to number
+          scheduled_date: date,
+          scheduled_time: slot.value,
+          duration: durationMinutes
         });
 
         if (!result.conflict) {

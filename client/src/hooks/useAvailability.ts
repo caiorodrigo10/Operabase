@@ -37,10 +37,11 @@ interface AvailabilityResponse {
 }
 
 export function useAvailabilityCheck() {
-  const checkAvailability = async (data: AvailabilityRequest): Promise<{
-    conflict: any;
-    workingHoursWarning: any;
-  }> => {
+  return useMutation({
+    mutationFn: async (data: AvailabilityRequest): Promise<{
+      conflict: any;
+      workingHoursWarning: any;
+    }> => {
     if (!data.user_id || !data.scheduled_date || !data.scheduled_time || !data.duration) {
       return { conflict: null, workingHoursWarning: null };
     }
@@ -105,9 +106,8 @@ export function useAvailabilityCheck() {
       console.error('Error checking availability:', error);
       return { conflict: null, workingHoursWarning: null };
     }
-  };
-
-  return { checkAvailability };
+    }
+  });
 }
 
 
