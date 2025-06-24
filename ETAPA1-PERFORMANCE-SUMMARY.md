@@ -85,4 +85,6 @@ Reduzir carregamento de conversas de 888-2526ms para <800ms, eliminando queries 
 - ✅ Paginação implementada
 - ✅ Cache otimizado
 - ✅ Map optimization aplicada
-- 🔄 Testes de performance em andamento
+- ✅ Schema timestamp corrigido
+- ✅ Mensagens carregando corretamente
+- ✅ Performance otimizada confirmada pelo usuário

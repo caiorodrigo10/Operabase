@@ -94,7 +94,7 @@ export function MainConversationArea({
       {/* Messages Timeline - Scrollable */}
       <div 
         ref={timelineRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-5 scroll-smooth"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-5"
       >
         {timelineItems.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
