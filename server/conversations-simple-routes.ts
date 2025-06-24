@@ -346,7 +346,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         return res.status(400).json({ error: 'Conteúdo e ID da conversa são obrigatórios' });
       }
 
-      console.log('📤 Sending message to conversation:', conversationId);
+      console.log('📤 Sending message to conversation:', conversationId, 'Type:', typeof conversationId);
 
       // Use direct Supabase client
       const { createClient } = await import('@supabase/supabase-js');
@@ -376,6 +376,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .eq('contact_id', 44)
           .eq('clinic_id', clinicId)
           .single();
+        
+        if (result.error) {
+          console.error('❌ Error finding Igor conversation:', result.error);
+          return res.status(404).json({ error: 'Conversa do Igor não encontrada' });
+        }
+        
         conversation = result.data;
         actualConversationId = conversation.id;
         console.log('🔍 Igor conversation found - ID:', conversation.id, 'Contact:', conversation.contact_id);
@@ -390,9 +396,15 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               name
             )
           `)
-          .eq('id', parseInt(conversationId))
+          .eq('id', conversationId)
           .eq('clinic_id', clinicId)
           .single();
+        
+        if (result.error) {
+          console.error('❌ Error finding conversation:', result.error);
+          return res.status(404).json({ error: 'Conversa não encontrada' });
+        }
+        
         conversation = result.data;
       }
 
@@ -405,8 +417,15 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('📱 Sending WhatsApp message to:', phoneNumber, '(', contactName, ')');
 
       // Step 1: Save message to database first
-      // Use the actual conversation ID from the database lookup
-      const dbConversationId = conversation.id;
+      // For Igor's scientific notation ID, use the string directly
+      let dbConversationId;
+      if (isScientificNotation) {
+        // Use the original large number as string
+        dbConversationId = '5598876940345511948922493';
+      } else {
+        dbConversationId = conversation.id;
+      }
+      
       console.log('💾 Saving message with conversation_id:', dbConversationId, 'Type:', typeof dbConversationId);
       
       const { data: newMessage, error } = await supabase
@@ -503,7 +522,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       const formattedMessage = {
         id: newMessage.id,
-        conversation_id: actualConversationId,
+        conversation_id: dbConversationId,
         content: content,
         sender_type: 'professional',
         sender_name: 'Caio Rodrigo',
@@ -514,16 +533,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       };
 
       // ETAPA 3: Invalidate cache after new message
-      await redisCacheService.invalidateConversationDetail(actualConversationId);
+      await redisCacheService.invalidateConversationDetail(dbConversationId);
       await redisCacheService.invalidateConversationCache(clinicId);
       console.log('🧹 Cache invalidated after new message');
 
       // ETAPA 2: Emit via WebSocket after message creation
       const webSocketServer = getWebSocketServer();
       if (webSocketServer) {
-        await webSocketServer.emitNewMessage(actualConversationId, clinicId, {
+        await webSocketServer.emitNewMessage(dbConversationId, clinicId, {
           id: newMessage.id,
-          conversation_id: actualConversationId,
+          conversation_id: dbConversationId,
           content: content,
           sender_type: 'professional',
           sender_name: 'Caio Rodrigo',
