@@ -85,15 +85,15 @@ export default function ConversasPage() {
         timeline.push({
           id: msg.id,
           type: 'message',
-          timestamp: msg.created_at,
+          timestamp: msg.timestamp,
           data: {
             id: msg.id,
             conversation_id: msg.conversation_id,
             type: msg.sender_type === 'ai' ? 'sent_ai' : 
                   msg.sender_type === 'professional' ? 'sent_user' : 'received',
             content: msg.content || '',
-            timestamp: msg.created_at,
-            created_at: msg.created_at,
+            timestamp: msg.timestamp,
+            created_at: msg.timestamp,
             sender_name: msg.sender_type === 'ai' ? 'Mara AI' : msg.sender_name,
             sender_avatar: undefined,
             media_type: msg.message_type !== 'text' ? msg.message_type as any : undefined,
@@ -113,7 +113,7 @@ export default function ConversasPage() {
           timeline.push({
             id: action.id + 10000, // Offset to avoid ID conflicts
             type: 'action',
-            timestamp: action.created_at,
+            timestamp: action.timestamp,
             data: action
           });
         });
