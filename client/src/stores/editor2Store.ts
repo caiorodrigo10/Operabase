@@ -586,6 +586,129 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
     });
   },
 
+  // Widget Management Actions
+  addWidget: (blockId: string, columnId: string, widgetType: Widget['type']) => {
+    const state = get();
+    let newWidget: Widget;
+
+    // Create widget based on type with default values
+    if (widgetType === 'title') {
+      newWidget = {
+        id: `widget-${nanoid()}`,
+        type: 'title',
+        content: {
+          text: 'Título Principal',
+          level: 1,
+        },
+        style: {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: 32,
+          fontWeight: 'bold',
+          color: '#333333',
+          textAlign: 'left',
+          lineHeight: 1.2,
+          letterSpacing: 0,
+          textTransform: 'none',
+          textDecoration: 'none',
+          backgroundColor: 'transparent',
+        },
+      } as TitleWidget;
+    } else {
+      // Default widget for other types
+      newWidget = {
+        id: `widget-${nanoid()}`,
+        type: widgetType,
+        content: {},
+        style: {},
+      };
+    }
+
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          columns: block.columns.map(column => {
+            if (column.id === columnId) {
+              return {
+                ...column,
+                widgets: [...column.widgets, newWidget],
+              };
+            }
+            return column;
+          }),
+        };
+      }
+      return block;
+    });
+
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+        selectedElement: { type: 'widget', id: newWidget.id },
+      },
+    });
+  },
+
+  updateWidget: (blockId: string, columnId: string, widgetId: string, widget: Widget) => {
+    const state = get();
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          columns: block.columns.map(column => {
+            if (column.id === columnId) {
+              return {
+                ...column,
+                widgets: column.widgets.map(w => 
+                  w.id === widgetId ? widget : w
+                ),
+              };
+            }
+            return column;
+          }),
+        };
+      }
+      return block;
+    });
+
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+      },
+    });
+  },
+
+  removeWidget: (blockId: string, columnId: string, widgetId: string) => {
+    const state = get();
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          columns: block.columns.map(column => {
+            if (column.id === columnId) {
+              return {
+                ...column,
+                widgets: column.widgets.filter(w => w.id !== widgetId),
+              };
+            }
+            return column;
+          }),
+        };
+      }
+      return block;
+    });
+
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+        selectedElement: { type: null, id: null },
+      },
+    });
+  },
+
   // JSON Management Actions
   serializeToJSON: () => {
     const state = get();
