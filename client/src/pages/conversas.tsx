@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ConversationsSidebar } from "@/components/features/conversas/ConversationsSidebar";
 import { MainConversationArea } from "@/components/features/conversas/MainConversationArea";
 import { PatientInfoPanel } from "@/components/features/conversas/PatientInfoPanel";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ConversasPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | string | undefined>();
@@ -23,6 +24,8 @@ export default function ConversasPage() {
   const [isTablet, setIsTablet] = useState(false);
   const [showPatientInfo, setShowPatientInfo] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Backend hooks
   const { data: conversationsData, isLoading: loadingConversations } = useConversations('active');
@@ -35,6 +38,53 @@ export default function ConversasPage() {
   
   // ETAPA 3: Optimistic mutations for instant UX
   const optimisticMarkAsRead = useOptimisticMarkAsRead();
+
+  // Polling em tempo real para conversa ativa
+  useEffect(() => {
+    if (!selectedConversationId) return;
+
+    // Polling rápido para conversa ativa (a cada 2 segundos)
+    pollingIntervalRef.current = setInterval(() => {
+      queryClient.invalidateQueries({
+        queryKey: ['/api/conversations-simple', selectedConversationId]
+      });
+    }, 2000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [selectedConversationId, queryClient]);
+
+  // Polling para lista de conversas (menos frequente)
+  useEffect(() => {
+    const listInterval = setInterval(() => {
+      queryClient.invalidateQueries({
+        queryKey: ['/api/conversations-simple']
+      });
+    }, 10000);
+
+    return () => clearInterval(listInterval);
+  }, [queryClient]);
+
+  // Refetch imediato quando a aba ganha foco
+  useEffect(() => {
+    const handleFocus = () => {
+      if (selectedConversationId) {
+        queryClient.invalidateQueries({
+          queryKey: ['/api/conversations-simple', selectedConversationId]
+        });
+      }
+      queryClient.invalidateQueries({
+        queryKey: ['/api/conversations-simple']
+      });
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [selectedConversationId, queryClient]);
 
   // Handle responsive layout
   useEffect(() => {
