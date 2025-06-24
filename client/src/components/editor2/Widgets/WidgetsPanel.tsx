@@ -75,7 +75,18 @@ export const WidgetsPanel: React.FC<WidgetsPanelProps> = ({ isOpen, onClose }) =
               key={index}
               icon={widget.icon}
               label={widget.label}
+              isAvailable={widget.isAvailable}
+              draggable={widget.isAvailable}
               onClick={() => handleWidgetClick(widget.label)}
+              onDragStart={(e) => {
+                if (widget.widgetType) {
+                  e.dataTransfer.setData('widget-type', widget.widgetType);
+                  console.log(`Dragging ${widget.label} widget`);
+                }
+              }}
+              onDragEnd={() => {
+                console.log('Drag ended');
+              }}
             />
           ))}
         </div>
