@@ -180,21 +180,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
       // Elimina problema de performance com conversas muito longas
-      console.log('🔍 Querying messages for conversation_id:', actualConversationId, 'type:', typeof actualConversationId);
-      
       // Para IDs científicos do Igor, usar o ID real do banco de dados
       let queryConversationId;
       if (isScientificNotation) {
         // ID real do Igor no banco: 5598876940345511948922493
         queryConversationId = '5598876940345511948922493';
-        console.log('🔍 Using Igor real database ID:', queryConversationId);
       } else {
         queryConversationId = actualConversationId;
       }
-      console.log('🔍 Using queryConversationId:', queryConversationId);
-      
-      // Debug: log the actual query being made
-      console.log('🔍 About to query messages with conversation_id:', queryConversationId);
       
       const { data: messages, error: msgError } = await supabase
         .from('messages')

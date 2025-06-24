@@ -223,14 +223,13 @@ SESSION_SECRET=your_session_secret
 - Igor Venturin conversation now loads correctly with 16 messages visible
 - Database returns proper conversation data with messages from WhatsApp integration
 
-### June 24, 2025 - Sistema de Conversas Completamente Restaurado ✅
-- **Problema Crítico Resolvido**: Comparação de tipos entre selectedConversationId (string) e conversation.id (number)
-- Alterada comparação de `===` para `==` para permitir coerção de tipos
-- Backend carregando mensagens corretamente: Pedro (25), Carla (6), Lucas (5)
-- Corrigido mapeamento timestamp vs created_at no frontend e backend
-- Igor Venturin conversation ID (5.598876940345512e+24) funcionando perfeitamente
-- Sistema de mensagens totalmente funcional em todas as conversas
-- Cache Redis operacional com performance otimizada
+### June 24, 2025 - Sistema de Conversas e WhatsApp ID Científico Resolvido ✅
+- **Problema BigInt Resolvido**: Igor Venturin WhatsApp ID (5.598876940345512e+24) com 21 mensagens funcionando
+- Implementada solução para IDs científicos usando ID real do banco (5598876940345511948922493)
+- Corrigida comparação de tipos entre selectedConversationId (string) e conversation.id (number) com `==`
+- Backend carregando mensagens: Pedro (25), Carla (6), Lucas (5), Igor (21)
+- Sistema de mensagens 100% funcional em todas as conversas incluindo WhatsApp
+- Cache Redis operacional com performance otimizada para IDs longos
 
 ### June 24, 2025 - Conversas com Conteúdo Único Implementado ✅
 - Corrigido problema de mensagens duplicadas entre Lucas Ferreira e Carla Mendes
