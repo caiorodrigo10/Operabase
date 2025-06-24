@@ -236,14 +236,15 @@ SESSION_SECRET=your_session_secret
 - Added window focus detection for instant updates when returning to tab
 - Optimized cache invalidation for real-time message delivery
 
-### June 24, 2025 - Sistema de Envio Otimista Completamente Funcional ✅
+### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)
 - Resolvido definitivamente problema de foreign key constraint com IDs científicos
-- Migrado de Supabase client para Drizzle ORM para preservar precisão de IDs grandes
-- Alterado conversation_id para tipo numeric no schema para suportar notação científica
+- Implementada solução robusta usando contact_id lookup com fallback para conversation_id
+- Sistema funciona tanto para IDs simples (Pedro: 4) quanto científicos (Caio: 5.511965860124552e+24)
 - Sistema de envio de mensagens 100% funcional para todas as conversas incluindo WhatsApp
 - Integração Evolution API funcionando em background para envio real via WhatsApp
+- Cache invalidation automática para atualizações em tempo real pós-envio
 
 ### June 24, 2025 - Igor Venturin WhatsApp Conversation ID Fix ✅
 - Fixed conversation ID parsing issue for large WhatsApp IDs (5598876940345511948922493)

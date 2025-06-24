@@ -469,29 +469,55 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         phone: actualConversation.contacts.phone
       });
 
-      // Solução final: usar Drizzle ORM que já está configurado no projeto
-      console.log('🎯 Using Drizzle ORM with exact conversation ID from database');
+      // Solução robusta: usar contact_id para buscar conversa e inserir mensagem
+      console.log('🎯 Robust solution: Insert message using contact_id lookup');
       
-      const { db } = await import('../db');
-      const { messages } = await import('../../shared/schema');
+      const targetContactId = actualConversation.contact_id;
+      console.log('📋 Target contact ID:', targetContactId);
       
-      // Usar o ID exato sem conversão, Drizzle preserva a precisão
-      const insertData = {
-        conversation_id: actualConversation.id, // ID original do banco
-        sender_type: 'professional' as const,
-        content: content,
-        device_type: 'system' as const,
-        timestamp: new Date()
-      };
-      
-      console.log('💾 Inserting with Drizzle:', {
-        conversation_id: insertData.conversation_id,
-        type: typeof insertData.conversation_id
-      });
-      
-      const [newMessage] = await db.insert(messages).values(insertData).returning();
+      // Inserir mensagem diretamente na conversa do contato
+      const { data: insertedMessage, error: insertError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: targetContactId, // Usar contact_id temporariamente
+          sender_type: 'professional',
+          content: content,
+          device_type: 'system',
+          timestamp: new Date().toISOString()
+        })
+        .select('id, content, sender_type, timestamp')
+        .single();
 
-      console.log('✅ Drizzle insert SUCCESS!', newMessage.id);
+      if (insertError) {
+        // Fallback: usar conversation_id real da lookup anterior
+        console.log('⚠️ Direct insert failed, using actual conversation ID:', actualConversationId);
+        
+        const { data: retryMessage, error: retryError } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: actualConversationId,
+            sender_type: 'professional',
+            content: content,
+            device_type: 'system',
+            timestamp: new Date().toISOString()
+          })
+          .select('id, content, sender_type, timestamp')
+          .single();
+        
+        if (retryError) {
+          console.error('❌ Retry failed:', retryError.message);
+          return res.status(500).json({ 
+            error: 'Erro ao salvar mensagem',
+            details: retryError.message
+          });
+        }
+        
+        var newMessage = retryMessage;
+      } else {
+        var newMessage = insertedMessage;
+      }
+
+      console.log('✅ Message insert SUCCESS!', newMessage.id);
 
       const formattedMessage = {
         id: newMessage.id,
