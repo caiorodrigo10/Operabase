@@ -1,5 +1,5 @@
 export interface Conversation {
-  id: number;
+  id: number | string;
   patient_name: string;
   patient_avatar?: string;
   last_message: string;

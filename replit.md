@@ -215,6 +215,14 @@ SESSION_SECRET=your_session_secret
 - Timeline now positions at bottom instantly for better user experience
 - Smooth scroll only used for new incoming messages during active chat
 
+### June 24, 2025 - Igor Venturin WhatsApp Conversation ID Fix ✅
+- Fixed conversation ID parsing issue for large WhatsApp IDs (5598876940345511948922493)
+- Resolved scientific notation conversion problem causing database lookup failures
+- Updated backend to handle both regular IDs and large WhatsApp IDs properly
+- Modified frontend types to accept string conversation IDs for compatibility
+- Igor Venturin conversation now loads correctly with 16 messages visible
+- Database returns proper conversation data with messages from WhatsApp integration
+
 ### June 24, 2025 - Database Schema Fix: conversation_id Type Change - ISSUE IDENTIFIED
 - **Problem**: Field conversation_id does not exist in conversations table in Supabase
 - **Error**: "violates foreign key constraint messages_conversation_id_fkey" because conversations table missing conversation_id column

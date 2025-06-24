@@ -43,7 +43,7 @@ export function useConversations(status: string = 'active', limit: number = 50) 
   });
 }
 
-export function useConversationDetail(conversationId: number | null) {
+export function useConversationDetail(conversationId: number | string | null) {
   return useQuery({
     queryKey: ['/api/conversations-simple', conversationId],
     queryFn: async () => {

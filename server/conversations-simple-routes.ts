@@ -120,10 +120,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const conversationIdParam = req.params.id;
       console.log('🔍 Raw conversation ID param:', conversationIdParam);
       
-      // Fix: Use the raw string directly for database query to avoid parsing issues
-      const conversationId = conversationIdParam;
+      // Fix: Handle scientific notation and convert to proper format
+      let conversationId = conversationIdParam;
       
-      console.log('🔍 Using conversation ID as string:', conversationId);
+      // If it's scientific notation, convert to full number string
+      if (conversationIdParam.includes('e+') || conversationIdParam.includes('E+')) {
+        const num = parseFloat(conversationIdParam);
+        conversationId = num.toLocaleString('fullwide', { useGrouping: false });
+      }
+      
+      console.log('🔍 Converted conversation ID:', conversationId, 'from:', conversationIdParam);
       const clinicId = 1; // Hardcoded for testing
       
       // ETAPA 3: Try cache first
@@ -163,6 +169,33 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .eq('clinic_id', clinicId);
         
         console.log('🔍 Available conversations:', allConversations);
+        
+        // Try to find by matching the numeric value
+        const matchingConv = allConversations?.find(conv => {
+          const convIdStr = conv.id.toString();
+          const searchIdStr = conversationId.toString();
+          return convIdStr === searchIdStr || 
+                 parseFloat(convIdStr) === parseFloat(searchIdStr);
+        });
+        
+        if (matchingConv) {
+          console.log('✅ Found matching conversation by numeric comparison:', matchingConv.id);
+          // Fetch the full conversation data
+          const { data: fullConv } = await supabase
+            .from('conversations')
+            .select('*')
+            .eq('id', matchingConv.id)
+            .single();
+          
+          if (fullConv) {
+            conversation = fullConv;
+            conversationId = fullConv.id;
+          }
+        }
+        
+        if (!conversation) {
+          return res.status(404).json({ error: 'Conversa não encontrada' });
+        }
       } else {
         // Conversation found, continue processing
         console.log('✅ Found conversation:', conversation.id);
