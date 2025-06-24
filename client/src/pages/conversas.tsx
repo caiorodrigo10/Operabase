@@ -125,10 +125,20 @@ export default function ConversasPage() {
       return;
     }
     
+    // ETAPA 2: Leave previous conversation and join new one
+    if (selectedConversationId && webSocket.connected) {
+      webSocket.leaveConversation(selectedConversationId);
+    }
+    
     // ETAPA 1: Clear state efficiently before transition
     setTimelineItems([]);
     setCurrentPatientInfo(undefined);
     setSelectedConversationId(conversationId);
+    
+    // ETAPA 2: Join new conversation for real-time updates
+    if (webSocket.connected) {
+      webSocket.joinConversation(conversationId);
+    }
     
     // Create patient info from conversation data
     const conversation = conversationsData?.conversations.find(c => c.id === conversationId);

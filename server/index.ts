@@ -14,6 +14,7 @@ import { performanceOptimizer } from "./performance-optimizer.js";
 import { initGoogleCalendarAuth, handleGoogleCalendarCallback } from './calendar-routes';
 import { initSystemLogsTable } from './init-system-logs';
 import { systemLogsService } from './services/system-logs.service';
+import { WebSocketServer } from './websocket-server';
 import http from "http";
 import fs from 'fs/promises';
 import path from 'path';
@@ -28,6 +29,10 @@ app.use(express.json({
     return value;
   }
 }));
+
+// ETAPA 2: Criar HTTP server para Socket.IO
+const httpServer = http.createServer(app);
+const PORT = process.env.PORT || 5000;
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {

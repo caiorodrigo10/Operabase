@@ -3,6 +3,9 @@ import { IStorage } from './storage';
 
 export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   
+  // ETAPA 2: Obter referência do WebSocket server
+  const getWebSocketServer = () => app.get('webSocketServer');
+  
   // Simple conversations list with real contact data
   app.get('/api/conversations-simple', async (req: Request, res: Response) => {
     try {
