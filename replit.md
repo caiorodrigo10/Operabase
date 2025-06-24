@@ -199,15 +199,14 @@ SESSION_SECRET=your_session_secret
 - ActionNotification component renders properly with blue notification blocks and "Ver consulta" buttons
 - Timeline correctly integrates action notifications chronologically with messages
 
-### June 24, 2025 - Complete Database Logging System Documentation
-- Created comprehensive documentation for the database logging system (SISTEMA-LOGS-DOCUMENTACAO-COMPLETA.md)
-- Documented two-layer architecture: System Logs (Database) + Structured Logger (File System)
-- Detailed system_logs table structure with 13 optimized indexes for multi-tenant performance
-- Documented SystemLogsService with methods for all entity types (contacts, appointments, messages, medical records, anamnesis, WhatsApp)
-- Covered Structured Logger with 8 categories, 4 log levels, and automatic sensitive data sanitization
-- Included performance metrics, compliance guidelines (LGPD/GDPR), and troubleshooting procedures
-- System supports patient timelines, professional activity tracking, and clinic statistics
-- Ready for production with sub-5ms query performance and 500+ concurrent user support
+### June 24, 2025 - Device Type Column and Contact Deletion
+- Added device_type column to messages table using Drizzle ORM to differentiate system vs manual messages
+- Successfully created column with default 'manual' value and performance index
+- Updated backend to mark web interface messages as device_type='system' 
+- Migration statistics: 8 system messages, 71 manual messages identified correctly
+- Safely deleted contact ID 38 (Caio Rodrigo) and all related data using atomic transaction
+- Removed 9 appointments, 0 anamneses, 0 medical records, 1 conversation, and 3 messages
+- Comprehensive data cleanup maintained referential integrity across all tables
 
 ### June 24, 2025 - Chat Auto-Scroll Optimization
 - Fixed chat auto-scroll behavior to show most recent messages immediately
