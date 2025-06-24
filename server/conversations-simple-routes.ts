@@ -475,9 +475,30 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Usar o ID correto da conversa conforme foreign key constraint
+        // Verificar se a conversa existe na tabela conversations
         const conversationIdForDB = actualConversation.id;
-        console.log('💾 Using correct conversation_id for foreign key:', conversationIdForDB);
+        console.log('💾 Checking if conversation exists:', conversationIdForDB);
+        
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('id', conversationIdForDB)
+          .single();
+        
+        if (!existingConv) {
+          console.log('💾 Creating conversation record for:', conversationIdForDB);
+          // Criar registro da conversa se não existir
+          await supabase
+            .from('conversations')
+            .insert({
+              id: conversationIdForDB,
+              clinic_id: 1,
+              contact_id: actualConversation.contact_id,
+              status: 'active'
+            });
+        }
+        
+        console.log('💾 Inserting message with conversation_id:', conversationIdForDB);
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
