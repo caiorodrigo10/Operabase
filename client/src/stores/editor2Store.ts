@@ -523,6 +523,7 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
       return block;
     });
 
+    // Update state first
     set({
       currentPage: {
         ...state.currentPage,
@@ -531,11 +532,13 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
       },
     });
 
-    // Auto-save to localStorage when widgets are added
-    const updatedState = get();
-    const pageJson = updatedState.serializeToJSON();
-    localStorage.setItem('editor2_page_state', JSON.stringify(pageJson, null, 2));
-    console.log('🔄 Auto-saved widget to localStorage:', newWidget.type);
+    // Auto-save to localStorage immediately after state update (like Craft.js pattern)
+    setTimeout(() => {
+      const currentState = get();
+      const pageJson = currentState.serializeToJSON();
+      localStorage.setItem('editor2_page_state', JSON.stringify(pageJson, null, 2));
+      console.log('🔄 Auto-saved widget to localStorage:', newWidget.type, pageJson);
+    }, 0);
   },
 
   updateWidget: (blockId: string, columnId: string, widgetId: string, widget: Widget) => {
