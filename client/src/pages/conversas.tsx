@@ -235,7 +235,29 @@ export default function ConversasPage() {
     }
   };
 
-  const handleSendMessage = async (message: string, isNote?: boolean) => {
+  const handleSendMessage = async (messageContent: string, isNote = false) => {
+    if (!selectedConversationId || !messageContent.trim()) return;
+
+    console.log('📤 ConversasPage: Sending message:', messageContent);
+    console.log('📤 To conversation:', selectedConversationId);
+
+    try {
+      const result = await sendMessage.mutateAsync({
+        conversationId: selectedConversationId,
+        message: { content: messageContent }
+      });
+      console.log('✅ Message sent successfully:', result);
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a mensagem",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSendMessageOptimistic = async (message: string, isNote?: boolean) => {
     if (!selectedConversationId) return;
 
     // Adicionar mensagem otimista imediatamente

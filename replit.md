@@ -228,6 +228,14 @@ SESSION_SECRET=your_session_secret
 - Fixed Caio Rodrigo conversation (messages 123/124) and all future large ID conversations
 - System now handles all ID formats universally with fallback strategies for precision issues
 
+### June 24, 2025 - Real-time Conversation Updates ✅
+- Reduced cache times to 3-5 seconds for immediate updates
+- Implemented automatic polling every 2 seconds for active conversations
+- Added 10-second polling for conversation list updates
+- Configured immediate refetch on message send without delays
+- Added window focus detection for instant updates when returning to tab
+- Optimized cache invalidation for real-time message delivery
+
 ### June 24, 2025 - Igor Venturin WhatsApp Conversation ID Fix ✅
 - Fixed conversation ID parsing issue for large WhatsApp IDs (5598876940345511948922493)
 - Resolved scientific notation conversion problem causing database lookup failures
