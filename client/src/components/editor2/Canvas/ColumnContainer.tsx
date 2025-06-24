@@ -70,9 +70,31 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
       )}
       
       {/* Column Content Area */}
-      <div className="h-full p-4">
+      <div 
+        className="h-full p-4 drop-zone"
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.add('drag-over');
+        }}
+        onDragLeave={(e) => {
+          e.currentTarget.classList.remove('drag-over');
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove('drag-over');
+          
+          const widgetType = e.dataTransfer.getData('widget-type');
+          if (widgetType && addWidget) {
+            addWidget(blockId, column.id, widgetType as any);
+          }
+        }}
+      >
         {column.widgets.length === 0 ? (
-          <div className="h-full"></div>
+          <div className="h-full drop-target">
+            <div className="drop-placeholder">
+              Arraste um widget aqui
+            </div>
+          </div>
         ) : (
           <div>
             {column.widgets.map((widget) => (
@@ -90,6 +112,30 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
                 )}
               </div>
             ))}
+            {/* Drop zone for adding widgets to non-empty columns */}
+            <div 
+              className="widget-drop-zone"
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.classList.add('drag-over');
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove('drag-over');
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.classList.remove('drag-over');
+                
+                const widgetType = e.dataTransfer.getData('widget-type');
+                if (widgetType && addWidget) {
+                  addWidget(blockId, column.id, widgetType as any);
+                }
+              }}
+            >
+              + Adicionar widget
+            </div>
           </div>
         )}
       </div>
