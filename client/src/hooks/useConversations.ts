@@ -82,7 +82,7 @@ export function useSendMessage() {
 
   return useMutation({
     mutationFn: async ({ conversationId, message }: { 
-      conversationId: number; 
+      conversationId: number | string; 
       message: { content: string } 
     }) => {
       const response = await fetch(`/api/conversations-simple/${conversationId}/messages`, {
@@ -94,18 +94,30 @@ export function useSendMessage() {
       });
       
       if (!response.ok) {
-        throw new Error('Erro ao enviar mensagem');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao enviar mensagem');
       }
       
       return response.json();
     },
-    onSuccess: (_, variables) => {
-      // Invalidar mensagens da conversa específica
+    onSuccess: (data, variables) => {
+      console.log('✅ Message sent successfully:', data);
+      
+      // Invalidar mensagens da conversa específica para recarregar
       queryClient.invalidateQueries({ 
         queryKey: ['/api/conversations-simple', variables.conversationId] 
       });
-      // Invalidar lista de conversas para atualizar contadores
+      
+      // Invalidar lista de conversas para atualizar contadores e última mensagem
       queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
+      
+      // Forçar refetch imediato
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/conversations-simple', variables.conversationId] 
+      });
+    },
+    onError: (error) => {
+      console.error('❌ Error sending message:', error);
     },
   });
 }

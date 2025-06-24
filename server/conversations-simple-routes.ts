@@ -413,6 +413,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       };
 
       // ETAPA 3: Invalidate cache after new message
+      const clinicId = 1; // Define clinic ID for cache invalidation
       await redisCacheService.invalidateConversationDetail(conversationId);
       await redisCacheService.invalidateConversationCache(clinicId);
       console.log('🧹 Cache invalidated after new message');
@@ -420,22 +421,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // ETAPA 2: Emit via WebSocket after message creation
       const webSocketServer = getWebSocketServer();
       if (webSocketServer) {
-        await webSocketServer.emitNewMessage(conversationId, clinicId, {
-          id: newMessage.id,
-          conversation_id: conversationId,
-          content: content,
-          sender_type: 'professional',
-          sender_name: 'Caio Rodrigo',
-          message_type: 'text',
-          timestamp: newMessage.timestamp,
-          attachments: []
-        });
+        await webSocketServer.emitNewMessage(actualConversationId, clinicId, formattedMessage);
         console.log('🔗 Message emitted via WebSocket');
       }
 
-      console.log('✅ Message sent successfully');
+      console.log('✅ Message sent successfully to WhatsApp and saved to database');
 
-      res.status(201).json({ message: formattedMessage });
+      res.status(201).json({ 
+        success: true,
+        message: formattedMessage,
+        whatsapp_sent: true
+      });
 
     } catch (error) {
       console.error('❌ Error sending message:', error);
