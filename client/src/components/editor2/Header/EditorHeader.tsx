@@ -135,6 +135,15 @@ export const EditorHeader: React.FC = () => {
         </button>
         
         <button 
+          className="header-button preview-button"
+          onClick={handlePreview}
+          title="Visualizar Página Externa"
+        >
+          <ExternalLink size={16} />
+          <span>Preview</span>
+        </button>
+        
+        <button 
           className="header-button json-button"
           onClick={handleViewJson}
           title="Ver JSON"
