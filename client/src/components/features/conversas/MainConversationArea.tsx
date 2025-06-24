@@ -62,13 +62,20 @@ export function MainConversationArea({
   }, [timelineItems]);
 
   const handleSendMessage = () => {
-    if (message.trim() && onSendMessage) {
+    if (!message.trim()) return;
+    
+    console.log('🚀 MainConversationArea: Sending message:', message);
+    console.log('🚀 onSendMessage function:', !!onSendMessage);
+    
+    if (onSendMessage) {
       onSendMessage(message.trim(), isNoteMode);
       setMessage("");
       // Scroll suave apenas para novas mensagens enviadas
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
+    } else {
+      console.error('❌ onSendMessage function not provided');
     }
   };
 
