@@ -369,7 +369,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       // ETAPA 3: Cache the result for next requests
       await redisCacheService.cacheConversationDetail(actualConversationId, responseData);
-      console.log('💾 Cached conversation detail for:', conversationId);
+      console.log('💾 Cached conversation detail for:', actualConversationId);
 
       res.json(responseData);
 
@@ -475,6 +475,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const { db } = await import('../db');
       const { messages } = await import('../../shared/schema');
       
+      let formattedMessage;
+      
       try {
         // Converter ID para string para evitar problemas de precisão
         const conversationIdStr = actualConversationId.toString();
@@ -496,7 +498,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         
         console.log('✅ Message inserted successfully:', newMessage.id);
 
-        const formattedMessage = {
+        formattedMessage = {
           id: newMessage.id,
           conversation_id: actualConversationId,
           content: content,
@@ -534,7 +536,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       setImmediate(async () => {
         try {
           const evolutionService = new EvolutionMessageService(storage);
-          const evolutionResult = await evolutionService.sendTextMessage(conversationId, content);
+          const evolutionResult = await evolutionService.sendTextMessage(req.params.id, content);
           
           if (evolutionResult.success) {
             console.log('✅ WhatsApp message sent successfully in background');
@@ -601,13 +603,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.error('❌ Error sending message details:', {
         message: error.message,
         stack: error.stack,
-        conversationId,
+        requestedId: req.params.id,
         content
       });
       res.status(500).json({ 
         error: 'Erro interno do servidor', 
         details: error.message,
-        conversationId 
+        conversationId: req.params.id 
       });
     }
   });
