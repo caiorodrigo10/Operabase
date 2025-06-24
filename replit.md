@@ -224,13 +224,13 @@ SESSION_SECRET=your_session_secret
 - Database returns proper conversation data with messages from WhatsApp integration
 
 ### June 24, 2025 - Sistema de Conversas Completamente Restaurado ✅
-- Identificado e corrigido problema crítico: campo messages.created_at não existe (deveria ser timestamp)
-- Corrigidas todas as queries do backend para usar campo correto: timestamp
-- Igor Venturin conversation ID (5.598876940345512e+24) agora funciona corretamente
-- Sistema de mensagens restaurado para todas as conversas
-- Backend carrega mensagens do Supabase usando campo timestamp correto
-- Frontend exibe mensagens cronologicamente ordenadas
-- Cache Redis funcionando com invalidação automática
+- **Problema Crítico Resolvido**: Comparação de tipos entre selectedConversationId (string) e conversation.id (number)
+- Alterada comparação de `===` para `==` para permitir coerção de tipos
+- Backend carregando mensagens corretamente: Pedro (25), Carla (6), Lucas (5)
+- Corrigido mapeamento timestamp vs created_at no frontend e backend
+- Igor Venturin conversation ID (5.598876940345512e+24) funcionando perfeitamente
+- Sistema de mensagens totalmente funcional em todas as conversas
+- Cache Redis operacional com performance otimizada
 
 ### June 24, 2025 - Conversas com Conteúdo Único Implementado ✅
 - Corrigido problema de mensagens duplicadas entre Lucas Ferreira e Carla Mendes

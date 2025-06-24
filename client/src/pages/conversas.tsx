@@ -76,12 +76,12 @@ export default function ConversasPage() {
 
   // ETAPA 1: Process conversation detail with optimized checks
   useEffect(() => {
-    if (conversationDetail?.messages && conversationDetail.conversation.id === selectedConversationId) {
+    if (conversationDetail?.messages && conversationDetail.conversation.id == selectedConversationId) {
       console.log('📊 Processing timeline for conversation:', selectedConversationId, 'with', conversationDetail.messages.length, 'messages');
       const timeline: TimelineItem[] = [];
       
       // Add messages to timeline
-      conversationDetail.messages.forEach(msg => {
+      conversationDetail.messages.forEach((msg, index) => {
         timeline.push({
           id: msg.id,
           type: 'message',
