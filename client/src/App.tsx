@@ -46,6 +46,7 @@ import SystemLogs from "./pages/SystemLogs";
 
 import FunilEditorLanding from "./pages/funil-editor-landing";
 import Editor2 from "./pages/editor2";
+import { PreviewPage } from "./pages/preview";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
