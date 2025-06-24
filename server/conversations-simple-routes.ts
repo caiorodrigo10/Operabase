@@ -469,23 +469,31 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         phone: actualConversation.contacts.phone
       });
 
-      // Para contornar o problema de conversão do JavaScript, usar SQL direto
-      console.log('💾 Inserting message with SQL query to avoid JS number conversion');
+      // Solução definitiva: buscar todas as conversas e usar correspondência exata
+      console.log('🎯 Using exact conversation match to avoid JS number conversion issues');
       
-      const insertQuery = `
-        INSERT INTO messages (conversation_id, sender_type, content, device_type, timestamp)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-      `;
+      const { data: allConversationsRaw } = await supabase
+        .from('conversations')
+        .select('id, contact_id')
+        .eq('clinic_id', 1);
       
-      // Alternativa: usar string literal para evitar conversão JS
-      const conversationIdStr = actualConversation.id.toString();
-      console.log('🔧 Using string literal for ID:', conversationIdStr);
+      // Encontrar a conversa correspondente pelo contact_id
+      const targetContactId = actualConversation.contact_id;
+      const exactConversation = allConversationsRaw?.find(conv => 
+        conv.contact_id === targetContactId
+      );
+      
+      if (!exactConversation) {
+        console.error('❌ Could not find exact conversation match');
+        return res.status(404).json({ error: 'Conversa não encontrada' });
+      }
+      
+      console.log('✅ Using exact conversation ID from lookup:', exactConversation.id);
       
       const { data: newMessage, error } = await supabase
         .from('messages')
         .insert({
-          conversation_id: conversationIdStr, // Usar como string literal
+          conversation_id: exactConversation.id, // ID exato do banco
           sender_type: 'professional',
           content: content,
           device_type: 'system',
