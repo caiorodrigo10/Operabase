@@ -174,6 +174,13 @@ SESSION_SECRET=your_session_secret
 - Added support for MIME type detection and proper media categorization (audio/mp3 → audio, image/jpeg → image, application/pdf → document)
 - Backend now returns 6 total attachments across all conversations with proper file metadata
 
+### June 24, 2025 - Calendar Appointment Positioning Fix
+- Fixed calendar week view appointment positioning bug where appointments appeared cut in half
+- Corrected collision detection algorithm to prevent false positive overlaps
+- Simplified collision group creation logic to properly handle single appointments
+- Improved event width calculation for proper full-width display when no actual conflicts exist
+- Appointments now display correctly with full width when no time conflicts are present
+
 ### June 23, 2025 - Media Message System Completion
 - Completed media message system with audio, image, and document support
 - Fixed attachment loading from Supabase with proper relationship queries
