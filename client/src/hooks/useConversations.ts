@@ -39,7 +39,7 @@ export function useConversations(status: string = 'active', limit: number = 50) 
       }
       return response.json() as Promise<ConversationsResponse>;
     },
-    staleTime: 60000, // ETAPA 1: Cache lista otimizado - 1 minuto
+    staleTime: 5000, // Reduzido para 5 segundos para updates mais rápidos
   });
 }
 
@@ -55,7 +55,7 @@ export function useConversationDetail(conversationId: number | string | null) {
       return response.json() as Promise<ConversationDetailResponse>;
     },
     enabled: !!conversationId,
-    staleTime: 30000, // ETAPA 1: Cache otimizado - 30 segundos para reduzir requests
+    staleTime: 3000, // Reduzido para 3 segundos para updates imediatos para reduzir requests
     gcTime: 5 * 60 * 1000, // 5 minutos de cache em garbage collection
   });
 }
@@ -103,16 +103,16 @@ export function useSendMessage() {
     onSuccess: (data, variables) => {
       console.log('✅ Message sent successfully:', data);
       
-      // Invalidar lista de conversas para atualizar contadores e última mensagem
+      // Invalidação imediata para atualizações em tempo real
       queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/conversations-simple', variables.conversationId] 
+      });
       
-      // Invalidar mensagens da conversa específica após um pequeno delay
-      // para garantir que o backend processou completamente
-      setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['/api/conversations-simple', variables.conversationId] 
-        });
-      }, 500);
+      // Refetch imediato da conversa para mostrar nova mensagem instantaneamente
+      queryClient.refetchQueries({
+        queryKey: ['/api/conversations-simple', variables.conversationId]
+      });
     },
     onError: (error) => {
       console.error('❌ Error sending message:', error);
