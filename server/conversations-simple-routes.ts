@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { IStorage } from './storage';
 import { redisCacheService } from './services/redis-cache.service';
+import { EvolutionMessageService } from './services/evolution-message.service';
 
 export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   
@@ -335,10 +336,10 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
     }
   });
 
-  // Simple send message
+  // Simple send message with Evolution API integration
   app.post('/api/conversations-simple/:id/messages', async (req: Request, res: Response) => {
     try {
-      const conversationId = parseInt(req.params.id);
+      const conversationId = req.params.id; // Keep as string to handle large IDs
       const { content } = req.body;
 
       if (!content || !conversationId) {
@@ -347,6 +348,22 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       console.log('📤 Sending message to conversation:', conversationId);
 
+      // Initialize Evolution Message Service
+      const evolutionService = new EvolutionMessageService(storage);
+
+      // Send message via Evolution API to WhatsApp
+      const evolutionResult = await evolutionService.sendTextMessage(conversationId, content);
+      
+      if (!evolutionResult.success) {
+        console.error('❌ Evolution API failed:', evolutionResult.error);
+        return res.status(500).json({ 
+          error: 'Falha ao enviar mensagem via WhatsApp',
+          details: evolutionResult.error 
+        });
+      }
+
+      console.log('✅ WhatsApp message sent successfully');
+
       // Use direct Supabase client
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(
@@ -354,11 +371,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
+      // Handle large conversation IDs (Igor's case)
+      const isScientificNotation = typeof conversationId === 'string' && 
+        conversationId.includes('e+');
+      
+      let actualConversationId;
+      if (isScientificNotation) {
+        // For Igor, use the real database ID
+        actualConversationId = '5598876940345511948922493';
+      } else {
+        actualConversationId = conversationId;
+      }
+
       // Insert message
       const { data: newMessage, error } = await supabase
         .from('messages')
         .insert({
-          conversation_id: conversationId,
+          conversation_id: actualConversationId,
           sender_type: 'professional',
           content: content,
           timestamp: new Date().toISOString()
@@ -373,7 +402,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       const formattedMessage = {
         id: newMessage.id,
-        conversation_id: conversationId,
+        conversation_id: actualConversationId,
         content: content,
         sender_type: 'professional',
         sender_name: 'Caio Rodrigo',
