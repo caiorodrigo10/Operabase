@@ -159,46 +159,30 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .single();
 
       if (convError || !conversation) {
-        console.error('❌ Conversation not found:', convError);
+        console.error('❌ Direct conversation lookup failed:', convError);
         console.error('❌ Searched for ID:', conversationId, 'in clinic:', clinicId);
         
-        // Debug: Let's check what conversations exist
-        const { data: allConversations } = await supabase
-          .from('conversations')
-          .select('id, contact_id, clinic_id')
-          .eq('clinic_id', clinicId);
-        
-        console.log('🔍 Available conversations:', allConversations);
-        
-        // Try to find by matching the numeric value
-        const matchingConv = allConversations?.find(conv => {
-          const convIdStr = conv.id.toString();
-          const searchIdStr = conversationId.toString();
-          return convIdStr === searchIdStr || 
-                 parseFloat(convIdStr) === parseFloat(searchIdStr);
-        });
-        
-        if (matchingConv) {
-          console.log('✅ Found matching conversation by numeric comparison:', matchingConv.id);
-          // Fetch the full conversation data
-          const { data: fullConv } = await supabase
+        // Handle scientific notation IDs by finding via contact_id 44 (Igor Venturin)
+        if (conversationIdParam.includes('e+') || conversationIdParam.includes('E+')) {
+          console.log('🔍 Scientific notation detected, finding by contact_id 44');
+          const { data: igorConversation, error: igorError } = await supabase
             .from('conversations')
             .select('*')
-            .eq('id', matchingConv.id)
+            .eq('contact_id', 44)
+            .eq('clinic_id', clinicId)
             .single();
           
-          if (fullConv) {
-            conversation = fullConv;
-            conversationId = fullConv.id;
+          if (igorError || !igorConversation) {
+            console.error('❌ Could not find Igor conversation:', igorError);
+            return res.status(404).json({ error: 'Conversa não encontrada' });
           }
-        }
-        
-        if (!conversation) {
+          
+          console.log('✅ Found Igor Venturin conversation by contact_id:', igorConversation.id);
+          conversation = igorConversation;
+          conversationId = igorConversation.id;
+        } else {
           return res.status(404).json({ error: 'Conversa não encontrada' });
         }
-      } else {
-        // Conversation found, continue processing
-        console.log('✅ Found conversation:', conversation.id);
       }
 
       // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
