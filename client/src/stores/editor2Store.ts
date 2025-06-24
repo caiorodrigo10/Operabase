@@ -223,6 +223,12 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
         },
       },
     });
+
+    // Auto-save to localStorage when blocks are added
+    const updatedState = get();
+    const pageJson = updatedState.serializeToJSON();
+    localStorage.setItem('editor2_page_state', JSON.stringify(pageJson, null, 2));
+    console.log('🔄 Auto-saved new block to localStorage');
   },
   
   addColumn: (blockId: string) => {
@@ -524,6 +530,12 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
         selectedElement: { type: 'widget', id: newWidget.id },
       },
     });
+
+    // Auto-save to localStorage when widgets are added
+    const updatedState = get();
+    const pageJson = updatedState.serializeToJSON();
+    localStorage.setItem('editor2_page_state', JSON.stringify(pageJson, null, 2));
+    console.log('🔄 Auto-saved widget to localStorage:', newWidget.type);
   },
 
   updateWidget: (blockId: string, columnId: string, widgetId: string, widget: Widget) => {
