@@ -3,9 +3,29 @@ import { nanoid } from 'nanoid';
 
 export interface Widget {
   id: string;
-  type: 'heading' | 'text' | 'image' | 'button' | 'container' | 'spacer' | 'video';
+  type: 'heading' | 'text' | 'image' | 'button' | 'container' | 'spacer' | 'video' | 'title';
   content: any;
   style: any;
+}
+
+export interface TitleWidget extends Widget {
+  type: 'title';
+  content: {
+    text: string;
+    level: 1 | 2 | 3 | 4 | 5 | 6;
+  };
+  style: {
+    fontFamily: string;
+    fontSize: number;
+    fontWeight: string;
+    color: string;
+    textAlign: 'left' | 'center' | 'right' | 'justify';
+    lineHeight: number;
+    letterSpacing: number;
+    textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+    textDecoration: 'none' | 'underline' | 'line-through';
+    backgroundColor: string;
+  };
 }
 
 export interface Column {
@@ -89,6 +109,11 @@ interface EditorState {
   removeColumn: (blockId: string, columnId: string) => void;
   removeBlock: (blockId: string) => void;
   updateGlobalSettings: (settings: Partial<GlobalSettings>) => void;
+  
+  // Widget Management Actions
+  addWidget: (blockId: string, columnId: string, widgetType: Widget['type']) => void;
+  updateWidget: (blockId: string, columnId: string, widgetId: string, widget: Widget) => void;
+  removeWidget: (blockId: string, columnId: string, widgetId: string) => void;
   
   // JSON Management Actions
   serializeToJSON: () => Editor2PageJSON;
@@ -434,6 +459,129 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
       globalSettings: {
         ...state.globalSettings,
         ...settings,
+      },
+    });
+  },
+
+  // Widget Management Actions
+  addWidget: (blockId: string, columnId: string, widgetType: Widget['type']) => {
+    const state = get();
+    let newWidget: Widget;
+
+    // Create widget based on type with default values
+    if (widgetType === 'title') {
+      newWidget = {
+        id: `widget-${nanoid()}`,
+        type: 'title',
+        content: {
+          text: 'Título Principal',
+          level: 1,
+        },
+        style: {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: 32,
+          fontWeight: 'bold',
+          color: '#333333',
+          textAlign: 'left',
+          lineHeight: 1.2,
+          letterSpacing: 0,
+          textTransform: 'none',
+          textDecoration: 'none',
+          backgroundColor: 'transparent',
+        },
+      } as TitleWidget;
+    } else {
+      // Default widget for other types
+      newWidget = {
+        id: `widget-${nanoid()}`,
+        type: widgetType,
+        content: {},
+        style: {},
+      };
+    }
+
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          columns: block.columns.map(column => {
+            if (column.id === columnId) {
+              return {
+                ...column,
+                widgets: [...column.widgets, newWidget],
+              };
+            }
+            return column;
+          }),
+        };
+      }
+      return block;
+    });
+
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+        selectedElement: { type: 'widget', id: newWidget.id },
+      },
+    });
+  },
+
+  updateWidget: (blockId: string, columnId: string, widgetId: string, widget: Widget) => {
+    const state = get();
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          columns: block.columns.map(column => {
+            if (column.id === columnId) {
+              return {
+                ...column,
+                widgets: column.widgets.map(w => 
+                  w.id === widgetId ? widget : w
+                ),
+              };
+            }
+            return column;
+          }),
+        };
+      }
+      return block;
+    });
+
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+      },
+    });
+  },
+
+  removeWidget: (blockId: string, columnId: string, widgetId: string) => {
+    const state = get();
+    const updatedBlocks = state.currentPage.blocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          columns: block.columns.map(column => {
+            if (column.id === columnId) {
+              return {
+                ...column,
+                widgets: column.widgets.filter(w => w.id !== widgetId),
+              };
+            }
+            return column;
+          }),
+        };
+      }
+      return block;
+    });
+
+    set({
+      currentPage: {
+        ...state.currentPage,
+        blocks: updatedBlocks,
+        selectedElement: { type: null, id: null },
       },
     });
   },

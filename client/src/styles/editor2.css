@@ -260,6 +260,272 @@
   background-color: #f9fafb;
 }
 
+/* Title Widget Toolbar Styles */
+.title-toolbar {
+  background: #2d2d2d;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border: 1px solid #404040;
+}
+
+.title-toolbar-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  gap: 4px;
+}
+
+.toolbar-button:hover {
+  background-color: #404040;
+}
+
+.toolbar-button.active {
+  background-color: #3b82f6;
+}
+
+.toolbar-button.ai-button {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 500;
+}
+
+.toolbar-button.ai-button:hover {
+  background-color: #2563eb;
+}
+
+.toolbar-dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  min-width: auto;
+  padding: 6px 8px;
+}
+
+.font-name {
+  font-size: 12px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.font-size {
+  font-size: 12px;
+  min-width: 20px;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.transform-indicator {
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.color-button {
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px;
+}
+
+.color-icon {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.color-bar {
+  width: 20px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.ai-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* Dropdown Menus */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  z-index: 1001;
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: #374151;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f3f4f6;
+}
+
+.dropdown-item.active {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Font Selector */
+.font-selector .font-item {
+  font-size: 14px;
+  padding: 10px 12px;
+}
+
+/* Header Selector */
+.header-selector .dropdown-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.header-selector .dropdown-item:last-child {
+  border-bottom: none;
+}
+
+/* Color Picker */
+.color-picker {
+  padding: 16px;
+  min-width: 280px;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+  border-color: #9ca3af;
+}
+
+.color-swatch.active {
+  border-color: #3b82f6;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.custom-color-section {
+  margin-bottom: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.custom-color-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.custom-color-input {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.color-input-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+}
+
+.color-text-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+/* Alignment Picker */
+.alignment-picker {
+  padding: 8px;
+  min-width: auto;
+}
+
+.alignment-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.alignment-button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.alignment-button:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.alignment-button.active {
+  background-color: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
 /* Left Area - AI Chat */
 .editor2-left-area {
   grid-area: left;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useEditor2Store, Column } from '../../../stores/editor2Store';
 import { ResizeHandle } from './ResizeHandle';
+import { TitleWidget } from '../Widgets/TitleWidget/TitleWidget';
 
 interface ColumnContainerProps {
   column: Column;
@@ -76,10 +77,17 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
           <div>
             {column.widgets.map((widget) => (
               <div key={widget.id} className="mb-2">
-                {/* Widget rendering will be implemented later */}
-                <div className="p-2 bg-gray-100 rounded text-sm">
-                  {widget.type} widget
-                </div>
+                {widget.type === 'title' ? (
+                  <TitleWidget
+                    widget={widget as any}
+                    columnId={column.id}
+                    blockId={blockId}
+                  />
+                ) : (
+                  <div className="p-2 bg-gray-100 rounded text-sm">
+                    {widget.type} widget
+                  </div>
+                )}
               </div>
             ))}
           </div>
