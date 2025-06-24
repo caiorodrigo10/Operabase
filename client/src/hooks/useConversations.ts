@@ -55,7 +55,8 @@ export function useConversationDetail(conversationId: number | null) {
       return response.json() as Promise<ConversationDetailResponse>;
     },
     enabled: !!conversationId,
-    staleTime: 10000, // 10 segundos
+    staleTime: 5000, // 5 segundos
+    gcTime: 0, // Force fresh data on conversation change
   });
 }
 

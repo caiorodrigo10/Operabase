@@ -39,12 +39,12 @@ export default function ConversasPage() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Auto-select first conversation on load
+  // Auto-select first conversation on load (only once)
   useEffect(() => {
-    if (conversationsData?.conversations.length > 0 && !selectedConversationId) {
-      handleConversationSelect(conversationsData.conversations[0].id);
+    if (conversationsData?.conversations.length > 0 && selectedConversationId === undefined) {
+      setSelectedConversationId(conversationsData.conversations[0].id);
     }
-  }, [conversationsData, selectedConversationId]);
+  }, [conversationsData]);
 
   // Convert backend data to frontend format
   const convertToFrontendConversations = (): Conversation[] => {
@@ -117,9 +117,19 @@ export default function ConversasPage() {
       
       setTimelineItems(timeline);
     }
-  }, [conversationDetail]);
+  }, [conversationDetail, selectedConversationId]);
 
   const handleConversationSelect = async (conversationId: number) => {
+    // Prevent selecting the same conversation
+    if (conversationId === selectedConversationId) {
+      return;
+    }
+    
+    // Clear current timeline and patient info first
+    setTimelineItems([]);
+    setCurrentPatientInfo(undefined);
+    
+    // Set new conversation ID
     setSelectedConversationId(conversationId);
     
     // Create patient info from conversation data
