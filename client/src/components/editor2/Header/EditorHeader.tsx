@@ -44,6 +44,19 @@ export const EditorHeader: React.FC = () => {
     }
   };
 
+  const handlePreview = async () => {
+    try {
+      // Primeiro salva a página
+      await savePageToServer();
+      
+      // Abre a página de preview em nova aba
+      const previewUrl = `/preview/editor2`;
+      window.open(previewUrl, '_blank');
+    } catch (error) {
+      console.error('Error opening preview:', error);
+    }
+  };
+
   const handleViewJson = () => {
     const pageJson = serializeToJSON();
     const formattedJson = JSON.stringify(pageJson, null, 2);
