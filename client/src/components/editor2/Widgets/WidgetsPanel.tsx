@@ -18,11 +18,7 @@ export const WidgetsPanel: React.FC<WidgetsPanelProps> = ({ isOpen, onClose }) =
     { icon: <Play size={32} />, label: 'VÍDEO', isAvailable: false }
   ];
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+
 
   const handleWidgetClick = (label: string, isAvailable: boolean) => {
     if (isAvailable) {
@@ -51,13 +47,7 @@ export const WidgetsPanel: React.FC<WidgetsPanelProps> = ({ isOpen, onClose }) =
   }, [isOpen, onClose]);
 
   return (
-    <>
-      {/* Overlay */}
-      <div 
-        className={`widgets-panel-overlay ${isOpen ? 'open' : ''}`}
-        onClick={handleOverlayClick}
-      />
-      
+    <>      
       {/* Panel */}
       <div className={`widgets-panel ${isOpen ? 'open' : ''}`}>
         {/* Header */}
