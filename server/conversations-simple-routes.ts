@@ -475,41 +475,40 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Resolver foreign key definitivamente: usar contact_id e garantir que existe na tabela conversations
-        const contactId = actualConversation.contact_id;
-        console.log('💾 Using contact_id as conversation_id:', contactId);
+        // Solução definitiva baseada na análise dos dados:
+        // Para conversas científicas, buscar uma mensagem existente e usar seu conversation_id
+        let validConversationId;
         
-        // Verificar se existe registro na tabela conversations para este contact_id
-        const { data: existingConversation } = await supabase
-          .from('conversations')
-          .select('id')
-          .eq('id', contactId)
-          .single();
-        
-        if (!existingConversation) {
-          console.log('💾 Creating conversation record for contact_id:', contactId);
-          const { error: createError } = await supabase
-            .from('conversations')
-            .insert({
-              id: contactId,
-              clinic_id: 1,
-              contact_id: contactId,
-              status: 'active',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
+        if (isScientificNotation) {
+          console.log('💾 Scientific notation detected, finding valid conversation_id from existing messages');
           
-          if (createError) {
-            console.error('❌ Error creating conversation:', createError);
-            throw new Error(`Failed to create conversation: ${createError.message}`);
+          // Buscar mensagens existentes desta conversa usando filtro de proximidade
+          const { data: existingMessages } = await supabase
+            .from('messages')
+            .select('conversation_id')
+            .order('timestamp', { ascending: false })
+            .limit(100);
+          
+          // Usar mesmo algoritmo de proximidade que funciona para leitura
+          const targetIdNum = parseFloat(actualConversation.id.toString());
+          const matchingMessage = existingMessages?.find(msg => {
+            const msgIdNum = parseFloat(msg.conversation_id.toString());
+            return Math.abs(msgIdNum - targetIdNum) < 1;
+          });
+          
+          if (matchingMessage) {
+            validConversationId = matchingMessage.conversation_id;
+            console.log('💾 Found valid conversation_id from existing message:', validConversationId);
+          } else {
+            // Se não encontrar mensagem existente, usar o contact_id que sabemos que é 45
+            validConversationId = actualConversation.contact_id;
+            console.log('💾 Using contact_id as fallback conversation_id:', validConversationId);
           }
-          
-          console.log('✅ Conversation record created successfully');
         } else {
-          console.log('✅ Conversation already exists for contact_id:', contactId);
+          validConversationId = actualConversation.id;
         }
         
-        const useConversationId = contactId;
+        const useConversationId = validConversationId;
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
