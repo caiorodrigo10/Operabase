@@ -39,7 +39,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           clinic_id,
           contact_id,
           status,
-          created_at,
+          created_at: timestamp,
           updated_at,
           contacts!inner (
             name,
@@ -184,7 +184,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .from('messages')
         .select('*')
         .eq('conversation_id', actualConversationId)
-        .order('created_at', { ascending: false })
+        .order('timestamp', { ascending: false })
         .limit(50); // Paginação: apenas últimas 50 mensagens
 
       if (msgError) {
@@ -227,7 +227,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .select('*')
           .eq('conversation_id', actualConversationId)
           .eq('clinic_id', conversation.clinic_id)
-          .order('created_at', { ascending: true });
+          .order('timestamp', { ascending: true });
 
         if (actionError && (actionError.code === '42P01' || actionError.message?.includes('does not exist'))) {
           console.log('🔧 Table conversation_actions does not exist, creating sample actions...');
@@ -250,7 +250,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                 },
                 related_entity_type: 'appointment',
                 related_entity_id: 123,
-                created_at: '2025-06-23T20:30:00Z'
+                timestamp: '2025-06-23T20:30:00Z'
               },
               {
                 id: 2,
@@ -267,7 +267,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                 },
                 related_entity_type: 'appointment',
                 related_entity_id: 123,
-                created_at: '2025-06-23T20:35:00Z'
+                timestamp: '2025-06-23T20:35:00Z'
               }
             ];
             console.log('✅ Created sample actions for Pedro conversation');
@@ -391,7 +391,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           sender_type: 'professional',
           sender_name: 'Caio Rodrigo',
           message_type: 'text',
-          created_at: newMessage.timestamp,
+          timestamp: newMessage.timestamp,
           attachments: []
         });
         console.log('🔗 Message emitted via WebSocket');
