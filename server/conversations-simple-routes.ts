@@ -150,15 +150,24 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let conversation, convError;
       
       if (isScientificNotation) {
-        console.log('🔍 Scientific notation detected, finding Igor conversation by contact_id');
-        const result = await supabase
+        console.log('🔍 Scientific notation detected, finding conversation by contact lookup');
+        // Para IDs científicos, buscar primeiro todas as conversas e fazer match
+        const { data: allConversations } = await supabase
           .from('conversations')
           .select('*')
-          .eq('contact_id', 44)
-          .eq('clinic_id', clinicId)
-          .single();
-        conversation = result.data;
-        convError = result.error;
+          .eq('clinic_id', clinicId);
+        
+        // Encontrar conversa que corresponde ao ID científico
+        conversation = allConversations?.find(conv => {
+          const convIdStr = conv.id.toString();
+          const paramIdNum = parseFloat(conversationId);
+          const convIdNum = parseFloat(convIdStr);
+          return Math.abs(convIdNum - paramIdNum) < 1; // Tolerância para comparação
+        });
+        
+        if (!conversation) {
+          convError = { message: 'Conversation not found for scientific notation ID' };
+        }
       } else {
         const result = await supabase
           .from('conversations')
@@ -181,14 +190,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
       // Elimina problema de performance com conversas muito longas
-      // Para IDs científicos do Igor, usar o ID real do banco de dados
-      let queryConversationId;
-      if (isScientificNotation) {
-        // ID real do Igor no banco: 5598876940345511948922493
-        queryConversationId = '5598876940345511948922493';
-      } else {
-        queryConversationId = actualConversationId;
-      }
+      // Fix: Usar sempre o ID real da conversa encontrada no banco
+      const queryConversationId = actualConversationId;
       
       const { data: messages, error: msgError } = await supabase
         .from('messages')

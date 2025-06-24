@@ -214,6 +214,13 @@ SESSION_SECRET=your_session_secret
 - Timeline now positions at bottom instantly for better user experience
 - Smooth scroll only used for new incoming messages during active chat
 
+### June 24, 2025 - Conversation System Universal Fix
+- Fixed API conversation lookup to handle all ID formats (scientific notation, regular numbers)
+- Enhanced message sending to work with any conversation ID format for all contacts
+- Improved conversation resolution to find actual database IDs from frontend parameters
+- Added cache invalidation for new messages to ensure real-time updates
+- System now supports messaging with any contact regardless of ID format or WhatsApp origin
+
 ### June 24, 2025 - Igor Venturin WhatsApp Conversation ID Fix ✅
 - Fixed conversation ID parsing issue for large WhatsApp IDs (5598876940345511948922493)
 - Resolved scientific notation conversion problem causing database lookup failures
