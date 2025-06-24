@@ -469,55 +469,29 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         phone: actualConversation.contacts.phone
       });
 
-      // Solução definitiva: buscar todas as conversas e usar correspondência exata
-      console.log('🎯 Using exact conversation match to avoid JS number conversion issues');
+      // Solução final: usar Drizzle ORM que já está configurado no projeto
+      console.log('🎯 Using Drizzle ORM with exact conversation ID from database');
       
-      const { data: allConversationsRaw } = await supabase
-        .from('conversations')
-        .select('id, contact_id')
-        .eq('clinic_id', 1);
+      const { db } = await import('../db');
+      const { messages } = await import('../../shared/schema');
       
-      // Encontrar a conversa correspondente pelo contact_id
-      const targetContactId = actualConversation.contact_id;
-      const exactConversation = allConversationsRaw?.find(conv => 
-        conv.contact_id === targetContactId
-      );
+      // Usar o ID exato sem conversão, Drizzle preserva a precisão
+      const insertData = {
+        conversation_id: actualConversation.id, // ID original do banco
+        sender_type: 'professional' as const,
+        content: content,
+        device_type: 'system' as const,
+        timestamp: new Date()
+      };
       
-      if (!exactConversation) {
-        console.error('❌ Could not find exact conversation match');
-        return res.status(404).json({ error: 'Conversa não encontrada' });
-      }
+      console.log('💾 Inserting with Drizzle:', {
+        conversation_id: insertData.conversation_id,
+        type: typeof insertData.conversation_id
+      });
       
-      console.log('✅ Using exact conversation ID from lookup:', exactConversation.id);
-      
-      const { data: newMessage, error } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: exactConversation.id, // ID exato do banco
-          sender_type: 'professional',
-          content: content,
-          device_type: 'system',
-          timestamp: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const [newMessage] = await db.insert(messages).values(insertData).returning();
 
-      if (error) {
-        console.error('❌ Database error details:', {
-          error,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          actualConversationId,
-          conversationId
-        });
-        return res.status(500).json({ 
-          error: 'Erro ao salvar mensagem no banco de dados',
-          details: error.message,
-          hint: error.hint 
-        });
-      }
+      console.log('✅ Drizzle insert SUCCESS!', newMessage.id);
 
       const formattedMessage = {
         id: newMessage.id,
@@ -527,7 +501,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         sender_name: 'Caio Rodrigo',
         direction: 'outbound',
         message_type: 'text',
-        timestamp: newMessage.timestamp,
+        timestamp: newMessage.timestamp.toISOString(),
         attachments: []
       };
 
