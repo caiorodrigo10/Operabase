@@ -230,18 +230,6 @@ export const anamnesis_responses = pgTable("anamnesis_responses", {
   index("idx_anamnesis_responses_status").on(table.status),
 ]);
 
-// Evolution API Settings
-export const evolutionApiSettings = pgTable('evolution_api_settings', {
-  id: serial('id').primaryKey(),
-  clinic_id: integer('clinic_id').notNull().references(() => clinics.id, { onDelete: 'cascade' }),
-  api_url: varchar('api_url', { length: 255 }).notNull(),
-  api_key: varchar('api_key', { length: 255 }).notNull(),
-  instance_name: varchar('instance_name', { length: 100 }).notNull().default('default'),
-  is_active: boolean('is_active').notNull().default(true),
-  created_at: timestamp('created_at').defaultNow(),
-  updated_at: timestamp('updated_at').defaultNow(),
-});
-
 // Anamnesis validation schemas
 export const insertAnamnesisTemplateSchema = createInsertSchema(anamnesis_templates).omit({
   id: true,

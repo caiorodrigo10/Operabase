@@ -223,22 +223,6 @@ SESSION_SECRET=your_session_secret
 - Igor Venturin conversation now loads correctly with 16 messages visible
 - Database returns proper conversation data with messages from WhatsApp integration
 
-### June 24, 2025 - Interface de Configuração WhatsApp Implementada ✅
-- **Página de Configuração**: Interface completa em /configuracoes-whatsapp para inserir API Key e URL
-- **Tabela evolution_api_settings**: Armazena configurações da Evolution API por clínica
-- **Teste de Conexão**: Função para validar credenciais antes de salvar
-- **Sistema Integrado**: Mensagens agora buscam configuração do banco de dados em vez de variáveis de ambiente
-- **Status de Entrega**: Tratamento completo de status (sent_whatsapp, failed_whatsapp, failed_network)
-- Campos: api_url, api_key, instance_name, is_active por clínica
-
-### June 24, 2025 - Sistema de Envio de Mensagens WhatsApp Implementado ✅
-- **Integração Evolution API**: Sistema salva mensagem no banco e envia via WhatsApp automaticamente
-- **Fluxo Completo**: Mensagem → Banco de dados → Evolution API → WhatsApp do paciente
-- Implementado tratamento de status: sent_whatsapp, failed_whatsapp, failed_network
-- Sistema funciona com notação científica do Igor e IDs normais de outras conversas
-- Busca automática do telefone do paciente pela conversa selecionada
-- Cache invalidado e WebSocket notificado após envio de mensagem
-
 ### June 24, 2025 - Sistema de Notificações de Consultas Funcional ✅
 - **Sistema de Logs Ativo**: Appointments sendo registrados automaticamente na tabela system_logs
 - **Notificações Reais**: Implementado sistema que gera notificações de consulta baseado nos logs reais

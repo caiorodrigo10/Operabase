@@ -335,18 +335,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
     }
   });
 
-  // Simple send message with WhatsApp integration
+  // Simple send message
   app.post('/api/conversations-simple/:id/messages', async (req: Request, res: Response) => {
     try {
-      const conversationId = req.params.id;
+      const conversationId = parseInt(req.params.id);
       const { content } = req.body;
-      const clinicId = 1; // Hardcoded for testing
 
       if (!content || !conversationId) {
         return res.status(400).json({ error: 'Conteúdo e ID da conversa são obrigatórios' });
       }
 
-      console.log('📤 Sending message to conversation:', conversationId, 'Type:', typeof conversationId);
+      console.log('📤 Sending message to conversation:', conversationId);
 
       // Use direct Supabase client
       const { createClient } = await import('@supabase/supabase-js');
@@ -355,83 +354,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      // First get conversation details to extract phone number
-      let actualConversationId = conversationId;
-      let conversation;
-      
-      // Handle scientific notation for Igor's conversation
-      const isScientificNotation = conversationId.includes('e+');
-      if (isScientificNotation) {
-        console.log('🔍 Scientific notation detected, finding Igor conversation by contact_id');
-        const result = await supabase
-          .from('conversations')
-          .select(`
-            id,
-            contact_id,
-            contacts!inner (
-              phone,
-              name
-            )
-          `)
-          .eq('contact_id', 44)
-          .eq('clinic_id', clinicId)
-          .single();
-        
-        if (result.error) {
-          console.error('❌ Error finding Igor conversation:', result.error);
-          return res.status(404).json({ error: 'Conversa do Igor não encontrada' });
-        }
-        
-        conversation = result.data;
-        actualConversationId = conversation.id;
-        console.log('🔍 Igor conversation found - ID:', conversation.id, 'Contact:', conversation.contact_id);
-      } else {
-        const result = await supabase
-          .from('conversations')
-          .select(`
-            id,
-            contact_id,
-            contacts!inner (
-              phone,
-              name
-            )
-          `)
-          .eq('id', conversationId)
-          .eq('clinic_id', clinicId)
-          .single();
-        
-        if (result.error) {
-          console.error('❌ Error finding conversation:', result.error);
-          return res.status(404).json({ error: 'Conversa não encontrada' });
-        }
-        
-        conversation = result.data;
-      }
-
-      if (!conversation) {
-        return res.status(404).json({ error: 'Conversa não encontrada' });
-      }
-
-      const phoneNumber = conversation.contacts.phone;
-      const contactName = conversation.contacts.name;
-      console.log('📱 Sending WhatsApp message to:', phoneNumber, '(', contactName, ')');
-
-      // Step 1: Save message to database first
-      // For Igor's scientific notation ID, use the string directly
-      let dbConversationId;
-      if (isScientificNotation) {
-        // Use the original large number as string
-        dbConversationId = '5598876940345511948922493';
-      } else {
-        dbConversationId = conversation.id;
-      }
-      
-      console.log('💾 Saving message with conversation_id:', dbConversationId, 'Type:', typeof dbConversationId);
-      
+      // Insert message
       const { data: newMessage, error } = await supabase
         .from('messages')
         .insert({
-          conversation_id: dbConversationId,
+          conversation_id: conversationId,
           sender_type: 'professional',
           content: content,
           timestamp: new Date().toISOString()
@@ -441,92 +368,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       if (error) {
         console.error('❌ Error inserting message:', error);
-        return res.status(500).json({ error: 'Erro ao salvar mensagem' });
-      }
-
-      console.log('✅ Message saved to database with ID:', newMessage.id);
-
-      // Step 2: Send message via Evolution API (using database configuration)
-      try {
-        // Get Evolution API configuration from database
-        const { data: evolutionConfig, error: configError } = await supabase
-          .from('evolution_api_settings')
-          .select('api_url, api_key, instance_name')
-          .eq('clinic_id', clinicId)
-          .eq('is_active', true)
-          .single();
-
-        if (configError || !evolutionConfig) {
-          console.error('❌ Evolution API not configured in database');
-          // Don't fail the request - message is already saved
-        } else {
-
-          const whatsappPayload = {
-            number: phoneNumber,
-            text: content
-          };
-
-          console.log('📡 Sending to Evolution API:', `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`);
-          console.log('📋 Payload:', whatsappPayload);
-
-          const whatsappResponse = await fetch(
-            `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`,
-            {
-              method: 'POST',
-              headers: {
-                'apikey': evolutionConfig.api_key,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(whatsappPayload)
-            }
-          );
-
-          if (whatsappResponse.ok) {
-            const whatsappResult = await whatsappResponse.json();
-            console.log('✅ WhatsApp message sent successfully:', whatsappResult);
-            
-            // Update message status to indicate WhatsApp delivery
-            await supabase
-              .from('messages')
-              .update({ 
-                status: 'sent_whatsapp',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', newMessage.id);
-              
-          } else {
-            const whatsappError = await whatsappResponse.text();
-            console.error('❌ WhatsApp API error:', whatsappResponse.status, whatsappError);
-            
-            // Update message status to indicate WhatsApp failure
-            await supabase
-              .from('messages')
-              .update({ 
-                status: 'failed_whatsapp',
-                error_message: whatsappError,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', newMessage.id);
-          }
-        }
-
-      } catch (whatsappError) {
-        console.error('❌ WhatsApp sending failed:', whatsappError);
-        
-        // Update message status to indicate network failure
-        await supabase
-          .from('messages')
-          .update({ 
-            status: 'failed_network',
-            error_message: whatsappError.message,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', newMessage.id);
+        return res.status(500).json({ error: 'Erro ao enviar mensagem' });
       }
 
       const formattedMessage = {
         id: newMessage.id,
-        conversation_id: dbConversationId,
+        conversation_id: conversationId,
         content: content,
         sender_type: 'professional',
         sender_name: 'Caio Rodrigo',
@@ -537,16 +384,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       };
 
       // ETAPA 3: Invalidate cache after new message
-      await redisCacheService.invalidateConversationDetail(dbConversationId);
+      await redisCacheService.invalidateConversationDetail(conversationId);
       await redisCacheService.invalidateConversationCache(clinicId);
       console.log('🧹 Cache invalidated after new message');
 
       // ETAPA 2: Emit via WebSocket after message creation
       const webSocketServer = getWebSocketServer();
       if (webSocketServer) {
-        await webSocketServer.emitNewMessage(dbConversationId, clinicId, {
+        await webSocketServer.emitNewMessage(conversationId, clinicId, {
           id: newMessage.id,
-          conversation_id: dbConversationId,
+          conversation_id: conversationId,
           content: content,
           sender_type: 'professional',
           sender_name: 'Caio Rodrigo',
