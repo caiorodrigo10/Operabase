@@ -31,42 +31,47 @@ export const PreviewPage: React.FC<PreviewPageProps> = ({ pageId = 'editor2' }) 
   useEffect(() => {
     const loadPageData = async () => {
       try {
+        // Always try localStorage first (most recent data from editor)
+        const savedState = localStorage.getItem('editor2_page_state');
+        if (savedState) {
+          const pageJson: Editor2PageJSON = JSON.parse(savedState);
+          setPageData(pageJson);
+          console.log('📂 Preview loaded from localStorage:', pageJson);
+          return;
+        }
+
+        // Fallback to server data
         const response = await fetch(`/api/load-page-json/${pageId}`);
         const result = await response.json();
         
         if (result.success && result.data) {
           const pageJson: Editor2PageJSON = JSON.parse(result.data);
           setPageData(pageJson);
+          console.log('📂 Preview loaded from server:', pageJson);
         } else {
-          // Try localStorage fallback
-          const savedState = localStorage.getItem('editor2_page_state');
-          if (savedState) {
-            const pageJson: Editor2PageJSON = JSON.parse(savedState);
-            setPageData(pageJson);
-          } else {
-            // Create empty page structure for preview
-            const emptyPage: Editor2PageJSON = {
-              id: 'editor2',
-              version: '1.0.0',
-              metadata: {
-                title: 'Página de Preview',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              },
-              layout: {
-                type: 'grid',
-                columns: 3,
-                gap: 20,
-              },
-              globalSettings: {
-                backgroundColor: '#ffffff',
-                textColor: '#333333',
-                fontFamily: 'Arial, sans-serif',
-              },
-              blocks: [],
-            };
-            setPageData(emptyPage);
-          }
+          // Create empty page structure for preview
+          const emptyPage: Editor2PageJSON = {
+            id: 'editor2',
+            version: '1.0.0',
+            metadata: {
+              title: 'Página de Preview',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            layout: {
+              type: 'grid',
+              columns: 3,
+              gap: 20,
+            },
+            globalSettings: {
+              backgroundColor: '#ffffff',
+              textColor: '#333333',
+              fontFamily: 'Arial, sans-serif',
+            },
+            blocks: [],
+          };
+          setPageData(emptyPage);
+          console.log('📂 Preview using empty page structure');
         }
       } catch (err) {
         console.error('Error loading page for preview:', err);
@@ -187,9 +192,26 @@ export const PreviewPage: React.FC<PreviewPageProps> = ({ pageId = 'editor2' }) 
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">🎨</div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Página em Branco</h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-4">
               Volte ao editor para adicionar conteúdo à sua página
             </p>
+            <p className="text-sm text-gray-500">
+              Para testar: Arraste widgets TÍTULO da sidebar para as colunas no editor
+            </p>
+          </div>
+        )}
+
+        {/* Debug Info */}
+        {pageData.blocks.length > 0 && (
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+            <details>
+              <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                Debug: Dados do Builder ({pageData.blocks.length} blocos)
+              </summary>
+              <pre className="mt-2 text-xs text-gray-600 overflow-auto">
+                {JSON.stringify(pageData, null, 2)}
+              </pre>
+            </details>
           </div>
         )}
       </div>
