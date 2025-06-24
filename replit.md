@@ -174,13 +174,17 @@ SESSION_SECRET=your_session_secret
 - Added support for MIME type detection and proper media categorization (audio/mp3 → audio, image/jpeg → image, application/pdf → document)
 - Backend now returns 6 total attachments across all conversations with proper file metadata
 
-### June 24, 2025 - Calendar Appointment Positioning Complete Fix
+### June 24, 2025 - Calendar System Complete Fix
 - Completely fixed calendar week view appointment positioning bug where appointments appeared cut in half
 - Removed complex collision detection system that was causing false positive overlaps
 - Simplified layout calculation to give all appointments full width by default
 - Eliminated the collision group system that was incorrectly reducing appointment widths
 - All appointments now display correctly with full width regardless of time positioning
 - Fixed multiple appointments (Caio Apfelbaum4, Lucas Ferreira, Maria Oliveira, etc.) that were appearing truncated
+- Enhanced availability popup system with better visibility and status information
+- Fixed rapid disappearing availability indicator by adding proper hover delays and transitions
+- Improved availability messages with color-coded status (green=available, yellow=warning, red=occupied)
+- Added detailed availability status messages for different time slot conditions
 
 ### June 23, 2025 - Media Message System Completion
 - Completed media message system with audio, image, and document support
