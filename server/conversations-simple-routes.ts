@@ -78,9 +78,9 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         }
       });
 
-      // Format for frontend com dados otimizados
+      // Format for frontend com dados otimizados - fix large ID handling
       const formattedConversations = (conversationsData || []).map(conv => ({
-        id: conv.id,
+        id: conv.id.toString(), // Convert to string to preserve large numbers
         clinic_id: conv.clinic_id,
         contact_id: conv.contact_id,
         status: conv.status || 'active',
@@ -154,7 +154,18 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       if (convError || !conversation) {
         console.error('❌ Conversation not found:', convError);
-        return res.status(404).json({ error: 'Conversa não encontrada' });
+        console.error('❌ Searched for ID:', conversationId, 'in clinic:', clinicId);
+        
+        // Debug: Let's check what conversations exist
+        const { data: allConversations } = await supabase
+          .from('conversations')
+          .select('id, contact_id, clinic_id')
+          .eq('clinic_id', clinicId);
+        
+        console.log('🔍 Available conversations:', allConversations);
+      } else {
+        // Conversation found, continue processing
+        console.log('✅ Found conversation:', conversation.id);
       }
 
       // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)

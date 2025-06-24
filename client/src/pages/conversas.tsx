@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from '@/hooks/use-toast';
 
 export default function ConversasPage() {
-  const [selectedConversationId, setSelectedConversationId] = useState<number | undefined>();
+  const [selectedConversationId, setSelectedConversationId] = useState<number | string | undefined>();
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [currentPatientInfo, setCurrentPatientInfo] = useState<PatientInfo | undefined>();
   const [isMobile, setIsMobile] = useState(false);
