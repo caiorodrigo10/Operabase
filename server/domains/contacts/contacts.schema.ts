@@ -1,5 +1,5 @@
 
-import { pgTable, text, serial, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, index, bigint } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -35,6 +35,7 @@ export const contacts = pgTable("contacts", {
 
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
+  conversation_id: bigint("conversation_id", { mode: "bigint" }).notNull().unique(),
   contact_id: integer("contact_id").notNull(),
   clinic_id: integer("clinic_id").notNull(),
   status: text("status").notNull(),
@@ -49,7 +50,7 @@ export const conversations = pgTable("conversations", {
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  conversation_id: integer("conversation_id").notNull(),
+  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.conversation_id),
   sender_type: text("sender_type").notNull(), // patient, ai
   content: text("content").notNull(),
   ai_action: text("ai_action"), // agendou_consulta, enviou_followup, etc

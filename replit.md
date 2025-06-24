@@ -215,6 +215,16 @@ SESSION_SECRET=your_session_secret
 - Timeline now positions at bottom instantly for better user experience
 - Smooth scroll only used for new incoming messages during active chat
 
+### June 24, 2025 - Database Schema Fix: conversation_id Type Change ✅ COMPLETED
+- Successfully changed conversation_id field from text to bigint in PostgreSQL database
+- Updated all Drizzle schema files (shared/schema.ts and server/domains/contacts/contacts.schema.ts)
+- Added bigint import to Drizzle schema imports for proper TypeScript support
+- Fixed foreign key constraints between conversations and messages tables
+- Updated Zod validation schemas to use z.bigint() for conversation_id fields
+- Now fully supports large numeric IDs like 5598876940345511948922493 for WhatsApp integration
+- Resolved "violates foreign key constraint" error that prevented inserting numeric conversation IDs
+- Database tested and confirmed working with PostgreSQL direct connection
+
 ### June 24, 2025 - Conversas com Conteúdo Único Implementado ✅
 - Corrigido problema de mensagens duplicadas entre Lucas Ferreira e Carla Mendes
 - Criadas conversas únicas: Lucas (remarcar consulta), Carla (resultados exames), Pedro (agendamento)

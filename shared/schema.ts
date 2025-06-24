@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index, unique, uuid, vector } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index, unique, uuid, vector, bigint } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -513,7 +513,7 @@ export const conversations = pgTable("conversations", {
 // Tabela de mensagens
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  conversation_id: integer("conversation_id").notNull(),
+  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.conversation_id),
   clinic_id: integer("clinic_id").notNull(),
   
   // Origem da mensagem
@@ -598,7 +598,7 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   status: z.enum(['sent', 'delivered', 'read', 'failed']).default('sent'),
   direction: z.enum(['inbound', 'outbound']),
   clinic_id: z.number().min(1),
-  conversation_id: z.number().min(1),
+  conversation_id: z.bigint(),
 });
 
 export const insertMessageAttachmentSchema = createInsertSchema(message_attachments).omit({
@@ -623,7 +623,7 @@ export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSche
 export const conversation_actions = pgTable("conversation_actions", {
   id: serial("id").primaryKey(),
   clinic_id: integer("clinic_id").notNull(),
-  conversation_id: integer("conversation_id").notNull(),
+  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.conversation_id),
   
   // Tipo de ação
   action_type: varchar("action_type", { length: 50 }).notNull(), // appointment_created, appointment_status_changed, etc
@@ -651,7 +651,7 @@ export const insertConversationActionSchema = createInsertSchema(conversation_ac
 }).extend({
   action_type: z.enum(['appointment_created', 'appointment_status_changed', 'appointment_cancelled', 'contact_created']),
   clinic_id: z.number().min(1),
-  conversation_id: z.number().min(1),
+  conversation_id: z.bigint(),
 });
 
 export type ConversationAction = typeof conversation_actions.$inferSelect;
