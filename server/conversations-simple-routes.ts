@@ -39,7 +39,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           clinic_id,
           contact_id,
           status,
-          created_at: timestamp,
+          created_at,
           updated_at,
           contacts!inner (
             name,
@@ -372,7 +372,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         sender_name: 'Caio Rodrigo',
         direction: 'outbound',
         message_type: 'text',
-        created_at: newMessage.timestamp,
+        timestamp: newMessage.timestamp,
         attachments: []
       };
 
