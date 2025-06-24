@@ -150,23 +150,40 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let conversation, convError;
       
       if (isScientificNotation) {
-        console.log('🔍 Scientific notation detected, finding conversation by contact lookup');
-        // Para IDs científicos, buscar primeiro todas as conversas e fazer match
+        console.log('🔍 Scientific notation detected, finding conversation by robust matching');
+        // Para IDs científicos, buscar primeiro todas as conversas e fazer match robusto
         const { data: allConversations } = await supabase
           .from('conversations')
           .select('*')
           .eq('clinic_id', clinicId);
         
-        // Encontrar conversa que corresponde ao ID científico
+        // Múltiplas estratégias de match para garantir encontrar a conversa correta
+        const paramIdNum = parseFloat(conversationId);
+        
         conversation = allConversations?.find(conv => {
           const convIdStr = conv.id.toString();
-          const paramIdNum = parseFloat(conversationId);
           const convIdNum = parseFloat(convIdStr);
-          return Math.abs(convIdNum - paramIdNum) < 1; // Tolerância para comparação
+          
+          // Estratégia 1: Comparação direta com tolerância
+          if (Math.abs(convIdNum - paramIdNum) < 1) return true;
+          
+          // Estratégia 2: Comparação de strings científicas
+          if (convIdStr === conversationId) return true;
+          
+          // Estratégia 3: Comparação de exponenciais
+          try {
+            const convExp = parseFloat(convIdStr).toExponential();
+            const paramExp = parseFloat(conversationId).toExponential();
+            if (convExp === paramExp) return true;
+          } catch (e) {}
+          
+          return false;
         });
         
         if (!conversation) {
           convError = { message: 'Conversation not found for scientific notation ID' };
+        } else {
+          console.log('✅ Found conversation via robust matching:', conversation.id);
         }
       } else {
         const result = await supabase
@@ -190,15 +207,38 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
       // Elimina problema de performance com conversas muito longas
-      // Fix: Usar sempre o ID real da conversa encontrada no banco
+      // Fix: Usar sempre o ID real da conversa encontrada no banco com busca robusta
       const queryConversationId = actualConversationId;
       
-      const { data: messages, error: msgError } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', queryConversationId)
-        .order('timestamp', { ascending: false })
-        .limit(50); // Paginação: apenas últimas 50 mensagens
+      // Para IDs científicos, usar busca mais robusta que considera precisão numérica
+      let messages, msgError;
+      
+      if (isScientificNotation) {
+        // Busca todas as mensagens e filtra por proximidade numérica
+        const { data: allMessages, error: allMsgError } = await supabase
+          .from('messages')
+          .select('*')
+          .order('timestamp', { ascending: false })
+          .limit(200); // Busca mais para filtrar
+        
+        const targetIdNum = parseFloat(queryConversationId.toString());
+        messages = allMessages?.filter(msg => {
+          const msgIdNum = parseFloat(msg.conversation_id.toString());
+          return Math.abs(msgIdNum - targetIdNum) < 1;
+        }).slice(0, 50); // Limita a 50 após filtrar
+        
+        msgError = allMsgError;
+      } else {
+        const { data: directMessages, error: directError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', queryConversationId)
+          .order('timestamp', { ascending: false })
+          .limit(50);
+        
+        messages = directMessages;
+        msgError = directError;
+      }
 
       if (msgError) {
         console.error('❌ Error fetching messages:', msgError);
