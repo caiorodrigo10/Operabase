@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Save, Code, Eye } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useEditor2Store } from '../../../stores/editor2Store';
 
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [, setLocation] = useLocation();
+  const [showJsonModal, setShowJsonModal] = useState(false);
+  const [jsonContent, setJsonContent] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const { serializeToJSON, deserializeFromJSON, savePageToServer } = useEditor2Store();
 
   const handleBackClick = () => {
     console.log('Navigating to funnels page');
@@ -22,6 +27,41 @@ export const EditorHeader: React.FC = () => {
 
   const handleSettingsClick = () => {
     console.log('Opening settings menu');
+  };
+
+  const handleSave = async () => {
+    const success = await savePageToServer();
+    if (success) {
+      // Visual feedback
+      const button = document.querySelector('[data-save-button]') as HTMLElement;
+      if (button) {
+        const originalText = button.textContent;
+        button.textContent = 'Salvo!';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1500);
+      }
+    }
+  };
+
+  const handleViewJson = () => {
+    const pageJson = serializeToJSON();
+    const formattedJson = JSON.stringify(pageJson, null, 2);
+    setJsonContent(formattedJson);
+    setIsEditing(false);
+    setShowJsonModal(true);
+  };
+
+  const handleSaveJson = () => {
+    try {
+      const parsedJson = JSON.parse(jsonContent);
+      deserializeFromJSON(parsedJson);
+      setShowJsonModal(false);
+      console.log('✅ JSON applied to Editor2');
+    } catch (error) {
+      console.error('❌ Invalid JSON:', error);
+      alert('Erro: JSON inválido. Verifique a sintaxe.');
+    }
   };
 
   return (
@@ -85,6 +125,24 @@ export const EditorHeader: React.FC = () => {
       {/* Right Section */}
       <div className="header-right">
         <button 
+          className="header-button save-button"
+          onClick={handleSave}
+          title="Salvar Página"
+          data-save-button
+        >
+          <Save size={16} />
+          <span>Salvar</span>
+        </button>
+        
+        <button 
+          className="header-button json-button"
+          onClick={handleViewJson}
+          title="Ver JSON"
+        >
+          <Code size={16} />
+        </button>
+        
+        <button 
           className="header-button settings-button"
           onClick={handleSettingsClick}
           title="Configurações"
@@ -92,6 +150,64 @@ export const EditorHeader: React.FC = () => {
           <Settings size={18} />
         </button>
       </div>
+      
+      {/* JSON Modal */}
+      {showJsonModal && (
+        <div className="json-modal-overlay">
+          <div className="json-modal">
+            <div className="json-modal-header">
+              <h3>JSON da Página Editor2</h3>
+              <button 
+                className="json-modal-close"
+                onClick={() => setShowJsonModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="json-modal-content">
+              <textarea
+                className="json-textarea"
+                value={jsonContent}
+                onChange={(e) => setJsonContent(e.target.value)}
+                readOnly={!isEditing}
+                placeholder="JSON da página será exibido aqui..."
+              />
+            </div>
+            <div className="json-modal-footer">
+              <div className="json-modal-actions-left">
+                <button 
+                  className="json-button secondary"
+                  onClick={() => navigator.clipboard.writeText(jsonContent)}
+                >
+                  Copiar JSON
+                </button>
+                <button 
+                  className="json-button secondary"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? 'Apenas Visualizar' : 'Editar JSON'}
+                </button>
+              </div>
+              <div className="json-modal-actions-right">
+                {isEditing && (
+                  <button 
+                    className="json-button primary"
+                    onClick={handleSaveJson}
+                  >
+                    Aplicar JSON
+                  </button>
+                )}
+                <button 
+                  className="json-button secondary"
+                  onClick={() => setShowJsonModal(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

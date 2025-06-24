@@ -41,6 +41,24 @@ export interface PageData {
   };
 }
 
+// JSON Structure for Editor2 Pages
+export interface Editor2PageJSON {
+  id: string;
+  version: string;
+  metadata: {
+    title: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  layout: {
+    type: 'grid' | 'flex';
+    columns: number;
+    gap: number;
+  };
+  globalSettings: GlobalSettings;
+  blocks: Block[];
+}
+
 interface EditorState {
   // Page structure
   currentPage: PageData;
@@ -71,6 +89,12 @@ interface EditorState {
   removeColumn: (blockId: string, columnId: string) => void;
   removeBlock: (blockId: string) => void;
   updateGlobalSettings: (settings: Partial<GlobalSettings>) => void;
+  
+  // JSON Management Actions
+  serializeToJSON: () => Editor2PageJSON;
+  deserializeFromJSON: (json: Editor2PageJSON) => void;
+  loadPageFromServer: () => Promise<boolean>;
+  savePageToServer: () => Promise<boolean>;
 }
 
 export const useEditor2Store = create<EditorState>((set, get) => ({
