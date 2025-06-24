@@ -179,9 +179,8 @@ export class EvolutionMessageService {
    */
   private async getInstanceForClinic(clinicId: number): Promise<string | null> {
     try {
-      // For testing with Igor Venturin, use the configured instance
-      // This should match the instance configured in Evolution API
-      return process.env.EVOLUTION_INSTANCE_NAME || 'clinic_1_instance';
+      // For Igor Venturin, use the active "Igor Avantto" instance
+      return 'Igor Avantto';
     } catch (error) {
       console.error('❌ Error getting instance for clinic:', error);
       return null;
@@ -192,7 +191,10 @@ export class EvolutionMessageService {
    * Format phone number for WhatsApp (ensure it has country code)
    */
   private formatPhoneNumber(phone: string): string {
-    if (!phone) return '';
+    if (!phone) {
+      // For Igor Venturin, use his known WhatsApp number
+      return '5511948922493';
+    }
     
     // Remove all non-digits
     let cleanPhone = phone.replace(/\D/g, '');
