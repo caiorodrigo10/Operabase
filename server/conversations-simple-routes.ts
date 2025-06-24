@@ -407,13 +407,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       let actualConversationId;
       if (isScientificNotation) {
-        // Para Caio Rodrigo com ID científico
+        // Para IDs científicos, usar o ID real da conversa no banco
         if (conversationId === '5.511965860124552e+24') {
-          actualConversationId = '5511965860124551948922493'; // ID real do Caio
+          actualConversationId = '5511965860124552000000000'; // ID científico do Caio
         } else if (conversationId === '5.598876940345512e+24') {
-          actualConversationId = '5598876940345511948922493'; // ID real do Igor
+          actualConversationId = '5598876940345512000000000'; // ID científico do Igor
         } else {
-          actualConversationId = conversationId;
+          // Converter notação científica para número inteiro
+          actualConversationId = parseFloat(conversationId).toString();
         }
       } else {
         actualConversationId = conversationId;
@@ -436,8 +437,20 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .single();
 
       if (error) {
-        console.error('❌ Error inserting message:', error);
-        return res.status(500).json({ error: 'Erro ao enviar mensagem' });
+        console.error('❌ Database error details:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          actualConversationId,
+          conversationId
+        });
+        return res.status(500).json({ 
+          error: 'Erro ao salvar mensagem no banco de dados',
+          details: error.message,
+          hint: error.hint 
+        });
       }
 
       const formattedMessage = {
