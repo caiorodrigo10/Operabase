@@ -223,13 +223,13 @@ SESSION_SECRET=your_session_secret
 - Igor Venturin conversation now loads correctly with 16 messages visible
 - Database returns proper conversation data with messages from WhatsApp integration
 
-### June 24, 2025 - Sistema de Logs de Consultas Funcional ✅
+### June 24, 2025 - Sistema de Notificações de Consultas Funcional ✅
 - **Sistema de Logs Ativo**: Appointments sendo registrados automaticamente na tabela system_logs
-- Logs capturando: entity_type, entity_id, professional_id, clinic_id, new_data completo
-- Tested appointments ID 47 e 48 com logs criados com sucesso (log IDs 13 e 14)
-- Middleware appointmentLogsMiddleware aplicado nas rotas POST/PUT/PATCH/DELETE de appointments
-- Sistema funcionando para todas as novas consultas daqui em diante
-- Pendente: Criação da tabela conversation_actions para notificações nas conversas
+- **Notificações Reais**: Implementado sistema que gera notificações de consulta baseado nos logs reais
+- Consulta 50 do Igor Venturin (contact_id 44) aparece corretamente na conversa
+- Sistema busca logs de appointments por contact_id e gera notificações automáticas
+- Removidas notificações de exemplo, mantendo apenas dados reais
+- 4 notificações geradas para Igor baseadas em logs de appointments ID 49 e 50
 
 ### June 24, 2025 - Sistema de Conversas e WhatsApp ID Científico Resolvido ✅
 - **Problema BigInt Resolvido**: Igor Venturin WhatsApp ID (5.598876940345512e+24) com 21 mensagens funcionando

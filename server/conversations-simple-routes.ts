@@ -278,47 +278,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             console.log(`✅ Generated ${actionNotifications.length} actions from appointment logs for contact ${conversation.contact_id}`);
           }
           
-          // Keep sample actions for Pedro conversation (ID 4) as fallback if no logs
-          if (queryConversationId === 4 && actionNotifications.length === 0) {
-            actionNotifications = [
-              {
-                id: 1,
-                clinic_id: 1,
-                conversation_id: 4,
-                action_type: 'appointment_created',
-                title: 'Consulta agendada',
-                description: 'Consulta agendada para 25/06 às 10:00 com Dr. Caio Rodrigo',
-                metadata: {
-                  appointment_id: 123,
-                  doctor_name: 'Dr. Caio Rodrigo',
-                  date: '25/06',
-                  time: '10:00',
-                  specialty: 'Clínico Geral'
-                },
-                related_entity_type: 'appointment',
-                related_entity_id: 123,
-                timestamp: '2025-06-23T20:30:00Z'
-              },
-              {
-                id: 2,
-                clinic_id: 1,
-                conversation_id: 4,
-                action_type: 'appointment_status_changed',
-                title: 'Status da consulta alterado',
-                description: 'Status da consulta alterado de Agendada para Confirmada',
-                metadata: {
-                  appointment_id: 123,
-                  old_status: 'Agendada',
-                  new_status: 'Confirmada',
-                  doctor_name: 'Dr. Caio Rodrigo'
-                },
-                related_entity_type: 'appointment',
-                related_entity_id: 123,
-                timestamp: '2025-06-23T20:35:00Z'
-              }
-            ];
-            console.log('✅ Created sample actions for Pedro conversation');
-          }
+
         } else if (!actionError) {
           actionNotifications = actionData || [];
         }
