@@ -472,8 +472,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Usar Drizzle ORM para inserir mensagem
       console.log('💾 Inserting message with Drizzle ORM');
       
-      const { db } = await import('../db');
-      const { messages } = await import('../../shared/schema');
+      const { db } = await import('./db');
+      const { messages } = await import('../shared/schema');
       
       let formattedMessage;
       
@@ -604,7 +604,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         message: error.message,
         stack: error.stack,
         requestedId: req.params.id,
-        content
+        content: req.body.content
       });
       res.status(500).json({ 
         error: 'Erro interno do servidor', 
