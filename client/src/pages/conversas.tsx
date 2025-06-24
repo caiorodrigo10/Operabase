@@ -97,7 +97,7 @@ export default function ConversasPage() {
       });
 
       // Add action notifications to timeline
-      if (conversationDetail.actions) {
+      if (conversationDetail.actions && conversationDetail.actions.length > 0) {
         conversationDetail.actions.forEach(action => {
           timeline.push({
             id: action.id + 10000, // Offset to avoid ID conflicts

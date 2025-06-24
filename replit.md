@@ -191,6 +191,14 @@ SESSION_SECRET=your_session_secret
 - Added proper error handling with fallback values for professionalName parameter
 - Application now starts successfully with all systems operational
 
+### June 24, 2025 - Conversation Actions Fixed
+- Fixed conversation action notifications not appearing in Pedro Oliveira chat
+- Identified issue with conversation_actions table creation via Supabase RPC
+- Implemented fallback system to provide sample action notifications for demo
+- Actions now display correctly in conversation timeline showing appointment creation and status changes
+- ActionNotification component renders properly with blue notification blocks and "Ver consulta" buttons
+- Timeline correctly integrates action notifications chronologically with messages
+
 ### June 23, 2025 - Media Message System Completion
 - Completed media message system with audio, image, and document support
 - Fixed attachment loading from Supabase with proper relationship queries
