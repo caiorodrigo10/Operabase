@@ -23,6 +23,7 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
     hoveredElement,
     selectElement,
     setHoveredElement,
+    addWidget,
     isResizing,
     resizingColumnId
   } = useEditor2Store();
