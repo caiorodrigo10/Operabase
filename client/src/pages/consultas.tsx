@@ -1044,19 +1044,7 @@ export function Consultas() {
     
     const overlaps = start1 < end2 && start2 < end1;
     
-    // Debug logging for Caio Apfelbaum4 overlaps
-    if ((event1.contact_id === 1 || event2.contact_id === 1) && 
-        (event1.scheduled_date.includes('2025-06-26') || event2.scheduled_date.includes('2025-06-26'))) {
-      console.log('🔍 Overlap check for Caio:', {
-        event1: { id: event1.id, contact_id: event1.contact_id, date: event1.scheduled_date },
-        event2: { id: event2.id, contact_id: event2.contact_id, date: event2.scheduled_date },
-        start1: new Date(start1),
-        end1: new Date(end1),
-        start2: new Date(start2),
-        end2: new Date(end2),
-        overlaps
-      });
-    }
+
     
     // Cache the result to avoid recalculation
     collisionCache.set(cacheKey, overlaps);
@@ -1102,29 +1090,18 @@ export function Consultas() {
       processedEvents.add(appointment.id.toString());
 
       // Find all events that overlap with this event
-      let foundNewOverlaps = true;
-      while (foundNewOverlaps) {
-        foundNewOverlaps = false;
+      dayAppointments.forEach(otherAppointment => {
+        if (processedEvents.has(otherAppointment.id.toString())) return;
+        if (appointment.id === otherAppointment.id) return; // Skip self
         
-        dayAppointments.forEach(otherAppointment => {
-          if (processedEvents.has(otherAppointment.id.toString())) return;
-          
-          // Check if this event overlaps with ANY event in the current group
-          const overlapsWithGroup = collisionGroup.some(groupEvent => 
-            checkEventsOverlap(groupEvent, otherAppointment)
-          );
+        // Check if this event overlaps with the current appointment
+        if (checkEventsOverlap(appointment, otherAppointment)) {
+          collisionGroup.push(otherAppointment);
+          processedEvents.add(otherAppointment.id.toString());
+        }
+      });
 
-          if (overlapsWithGroup) {
-            collisionGroup.push(otherAppointment);
-            processedEvents.add(otherAppointment.id.toString());
-            foundNewOverlaps = true;
-          }
-        });
-      }
-
-      if (collisionGroup.length > 0) {
-        collisionGroups.push(collisionGroup);
-      }
+      collisionGroups.push(collisionGroup);
     });
 
     // Calculate layout for each event based on collision groups
@@ -1936,20 +1913,7 @@ export function Consultas() {
                           const eventLeftOffset = `calc(${dayColumnWidth} * ${layout.left / 100})`;
                           const finalLeftPosition = `calc(${baseDayPosition} + ${eventLeftOffset} + 2px)`;
                           
-                          // Debug logging for Caio Apfelbaum4 appointment
-                          if (patientName.includes('Caio') && format(aptStart, 'yyyy-MM-dd') === '2025-06-26') {
-                            console.log('🔍 Caio Apfelbaum4 appointment debug:', {
-                              patientName,
-                              dayIndex,
-                              startHour,
-                              startMinutes,
-                              topPosition,
-                              height,
-                              layout,
-                              finalLeftPosition,
-                              eventWidth
-                            });
-                          }
+
                           
                           return (
                             <EventTooltip key={appointment.id} appointment={appointment} patientName={patientName}>
