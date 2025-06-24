@@ -188,7 +188,31 @@ export default function ConversasPage() {
   const handleSendMessage = async (message: string, isNote?: boolean) => {
     if (!selectedConversationId) return;
 
+    // Adicionar mensagem otimista imediatamente
+    const optimisticMessage: TimelineItem = {
+      id: `temp-${Date.now()}`,
+      type: 'message',
+      timestamp: new Date().toISOString(),
+      data: {
+        id: `temp-${Date.now()}`,
+        conversation_id: selectedConversationId,
+        type: 'sent_user',
+        content: message,
+        timestamp: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        sender_name: 'Caio Rodrigo',
+        sender_avatar: undefined,
+        media_type: undefined,
+        media_url: undefined,
+        attachments: []
+      }
+    };
+
+    // Adicionar mensagem otimista ao timeline
+    setTimelineItems(prev => [...prev, optimisticMessage]);
+
     try {
+      // Enviar mensagem em background
       await sendMessage.mutateAsync({
         conversationId: selectedConversationId,
         message: {
@@ -196,11 +220,11 @@ export default function ConversasPage() {
         }
       });
       
-      toast({
-        title: "Mensagem enviada",
-        description: "Sua mensagem foi enviada com sucesso."
-      });
+      // Não mostrar notificação de sucesso
     } catch (error) {
+      // Remover mensagem otimista em caso de erro
+      setTimelineItems(prev => prev.filter(item => item.id !== optimisticMessage.id));
+      
       toast({
         title: "Erro ao enviar mensagem",
         description: "Não foi possível enviar a mensagem. Tente novamente.",

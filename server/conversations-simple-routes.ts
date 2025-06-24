@@ -348,21 +348,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       console.log('📤 Sending message to conversation:', conversationId);
 
-      // Initialize Evolution Message Service
-      const evolutionService = new EvolutionMessageService(storage);
-
-      // Send message via Evolution API to WhatsApp
-      const evolutionResult = await evolutionService.sendTextMessage(conversationId, content);
-      
-      if (!evolutionResult.success) {
-        console.error('❌ Evolution API failed:', evolutionResult.error);
-        return res.status(500).json({ 
-          error: 'Falha ao enviar mensagem via WhatsApp',
-          details: evolutionResult.error 
-        });
-      }
-
-      console.log('✅ WhatsApp message sent successfully');
+      // Primeiro salvar no banco de dados
+      console.log('💾 Saving message to database first for instant UI update');
 
       // Use direct Supabase client
       const { createClient } = await import('@supabase/supabase-js');
@@ -425,12 +412,28 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         console.log('🔗 Message emitted via WebSocket');
       }
 
-      console.log('✅ Message sent successfully to WhatsApp and saved to database');
+      // Enviar para WhatsApp em background (não bloquear resposta)
+      setImmediate(async () => {
+        try {
+          const evolutionService = new EvolutionMessageService(storage);
+          const evolutionResult = await evolutionService.sendTextMessage(conversationId, content);
+          
+          if (evolutionResult.success) {
+            console.log('✅ WhatsApp message sent successfully in background');
+          } else {
+            console.error('❌ Background WhatsApp send failed:', evolutionResult.error);
+          }
+        } catch (error) {
+          console.error('❌ Background WhatsApp send error:', error);
+        }
+      });
+
+      console.log('✅ Message saved to database, WhatsApp sending in background');
 
       res.status(201).json({ 
         success: true,
         message: formattedMessage,
-        whatsapp_sent: true
+        whatsapp_sending: true
       });
 
     } catch (error) {

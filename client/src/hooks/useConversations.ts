@@ -103,18 +103,16 @@ export function useSendMessage() {
     onSuccess: (data, variables) => {
       console.log('✅ Message sent successfully:', data);
       
-      // Invalidar mensagens da conversa específica para recarregar
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations-simple', variables.conversationId] 
-      });
-      
       // Invalidar lista de conversas para atualizar contadores e última mensagem
       queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
       
-      // Forçar refetch imediato
-      queryClient.refetchQueries({ 
-        queryKey: ['/api/conversations-simple', variables.conversationId] 
-      });
+      // Invalidar mensagens da conversa específica após um pequeno delay
+      // para garantir que o backend processou completamente
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple', variables.conversationId] 
+        });
+      }, 500);
     },
     onError: (error) => {
       console.error('❌ Error sending message:', error);
