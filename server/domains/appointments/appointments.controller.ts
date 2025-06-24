@@ -123,13 +123,13 @@ export class AppointmentsController {
       
       const appointment = await this.service.createAppointment(createData);
 
-      // Log the appointment creation
-      const userId = (req as any).user?.id;
-      const userName = (req as any).user?.name;
-      console.log('📝 Logging appointment creation with user:', { userId, userName });
+      // Log the appointment creation with detailed context
+      const userId = (req as any).user?.id || (req as any).session?.user?.id;
+      const userName = (req as any).user?.name || (req as any).session?.user?.name;
+      console.log('📝 Logging appointment creation with user:', { userId, userName, appointment: appointment.id });
       
       try {
-        await systemLogsService.logAppointmentAction(
+        const logResult = await systemLogsService.logAppointmentAction(
           'created',
           appointment.id,
           appointment.clinic_id,
@@ -147,9 +147,10 @@ export class AppointmentsController {
             session_id: req.sessionID
           }
         );
-        console.log('✅ Appointment log created successfully');
+        console.log('✅ Appointment log created successfully with ID:', logResult?.id);
       } catch (logError) {
         console.error('❌ Error logging appointment:', logError);
+        console.error('❌ Log error stack:', logError.stack);
       }
 
       // Create action notification for the conversation
