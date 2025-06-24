@@ -28,7 +28,6 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           status,
           created_at,
           updated_at,
-          unread_count,
           contacts!inner (
             name,
             phone,
@@ -81,7 +80,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         last_message: lastMessageMap[conv.id]?.content || '',
         last_message_at: lastMessageMap[conv.id]?.created_at || conv.updated_at,
         total_messages: 0, // Será calculado se necessário
-        unread_count: conv.unread_count || 0
+        unread_count: 0 // Será calculado dinamicamente quando necessário
       }));
       
       res.json({
@@ -152,13 +151,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       const allAttachments = attachments || [];
 
-      console.log('📨 Found messages:', messages?.length || 0);
+      console.log('📨 Found messages:', sortedMessages.length);
       console.log('📎 Found attachments:', allAttachments.length);
+
+      // ETAPA 1: Otimização de mapeamento de attachments 
+      // Map otimizado para lookup O(1) em vez de nested loops
+      const attachmentMap = new Map();
+      allAttachments.forEach(attachment => {
+        const messageId = attachment.message_id;
+        if (!attachmentMap.has(messageId)) {
+          attachmentMap.set(messageId, []);
+        }
+        attachmentMap.get(messageId).push(attachment);
+      });
 
       // Get action notifications from database
       let actionNotifications = [];
       try {
-        // Try to load from database first
         const { data: actionData, error: actionError } = await supabase
           .from('conversation_actions')
           .select('*')
@@ -167,11 +176,9 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .order('created_at', { ascending: true });
 
         if (actionError && (actionError.code === '42P01' || actionError.message?.includes('does not exist'))) {
-          // Table doesn't exist, create sample actions directly for Pedro's conversation
           console.log('🔧 Table conversation_actions does not exist, creating sample actions...');
           
           if (conversationId === 4) {
-            // Since we can't create the table via RPC, provide hardcoded sample actions for demo
             actionNotifications = [
               {
                 id: 1,
@@ -216,24 +223,22 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         }
       } catch (error) {
         console.error('❌ Error handling action notifications:', error);
-        // Fallback to empty array
         actionNotifications = [];
       }
 
       console.log('📋 Found actions:', actionNotifications.length);
 
-      // Format messages for frontend
-      const formattedMessages = (messages || []).map(msg => {
-        // Find attachments for this message
-        const msgAttachments = allAttachments.filter(att => att.message_id === msg.id);
+      // ETAPA 1: Format messages com Map otimizado - elimina filter() loops
+      const finalFormattedMessages = sortedMessages.map(msg => {
+        const msgAttachments = attachmentMap.get(msg.id) || [];
         
         // Determine message type based on attachments
         let messageType = 'text';
         if (msgAttachments.length > 0) {
           const attachment = msgAttachments[0];
-          if (attachment.file_type.startsWith('image/')) messageType = 'image';
-          else if (attachment.file_type.startsWith('audio/')) messageType = 'audio';
-          else if (attachment.file_type.startsWith('video/')) messageType = 'video';
+          if (attachment.file_type?.startsWith('image/')) messageType = 'image';
+          else if (attachment.file_type?.startsWith('audio/')) messageType = 'audio';
+          else if (attachment.file_type?.startsWith('video/')) messageType = 'video';
           else messageType = 'document';
         }
 
@@ -246,14 +251,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                       msg.sender_type === 'ai' ? 'Mara AI' : 'Paciente',
           direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
           message_type: messageType,
-          created_at: msg.timestamp,
+          created_at: msg.created_at || msg.timestamp,
           attachments: msgAttachments
         };
       });
 
       res.json({
         conversation: conversation,
-        messages: formattedMessages,
+        messages: finalFormattedMessages,
         actions: actionNotifications
       });
 

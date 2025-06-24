@@ -64,17 +64,9 @@ export default function ConversasPage() {
     }));
   };
 
-  // Convert backend messages and actions to timeline format
+  // ETAPA 1: Process conversation detail with optimized checks
   useEffect(() => {
-    console.log('📊 Processing conversation detail:', {
-      hasDetail: !!conversationDetail,
-      detailId: conversationDetail?.conversation.id,
-      selectedId: selectedConversationId,
-      matches: conversationDetail?.conversation.id === selectedConversationId
-    });
-    
     if (conversationDetail?.messages && conversationDetail.conversation.id === selectedConversationId) {
-      console.log('✅ Processing timeline for conversation:', selectedConversationId);
       const timeline: TimelineItem[] = [];
       
       // Add messages to timeline
@@ -128,21 +120,14 @@ export default function ConversasPage() {
   }, [conversationDetail, selectedConversationId]);
 
   const handleConversationSelect = async (conversationId: number) => {
-    console.log('🔄 Conversation select:', { from: selectedConversationId, to: conversationId });
-    
     // Prevent selecting the same conversation
     if (conversationId === selectedConversationId) {
-      console.log('⚠️ Same conversation selected, ignoring');
       return;
     }
     
-    // Clear current timeline and patient info first
-    console.log('🧹 Clearing timeline and patient info');
+    // ETAPA 1: Clear state efficiently before transition
     setTimelineItems([]);
     setCurrentPatientInfo(undefined);
-    
-    // Set new conversation ID
-    console.log('📝 Setting new conversation ID:', conversationId);
     setSelectedConversationId(conversationId);
     
     // Create patient info from conversation data

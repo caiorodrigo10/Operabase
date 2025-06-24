@@ -39,7 +39,7 @@ export function useConversations(status: string = 'active', limit: number = 50) 
       }
       return response.json() as Promise<ConversationsResponse>;
     },
-    staleTime: 30000, // 30 segundos
+    staleTime: 60000, // ETAPA 1: Cache lista otimizado - 1 minuto
   });
 }
 
@@ -55,8 +55,8 @@ export function useConversationDetail(conversationId: number | null) {
       return response.json() as Promise<ConversationDetailResponse>;
     },
     enabled: !!conversationId,
-    staleTime: 5000, // 5 segundos
-    gcTime: 0, // Force fresh data on conversation change
+    staleTime: 30000, // ETAPA 1: Cache otimizado - 30 segundos para reduzir requests
+    gcTime: 5 * 60 * 1000, // 5 minutos de cache em garbage collection
   });
 }
 
