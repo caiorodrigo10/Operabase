@@ -472,12 +472,50 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         }
       });
 
+      // Enviar para Evolution API em background
+      let whatsappSent = false;
+      if (conversation?.contacts?.phone) {
+        setImmediate(async () => {
+          try {
+            console.log('📤 Sending to Evolution API...');
+            
+            const evolutionUrl = process.env.EVOLUTION_API_URL;
+            const evolutionApiKey = process.env.EVOLUTION_API_KEY;
+            const instanceName = 'Igor Avantto';
+            
+            const evolutionPayload = {
+              number: conversation.contacts.phone,
+              text: content
+            };
+
+            const response = await fetch(`${evolutionUrl}/message/sendText/${instanceName}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': evolutionApiKey
+              },
+              body: JSON.stringify(evolutionPayload)
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log('✅ WhatsApp message sent successfully:', result);
+            } else {
+              const error = await response.text();
+              console.error('❌ Evolution API error:', error);
+            }
+          } catch (error) {
+            console.error('❌ Evolution API send error:', error);
+          }
+        });
+      }
+
       console.log('✅ Message saved to database, WhatsApp sending in background');
 
       res.status(201).json({ 
         success: true,
         message: formattedMessage,
-        whatsapp_sending: true
+        sent_to_whatsapp: !!conversation?.contacts?.phone
       });
 
     } catch (error) {

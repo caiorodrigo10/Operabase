@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message } from "@/types/conversations";
-import { Bot, Settings, FileText } from "lucide-react";
+import { Bot, Settings, FileText, Check, CheckCheck, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaMessage } from "./MediaMessage";
 

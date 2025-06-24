@@ -238,17 +238,63 @@ export default function ConversasPage() {
   const handleSendMessage = async (messageContent: string, isNote = false) => {
     if (!selectedConversationId || !messageContent.trim()) return;
 
-    console.log('📤 ConversasPage: Sending message:', messageContent);
-    console.log('📤 To conversation:', selectedConversationId);
+    const tempId = `temp-${Date.now()}`;
+
+    // 1. Adicionar mensagem otimista imediatamente na UI
+    const optimisticMessage: TimelineItem = {
+      id: tempId,
+      type: 'message',
+      timestamp: new Date().toISOString(),
+      data: {
+        id: tempId,
+        conversation_id: selectedConversationId,
+        type: 'sent_user',
+        content: messageContent,
+        timestamp: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        sender_name: 'Caio Rodrigo',
+        sender_avatar: undefined,
+        media_type: undefined,
+        media_url: undefined,
+        attachments: [],
+        status: 'sending' // Status para indicar que está enviando
+      }
+    };
+
+    setTimelineItems(prev => [...prev, optimisticMessage]);
 
     try {
+      // 2. Enviar para backend (salva no banco + Evolution API)
       const result = await sendMessage.mutateAsync({
         conversationId: selectedConversationId,
         message: { content: messageContent }
       });
-      console.log('✅ Message sent successfully:', result);
+
+      // 3. Atualizar mensagem com dados reais do servidor
+      setTimelineItems(prev => prev.map(item => 
+        item.id === tempId ? {
+          ...item,
+          id: result.message.id,
+          data: {
+            ...item.data,
+            id: result.message.id,
+            status: result.sent_to_whatsapp ? 'sent' : 'sent_db_only'
+          }
+        } : item
+      ));
+
     } catch (error) {
-      console.error('❌ Error sending message:', error);
+      // 4. Em caso de erro, marcar mensagem com erro
+      setTimelineItems(prev => prev.map(item => 
+        item.id === tempId ? {
+          ...item,
+          data: {
+            ...item.data,
+            status: 'error'
+          }
+        } : item
+      ));
+
       toast({
         title: "Erro",
         description: "Não foi possível enviar a mensagem",
