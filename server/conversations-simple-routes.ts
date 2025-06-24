@@ -53,9 +53,9 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Batch load últimas mensagens
       const { data: lastMessages } = await supabase
         .from('messages')
-        .select('conversation_id, content, created_at')
+        .select('conversation_id, content, timestamp')
         .in('conversation_id', conversationIds)
-        .order('created_at', { ascending: false });
+        .order('timestamp', { ascending: false });
       
       // Agrupa por conversation_id para pegar a última mensagem
       const lastMessageMap = {};
@@ -78,7 +78,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         contact_email: conv.contacts?.email || '',
         contact_status: conv.contacts?.status || 'active',
         last_message: lastMessageMap[conv.id]?.content || '',
-        last_message_at: lastMessageMap[conv.id]?.created_at || conv.updated_at,
+        last_message_at: lastMessageMap[conv.id]?.timestamp || conv.updated_at,
         total_messages: 0, // Será calculado se necessário
         unread_count: 0 // Será calculado dinamicamente quando necessário
       }));
@@ -130,7 +130,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: false })
+        .order('timestamp', { ascending: false })
         .limit(50); // Paginação: apenas últimas 50 mensagens
 
       if (msgError) {
@@ -251,7 +251,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                       msg.sender_type === 'ai' ? 'Mara AI' : 'Paciente',
           direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
           message_type: messageType,
-          created_at: msg.created_at || msg.timestamp,
+          created_at: msg.timestamp,
           attachments: msgAttachments
         };
       });
