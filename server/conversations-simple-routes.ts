@@ -475,17 +475,46 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Solução definitiva: usar contact_id como conversation_id
-        // Isso resolve problemas de foreign key e precisão para IDs científicos
-        // As mensagens AI usam este padrão e funcionam perfeitamente
+        // Resolver foreign key definitivamente: usar contact_id e garantir que existe na tabela conversations
         const contactId = actualConversation.contact_id;
-        console.log('💾 Using contact_id as conversation_id (AI message pattern):', contactId);
-        console.log('💾 This resolves foreign key constraint issues with scientific notation IDs');
+        console.log('💾 Using contact_id as conversation_id:', contactId);
+        
+        // Verificar se existe registro na tabela conversations para este contact_id
+        const { data: existingConversation } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('id', contactId)
+          .single();
+        
+        if (!existingConversation) {
+          console.log('💾 Creating conversation record for contact_id:', contactId);
+          const { error: createError } = await supabase
+            .from('conversations')
+            .insert({
+              id: contactId,
+              clinic_id: 1,
+              contact_id: contactId,
+              status: 'active',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (createError) {
+            console.error('❌ Error creating conversation:', createError);
+            throw new Error(`Failed to create conversation: ${createError.message}`);
+          }
+          
+          console.log('✅ Conversation record created successfully');
+        } else {
+          console.log('✅ Conversation already exists for contact_id:', contactId);
+        }
+        
+        const useConversationId = contactId;
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
-            conversation_id: contactId,
+            conversation_id: useConversationId,
             sender_type: 'professional',
             content: content
           })
