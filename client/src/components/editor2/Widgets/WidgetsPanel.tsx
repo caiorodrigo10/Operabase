@@ -9,13 +9,13 @@ interface WidgetsPanelProps {
 
 export const WidgetsPanel: React.FC<WidgetsPanelProps> = ({ isOpen, onClose }) => {
   const widgets = [
-    { icon: <Type size={32} />, label: 'TÍTULO' },
-    { icon: <AlignLeft size={32} />, label: 'TEXTO' },
-    { icon: <Square size={32} />, label: 'BOTÃO' },
-    { icon: <Container size={32} />, label: 'CONTAINER' },
-    { icon: <Minus size={32} />, label: 'ESPAÇO' },
-    { icon: <Image size={32} />, label: 'IMAGEM' },
-    { icon: <Play size={32} />, label: 'VÍDEO' }
+    { icon: <Type size={32} />, label: 'TÍTULO', isAvailable: true, widgetType: 'title' },
+    { icon: <AlignLeft size={32} />, label: 'TEXTO', isAvailable: false },
+    { icon: <Square size={32} />, label: 'BOTÃO', isAvailable: false },
+    { icon: <Container size={32} />, label: 'CONTAINER', isAvailable: false },
+    { icon: <Minus size={32} />, label: 'ESPAÇO', isAvailable: false },
+    { icon: <Image size={32} />, label: 'IMAGEM', isAvailable: false },
+    { icon: <Play size={32} />, label: 'VÍDEO', isAvailable: false }
   ];
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -24,8 +24,12 @@ export const WidgetsPanel: React.FC<WidgetsPanelProps> = ({ isOpen, onClose }) =
     }
   };
 
-  const handleWidgetClick = (label: string) => {
-    console.log(`Widget ${label} clicked - Em Breve`);
+  const handleWidgetClick = (label: string, isAvailable: boolean) => {
+    if (isAvailable) {
+      console.log(`Widget ${label} clicked - Available`);
+    } else {
+      console.log(`Widget ${label} clicked - Em Breve`);
+    }
   };
 
   React.useEffect(() => {
@@ -75,9 +79,9 @@ export const WidgetsPanel: React.FC<WidgetsPanelProps> = ({ isOpen, onClose }) =
               key={index}
               icon={widget.icon}
               label={widget.label}
-              isAvailable={widget.isAvailable}
-              draggable={widget.isAvailable}
-              onClick={() => handleWidgetClick(widget.label)}
+              isAvailable={widget.isAvailable || false}
+              draggable={widget.isAvailable || false}
+              onClick={() => handleWidgetClick(widget.label, widget.isAvailable || false)}
               onDragStart={(e) => {
                 if (widget.widgetType) {
                   e.dataTransfer.setData('widget-type', widget.widgetType);

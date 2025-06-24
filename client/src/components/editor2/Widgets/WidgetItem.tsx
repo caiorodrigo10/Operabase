@@ -4,6 +4,10 @@ interface WidgetItemProps {
   icon: React.ReactNode;
   label: string;
   onClick?: () => void;
+  isAvailable?: boolean;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
 export const WidgetItem: React.FC<WidgetItemProps> = ({ 
@@ -15,6 +19,8 @@ export const WidgetItem: React.FC<WidgetItemProps> = ({
   onDragStart,
   onDragEnd
 }) => {
+  console.log(`WidgetItem ${label}: isAvailable=${isAvailable}, draggable=${draggable}`);
+  
   return (
     <div 
       className={`widget-item ${isAvailable ? 'available' : 'coming-soon'} ${draggable ? 'draggable' : ''}`}
@@ -22,6 +28,10 @@ export const WidgetItem: React.FC<WidgetItemProps> = ({
       draggable={draggable && isAvailable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      style={{
+        cursor: isAvailable && draggable ? 'grab' : 'pointer',
+        opacity: isAvailable ? 1 : 0.7
+      }}
     >
       <div className="widget-item-content">
         <div className="widget-icon">
