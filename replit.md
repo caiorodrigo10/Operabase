@@ -338,13 +338,15 @@ SESSION_SECRET=your_session_secret
 - Documentação completa atualizada incluindo integração Supabase Storage
 - Sistema de upload, visualização e armazenamento totalmente documentado
 
-### June 25, 2025 - Sistema de Upload Interface Web CORRIGIDO COMPLETAMENTE ✅
+### June 25, 2025 - Sistema de Upload e Horário CORRIGIDO DEFINITIVAMENTE ✅
 - Identificado bug real: Layout Desktop (3-column) não passava selectedConversationId
 - Corrigido: MainConversationArea em layout Desktop agora recebe selectedConversationId
 - ConversationId agora chega corretamente no backend (5511965860124551150391104)
 - Corrigido erro backend: adicionado método updateMessage no IStorage e PostgreSQLStorage
 - Método updateMessage implementado para atualizar evolution_status e whatsapp_message_id
-- Sistema de upload completamente funcional: frontend + backend + storage
+- Corrigido problema de fuso horário: mensagens agora salvas com horário correto GMT-3 (Brasil)
+- Sistema ajustado para horário de Brasília em envio de mensagens e uploads
+- Sistema de upload completamente funcional: frontend + backend + storage + horário correto
 
 ### June 25, 2025 - Sistema de Upload Completo Implementado ✅
 - Implementado FileUploadModal com drag-and-drop e preview de arquivos

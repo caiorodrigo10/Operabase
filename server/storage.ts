@@ -177,6 +177,7 @@ export interface IStorage {
   // Upload system methods
   getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined>;
   createMessage(message: any): Promise<any>;
+  updateMessage(messageId: number, updates: any): Promise<any>;
   createAttachment(attachment: any): Promise<any>;
   getActiveWhatsAppInstance(clinicId: number): Promise<any>;
   getConversationById(id: string): Promise<any>;

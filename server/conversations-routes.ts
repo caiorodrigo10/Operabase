@@ -324,7 +324,11 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
         direction: 'inbound' as const,
         whatsapp_data: whatsappData,
         external_id: whatsappData?.id,
-        sent_at: new Date()
+        sent_at: (() => {
+          const brasilTime = new Date();
+          brasilTime.setHours(brasilTime.getHours() - 3);
+          return brasilTime;
+        })()
       };
 
       const newMessage = await storage.db
