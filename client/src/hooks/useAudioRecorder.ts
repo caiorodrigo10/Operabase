@@ -48,13 +48,18 @@ export function useAudioRecorder(): AudioRecorderHook {
 
   // Start recording
   const startRecording = useCallback(async () => {
+    console.log('🎵 Starting audio recording...');
+    
     if (!isSupported) {
-      setError('Gravação de áudio não é suportada neste navegador');
+      const errorMsg = 'Gravação de áudio não é suportada neste navegador';
+      console.error('❌', errorMsg);
+      setError(errorMsg);
       return;
     }
 
     try {
       setError(null);
+      console.log('🎤 Requesting microphone access...');
       
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -64,6 +69,8 @@ export function useAudioRecorder(): AudioRecorderHook {
           autoGainControl: true,
         }
       });
+      
+      console.log('✅ Microphone access granted');
       
       streamRef.current = stream;
       chunksRef.current = [];
@@ -117,11 +124,24 @@ export function useAudioRecorder(): AudioRecorderHook {
       startTimer();
 
     } catch (err) {
-      console.error('Error starting recording:', err);
+      console.error('❌ Error starting recording:', err);
+      console.error('❌ Error details:', {
+        name: err instanceof Error ? err.name : 'Unknown',
+        message: err instanceof Error ? err.message : String(err)
+      });
+      
       if (err instanceof Error && err.name === 'NotAllowedError') {
-        setError('Permissão de microfone negada. Permita o acesso ao microfone e tente novamente.');
+        const errorMsg = 'Permissão de microfone negada. Permita o acesso ao microfone e tente novamente.';
+        console.error('🚫 Permission denied:', errorMsg);
+        setError(errorMsg);
+      } else if (err instanceof Error && err.name === 'NotFoundError') {
+        const errorMsg = 'Microfone não encontrado. Verifique se há um microfone conectado.';
+        console.error('🎤 No microphone:', errorMsg);
+        setError(errorMsg);
       } else {
-        setError('Erro ao acessar o microfone');
+        const errorMsg = `Erro ao acessar o microfone: ${err instanceof Error ? err.message : String(err)}`;
+        console.error('💥 Generic error:', errorMsg);
+        setError(errorMsg);
       }
       setRecordingState('idle');
     }

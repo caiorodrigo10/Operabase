@@ -123,14 +123,20 @@ export function MainConversationArea({
 
   // Audio recording handlers
   const handleMicrophoneClick = async () => {
+    console.log('🎤 Microphone button clicked');
+    console.log('🎤 Audio supported:', isAudioSupported);
+    console.log('🎤 Current recording state:', recordingState);
+    
     if (!isAudioSupported) {
       console.error('❌ Audio recording not supported');
       return;
     }
 
     if (recordingState === 'idle') {
+      console.log('🎤 Starting recording...');
       await startRecording();
     } else if (recordingState === 'recording') {
+      console.log('🎤 Stopping recording...');
       stopRecording();
     }
   };
