@@ -58,6 +58,16 @@ export function MainConversationArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [showAudioPreview, setShowAudioPreview] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
     if (messagesEndRef.current && timelineItems.length > 0) {
@@ -65,6 +75,24 @@ export function MainConversationArea({
       messagesEndRef.current.scrollIntoView({ behavior: "instant" });
     }
   }, [timelineItems]);
+
+  // Cleanup audio resources on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [mediaRecorder, audioUrl]);
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
@@ -108,12 +136,84 @@ export function MainConversationArea({
   };
 
   // Handle audio recording sent from AudioRecorder component
-  const handleSendAudio = async (audioBlob: Blob) => {
-    if (!selectedConversationId) {
-      console.error('❌ No conversation selected for audio upload');
-      return;
+  const handleMicrophoneClick = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
     }
+  };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        } 
+      });
+      
+      streamRef.current = stream;
+      
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+      
+      const chunks: BlobPart[] = [];
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
+        setAudioBlob(blob);
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+        setShowAudioPreview(true);
+        
+        // Stop all tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+      };
+      
+      setMediaRecorder(recorder);
+      recorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Start timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Erro ao iniciar gravação. Verifique as permissões do microfone.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
+    
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    
+    setIsRecording(false);
+  };
+
+  const handleSendAudio = async () => {
+    if (!audioBlob || !selectedConversationId) return;
+    
     try {
       console.log('🎤 Uploading audio blob:', {
         size: audioBlob.size,
@@ -132,7 +232,7 @@ export function MainConversationArea({
       
       formData.append('file', audioFile);
       formData.append('sendToWhatsApp', 'true');
-      formData.append('messageType', 'voice'); // Indicate it's a voice message
+      formData.append('messageType', 'voice');
       formData.append('caption', 'Mensagem de voz');
 
       // Upload audio to conversation
@@ -150,6 +250,9 @@ export function MainConversationArea({
       const result = await response.json();
       console.log('✅ Audio upload successful:', result);
 
+      // Reset audio state
+      resetAudioState();
+
       // Scroll to new message
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -157,40 +260,29 @@ export function MainConversationArea({
 
     } catch (error) {
       console.error('❌ Error uploading audio:', error);
+      alert('Erro ao enviar áudio. Tente novamente.');
     }
   };
 
-  // Audio recording functions
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: noiseReduction,
-          autoGainControl: true,
-          sampleRate: audioQuality === 'high' ? 48000 : audioQuality === 'medium' ? 44100 : 22050
-        }
-      });
+  const resetAudioState = () => {
+    setAudioBlob(null);
+    setShowAudioPreview(false);
+    setRecordingTime(0);
+    
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+  };
 
-      // FASE 3: Setup audio analysis for real-time volume monitoring
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyserNode = audioCtx.createAnalyser();
-      analyserNode.fftSize = 256;
-      source.connect(analyserNode);
-      
-      setAudioContext(audioCtx);
-      setAnalyser(analyserNode);
-      
-      // Start volume monitoring
-      const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-      const updateVolume = () => {
-        if (analyserNode && isRecording) {
-          analyserNode.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
-          setVolumeLevel(average / 255);
-          requestAnimationFrame(updateVolume);
-        }
+  const handleCancelAudio = () => {
+    resetAudioState();
+  };
       };
       updateVolume();
 
@@ -472,12 +564,15 @@ export function MainConversationArea({
             />
           </div>
 
-          <div className="flex-shrink-0 relative">
-            <AudioRecorder 
-              onSendAudio={handleSendAudio}
-              className=""
-            />
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10"
+            title="Gravar áudio"
+            onClick={handleMicrophoneClick}
+          >
+            <Mic className="w-4 h-4" />
+          </Button>
 
           <Button
             onClick={handleSendMessage}
