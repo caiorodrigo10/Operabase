@@ -42,8 +42,10 @@ export function useUpload() {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Erro no upload' }));
-        throw new Error(error.error || `HTTP ${response.status}`);
+        const errorText = await response.text();
+        console.error(`❌ Upload failed with status ${response.status}:`, errorText);
+        const error = JSON.parse(errorText || '{}').error || errorText || `HTTP ${response.status}`;
+        throw new Error(error);
       }
 
       const result = await response.json();
@@ -66,6 +68,7 @@ export function useUpload() {
     },
     onError: (error) => {
       console.error('❌ Upload failed:', error);
+      console.error('Upload error:', error);
     }
   });
 }
