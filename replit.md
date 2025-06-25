@@ -315,6 +315,8 @@ SESSION_SECRET=your_session_secret
 - Sistema de upload backend e frontend implementado
 - Botão de anexo temporariamente revertido para evitar erros de interface
 - Infraestrutura completa preparada para sistema de arquivos
+- Migração de anexos existentes executada com sucesso para o Supabase Storage
+- Anexos migrados com estrutura organizada e URLs assinadas válidas
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
