@@ -196,18 +196,30 @@ export class ConversationUploadService {
     const category = this.getCategoryFromMime(params.mimeType);
     const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${params.filename}`;
 
-    const result = await this.supabaseStorage.uploadFileLegacy(
-      params.file,
-      storagePath,
-      params.mimeType
-    );
+    // Upload direto usando Supabase sem service intermediário
+    const supabase = this.supabaseStorage['supabase'];
+    const bucketName = 'conversation-attachments';
+    
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(storagePath, params.file, {
+        contentType: params.mimeType,
+        upsert: true
+      });
 
-    const signedUrl = await this.supabaseStorage.createSignedUrl(storagePath, 24 * 60 * 60); // 24 hours
+    if (error) {
+      console.error('❌ Erro no upload direto:', error);
+      throw new Error(`Erro no upload: ${error.message}`);
+    }
+
+    console.log('✅ Upload direto realizado com sucesso:', data.path);
+
+    const signedUrl = await this.supabaseStorage.createSignedUrl(storagePath);
     
     return {
       storage_path: storagePath,
       signed_url: signedUrl,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
     };
   }
 
