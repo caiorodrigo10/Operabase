@@ -1,43 +1,44 @@
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * Middleware de autenticação para N8N via API Key
- * Valida se a API key está presente e é válida
+ * Middleware de validação para requisições N8N
+ * Valida se os parâmetros obrigatórios estão presentes
  */
-export const validateN8NApiKey = (req: Request, res: Response, next: NextFunction) => {
-  const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+export const validateN8NRequest = (req: Request, res: Response, next: NextFunction) => {
+  // Verificar parâmetros obrigatórios
+  const conversationId = req.headers['x-conversation-id'] || req.body?.conversationId;
+  const clinicId = req.headers['x-clinic-id'] || req.body?.clinicId;
   
-  if (!apiKey) {
-    console.error('❌ N8N API Key missing in request');
-    return res.status(401).json({
+  if (!conversationId) {
+    console.error('❌ Missing conversation ID in N8N request');
+    return res.status(400).json({
       success: false,
-      error: 'API Key required',
-      message: 'Header x-api-key or Authorization Bearer token is required'
+      error: 'Missing conversation ID',
+      message: 'Header x-conversation-id or body.conversationId required'
     });
   }
 
-  // Validar contra API key configurada no ambiente
-  const validApiKey = process.env.N8N_API_KEY;
-  
-  if (!validApiKey) {
-    console.error('❌ N8N_API_KEY not configured in environment');
-    return res.status(500).json({
+  if (!clinicId) {
+    console.error('❌ Missing clinic ID in N8N request');
+    return res.status(400).json({
       success: false,
-      error: 'Server configuration error',
-      message: 'N8N API Key not configured'
+      error: 'Missing clinic ID', 
+      message: 'Header x-clinic-id or body.clinicId required'
     });
   }
 
-  if (apiKey !== validApiKey) {
-    console.error('❌ Invalid N8N API Key provided');
-    return res.status(401).json({
+  // Validar se clinic_id é um número válido
+  const clinicIdNum = parseInt(clinicId.toString());
+  if (isNaN(clinicIdNum) || clinicIdNum < 1) {
+    console.error('❌ Invalid clinic ID:', clinicId);
+    return res.status(400).json({
       success: false,
-      error: 'Invalid API Key',
-      message: 'The provided API Key is not valid'
+      error: 'Invalid clinic ID',
+      message: 'Clinic ID must be a valid positive number'
     });
   }
 
-  console.log('✅ N8N API Key validated successfully');
+  console.log('✅ N8N request parameters validated successfully');
   next();
 };
 
