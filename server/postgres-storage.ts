@@ -2144,6 +2144,7 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log('🔍 Getting conversation with contact data for ID:', id);
       
+      // Tentar primeiro como número simples
       const conversationIdNum = parseInt(id);
       if (!isNaN(conversationIdNum)) {
         const result = await db.execute(sql`
@@ -2177,6 +2178,7 @@ export class PostgreSQLStorage implements IStorage {
         }
       }
       
+      // Se não encontrou como número, tentar buscar por ID como string grande
       const result = await db.execute(sql`
         SELECT 
           c.*,
@@ -2186,7 +2188,7 @@ export class PostgreSQLStorage implements IStorage {
           ct.email as contact_email
         FROM conversations c
         LEFT JOIN contacts ct ON c.contact_id = ct.id
-        WHERE c.conversation_id = ${id}
+        WHERE CAST(c.id AS TEXT) = ${id}
       `);
       
       if (result.rows[0]) {
