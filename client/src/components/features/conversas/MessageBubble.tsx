@@ -108,9 +108,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             })()}
           </span>
           
-          {/* Indicador de falha na Evolution API para mensagens enviadas */}
+          {/* Indicador de falha na Evolution API apenas para mensagens confirmadamente falhadas */}
           {!isReceived && !isNote && message.evolution_status === 'failed' && (
-            <AlertTriangle className="w-3 h-3 text-red-500" title="Falha no envio via WhatsApp" />
+            <AlertTriangle className="w-3 h-3 text-red-500" title="Falha confirmada no envio via WhatsApp" />
+          )}
+          
+          {/* Indicador de status pendente (sem mostrar erro, apenas aguardando) */}
+          {!isReceived && !isNote && message.evolution_status === 'pending' && (
+            <div className="w-3 h-3 text-gray-400" title="Enviando...">
+              <div className="animate-pulse">⏳</div>
+            </div>
           )}
         </div>
       </div>

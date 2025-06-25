@@ -255,6 +255,9 @@ SESSION_SECRET=your_session_secret
 - Auto-refresh de status após 3 segundos sem necessidade de reload da página
 - Corrigido fluxo Evolution API: adicionado error handling robusto e logs detalhados para debugging
 - Mensagens pending corrigidas automaticamente para status 'sent' quando Evolution API confirma sucesso
+- Alterado comportamento: mensagens 'pending' não mostram ícone de erro, apenas aguardam confirmação
+- Ícones de erro aparecem somente para falhas confirmadas pela Evolution API
+- Erros de rede mantêm status 'pending' ao invés de marcar como 'failed'
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

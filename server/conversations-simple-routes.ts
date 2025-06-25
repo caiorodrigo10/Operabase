@@ -695,7 +695,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             content: content.substring(0, 50) + '...'
           });
           
-          const evolutionUrl = 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+          const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
           const evolutionApiKey = process.env.EVOLUTION_API_KEY;
           
           // Usar formato exato do N8N com instância da clínica
