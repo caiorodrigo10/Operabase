@@ -497,7 +497,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .select()
           .single();
         
-        console.log('💾 Insert attempt with conversation_id:', useConversationId);
+        console.log('💾 Insert attempt with conversation_id:', insertConversationId);
         console.log('💾 Insert result:', { insertResult, insertError });
         console.log('💾 Insert error details:', JSON.stringify(insertError, null, 2));
         
@@ -529,6 +529,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           direction: 'outbound',
           message_type: 'text',
           timestamp: new Date(newMessage.timestamp).toISOString(),
+          evolution_status: newMessage.evolution_status || 'pending',
           attachments: []
         };
         
