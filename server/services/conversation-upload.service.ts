@@ -55,6 +55,18 @@ export class ConversationUploadService {
     private evolutionAPI: EvolutionAPIService
   ) {}
 
+  // Mapear MIME type para message_type
+  private getMimeToMessageType(mimeType: string): string {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('audio/')) return 'audio';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType === 'application/pdf' || 
+        mimeType.includes('document') || 
+        mimeType.includes('text/') ||
+        mimeType.includes('application/')) return 'document';
+    return 'document'; // fallback
+  }
+
   async uploadFile(params: UploadParams): Promise<UploadResult> {
     const {
       file,
@@ -134,7 +146,7 @@ export class ConversationUploadService {
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       
       // Mapear MIME type para message_type automaticamente
-      const messageType = this.getMimeToMessageType(file.mimetype || file.type || 'application/octet-stream');
+      const messageType = this.getMimeToMessageType(mimeType);
       
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
