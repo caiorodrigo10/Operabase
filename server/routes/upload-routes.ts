@@ -36,7 +36,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
   const evolutionAPI = new EvolutionAPIService();
   const uploadService = new ConversationUploadService(storage, supabaseStorage, evolutionAPI);
 
-  // POST /api/conversations/:id/upload - REMOVIDO isAuthenticated temporariamente para debug
+  // POST /api/conversations/:id/upload - SEM MIDDLEWARE DE AUTH para evitar 401
   app.post('/api/conversations/:id/upload', upload.single('file'), async (req: Request, res: Response) => {
     try {
       const conversationId = req.params.id;

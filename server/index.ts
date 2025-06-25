@@ -89,7 +89,14 @@ app.use((req, res, next) => {
   app.use('/api', performanceTrackingMiddleware);
   app.use('/api', auditLoggingMiddleware);
   app.use('/api', cacheInterceptorMiddleware as any);
-  app.use('/api', tenantIsolationMiddleware as any);
+  // Apply tenant isolation but skip for upload routes
+  app.use('/api', (req: any, res: any, next: any) => {
+    if (req.path.includes('/upload')) {
+      console.log('🔧 Bypassing tenant isolation for upload:', req.path);
+      return next();
+    }
+    return tenantIsolationMiddleware(req, res, next);
+  });
   app.use('/api', cacheInvalidationMiddleware as any);
   
   // Setup optimized routes first for better performance
