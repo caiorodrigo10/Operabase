@@ -2128,11 +2128,15 @@ export class PostgreSQLStorage implements IStorage {
 
   async getActiveWhatsAppInstance(clinicId: number): Promise<any> {
     try {
+      console.log('🔍 PostgreSQL getActiveWhatsAppInstance - querying for clinic:', clinicId);
       const result = await db.execute(sql`
         SELECT * FROM whatsapp_numbers 
         WHERE clinic_id = ${clinicId} AND status = 'open'
+        ORDER BY created_at DESC
         LIMIT 1
       `);
+      console.log('🔍 PostgreSQL query result - all rows found:', result.rows);
+      console.log('🔍 PostgreSQL selected instance (first/most recent):', result.rows[0]);
       return result.rows[0];
     } catch (error) {
       console.error('Error getting WhatsApp instance:', error);
