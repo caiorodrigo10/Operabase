@@ -14,45 +14,34 @@ interface FileUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   conversationId: string;
-  onUploadSuccess: (result: any) => void;
+  onUploadSuccess?: (result: any) => void;
 }
 
-interface FileWithPreview {
-  file: File;
+interface FileWithPreview extends File {
   preview?: string;
-  type: 'image' | 'video' | 'audio' | 'document' | 'other';
+  id: string;
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const ACCEPTED_TYPES = {
-  'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
-  'video/*': ['.mp4', '.mov', '.avi', '.webm'],
-  'audio/*': ['.mp3', '.wav', '.ogg', '.m4a'],
-  'application/pdf': ['.pdf'],
-  'application/msword': ['.doc'],
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-  'text/*': ['.txt']
+type UploadStatus = 'idle' | 'uploading' | 'processing' | 'success' | 'error';
+
+// Tipos MIME permitidos
+const allowedTypes = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+  'video/mp4', 'video/mov', 'video/avi', 'video/webm',
+  'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a',
+  'application/pdf', 'application/msword', 
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain'
+];
+
+const getFileIcon = (file: File) => {
+  if (file.type.startsWith('image/')) return <Image className="h-4 w-4" />;
+  if (file.type.startsWith('video/')) return <Video className="h-4 w-4" />;
+  if (file.type.startsWith('audio/')) return <Music className="h-4 w-4" />;
+  return <FileText className="h-4 w-4" />;
 };
 
-const getFileType = (mimeType: string): FileWithPreview['type'] => {
-  if (mimeType.startsWith('image/')) return 'image';
-  if (mimeType.startsWith('video/')) return 'video';
-  if (mimeType.startsWith('audio/')) return 'audio';
-  if (mimeType.includes('pdf') || mimeType.includes('doc') || mimeType.includes('text')) return 'document';
-  return 'other';
-};
-
-const FileIcon_Component = ({ type, className }: { type: FileWithPreview['type']; className?: string }) => {
-  switch (type) {
-    case 'image': return <Image className={className} />;
-    case 'video': return <Video className={className} />;
-    case 'audio': return <Music className={className} />;
-    case 'document': return <FileText className={className} />;
-    default: return <FileIcon className={className} />;
-  }
-};
-
-const formatFileSize = (bytes: number): string => {
+const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -61,244 +50,268 @@ const formatFileSize = (bytes: number): string => {
 };
 
 export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSuccess }: FileUploadModalProps) {
-  const [selectedFile, setSelectedFile] = useState<FileWithPreview | null>(null);
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [caption, setCaption] = useState('');
-  const [uploading, setUploading] = useState(false);
+  const [sendToWhatsApp, setSendToWhatsApp] = useState(true);
+  const [status, setStatus] = useState<UploadStatus>('idle');
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
+  
+  const uploadMutation = useUpload();
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
-    setError(null);
-    
-    if (rejectedFiles.length > 0) {
-      const rejection = rejectedFiles[0];
-      if (rejection.errors.some((e: any) => e.code === 'file-too-large')) {
-        setError(`Arquivo muito grande. Limite: ${formatFileSize(MAX_FILE_SIZE)}`);
-      } else if (rejection.errors.some((e: any) => e.code === 'file-invalid-type')) {
-        setError('Tipo de arquivo não suportado');
-      } else {
-        setError('Erro ao selecionar arquivo');
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const newFiles = acceptedFiles.map(file => {
+      // Validar tamanho
+      if (file.size > 50 * 1024 * 1024) { // 50MB
+        alert(`Arquivo ${file.name} é muito grande. Máximo: 50MB`);
+        return null;
       }
-      return;
-    }
-
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      const fileWithPreview: FileWithPreview = {
-        file,
-        type: getFileType(file.type)
-      };
-
-      // Create preview for images
-      if (fileWithPreview.type === 'image') {
-        fileWithPreview.preview = URL.createObjectURL(file);
+      
+      // Validar tipo
+      if (!allowedTypes.includes(file.type)) {
+        alert(`Tipo de arquivo não suportado: ${file.type}`);
+        return null;
       }
 
-      setSelectedFile(fileWithPreview);
-    }
+      const fileWithPreview: FileWithPreview = Object.assign(file, {
+        id: Math.random().toString(36).substr(2, 9),
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+      });
+      
+      return fileWithPreview;
+    }).filter(Boolean) as FileWithPreview[];
+
+    setFiles(prev => [...prev, ...newFiles]);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    maxFiles: 1,
-    maxSize: MAX_FILE_SIZE,
-    accept: ACCEPTED_TYPES
+    disabled: status !== 'idle',
+    maxFiles: 1 // Um arquivo por vez por enquanto
   });
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    setUploading(true);
-    setProgress(0);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile.file);
-      formData.append('caption', caption);
-
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      const response = await fetch(`/api/conversations/${conversationId}/upload`, {
-        method: 'POST',
-        body: formData
+  const removeFile = (fileId: string) => {
+    setFiles(prev => {
+      const updated = prev.filter(f => f.id !== fileId);
+      // Cleanup URLs
+      prev.forEach(f => {
+        if (f.preview && f.id === fileId) {
+          URL.revokeObjectURL(f.preview);
+        }
       });
+      return updated;
+    });
+  };
 
-      clearInterval(progressInterval);
+  const handleUpload = async () => {
+    if (files.length === 0) return;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro no upload');
+    setStatus('uploading');
+    setProgress(0);
+    
+    try {
+      const file = files[0];
+      
+      // Simular progresso de upload (0-50%)
+      for (let p = 0; p <= 50; p += 10) {
+        setProgress(p);
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-
-      const result = await response.json();
-      setProgress(100);
-
-      // Wait a bit to show 100% progress
+      
+      setStatus('processing');
+      
+      const uploadResult = await uploadMutation.mutateAsync({
+        conversationId,
+        file,
+        caption: caption.trim() || undefined,
+        sendToWhatsApp
+      });
+      
+      // Progresso final (50-100%)
+      for (let p = 51; p <= 100; p += 10) {
+        setProgress(p);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      setStatus('success');
+      setResult(uploadResult);
+      
+      onUploadSuccess?.(uploadResult);
+      
+      // Fechar modal após 2 segundos
       setTimeout(() => {
-        onUploadSuccess(result);
         handleClose();
-      }, 500);
-
+      }, 2000);
+      
     } catch (error) {
       console.error('Upload error:', error);
-      setError(error instanceof Error ? error.message : 'Erro no upload');
-    } finally {
-      setUploading(false);
+      setStatus('error');
+      setResult({ error: error instanceof Error ? error.message : 'Erro no upload' });
     }
   };
 
   const handleClose = () => {
-    setSelectedFile(null);
+    // Cleanup object URLs
+    files.forEach(file => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+      }
+    });
+    
+    setFiles([]);
     setCaption('');
+    setSendToWhatsApp(true);
+    setStatus('idle');
     setProgress(0);
-    setError(null);
-    setUploading(false);
+    setResult(null);
     onClose();
-  };
-
-  const removeFile = () => {
-    if (selectedFile?.preview) {
-      URL.revokeObjectURL(selectedFile.preview);
-    }
-    setSelectedFile(null);
-    setError(null);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Upload className="w-5 h-5" />
-            <span>Enviar Arquivo</span>
-          </DialogTitle>
+          <DialogTitle>Enviar Arquivo</DialogTitle>
+          <DialogDescription>
+            Envie imagens, vídeos, áudios ou documentos para a conversa.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {!selectedFile ? (
-            <div
-              {...getRootProps()}
-              className={cn(
-                "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-                isDragActive 
-                  ? "border-blue-500 bg-blue-50" 
-                  : "border-gray-300 hover:border-gray-400"
-              )}
-            >
-              <input {...getInputProps()} />
-              <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              {isDragActive ? (
-                <p className="text-blue-600">Solte o arquivo aqui...</p>
-              ) : (
-                <div>
-                  <p className="text-gray-600 mb-2">
-                    Arraste um arquivo aqui ou clique para selecionar
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Imagens, vídeos, áudio, documentos (até {formatFileSize(MAX_FILE_SIZE)})
-                  </p>
+          {/* Status de upload */}
+          {status !== 'idle' && (
+            <div className="space-y-2">
+              {status === 'uploading' && (
+                <div className="flex items-center space-x-2">
+                  <Upload className="h-4 w-4 text-blue-500 animate-pulse" />
+                  <span className="text-sm text-blue-600">Enviando arquivo...</span>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="border rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  {selectedFile.preview ? (
-                    <img 
-                      src={selectedFile.preview} 
-                      alt="Preview" 
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
-                      <FileIcon_Component type={selectedFile.type} className="w-8 h-8 text-gray-400" />
-                    </div>
-                  )}
+              {status === 'processing' && (
+                <div className="flex items-center space-x-2">
+                  <Upload className="h-4 w-4 text-orange-500 animate-pulse" />
+                  <span className="text-sm text-orange-600">Processando...</span>
                 </div>
-                
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {selectedFile.file.name}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {formatFileSize(selectedFile.file.size)}
-                  </p>
+              )}
+              {status === 'success' && (
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600">
+                    {result?.data?.whatsapp?.sent ? 'Enviado com sucesso!' : 'Arquivo salvo (WhatsApp indisponível)'}
+                  </span>
                 </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={removeFile}
-                  disabled={uploading}
-                  className="flex-shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+              )}
+              {status === 'error' && (
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <span className="text-sm text-red-600">
+                    {result?.error || 'Erro no upload'}
+                  </span>
+                </div>
+              )}
+              <Progress value={progress} className="h-2" />
             </div>
           )}
 
-          {selectedFile && selectedFile.type !== 'audio' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Legenda (opcional)
-              </label>
-              <Textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Adicione uma descrição para o arquivo..."
-                disabled={uploading}
-                rows={3}
-                className="resize-none"
-              />
+          {/* Área de Drop */}
+          {status === 'idle' && (
+            <div
+              {...getRootProps()}
+              className={cn(
+                "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
+              )}
+            >
+              <input {...getInputProps()} />
+              <Upload className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-600">
+                {isDragActive 
+                  ? "Solte os arquivos aqui..."
+                  : "Arraste arquivos aqui ou clique para selecionar"
+                }
+              </p>
               <p className="text-xs text-gray-500 mt-1">
-                Esta mensagem será enviada junto com o arquivo no WhatsApp
+                Imagens, vídeos, áudios ou documentos (máx. 50MB)
               </p>
             </div>
           )}
 
-          {uploading && (
+          {/* Lista de arquivos */}
+          {files.length > 0 && status === 'idle' && (
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Enviando arquivo...</span>
-                <span>{progress}%</span>
-              </div>
-              <Progress value={progress} className="w-full" />
+              {files.map((file) => (
+                <div key={file.id} className="flex items-center space-x-3 p-2 border rounded-lg">
+                  {file.preview ? (
+                    <img src={file.preview} alt="" className="h-10 w-10 object-cover rounded" />
+                  ) : (
+                    <div className="h-10 w-10 bg-gray-100 rounded flex items-center justify-center">
+                      {getFileIcon(file)}
+                    </div>
+                  )}
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(file.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
 
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-700">{error}</p>
+          {/* Caption */}
+          {status === 'idle' && (
+            <div>
+              <Textarea
+                placeholder="Adicione uma mensagem (opcional)"
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                className="resize-none"
+                rows={3}
+              />
             </div>
           )}
 
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={uploading}
+          {/* Configurações */}
+          {status === 'idle' && (
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="whatsapp-send"
+                checked={sendToWhatsApp}
+                onCheckedChange={setSendToWhatsApp}
+              />
+              <Label htmlFor="whatsapp-send" className="text-sm">
+                Enviar via WhatsApp
+              </Label>
+            </div>
+          )}
+
+          {/* Botões */}
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={handleClose} 
+              disabled={status === 'uploading' || status === 'processing'}
             >
-              Cancelar
+              {status === 'success' ? 'Fechar' : 'Cancelar'}
             </Button>
-            <Button
-              onClick={handleUpload}
-              disabled={!selectedFile || uploading}
-              className="bg-emerald-500 hover:bg-emerald-600"
-            >
-              {uploading ? 'Enviando...' : 'Enviar'}
-            </Button>
+            {status === 'idle' && (
+              <Button 
+                onClick={handleUpload} 
+                disabled={files.length === 0}
+                className="min-w-[100px]"
+              >
+                Enviar
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
