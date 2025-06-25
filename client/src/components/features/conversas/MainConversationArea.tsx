@@ -398,7 +398,7 @@ export function MainConversationArea({
           </Button>
         </div>
 
-        {/* Recording State */}
+        {/* Audio Recording Interface - Single State */}
         {isRecording && (
           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center space-x-2">
@@ -418,8 +418,8 @@ export function MainConversationArea({
           </div>
         )}
 
-        {/* Audio Preview */}
-        {showAudioPreview && audioBlob && (
+        {/* Audio Preview - Only when NOT recording */}
+        {!isRecording && showAudioPreview && audioBlob && (
           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
