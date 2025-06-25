@@ -236,6 +236,16 @@ SESSION_SECRET=your_session_secret
 - Added window focus detection for instant updates when returning to tab
 - Optimized cache invalidation for real-time message delivery
 
+### June 25, 2025 - Scientific Notation ID Precision Fix Implemented ✅
+- Fixed foreign key constraint issue preventing message insertion with scientific notation IDs
+- Identified root cause: conversation_id column expects numeric type compatible with conversations.id foreign key
+- Implemented robust solution using actual database conversation_id instead of scientific notation string
+- Modified POST /api/conversations-simple/:id/messages to use real numeric ID for database insertion
+- Preserved existing conversation lookup logic that handles scientific notation correctly
+- System now successfully inserts messages for both regular IDs and scientific notation IDs
+- Evolution API integration maintained for WhatsApp background sending
+- Cache invalidation and WebSocket events working correctly with fixed insertion
+
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)

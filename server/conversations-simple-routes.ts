@@ -491,14 +491,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         const useConversationId = realConversation.id;
         console.log('💾 Using real conversation_id from database:', useConversationId);
         
-        // Usar string para preservar precisão de IDs científicos
-        const conversationIdString = useConversationId.toString();
-        console.log('💾 Converting conversation_id to string to preserve precision:', conversationIdString);
+        // Usar o ID numérico real do banco para manter compatibilidade com foreign key
+        console.log('💾 Using numeric conversation_id for database insertion:', useConversationId);
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
-            conversation_id: conversationIdString,
+            conversation_id: useConversationId, // Usar valor numérico do banco
             sender_type: 'professional',
             content: content
           })
