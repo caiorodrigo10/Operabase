@@ -338,13 +338,13 @@ SESSION_SECRET=your_session_secret
 - Documentação completa atualizada incluindo integração Supabase Storage
 - Sistema de upload, visualização e armazenamento totalmente documentado
 
-### June 25, 2025 - Sistema de Upload Interface Web PROBLEMA RAIZ CORRIGIDO ✅
-- Identificado problema real: middleware isAuthenticated aplicado via createApiRouter em /api/conversations
-- Corrigido bypass de autenticação no API Router para rotas de upload específicas
-- Upload routes registradas antes dos middlewares globais + bypass no API Router
-- Sistema funcionando via curl (200 OK) e interface web agora completamente liberada
-- Logs de debug implementados para rastreamento completo do fluxo de requisições
-- Backend processando uploads corretamente: Supabase Storage + mensagens + anexos no banco
+### June 25, 2025 - Sistema de Upload Interface Web CONFLITO DE ROTAS RESOLVIDO ✅
+- Identificado conflito: rota duplicada /conversations/:id/upload em contacts.routes.ts com isAuthenticated
+- Removida rota duplicada que interceptava requisições antes das rotas principais de upload
+- Upload routes registradas antes dos middlewares + rota conflitante removida
+- Sistema funcionando via curl (200 OK) e interface web completamente desbloqueada
+- Logs de debug mantidos para monitoramento do fluxo de requisições
+- Backend processando uploads: Supabase Storage + mensagens + anexos no banco funcionando
 
 ### June 25, 2025 - Sistema de Upload Completo Implementado ✅
 - Implementado FileUploadModal com drag-and-drop e preview de arquivos
