@@ -133,12 +133,14 @@ export class ConversationUploadService {
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       
-      // Usar schema atualizado com message_type
+      // Mapear MIME type para message_type automaticamente
+      const messageType = this.getMimeToMessageType(file.mimetype);
+      
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
         sender_type: 'professional',
         content: messageContent,
-        message_type: 'document', // Tipo padrão para upload de arquivo
+        message_type: messageType, // Tipo mapeado automaticamente
         ai_action: 'file_upload' // Indicar que foi upload de arquivo
       });
 
