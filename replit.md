@@ -355,6 +355,15 @@ SESSION_SECRET=your_session_secret
 - Ajustado schema de banco para usar apenas colunas existentes na tabela message_attachments
 - Sistema de upload operacional com conversation_id correto e sanitização ultra-agressiva
 
+### June 25, 2025 - Sanitização Definitiva para Supabase Storage ✅
+- Implementado mapeamento completo de caracteres especiais (À→A, Ì→I, ç→c, etc.)
+- Sistema de transliteração para caracteres acentuados e especiais brasileiros
+- Validação rigorosa contra padrão Supabase: ^[a-zA-Z0-9._-]+$
+- Fallback inteligente para casos extremos (emojis, caracteres asiáticos)
+- Preservação do nome original no banco para exibição ao usuário
+- Nome sanitizado usado apenas para storage, mantendo experiência do usuário
+- Resolução definitiva do erro "Invalid key" com caracteres como "às", "ção", etc.
+
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)

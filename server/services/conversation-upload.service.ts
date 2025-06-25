@@ -95,12 +95,12 @@ export class ConversationUploadService {
         content: messageContent
       });
 
-      // 6. Criar attachment (usando apenas colunas que existem)
+      // 6. Criar attachment (preservar nome original para o usuário)
       console.log('📎 Creating attachment record...');
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
         clinic_id: clinicId,
-        file_name: sanitizedFilename,
+        file_name: filename, // Nome original para exibição
         file_type: mimeType,
         file_size: file.length,
         file_url: storageResult.signed_url
@@ -186,39 +186,81 @@ export class ConversationUploadService {
     if (!filename) return 'unnamed-file';
     
     console.log('🔧 Sanitizing filename:', filename);
-    console.log('🔧 Filename bytes:', Buffer.from(filename).toString('hex'));
+    console.log('🔧 Original bytes:', Buffer.from(filename).toString('hex'));
     
-    // Sanitização ultra-agressiva para remover TODOS os caracteres problemáticos
+    // Mapeamento completo de caracteres especiais para Supabase Storage
+    const characterMap: { [key: string]: string } = {
+      // Acentos maiúsculos
+      'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A', 'Å': 'A', 'Æ': 'AE',
+      'È': 'E', 'É': 'E', 'Ê': 'E', 'Ë': 'E',
+      'Ì': 'I', 'Í': 'I', 'Î': 'I', 'Ï': 'I',
+      'Ò': 'O', 'Ó': 'O', 'Ô': 'O', 'Õ': 'O', 'Ö': 'O', 'Ø': 'O',
+      'Ù': 'U', 'Ú': 'U', 'Û': 'U', 'Ü': 'U',
+      'Ç': 'C', 'Ñ': 'N', 'Ý': 'Y',
+      
+      // Acentos minúsculos
+      'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a', 'æ': 'ae',
+      'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+      'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+      'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
+      'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
+      'ç': 'c', 'ñ': 'n', 'ý': 'y', 'ÿ': 'y',
+      
+      // Caracteres especiais comuns
+      ' ': '_', '\t': '_', '\n': '_', '\r': '_',
+      '!': '', '?': '', '@': '', '#': '', '$': '', '%': '', '&': '', '*': '',
+      '(': '', ')': '', '[': '', ']': '', '{': '', '}': '', '|': '', '\\': '',
+      '/': '_', ':': '', ';': '', '<': '', '>': '', '=': '', '+': '', '~': '',
+      '`': '', "'": '', '"': '', ',': '', '^': ''
+    };
+    
+    // Primeiro: aplicar mapeamento de caracteres
     let sanitized = filename
-      // Primeiro passo: remover caracteres especiais byte por byte
       .split('')
       .map(char => {
+        // Se está no mapa, usar mapeamento
+        if (characterMap.hasOwnProperty(char)) {
+          return characterMap[char];
+        }
+        // Se é ASCII básico permitido (a-z, A-Z, 0-9, ., -, _), manter
         const code = char.charCodeAt(0);
-        // Manter apenas ASCII básico: letras, números, ponto, hífen
         if ((code >= 48 && code <= 57) ||  // 0-9
             (code >= 65 && code <= 90) ||  // A-Z
             (code >= 97 && code <= 122) || // a-z
             code === 46 ||                 // .
-            code === 45) {                 // -
+            code === 45 ||                 // -
+            code === 95) {                 // _
           return char;
-        } else if (code === 32) {          // espaço
-          return '_';
-        } else {
-          return '_'; // Qualquer outro caractere vira underscore
         }
+        // Qualquer outro caractere é removido
+        return '';
       })
       .join('')
-      // Limpar underscores excessivos
+      // Limpar múltiplos underscores e pontos
       .replace(/_{2,}/g, '_')
-      .replace(/^_+|_+$/g, '')
+      .replace(/\.{2,}/g, '.')
+      .replace(/^[._-]+|[._-]+$/g, '')
       .toLowerCase();
     
-    // Se ficou vazio, usar nome padrão
-    if (!sanitized || sanitized === '.') {
-      sanitized = 'file_' + Date.now();
+    // Garantir que há pelo menos algum conteúdo
+    if (!sanitized || sanitized.length === 0 || sanitized === '.' || sanitized === '_') {
+      const timestamp = Date.now();
+      const extension = filename.includes('.') ? filename.split('.').pop()?.toLowerCase() || 'file' : 'file';
+      sanitized = `arquivo_${timestamp}.${extension}`;
+    }
+    
+    // Validação final: apenas caracteres permitidos pelo Supabase
+    const validPattern = /^[a-zA-Z0-9._-]+$/;
+    if (!validPattern.test(sanitized)) {
+      console.warn('🚨 Filename ainda contém caracteres inválidos, usando fallback');
+      const timestamp = Date.now();
+      const extension = filename.includes('.') ? filename.split('.').pop()?.toLowerCase() || 'file' : 'file';
+      sanitized = `arquivo_${timestamp}.${extension}`;
     }
     
     console.log('✅ Sanitized filename:', sanitized);
+    console.log('🔍 Validation check:', validPattern.test(sanitized));
+    
     return sanitized;
   }
 
