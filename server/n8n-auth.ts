@@ -1,39 +1,69 @@
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * Middleware de autenticação para endpoints do N8N
- * Verifica API key via header x-api-key ou Authorization Bearer
+ * Middleware de autenticação para N8N via API Key
+ * Valida se a API key está presente e é válida
  */
-export const authenticateN8N = (req: Request, res: Response, next: NextFunction) => {
-  const apiKey = req.headers['x-api-key'] as string || 
-                 req.headers['authorization']?.replace('Bearer ', '');
-  
-  const expectedApiKey = process.env.N8N_API_KEY;
-  
-  if (!expectedApiKey) {
-    console.error('🔑 N8N_API_KEY not configured in environment');
-    return res.status(500).json({ 
-      success: false,
-      error: 'N8N integration not configured' 
-    });
-  }
+export const validateN8NApiKey = (req: Request, res: Response, next: NextFunction) => {
+  const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
   
   if (!apiKey) {
-    console.warn('🔑 N8N API key missing in request headers');
-    return res.status(401).json({ 
+    console.error('❌ N8N API Key missing in request');
+    return res.status(401).json({
       success: false,
-      error: 'API key required. Use x-api-key header or Authorization Bearer token.' 
+      error: 'API Key required',
+      message: 'Header x-api-key or Authorization Bearer token is required'
     });
   }
+
+  // Validar contra API key configurada no ambiente
+  const validApiKey = process.env.N8N_API_KEY;
   
-  if (apiKey !== expectedApiKey) {
-    console.warn('🔑 Invalid N8N API key attempt');
-    return res.status(401).json({ 
+  if (!validApiKey) {
+    console.error('❌ N8N_API_KEY not configured in environment');
+    return res.status(500).json({
       success: false,
-      error: 'Invalid API key' 
+      error: 'Server configuration error',
+      message: 'N8N API Key not configured'
     });
   }
+
+  if (apiKey !== validApiKey) {
+    console.error('❌ Invalid N8N API Key provided');
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid API Key',
+      message: 'The provided API Key is not valid'
+    });
+  }
+
+  console.log('✅ N8N API Key validated successfully');
+  next();
+};
+
+/**
+ * Middleware para parsing de multipart/form-data específico para N8N
+ * Extrai file, metadata e parâmetros da requisição
+ */
+export const parseN8NUpload = (req: any, res: Response, next: NextFunction) => {
+  const contentType = req.headers['content-type'];
   
-  console.log('✅ N8N authentication successful');
+  if (!contentType?.includes('multipart/form-data') && !contentType?.includes('application/octet-stream')) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid content type',
+      message: 'Expected multipart/form-data or application/octet-stream'
+    });
+  }
+
+  // Se for binary stream direto, usar req.body como buffer
+  if (contentType.includes('application/octet-stream')) {
+    req.n8nFile = {
+      buffer: req.body,
+      filename: req.headers['x-filename'] || 'unknown-file',
+      mimeType: req.headers['x-mime-type'] || 'application/octet-stream'
+    };
+  }
+
   next();
 };

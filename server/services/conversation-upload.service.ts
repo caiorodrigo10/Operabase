@@ -13,6 +13,19 @@ interface UploadParams {
   sendToWhatsApp?: boolean;
 }
 
+interface N8NUploadParams {
+  file: Buffer;
+  filename: string;
+  mimeType: string;
+  conversationId: string;
+  clinicId: number;
+  caption?: string;
+  whatsappMessageId?: string;
+  whatsappMediaId?: string;
+  whatsappMediaUrl?: string;
+  timestamp?: string;
+}
+
 interface UploadResult {
   success: boolean;
   message: any;
@@ -59,6 +72,18 @@ export class ConversationUploadService {
   private getMimeToMessageType(mimeType: string): string {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('audio/')) return 'audio_file'; // Upload de arquivo de áudio
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType === 'application/pdf' || 
+        mimeType.includes('document') || 
+        mimeType.includes('text/') ||
+        mimeType.includes('application/')) return 'document';
+    return 'document'; // fallback
+  }
+
+  // Método específico para arquivos recebidos do WhatsApp via N8N
+  private getWhatsAppMessageType(mimeType: string): string {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('audio/')) return 'audio_voice'; // WhatsApp audio = audio_voice  
     if (mimeType.startsWith('video/')) return 'video';
     if (mimeType === 'application/pdf' || 
         mimeType.includes('document') || 
@@ -594,5 +619,149 @@ export class ConversationUploadService {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  /**
+   * Método específico para receber arquivos do N8N (origem: pacientes via WhatsApp)
+   * Não envia via Evolution API - apenas armazena no Supabase Storage
+   */
+  async uploadFromN8N(params: N8NUploadParams): Promise<{
+    success: boolean;
+    message: any;
+    attachment: any;
+    signedUrl: string;
+    expiresAt: string;
+  }> {
+    const {
+      file,
+      filename,
+      mimeType,
+      conversationId,
+      clinicId,
+      caption,
+      whatsappMessageId,
+      whatsappMediaId,
+      whatsappMediaUrl,
+      timestamp
+    } = params;
+
+    console.log(`📥 N8N Upload: ${filename} (${mimeType}) for conversation ${conversationId}`);
+
+    try {
+      // 1. Validar arquivo
+      this.validateFile(file, mimeType, filename);
+
+      // 2. Sanitizar filename 
+      const sanitizedFilename = this.sanitizeFilename(filename);
+      
+      // 3. Upload para Supabase Storage
+      console.log('📁 Uploading N8N file to Supabase Storage...');
+      const storageResult = await this.uploadToSupabase({
+        file,
+        filename: sanitizedFilename,
+        mimeType,
+        conversationId,
+        clinicId
+      });
+      
+      // 4. Validar conversation (mesmo código robusto do uploadFile)
+      console.log('🔍 Validating conversation exists...');
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      let conversation;
+      const isScientificNotation = typeof conversationId === 'string' && conversationId.includes('e+');
+      
+      if (isScientificNotation) {
+        console.log('🔬 Scientific notation ID detected, using robust lookup');
+        const { data: allConversations } = await supabase
+          .from('conversations')
+          .select('id, contact_id, clinic_id')
+          .eq('clinic_id', clinicId);
+        
+        const paramIdNum = parseFloat(conversationId);
+        conversation = allConversations?.find(conv => {
+          const convIdNum = parseFloat(conv.id.toString());
+          return Math.abs(convIdNum - paramIdNum) < 1;
+        });
+      } else {
+        const { data } = await supabase
+          .from('conversations')
+          .select('id, contact_id, clinic_id')
+          .eq('id', conversationId)
+          .eq('clinic_id', clinicId)
+          .single();
+        conversation = data;
+      }
+
+      if (!conversation) {
+        console.error(`❌ Conversation not found: ${conversationId} for clinic ${clinicId}`);
+        throw new Error(`Conversation ${conversationId} not found`);
+      }
+      
+      console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
+      
+      // 5. Criar mensagem no banco com sender_type='patient' e message_type específico para WhatsApp
+      console.log('💾 Creating N8N message in database...');
+      const messageContent = caption || `📎 ${filename}`;
+      
+      // Usar método específico para WhatsApp (audio_voice ao invés de audio_file)
+      const messageType = this.getWhatsAppMessageType(mimeType);
+      
+      // Usar timestamp do WhatsApp se disponível, senão usar atual
+      const messageTimestamp = timestamp ? new Date(timestamp) : new Date();
+      
+      console.log('🕐 Adjusting timestamp to GMT-3 (Brasília)...');
+      const brasiliaTimestamp = new Date(messageTimestamp.getTime() - 3 * 60 * 60 * 1000);
+      
+      const message = await this.storage.createMessage({
+        conversation_id: conversation.id.toString(),
+        content: messageContent,
+        sender_type: 'patient', // Mensagem vem do paciente via WhatsApp
+        message_type: messageType,
+        device_type: 'manual', // WhatsApp é considerado manual (não sistema)
+        timestamp: brasiliaTimestamp,
+        created_at: brasiliaTimestamp,
+        sent_at: brasiliaTimestamp,
+        evolution_status: 'sent', // Já foi enviado pelo WhatsApp
+        whatsapp_message_id: whatsappMessageId || null
+      });
+
+      console.log('✅ N8N Message created:', message.id);
+
+      // 6. Criar attachment no banco
+      console.log('📎 Creating N8N attachment...');
+      const attachment = await this.storage.createMessageAttachment({
+        message_id: message.id,
+        filename: filename, // Nome original na mensagem
+        file_type: this.getMessageTypeFromMime(mimeType),
+        file_size: file.length,
+        mime_type: mimeType,
+        storage_bucket: storageResult.bucket,
+        storage_path: storageResult.path,
+        public_url: storageResult.publicUrl,
+        signed_url: storageResult.signedUrl,
+        signed_url_expires: storageResult.expiresAt,
+        whatsapp_media_id: whatsappMediaId || null,
+        whatsapp_media_url: whatsappMediaUrl || null
+      });
+
+      console.log('✅ N8N Attachment created:', attachment.id);
+
+      return {
+        success: true,
+        message,
+        attachment,
+        signedUrl: storageResult.signedUrl,
+        expiresAt: storageResult.expiresAt
+      };
+
+    } catch (error) {
+      console.error('❌ N8N Upload error:', error);
+      throw error;
+    }
   }
 }

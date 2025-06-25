@@ -4,6 +4,7 @@ import { IStorage } from '../storage';
 import { ConversationUploadService } from '../services/conversation-upload.service';
 import { SupabaseStorageService } from '../services/supabase-storage.service';
 import { EvolutionAPIService } from '../services/evolution-api.service';
+import { validateN8NApiKey, parseN8NUpload } from '../n8n-auth';
 
 // Configurar multer para upload em memória
 const upload = multer({
@@ -298,8 +299,157 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
     }
   });
 
+  // POST /api/n8n/upload - Endpoint para receber arquivos do N8N
+  app.post('/api/n8n/upload', 
+    validateN8NApiKey,
+    parseN8NUpload,
+    upload.single('file'),
+    async (req: any, res: Response) => {
+      console.log('📥 N8N Upload request received');
+      console.log('🔍 Headers:', {
+        'content-type': req.headers['content-type'],
+        'x-filename': req.headers['x-filename'],
+        'x-mime-type': req.headers['x-mime-type'],
+        'x-conversation-id': req.headers['x-conversation-id'],
+        'x-clinic-id': req.headers['x-clinic-id']
+      });
+
+      try {
+        // Extrair dados do arquivo (multer ou headers)
+        let fileData: Buffer;
+        let filename: string;
+        let mimeType: string;
+        
+        if (req.file) {
+          // Via multipart/form-data
+          fileData = req.file.buffer;
+          filename = req.file.originalname;
+          mimeType = req.file.mimetype;
+        } else if (req.n8nFile) {
+          // Via binary stream
+          fileData = req.n8nFile.buffer;
+          filename = req.n8nFile.filename;
+          mimeType = req.n8nFile.mimeType;
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: 'No file data received',
+            message: 'Expected file via multipart/form-data or binary stream'
+          });
+        }
+
+        // Extrair parâmetros obrigatórios
+        const conversationId = req.headers['x-conversation-id'] || req.body.conversationId;
+        const clinicId = parseInt(req.headers['x-clinic-id'] || req.body.clinicId);
+        
+        if (!conversationId) {
+          return res.status(400).json({
+            success: false,
+            error: 'Missing conversation ID',
+            message: 'Header x-conversation-id or body.conversationId required'
+          });
+        }
+
+        if (!clinicId || isNaN(clinicId)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Missing or invalid clinic ID',
+            message: 'Header x-clinic-id or body.clinicId required as number'
+          });
+        }
+
+        // Parâmetros opcionais
+        const caption = req.headers['x-caption'] || req.body.caption;
+        const whatsappMessageId = req.headers['x-whatsapp-message-id'] || req.body.whatsappMessageId;
+        const whatsappMediaId = req.headers['x-whatsapp-media-id'] || req.body.whatsappMediaId;
+        const whatsappMediaUrl = req.headers['x-whatsapp-media-url'] || req.body.whatsappMediaUrl;
+        const timestamp = req.headers['x-timestamp'] || req.body.timestamp;
+
+        console.log('📋 N8N Upload parameters:', {
+          filename,
+          mimeType,
+          fileSize: fileData.length,
+          conversationId,
+          clinicId,
+          caption: caption || 'No caption',
+          whatsappMessageId: whatsappMessageId || 'Not provided',
+          timestamp: timestamp || 'Not provided'
+        });
+
+        // Validar arquivo
+        if (!fileData || fileData.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'Empty file',
+            message: 'File data is empty or corrupted'
+          });
+        }
+
+        // Preparar parâmetros para o serviço N8N
+        const uploadParams = {
+          file: fileData,
+          filename,
+          mimeType,
+          conversationId: conversationId.toString(),
+          clinicId,
+          caption,
+          whatsappMessageId,
+          whatsappMediaId,
+          whatsappMediaUrl,
+          timestamp
+        };
+
+        // Executar upload via método N8N (não envia via Evolution API)
+        console.log('📤 Executing N8N upload...');
+        const result = await uploadService.uploadFromN8N(uploadParams);
+
+        console.log('✅ N8N Upload completed:', {
+          messageId: result.message.id,
+          attachmentId: result.attachment.id,
+          filename: result.attachment.filename
+        });
+
+        res.json({
+          success: true,
+          data: {
+            message: {
+              id: result.message.id,
+              content: result.message.content,
+              message_type: result.message.message_type,
+              timestamp: result.message.timestamp
+            },
+            attachment: {
+              id: result.attachment.id,
+              filename: result.attachment.filename,
+              file_type: result.attachment.file_type,
+              file_size: result.attachment.file_size,
+              mime_type: result.attachment.mime_type
+            },
+            storage: {
+              signedUrl: result.signedUrl,
+              expiresAt: result.expiresAt
+            }
+          },
+          message: 'File received and stored successfully'
+        });
+
+      } catch (error) {
+        console.error('❌ N8N Upload error:', error);
+        
+        const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+        
+        res.status(500).json({
+          success: false,
+          error: errorMessage,
+          message: 'Failed to process N8N file upload'
+        });
+      }
+    }
+  );
+
   console.log('📤 Upload routes registered:');
   console.log('  POST /api/conversations/:id/upload');
   console.log('  POST /api/attachments/:id/renew-url');
   console.log('  DELETE /api/attachments/:id');
+  console.log('  POST /api/n8n/upload (N8N integration)');
 }
