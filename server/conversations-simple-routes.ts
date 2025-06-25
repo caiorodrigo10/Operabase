@@ -475,29 +475,21 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Solução definitiva: buscar o conversation_id real que existe no banco
-        console.log('💾 Finding real conversation_id for contact_id:', actualConversation.contact_id);
+        // Usar diretamente o actualConversationId que já foi encontrado corretamente
+        console.log('💾 Using actualConversationId directly:', actualConversationId);
+        console.log('💾 Type of actualConversationId:', typeof actualConversationId);
         
-        const { data: realConversation } = await supabase
-          .from('conversations')
-          .select('id')
-          .eq('contact_id', actualConversation.contact_id)
-          .single();
+        // Para IDs científicos, usar o valor como string para preservar precisão
+        const insertConversationId = typeof actualConversationId === 'number' && actualConversationId.toString().includes('e+') 
+          ? actualConversationId.toString() 
+          : actualConversationId;
         
-        if (!realConversation) {
-          throw new Error(`No conversation found for contact_id ${actualConversation.contact_id}`);
-        }
-        
-        const useConversationId = realConversation.id;
-        console.log('💾 Using real conversation_id from database:', useConversationId);
-        
-        // Usar o ID numérico real do banco para manter compatibilidade com foreign key
-        console.log('💾 Using numeric conversation_id for database insertion:', useConversationId);
+        console.log('💾 Using conversation_id for insert:', insertConversationId);
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
-            conversation_id: useConversationId, // Usar valor numérico do banco
+            conversation_id: insertConversationId,
             sender_type: 'professional',
             content: content
           })
