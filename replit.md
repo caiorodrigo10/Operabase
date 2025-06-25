@@ -320,6 +320,8 @@ SESSION_SECRET=your_session_secret
 - Mensagens de teste criadas com anexos de imagem, áudio, vídeo e documento
 - Conversa do Caio Rodrigo (ID 45) configurada para demonstração completa
 - Sistema de upload e visualização funcionando completamente
+- Anexos de teste criados diretamente no Supabase Storage: imagem, áudio e vídeo
+- URLs assinadas funcionando para acesso aos arquivos via sistema
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
