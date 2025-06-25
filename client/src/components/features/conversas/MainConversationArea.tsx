@@ -90,8 +90,19 @@ export function MainConversationArea({
   };
 
   const handleUploadSuccess = (result: any) => {
-    console.log('Upload successful:', result);
-    // Cache invalidation será implementado na próxima etapa
+    console.log('✅ Upload successful:', result);
+    
+    // Notificar usuário sobre o resultado
+    if (result.data?.whatsapp?.sent) {
+      console.log('📱 Arquivo enviado via WhatsApp');
+    } else if (result.data?.whatsapp?.error) {
+      console.log('⚠️ Arquivo salvo, mas falha no WhatsApp:', result.data.whatsapp.error);
+    } else {
+      console.log('💾 Arquivo salvo internamente');
+    }
+    
+    // Fechar modal
+    setShowUploadModal(false);
   };
 
   if (!patientInfo) {
