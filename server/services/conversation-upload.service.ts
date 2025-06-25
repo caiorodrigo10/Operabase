@@ -476,7 +476,7 @@ export class ConversationUploadService {
       console.log('📤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
       console.log('📤 Headers:', { 'Content-Type': 'application/json', 'apikey': '***HIDDEN***' });
       console.log('📤 Payload:', JSON.stringify(payload, null, 2));
-      console.log('📤 Campo mediatype:', payload.mediaMessage.mediatype);
+      console.log('📤 Campo mediaType:', payload.mediaMessage.mediaType);
       console.log('📤 Campo fileName:', payload.mediaMessage.fileName);
       console.log('📤 Campo media:', payload.mediaMessage.media?.substring(0, 100) + '...');
       console.log('📤 Campo number:', payload.number);
