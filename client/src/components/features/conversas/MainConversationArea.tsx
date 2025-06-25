@@ -263,7 +263,7 @@ export function MainConversationArea({
         <FileUploadModal
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
-          conversationId={selectedConversation.id}
+          conversationId={String(patientInfo?.id || '')}
           onUploadSuccess={handleUploadSuccess}
         />
       </div>

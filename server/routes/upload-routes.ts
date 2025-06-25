@@ -1,24 +1,23 @@
-import { Request, Response } from 'express';
+import { Express, Request, Response } from 'express';
 import multer from 'multer';
 import { IStorage } from '../storage';
 import { ConversationUploadService } from '../services/conversation-upload.service';
 import { SupabaseStorageService } from '../services/supabase-storage.service';
 import { EvolutionAPIService } from '../services/evolution-api.service';
-import { isAuthenticated } from '../auth';
 
-// Configure multer for file uploads
+// Configurar multer para upload em memória
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB máximo
   },
   fileFilter: (req, file, cb) => {
-    // Allow specific file types
+    // Tipos MIME permitidos
     const allowedTypes = [
       'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
       'video/mp4', 'video/mov', 'video/avi', 'video/webm',
       'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a',
-      'application/pdf', 'application/msword',
+      'application/pdf', 'application/msword', 
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain'
     ];
@@ -31,197 +30,210 @@ const upload = multer({
   }
 });
 
-export function setupUploadRoutes(app: any, storage: IStorage) {
+export function setupUploadRoutes(app: Express, storage: IStorage) {
+  // Inicializar serviços
   const supabaseStorage = new SupabaseStorageService();
   const evolutionAPI = new EvolutionAPIService();
   const uploadService = new ConversationUploadService(storage, supabaseStorage, evolutionAPI);
 
-  // Upload de arquivo para conversa
-  app.post('/api/conversations/:conversationId/upload', 
-    isAuthenticated,
-    upload.single('file'),
-    async (req: Request, res: Response) => {
-      try {
-        const { conversationId } = req.params;
-        const { caption, sendToWhatsApp = 'true' } = req.body;
-        const user = (req as any).user;
+  // POST /api/conversations/:id/upload
+  app.post('/api/conversations/:id/upload', upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      const conversationId = req.params.id;
+      const { caption, sendToWhatsApp = 'true' } = req.body;
+      
+      console.log(`📤 Upload request for conversation ${conversationId}`);
 
-        console.log(`📤 Upload request for conversation ${conversationId}`);
-
-        // Validar arquivo
-        if (!req.file) {
-          return res.status(400).json({
-            success: false,
-            message: 'Nenhum arquivo enviado'
-          });
-        }
-
-        // Validar conversa existe e usuário tem acesso
-        const conversation = await storage.getConversationById(conversationId);
-        if (!conversation) {
-          return res.status(404).json({
-            success: false,
-            message: 'Conversa não encontrada'
-          });
-        }
-
-        // Validar acesso à clínica
-        if (conversation.clinic_id !== user.clinic_id && user.role !== 'super_admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Acesso negado'
-          });
-        }
-
-        // Processar upload
-        const result = await uploadService.uploadFile({
-          file: req.file.buffer,
-          filename: req.file.originalname,
-          mimeType: req.file.mimetype,
-          conversationId,
-          clinicId: conversation.clinic_id,
-          userId: user.id,
-          caption: caption || undefined,
-          sendToWhatsApp: sendToWhatsApp === 'true'
-        });
-
-        console.log(`✅ Upload successful for ${req.file.originalname}`);
-
-        res.json(result);
-
-      } catch (error) {
-        console.error('❌ Upload error:', error);
-        
-        let statusCode = 500;
-        let message = 'Erro interno do servidor';
-
-        if (error instanceof Error) {
-          if (error.message.includes('muito grande')) {
-            statusCode = 413;
-            message = error.message;
-          } else if (error.message.includes('não suportado')) {
-            statusCode = 400;
-            message = error.message;
-          } else if (error.message.includes('não encontrada')) {
-            statusCode = 404;
-            message = error.message;
-          } else {
-            message = error.message;
-          }
-        }
-
-        res.status(statusCode).json({
+      if (!req.file) {
+        return res.status(400).json({
           success: false,
-          message
+          error: 'Nenhum arquivo enviado'
         });
       }
-    }
-  );
 
-  // Renovar URL assinada de anexo
-  app.post('/api/attachments/:attachmentId/renew-url', 
-    isAuthenticated,
-    async (req: Request, res: Response) => {
-      try {
-        const { attachmentId } = req.params;
-        const user = (req as any).user;
-
-        console.log(`🔄 Renewing URL for attachment ${attachmentId}`);
-
-        // Buscar anexo
-        const attachment = await storage.getAttachmentById(Number(attachmentId));
-        if (!attachment) {
-          return res.status(404).json({
-            success: false,
-            message: 'Anexo não encontrado'
-          });
-        }
-
-        // Validar acesso
-        if (attachment.clinic_id !== user.clinic_id && user.role !== 'super_admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Acesso negado'
-          });
-        }
-
-        // Renovar URL
-        const newSignedUrl = await supabaseStorage.createSignedUrl(attachment.storage_path, 24 * 60 * 60);
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-        // Atualizar no banco
-        await storage.updateAttachment(Number(attachmentId), {
-          signed_url: newSignedUrl,
-          signed_url_expires: expiresAt
+      // Obter dados do usuário da sessão
+      const session = req.session as any;
+      if (!session?.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Usuário não autenticado'
         });
+      }
 
-        console.log(`✅ URL renewed for attachment ${attachmentId}`);
+      // Obter perfil do usuário para clínica
+      const userProfile = await storage.getUserProfile(session.user.email);
+      if (!userProfile) {
+        return res.status(403).json({
+          success: false,
+          error: 'Perfil do usuário não encontrado'
+        });
+      }
 
-        res.json({
-          success: true,
+      // Preparar parâmetros de upload
+      const uploadParams = {
+        file: req.file.buffer,
+        filename: req.file.originalname,
+        mimeType: req.file.mimetype,
+        conversationId,
+        clinicId: userProfile.clinic_id,
+        userId: session.user.id,
+        caption: caption || undefined,
+        sendToWhatsApp: sendToWhatsApp === 'true'
+      };
+
+      console.log(`📋 Upload params:`, {
+        filename: uploadParams.filename,
+        mimeType: uploadParams.mimeType,
+        fileSize: uploadParams.file.length,
+        sendToWhatsApp: uploadParams.sendToWhatsApp
+      });
+
+      // Executar upload
+      const result = await uploadService.uploadFile(uploadParams);
+
+      console.log(`✅ Upload completed:`, {
+        messageId: result.message.id,
+        attachmentId: result.attachment.id,
+        whatsappSent: result.whatsapp.sent
+      });
+
+      res.json({
+        success: true,
+        data: {
+          message: result.message,
+          attachment: result.attachment,
+          signedUrl: result.signedUrl,
+          expiresAt: result.expiresAt,
+          whatsapp: result.whatsapp
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro interno do servidor';
+      
+      res.status(500).json({
+        success: false,
+        error: errorMessage
+      });
+    }
+  });
+
+  // POST /api/attachments/:id/renew-url
+  app.post('/api/attachments/:id/renew-url', async (req: Request, res: Response) => {
+    try {
+      const attachmentId = parseInt(req.params.id);
+      
+      if (isNaN(attachmentId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID do anexo inválido'
+        });
+      }
+
+      // Buscar anexo
+      const attachment = await storage.getAttachmentById(attachmentId);
+      if (!attachment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Anexo não encontrado'
+        });
+      }
+
+      // Verificar se tem storage_path
+      if (!attachment.storage_path) {
+        return res.status(400).json({
+          success: false,
+          error: 'Anexo não possui caminho de storage'
+        });
+      }
+
+      // Gerar nova URL assinada (24 horas)
+      const supabaseStorage = new SupabaseStorageService();
+      const newSignedUrl = await supabaseStorage.createSignedUrl(attachment.storage_path, 24 * 60 * 60);
+      const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // Atualizar no banco
+      await storage.updateAttachment(attachmentId, {
+        signed_url: newSignedUrl,
+        signed_url_expires: newExpiresAt
+      });
+
+      console.log(`🔄 URL renewed for attachment ${attachmentId}`);
+
+      res.json({
+        success: true,
+        data: {
           signedUrl: newSignedUrl,
-          expiresAt: expiresAt.toISOString()
-        });
+          expiresAt: newExpiresAt.toISOString()
+        }
+      });
 
-      } catch (error) {
-        console.error('❌ URL renewal error:', error);
-        res.status(500).json({
+    } catch (error) {
+      console.error('❌ URL renewal error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro interno do servidor';
+      
+      res.status(500).json({
+        success: false,
+        error: errorMessage
+      });
+    }
+  });
+
+  // DELETE /api/attachments/:id
+  app.delete('/api/attachments/:id', async (req: Request, res: Response) => {
+    try {
+      const attachmentId = parseInt(req.params.id);
+      
+      if (isNaN(attachmentId)) {
+        return res.status(400).json({
           success: false,
-          message: 'Erro ao renovar URL'
+          error: 'ID do anexo inválido'
         });
       }
-    }
-  );
 
-  // Deletar anexo
-  app.delete('/api/attachments/:attachmentId',
-    isAuthenticated,
-    async (req: Request, res: Response) => {
-      try {
-        const { attachmentId } = req.params;
-        const user = (req as any).user;
-
-        console.log(`🗑️ Deleting attachment ${attachmentId}`);
-
-        // Buscar anexo
-        const attachment = await storage.getAttachmentById(Number(attachmentId));
-        if (!attachment) {
-          return res.status(404).json({
-            success: false,
-            message: 'Anexo não encontrado'
-          });
-        }
-
-        // Validar acesso
-        if (attachment.clinic_id !== user.clinic_id && user.role !== 'super_admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Acesso negado'
-          });
-        }
-
-        // Deletar do storage
-        if (attachment.storage_path) {
-          await supabaseStorage.deleteFile(attachment.storage_path);
-        }
-
-        // Deletar do banco
-        await storage.deleteAttachment(Number(attachmentId));
-
-        console.log(`✅ Attachment ${attachmentId} deleted`);
-
-        res.json({
-          success: true,
-          message: 'Anexo deletado com sucesso'
-        });
-
-      } catch (error) {
-        console.error('❌ Attachment deletion error:', error);
-        res.status(500).json({
+      // Buscar anexo
+      const attachment = await storage.getAttachmentById(attachmentId);
+      if (!attachment) {
+        return res.status(404).json({
           success: false,
-          message: 'Erro ao deletar anexo'
+          error: 'Anexo não encontrado'
         });
       }
+
+      // Deletar do Supabase Storage se existir
+      if (attachment.storage_path) {
+        const supabaseStorage = new SupabaseStorageService();
+        await supabaseStorage.deleteFile(attachment.storage_path);
+        console.log(`🗑️ File deleted from storage: ${attachment.storage_path}`);
+      }
+
+      // Deletar do banco
+      await storage.deleteAttachment(attachmentId);
+
+      console.log(`✅ Attachment ${attachmentId} deleted completely`);
+
+      res.json({
+        success: true,
+        message: 'Anexo deletado com sucesso'
+      });
+
+    } catch (error) {
+      console.error('❌ Attachment deletion error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro interno do servidor';
+      
+      res.status(500).json({
+        success: false,
+        error: errorMessage
+      });
     }
-  );
+  });
+
+  console.log('📤 Upload routes registered:');
+  console.log('  POST /api/conversations/:id/upload');
+  console.log('  POST /api/attachments/:id/renew-url');
+  console.log('  DELETE /api/attachments/:id');
 }
