@@ -1995,6 +1995,109 @@ export class PostgreSQLStorage implements IStorage {
       return false;
     }
   }
+
+  // User Profile
+  async getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined> {
+    console.log('Getting user profile for userId:', userId);
+    try {
+      // Try to find user by email first
+      const userResult = await db.execute(sql`
+        SELECT id, email, name, role FROM users WHERE email = ${userId} LIMIT 1
+      `);
+      
+      if (userResult.rows.length > 0) {
+        console.log('Found user for profile:', userResult.rows[0]);
+        return { clinic_id: 1 }; // Default clinic for now
+      }
+      
+      // If not found by email, try by ID
+      const userIdResult = await db.execute(sql`
+        SELECT id, email, name, role FROM users WHERE id = ${userId} LIMIT 1
+      `);
+      
+      if (userIdResult.rows.length > 0) {
+        console.log('Found user by ID for profile:', userIdResult.rows[0]);
+        return { clinic_id: 1 }; // Default clinic for now
+      }
+      
+      console.log('User not found, returning undefined');
+      return undefined;
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return undefined;
+    }
+  }
+
+  // Additional methods for upload system
+  async createMessage(message: any): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO messages (conversation_id, sender_type, content, message_type, status, device_type, whatsapp_message_id)
+        VALUES (${message.conversation_id}, ${message.sender_type}, ${message.content}, ${message.message_type || 'text'}, ${message.status || 'sent'}, ${message.device_type || 'system'}, ${message.whatsapp_message_id || null})
+        RETURNING *
+      `);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error creating message:', error);
+      throw error;
+    }
+  }
+
+  async createAttachment(attachment: any): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO message_attachments (
+          message_id, clinic_id, file_name, file_type, file_size, file_url,
+          storage_bucket, storage_path, signed_url, signed_url_expires
+        )
+        VALUES (
+          ${attachment.message_id}, ${attachment.clinic_id}, ${attachment.file_name}, 
+          ${attachment.file_type}, ${attachment.file_size}, ${attachment.file_url},
+          ${attachment.storage_bucket || null}, ${attachment.storage_path || null},
+          ${attachment.signed_url || null}, ${attachment.signed_url_expires || null}
+        )
+        RETURNING *
+      `);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error creating attachment:', error);
+      throw error;
+    }
+  }
+
+  async getActiveWhatsAppInstance(clinicId: number): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM whatsapp_numbers 
+        WHERE clinic_id = ${clinicId} AND status = 'open'
+        LIMIT 1
+      `);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error getting WhatsApp instance:', error);
+      throw error;
+    }
+  }
+
+  async getConversationById(id: string): Promise<any> {
+    try {
+      const conversationIdNum = parseInt(id);
+      if (!isNaN(conversationIdNum)) {
+        const result = await db.execute(sql`
+          SELECT * FROM conversations WHERE id = ${conversationIdNum}
+        `);
+        return result.rows[0];
+      }
+      
+      const result = await db.execute(sql`
+        SELECT * FROM conversations WHERE conversation_id = ${id}
+      `);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error getting conversation:', error);
+      throw error;
+    }
+  }
 }
 
 export const postgresStorage = new PostgreSQLStorage();

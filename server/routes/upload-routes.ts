@@ -43,6 +43,12 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       const { caption, sendToWhatsApp = 'true' } = req.body;
       
       console.log(`📤 Upload request for conversation ${conversationId}`);
+      console.log(`📋 Request body:`, { caption, sendToWhatsApp });
+      console.log(`📁 File info:`, req.file ? { 
+        name: req.file.originalname, 
+        size: req.file.size, 
+        type: req.file.mimetype 
+      } : 'No file');
 
       if (!req.file) {
         return res.status(400).json({
