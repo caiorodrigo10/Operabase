@@ -475,18 +475,30 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Solução definitiva: usar contact_id como conversation_id para IDs científicos
-        // As mensagens AI usam este padrão e funcionam perfeitamente
-        const contactId = actualConversation.contact_id;
-        console.log('💾 Using contact_id as conversation_id (AI pattern):', contactId);
-        console.log('💾 This resolves foreign key issues with scientific notation IDs');
+        // Solução definitiva: buscar o conversation_id real que existe no banco
+        console.log('💾 Finding real conversation_id for contact_id:', actualConversation.contact_id);
         
-        const useConversationId = contactId;
+        const { data: realConversation } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('contact_id', actualConversation.contact_id)
+          .single();
+        
+        if (!realConversation) {
+          throw new Error(`No conversation found for contact_id ${actualConversation.contact_id}`);
+        }
+        
+        const useConversationId = realConversation.id;
+        console.log('💾 Using real conversation_id from database:', useConversationId);
+        
+        // Usar string para preservar precisão de IDs científicos
+        const conversationIdString = useConversationId.toString();
+        console.log('💾 Converting conversation_id to string to preserve precision:', conversationIdString);
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
-            conversation_id: useConversationId,
+            conversation_id: conversationIdString,
             sender_type: 'professional',
             content: content
           })
