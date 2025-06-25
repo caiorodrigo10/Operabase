@@ -77,10 +77,6 @@ input[type="range"]::-moz-range-thumb {
   background-color: #3b82f6 !important;
   box-shadow: 0 0 4px rgba(59, 130, 246, 0.4);
 }
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: none;
-}
 
 /* Google Calendar-style Drag and Drop with Custom Cursor */
 .drag-over-indicator {
