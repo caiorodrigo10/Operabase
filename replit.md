@@ -339,13 +339,12 @@ SESSION_SECRET=your_session_secret
 - Sistema de upload, visualização e armazenamento totalmente documentado
 
 ### June 25, 2025 - Sistema de Upload Interface Web PROBLEMA IDENTIFICADO E CORRIGIDO ✅
-- Identificado bug: conversationId vazio na interface web (/api/conversations//upload)
-- FileUploadModal não recebia conversationId como prop, enviava string vazia
-- Corrigido: adicionada prop conversationId ao FileUploadModal
-- MainConversationArea agora passa selectedConversationId corretamente
-- Páginas/Conversas/index.tsx atualizada para passar selectedConversationId
-- Sistema funcionando via curl (200 OK) e interface web corrigida
-- Logs de debug mantidos para confirmar funcionamento
+- Identificado bug real: Layout Desktop (3-column) não passava selectedConversationId
+- Corrigido: MainConversationArea em layout Desktop agora recebe selectedConversationId
+- Adicionada validação no backend para conversationId vazio com erro 400
+- FileUploadModal e hooks já estavam corretos, problema era na passagem de props
+- Sistema funcionando via curl (200 OK) e interface web corrigida definitivamente
+- Todos os layouts (Mobile, Tablet, Desktop) agora passam selectedConversationId corretamente
 
 ### June 25, 2025 - Sistema de Upload Completo Implementado ✅
 - Implementado FileUploadModal com drag-and-drop e preview de arquivos

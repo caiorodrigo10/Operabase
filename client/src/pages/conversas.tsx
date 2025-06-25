@@ -416,6 +416,7 @@ export default function ConversasPage() {
           timelineItems={timelineItems}
           patientInfo={currentPatientInfo}
           onSendMessage={handleSendMessage}
+          selectedConversationId={selectedConversationId}
         />
       </div>
       
