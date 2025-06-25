@@ -761,6 +761,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             console.error('❌ Evolution API network error:', error.message);
             
             // Marcar como falha em caso de erro de rede
+            const { error: networkError } = await supabase
+              .from('messages')
+              .update({ evolution_status: 'failed' })
+              .eq('id', formattedMessage.id);
+            
+            if (networkError) {
+              console.error('❌ Error updating to failed (network error):', networkError);
+            } else {
+              console.log('✅ Message marked as failed - network error');
+              await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
+            }
             try {
               await supabase
                 .from('messages')
