@@ -236,16 +236,16 @@ SESSION_SECRET=your_session_secret
 - Added window focus detection for instant updates when returning to tab
 - Optimized cache invalidation for real-time message delivery
 
-### June 25, 2025 - WhatsApp Instance Management by Clinic ✅
-- Implemented dynamic WhatsApp instance selection based on clinic configuration
-- System now queries whatsapp_numbers table to find active instances for each clinic
-- Replaced hardcoded "Igor Avantto" instance with clinic-specific instance lookup
-- Enhanced message sending to use correct Evolution API instance per clinic
-- Added comprehensive error handling for missing or inactive WhatsApp instances
-- Messages automatically marked as 'failed' if no active instance available for clinic
-- Created test instance 'clinic_1_main' for clinic 1 with 'connected' status
-- System now properly isolates WhatsApp communications by clinic tenant
-- Evolution API failure indicators system working with red triangle visual feedback
+### June 25, 2025 - WhatsApp Instance Management by Clinic with "Open" Status ✅
+- Implemented dynamic WhatsApp instance selection using status "open" only
+- System queries whatsapp_numbers table for clinic's unique "open" instance
+- Completely removed hardcoded "Igor Avantto" and test "connected" instances
+- Enhanced message sending to use clinic's "open" Evolution API instance
+- Added comprehensive error handling for missing "open" instances
+- Messages automatically marked as 'failed' if no "open" instance available
+- Cleaned up test instance, now using only existing "open" instance for clinic 1
+- System properly isolates WhatsApp communications by clinic with single "open" instance
+- Evolution API failure indicators working with red triangle visual feedback
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

@@ -575,12 +575,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Enviar para Evolution API em background usando instância ativa da clínica
       setImmediate(async () => {
         try {
-          // Buscar instância WhatsApp ativa da clínica
+          // Buscar instância WhatsApp ativa da clínica (status "open")
           const { data: activeInstance } = await supabase
             .from('whatsapp_numbers')
             .select('*')
             .eq('clinic_id', clinicId)
-            .eq('status', 'connected')
+            .eq('status', 'open')
             .limit(1)
             .single();
 
