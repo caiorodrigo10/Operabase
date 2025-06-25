@@ -299,18 +299,51 @@ export function MainConversationArea({
           </Button>
         </div>
 
-        {isRecording && (
+        {/* Recording State UI */}
+        {recordingState === 'recording' && (
           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-red-700">Gravando áudio...</span>
+              <span className="text-sm text-red-700">
+                Gravando áudio... {formatRecordingTime(recordingTime)}
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsRecording(false)}
+                onClick={stopRecording}
                 className="ml-auto text-red-600 hover:text-red-800"
               >
                 Parar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Audio Preview UI */}
+        {recordingState === 'stopped' && audioUrl && (
+          <AudioRecordingPreview
+            audioUrl={audioUrl}
+            recordingTime={recordingTime}
+            onSend={handleSendAudio}
+            onCancel={handleCancelAudio}
+            className="mt-3"
+          />
+        )}
+
+        {/* Audio Error UI */}
+        {audioError && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-red-700">
+                Erro: {audioError}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearRecording}
+                className="ml-auto text-red-600 hover:text-red-800"
+              >
+                Fechar
               </Button>
             </div>
           </div>
