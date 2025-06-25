@@ -173,6 +173,13 @@ export interface IStorage {
   updateWhatsAppNumberStatus(id: number, status: string, connectedAt?: Date): Promise<WhatsAppNumber | undefined>;
   updateWhatsAppConnectionFromWebhook(instanceName: string, updateData: any): Promise<boolean>;
   deleteWhatsAppNumber(id: number): Promise<boolean>;
+  
+  // Upload system methods
+  getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined>;
+  createMessage(message: any): Promise<any>;
+  createAttachment(attachment: any): Promise<any>;
+  getActiveWhatsAppInstance(clinicId: number): Promise<any>;
+  getConversationById(id: string): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
