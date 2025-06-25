@@ -7,6 +7,7 @@ import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploader } from "./FileUploader";
 import { FileUploadModal } from "./FileUploadModal";
+import { AudioRecorder } from "./AudioRecorder";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
 import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText, Play, Pause, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -452,18 +453,10 @@ export function MainConversationArea({
             />
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10",
-              isRecording && "text-red-500 bg-red-50"
-            )}
-            onClick={handleMicrophoneClick}
-            title={isRecording ? 'Parar gravação' : 'Gravar áudio'}
-          >
-            <Mic className="w-4 h-4" />
-          </Button>
+          <AudioRecorder 
+            onSendAudio={handleSendAudio}
+            className="flex-shrink-0"
+          />
 
           <Button
             onClick={handleSendMessage}

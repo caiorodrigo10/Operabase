@@ -138,22 +138,123 @@ export function useAudioRecorder(): AudioRecorderHook {
       console.error('❌ Error starting recording:', err);
       console.error('❌ Error details:', {
         name: err instanceof Error ? err.name : 'Unknown',
-        message: err instanceof Error ? err.message : String(err)
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : 'No stack'
       });
       
+      let errorMsg = 'Erro ao acessar o microfone. Verifique as permissões.';
+      
       if (err instanceof Error && err.name === 'NotAllowedError') {
-        const errorMsg = 'Permissão de microfone negada. Permita o acesso ao microfone e tente novamente.';
-        console.error('🚫 Permission denied:', errorMsg);
-        setError(errorMsg);
+        errorMsg = `Acesso ao microfone bloqueado pelo navegador Arc.
+
+COMO RESOLVER:
+1. Clique no ícone de cadeado/escudo na barra de endereço
+2. Permita o acesso ao microfone para este site
+3. Recarregue a página e tente novamente
+
+Se não funcionar:
+• Vá em Configurações > Privacidade > Câmera e microfone
+• Certifique-se que o microfone está habilitado para este domínio`;
+        
+        console.error('🚫 Permission denied by browser');
       } else if (err instanceof Error && err.name === 'NotFoundError') {
-        const errorMsg = 'Microfone não encontrado. Verifique se há um microfone conectado.';
-        console.error('🎤 No microphone:', errorMsg);
-        setError(errorMsg);
+        errorMsg = `Microfone não encontrado.
+
+VERIFIQUE:
+• Se há um microfone conectado ao seu computador
+• Se o microfone está funcionando em outros aplicativos
+• Se não há outros aplicativos usando o microfone`;
+        
+        console.error('🎤 No microphone device found');
+      } else if (err instanceof Error && err.name === 'NotReadableError') {
+        errorMsg = `Microfone em uso por outro aplicativo.
+
+SOLUÇÃO:
+• Feche outros aplicativos que possam estar usando o microfone
+• Reinicie o navegador Arc
+• Tente novamente`;
+        
+        console.error('🎤 Microphone already in use');
+      } else if (err instanceof Error && err.name === 'OverconstrainedError') {
+        errorMsg = `Configuração de áudio não suportada pelo seu microfone.
+
+SOLUÇÃO: Tentando configuração alternativa...`;
+        
+        console.error('🎤 Audio constraints not supported');
+        
+        // Tentar com configurações mais simples
+        try {
+          console.log('🔄 Trying fallback audio settings...');
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: true // Configuração mais simples
+          });
+          
+          streamRef.current = fallbackStream;
+          chunksRef.current = [];
+          
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+            ? 'audio/webm' 
+            : 'audio/mp4';
+            
+          const mediaRecorder = new MediaRecorder(fallbackStream, { mimeType });
+          mediaRecorderRef.current = mediaRecorder;
+          
+          // Configurar eventos do MediaRecorder (mesmo código anterior)
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              chunksRef.current.push(event.data);
+            }
+          };
+          
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunksRef.current, { type: mimeType });
+            setAudioBlob(blob);
+            const url = URL.createObjectURL(blob);
+            setAudioUrl(url);
+            setRecordingState('stopped');
+            stopTimer();
+            
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop());
+              streamRef.current = null;
+            }
+          };
+          
+          mediaRecorder.onstart = () => {
+            setRecordingState('recording');
+            setRecordingTime(0);
+            startTimer();
+          };
+          
+          mediaRecorder.onerror = (event) => {
+            console.error('❌ MediaRecorder fallback error:', event);
+            setError('Erro durante a gravação');
+            setRecordingState('idle');
+            stopTimer();
+          };
+          
+          console.log('✅ Fallback recording started');
+          mediaRecorder.start(1000);
+          return; // Sucesso com fallback
+          
+        } catch (fallbackErr) {
+          console.error('❌ Fallback also failed:', fallbackErr);
+          errorMsg = 'Microfone não compatível com este navegador. Tente usar Chrome ou Firefox.';
+        }
       } else {
-        const errorMsg = `Erro ao acessar o microfone: ${err instanceof Error ? err.message : String(err)}`;
-        console.error('💥 Generic error:', errorMsg);
-        setError(errorMsg);
+        errorMsg = `Erro desconhecido ao acessar microfone.
+
+DETALHES: ${err instanceof Error ? err.message : String(err)}
+
+TENTE:
+• Recarregar a página
+• Usar outro navegador (Chrome, Firefox)
+• Verificar se o microfone funciona em outros sites`;
+        
+        console.error('💥 Unknown microphone error');
       }
+      
+      setError(errorMsg);
       setRecordingState('idle');
     }
   }, [isSupported, startTimer, stopTimer]);
