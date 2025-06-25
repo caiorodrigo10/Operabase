@@ -50,9 +50,10 @@ export const conversations = pgTable("conversations", {
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.conversation_id),
-  sender_type: text("sender_type").notNull(), // patient, ai
+  conversation_id: integer("conversation_id").notNull(), // Simplificar para integer primeiro
+  sender_type: text("sender_type").notNull(), // patient, ai, professional, system
   content: text("content").notNull(),
+  message_type: varchar("message_type", { length: 50 }).notNull().default("text"), // text, image, audio, video, document, location, contact
   ai_action: text("ai_action"), // agendou_consulta, enviou_followup, etc
   timestamp: timestamp("timestamp").defaultNow(),
 }, (table) => [

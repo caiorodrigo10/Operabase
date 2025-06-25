@@ -2038,13 +2038,14 @@ export class PostgreSQLStorage implements IStorage {
         timestamp_provided: !!message.timestamp
       });
       
-      // Usar apenas colunas que existem na tabela real do banco
+      // Usar schema atualizado com message_type
       const result = await db.execute(sql`
-        INSERT INTO messages (conversation_id, sender_type, content, ai_action)
+        INSERT INTO messages (conversation_id, sender_type, content, message_type, ai_action)
         VALUES (
           ${String(message.conversation_id)}, 
           ${message.sender_type}, 
           ${message.content},
+          ${message.message_type || 'text'},
           ${message.ai_action || null}
         )
         RETURNING *
