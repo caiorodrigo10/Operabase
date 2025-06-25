@@ -83,9 +83,9 @@ export class ConversationUploadService {
         clinicId
       });
 
-      // 3. Criar mensagem no banco
+      // 4. Criar mensagem no banco
       console.log('💾 Creating message in database...');
-      const messageContent = caption || `📎 ${filename}`;
+      const messageContent = caption || `📎 ${sanitizedFilename}`;
       const message = await this.storage.createMessage({
         conversation_id: conversationId,
         sender_type: 'professional',
@@ -94,12 +94,12 @@ export class ConversationUploadService {
         status: sendToWhatsApp ? 'pending' : 'sent'
       });
 
-      // 4. Criar attachment
+      // 5. Criar attachment
       console.log('📎 Creating attachment record...');
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
         clinic_id: clinicId,
-        file_name: filename,
+        file_name: sanitizedFilename,
         file_type: mimeType,
         file_size: file.length,
         file_url: storageResult.signed_url,
