@@ -2,7 +2,9 @@
 
 ## Overview
 
-TaskMed is a comprehensive healthcare management platform built with modern full-stack architecture. The system provides multi-tenant clinic management with advanced features including appointment scheduling, patient management, medical records, Google Calendar integration, WhatsApp communication, and an AI-powered assistant named Mara with RAG (Retrieval-Augmented Generation) capabilities.
+TaskMed is a comprehensive healthcare management platform built with modern full-stack architecture. The system provides multi-tenant clinic management with advanced features including appointment scheduling, patient management, medical records, Google Calendar integration, WhatsApp communication via Evolution API V2, and an AI-powered assistant named Mara with RAG (Retrieval-Augmented Generation) capabilities.
+
+The platform features a sophisticated conversation system with dual-channel file upload capabilities (Supabase Storage + WhatsApp), intelligent audio differentiation, real-time messaging with WebSocket fallback, and Redis-powered caching for sub-50ms response times. The system supports 500+ concurrent users with comprehensive multi-tenant data isolation.
 
 ## System Architecture
 
@@ -369,6 +371,17 @@ SESSION_SECRET=your_session_secret
 - Corrigido problema de sanitização de nomes de arquivo com caracteres especiais
 - Schema do banco totalmente alinhado: removido whatsapp_message_id, usado evolution_status existente
 - Sistema de upload 100% operacional e pronto para integração N8N
+
+### June 25, 2025 - Sistema de Diferenciação de Áudio Implementado ✅
+- Implementado sistema completo de diferenciação entre tipos de áudio
+- Backend: Tipo "audio_file" para uploads vs "audio_voice" para mensagens WhatsApp
+- Evolution API: Ambos os tipos enviam como "audio" mas são armazenados diferentemente
+- Frontend: Mensagens com tipo "audio_file" mostram "Áudio encaminhado" em texto pequeno
+- Preservada estrutura de UI existente com adição visual mínima e elegante
+- MessageBubble atualizado para passar message_type ao invés de apenas file_type
+- MediaMessage com lógica condicional para renderizar indicador apenas em uploads
+- Teste funcional criado na conversa do Caio Rodrigo demonstrando a diferenciação
+- Sistema mantém compatibilidade total com áudios WhatsApp existentes
 
 ### June 25, 2025 - Evolution API V2 Integration Complete ✅
 - Fixed critical API structure issue: Evolution API V2 uses flat payload structure vs V1 nested format
