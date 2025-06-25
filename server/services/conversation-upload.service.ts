@@ -480,19 +480,15 @@ export class ConversationUploadService {
         throw new Error('Evolution API Key não configurada');
       }
 
-      // Payload conforme documentação Evolution API - estrutura CORRETA
+      // Payload V2 Evolution API - estrutura CORRETA com campos diretos
       const payload = {
         number: conversation.contact.phone,
-        mediaMessage: {
-          mediaType: params.mediaType,  // Evolution API espera 'mediaType' com T maiúsculo
-          fileName: params.fileName || 'attachment',
-          media: params.mediaUrl,
-          ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
-        },
-        options: {
-          delay: 1000,
-          presence: params.mediaType === 'audio' ? 'recording' : 'composing'
-        }
+        mediatype: params.mediaType,  // Campo direto no root
+        mimetype: this.getMimeType(params.mediaType),
+        media: params.mediaUrl,
+        fileName: params.fileName || 'attachment',
+        delay: 1000,
+        ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
       };
       
       console.log('📤 Evolution API Payload (mediaType com T maiúsculo):');

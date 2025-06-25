@@ -2,7 +2,7 @@
  * Teste direto da Evolution API para identificar o formato correto
  */
 
-const https = require('https');
+import https from 'https';
 
 const testEvolutionAPI = async () => {
   console.log('🧪 Testando Evolution API diretamente...');
