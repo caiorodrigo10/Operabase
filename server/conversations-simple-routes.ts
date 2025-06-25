@@ -673,6 +673,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               console.log('✅ Evolution API success:', result);
               
               // Atualizar status para 'sent' em caso de sucesso
+              console.log('🔄 Updating message status to sent for ID:', formattedMessage.id);
               const { error: updateError } = await supabase
                 .from('messages')
                 .update({ evolution_status: 'sent' })
@@ -680,8 +681,18 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               
               if (updateError) {
                 console.error('❌ Error updating message status to sent:', updateError);
+                console.error('❌ Update error details:', JSON.stringify(updateError, null, 2));
               } else {
                 console.log('✅ Message status updated to sent for ID:', formattedMessage.id);
+                
+                // Verificar se a atualização realmente funcionou
+                const { data: checkMessage } = await supabase
+                  .from('messages')
+                  .select('evolution_status')
+                  .eq('id', formattedMessage.id)
+                  .single();
+                
+                console.log('🔍 Message status verification:', checkMessage?.evolution_status);
               }
               
             } else {
