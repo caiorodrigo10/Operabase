@@ -188,6 +188,7 @@ export function MainConversationArea({
             size="sm"
             className="text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10"
             title="Anexar arquivo"
+            onClick={() => setShowUploadModal(true)}
           >
             <Paperclip className="w-4 h-4" />
           </Button>
@@ -251,6 +252,13 @@ export function MainConversationArea({
             </div>
           </div>
         )}
+
+        <FileUploadModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          conversationId={selectedConversation.id}
+          onUploadSuccess={handleUploadSuccess}
+        />
       </div>
     </div>
   );

@@ -1,301 +1,214 @@
-/**
- * FASE 2: Upload Routes para Supabase Storage
- * Endpoints para upload de arquivos em conversas
- */
-
 import { Request, Response } from 'express';
 import multer from 'multer';
-import { SupabaseStorageService } from '../services/supabase-storage.service';
 import { IStorage } from '../storage';
+import { ConversationUploadService } from '../services/conversation-upload.service';
+import { SupabaseStorageService } from '../services/supabase-storage.service';
+import { EvolutionAPIService } from '../services/evolution-api.service';
 import { isAuthenticated } from '../auth';
-import { createClient } from '@supabase/supabase-js';
 
-// Configurar multer para upload em memória
+// Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB
+    fileSize: 50 * 1024 * 1024, // 50MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Validação básica de tipo será feita no service
-    cb(null, true);
+    // Allow specific file types
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/mov', 'video/avi', 'video/webm',
+      'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a',
+      'application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Tipo de arquivo não suportado: ${file.mimetype}`));
+    }
   }
 });
 
-// Helper function para determinar tipo de mensagem
-function getMessageType(mimeType: string): string {
-  if (mimeType.startsWith('image/')) return 'image';
-  if (mimeType.startsWith('audio/')) return 'audio';
-  if (mimeType.startsWith('video/')) return 'video';
-  return 'document';
-}
-
 export function setupUploadRoutes(app: any, storage: IStorage) {
-  const storageService = new SupabaseStorageService();
+  const supabaseStorage = new SupabaseStorageService();
+  const evolutionAPI = new EvolutionAPIService();
+  const uploadService = new ConversationUploadService(storage, supabaseStorage, evolutionAPI);
 
-  /**
-   * Upload de arquivo para conversa específica
-   */
-  app.post('/api/conversations-simple/:id/upload', 
-    isAuthenticated, 
-    upload.single('file'), 
+  // Upload de arquivo para conversa
+  app.post('/api/conversations/:conversationId/upload', 
+    isAuthenticated,
+    upload.single('file'),
     async (req: Request, res: Response) => {
       try {
-        const conversationId = req.params.id;
-        const file = req.file;
-        const clinicId = 1; // Hardcoded for testing
-        
-        if (!file) {
+        const { conversationId } = req.params;
+        const { caption, sendToWhatsApp = 'true' } = req.body;
+        const user = (req as any).user;
+
+        console.log(`📤 Upload request for conversation ${conversationId}`);
+
+        // Validar arquivo
+        if (!req.file) {
           return res.status(400).json({
             success: false,
-            error: 'Nenhum arquivo enviado'
+            message: 'Nenhum arquivo enviado'
           });
         }
 
-        console.log('📤 Processando upload:', {
-          conversationId,
-          fileName: file.originalname,
-          size: file.size,
-          mimeType: file.mimetype
-        });
-
-        // Validar tipo MIME
-        if (!storageService.validateMimeType(file.mimetype)) {
-          return res.status(400).json({
-            success: false,
-            error: 'Tipo de arquivo não permitido'
-          });
-        }
-
-        // Validar tamanho
-        if (!storageService.validateFileSize(file.size)) {
-          return res.status(400).json({
-            success: false,
-            error: 'Arquivo muito grande (máximo 50MB)'
-          });
-        }
-
-        // Verificar se conversa existe
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-
-        const { data: conversation, error: convError } = await supabase
-          .from('conversations')
-          .select('id, clinic_id, contact_id')
-          .eq('id', conversationId)
-          .single();
-
-        if (convError || !conversation) {
+        // Validar conversa existe e usuário tem acesso
+        const conversation = await storage.getConversationById(conversationId);
+        if (!conversation) {
           return res.status(404).json({
             success: false,
-            error: 'Conversa não encontrada'
+            message: 'Conversa não encontrada'
           });
         }
 
-        // 1. Criar mensagem para o arquivo
-        const { data: message, error: messageError } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: conversationId,
-            sender_type: 'professional',
-            sender_name: req.user?.name || 'Sistema',
-            content: `Arquivo enviado: ${file.originalname}`,
-            message_type: getMessageType(file.mimetype),
-            direction: 'outbound',
-            device_type: 'system',
-            evolution_status: 'sent' // Arquivos não passam pela Evolution API
-          })
-          .select()
-          .single();
-
-        if (messageError) {
-          console.error('❌ Erro ao criar mensagem:', messageError);
-          return res.status(500).json({
+        // Validar acesso à clínica
+        if (conversation.clinic_id !== user.clinic_id && user.role !== 'super_admin') {
+          return res.status(403).json({
             success: false,
-            error: 'Erro ao criar mensagem'
+            message: 'Acesso negado'
           });
         }
 
-        // 2. Upload para Supabase Storage
-        const uploadResult = await storageService.uploadFile(file, {
+        // Processar upload
+        const result = await uploadService.uploadFile({
+          file: req.file.buffer,
+          filename: req.file.originalname,
+          mimeType: req.file.mimetype,
           conversationId,
-          clinicId,
-          messageId: message.id,
-          originalName: file.originalname,
-          mimeType: file.mimetype,
-          size: file.size
+          clinicId: conversation.clinic_id,
+          userId: user.id,
+          caption: caption || undefined,
+          sendToWhatsApp: sendToWhatsApp === 'true'
         });
 
-        // 3. Criar attachment record
-        const { data: attachment, error: attachmentError } = await supabase
-          .from('message_attachments')
-          .insert({
-            message_id: message.id,
-            clinic_id: clinicId,
-            file_name: file.originalname,
-            file_type: file.mimetype,
-            file_size: file.size,
-            storage_bucket: 'conversation-attachments',
-            storage_path: uploadResult.storage_path,
-            signed_url: uploadResult.signed_url,
-            signed_url_expires: uploadResult.expires_at.toISOString()
-          })
-          .select()
-          .single();
+        console.log(`✅ Upload successful for ${req.file.originalname}`);
 
-        if (attachmentError) {
-          console.error('❌ Erro ao criar attachment:', attachmentError);
-          // Cleanup: deletar arquivo do storage se falhou
-          await storageService.deleteFile(uploadResult.storage_path);
-          return res.status(500).json({
-            success: false,
-            error: 'Erro ao registrar anexo'
-          });
-        }
-
-        console.log('✅ Upload concluído com sucesso:', {
-          messageId: message.id,
-          attachmentId: attachment.id,
-          storagePath: uploadResult.storage_path
-        });
-
-        // 4. Retornar resposta com mensagem e anexo
-        res.json({
-          success: true,
-          message: {
-            ...message,
-            attachments: [attachment]
-          },
-          attachment
-        });
+        res.json(result);
 
       } catch (error) {
-        console.error('❌ Erro no upload:', error);
-        res.status(500).json({
+        console.error('❌ Upload error:', error);
+        
+        let statusCode = 500;
+        let message = 'Erro interno do servidor';
+
+        if (error instanceof Error) {
+          if (error.message.includes('muito grande')) {
+            statusCode = 413;
+            message = error.message;
+          } else if (error.message.includes('não suportado')) {
+            statusCode = 400;
+            message = error.message;
+          } else if (error.message.includes('não encontrada')) {
+            statusCode = 404;
+            message = error.message;
+          } else {
+            message = error.message;
+          }
+        }
+
+        res.status(statusCode).json({
           success: false,
-          error: 'Erro interno do servidor'
+          message
         });
       }
     }
   );
 
-  /**
-   * Renovar URL assinada de arquivo
-   */
-  app.post('/api/attachments/:id/renew-url', 
+  // Renovar URL assinada de anexo
+  app.post('/api/attachments/:attachmentId/renew-url', 
     isAuthenticated,
     async (req: Request, res: Response) => {
       try {
-        const attachmentId = req.params.id;
+        const { attachmentId } = req.params;
+        const user = (req as any).user;
 
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+        console.log(`🔄 Renewing URL for attachment ${attachmentId}`);
 
-        // Buscar attachment
-        const { data: attachment, error } = await supabase
-          .from('message_attachments')
-          .select('*')
-          .eq('id', attachmentId)
-          .single();
-
-        if (error || !attachment) {
+        // Buscar anexo
+        const attachment = await storage.getAttachmentById(Number(attachmentId));
+        if (!attachment) {
           return res.status(404).json({
             success: false,
-            error: 'Anexo não encontrado'
+            message: 'Anexo não encontrado'
           });
         }
 
-        // Gerar nova URL assinada
-        const { signed_url, expires_at } = await storageService.generateSignedUrl(
-          attachment.storage_path
-        );
+        // Validar acesso
+        if (attachment.clinic_id !== user.clinic_id && user.role !== 'super_admin') {
+          return res.status(403).json({
+            success: false,
+            message: 'Acesso negado'
+          });
+        }
+
+        // Renovar URL
+        const newSignedUrl = await supabaseStorage.createSignedUrl(attachment.storage_path, 24 * 60 * 60);
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         // Atualizar no banco
-        const { error: updateError } = await supabase
-          .from('message_attachments')
-          .update({
-            signed_url,
-            signed_url_expires: expires_at.toISOString()
-          })
-          .eq('id', attachmentId);
+        await storage.updateAttachment(Number(attachmentId), {
+          signed_url: newSignedUrl,
+          signed_url_expires: expiresAt
+        });
 
-        if (updateError) {
-          console.error('❌ Erro ao atualizar URL:', updateError);
-          return res.status(500).json({
-            success: false,
-            error: 'Erro ao renovar URL'
-          });
-        }
+        console.log(`✅ URL renewed for attachment ${attachmentId}`);
 
         res.json({
           success: true,
-          signed_url,
-          expires_at
+          signedUrl: newSignedUrl,
+          expiresAt: expiresAt.toISOString()
         });
 
       } catch (error) {
-        console.error('❌ Erro ao renovar URL:', error);
+        console.error('❌ URL renewal error:', error);
         res.status(500).json({
           success: false,
-          error: 'Erro interno do servidor'
+          message: 'Erro ao renovar URL'
         });
       }
     }
   );
 
-  /**
-   * Deletar arquivo
-   */
-  app.delete('/api/attachments/:id', 
+  // Deletar anexo
+  app.delete('/api/attachments/:attachmentId',
     isAuthenticated,
     async (req: Request, res: Response) => {
       try {
-        const attachmentId = req.params.id;
+        const { attachmentId } = req.params;
+        const user = (req as any).user;
 
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+        console.log(`🗑️ Deleting attachment ${attachmentId}`);
 
-        // Buscar attachment
-        const { data: attachment, error } = await supabase
-          .from('message_attachments')
-          .select('*')
-          .eq('id', attachmentId)
-          .single();
-
-        if (error || !attachment) {
+        // Buscar anexo
+        const attachment = await storage.getAttachmentById(Number(attachmentId));
+        if (!attachment) {
           return res.status(404).json({
             success: false,
-            error: 'Anexo não encontrado'
+            message: 'Anexo não encontrado'
           });
         }
 
-        // Deletar do storage se tem storage_path
-        if (attachment.storage_path) {
-          await storageService.deleteFile(attachment.storage_path);
-        }
-
-        // Deletar registro do banco
-        const { error: deleteError } = await supabase
-          .from('message_attachments')
-          .delete()
-          .eq('id', attachmentId);
-
-        if (deleteError) {
-          console.error('❌ Erro ao deletar anexo:', deleteError);
-          return res.status(500).json({
+        // Validar acesso
+        if (attachment.clinic_id !== user.clinic_id && user.role !== 'super_admin') {
+          return res.status(403).json({
             success: false,
-            error: 'Erro ao deletar anexo'
+            message: 'Acesso negado'
           });
         }
+
+        // Deletar do storage
+        if (attachment.storage_path) {
+          await supabaseStorage.deleteFile(attachment.storage_path);
+        }
+
+        // Deletar do banco
+        await storage.deleteAttachment(Number(attachmentId));
+
+        console.log(`✅ Attachment ${attachmentId} deleted`);
 
         res.json({
           success: true,
@@ -303,10 +216,10 @@ export function setupUploadRoutes(app: any, storage: IStorage) {
         });
 
       } catch (error) {
-        console.error('❌ Erro ao deletar anexo:', error);
+        console.error('❌ Attachment deletion error:', error);
         res.status(500).json({
           success: false,
-          error: 'Erro interno do servidor'
+          message: 'Erro ao deletar anexo'
         });
       }
     }

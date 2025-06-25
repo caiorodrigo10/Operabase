@@ -338,6 +338,20 @@ SESSION_SECRET=your_session_secret
 - Documentação completa atualizada incluindo integração Supabase Storage
 - Sistema de upload, visualização e armazenamento totalmente documentado
 
+### June 25, 2025 - Sistema de Upload Completo Implementado ✅
+- Implementado FileUploadModal com drag-and-drop e preview de arquivos
+- ConversationUploadService com integração dupla Supabase Storage + Evolution API
+- Endpoints de upload: POST /api/conversations/:id/upload com suporte a caption
+- Mapeamento automático MIME types para Evolution API (image, video, document, audio)
+- Schema atualizado: message_attachments com campos Supabase Storage
+- Schema atualizado: messages com whatsapp_message_id para tracking
+- Validação de arquivos: 50MB máximo, tipos MIME específicos
+- Progress tracking duplo: Storage (50%) + WhatsApp (100%)
+- Estados visuais: Enviando → Processando → Enviado/Parcial/Erro
+- Fallback inteligente: arquivo salvo mesmo se WhatsApp falhar
+- Botão anexo conectado ao MainConversationArea funcionando
+- Sistema funciona com ou sem Evolution API configurada
+
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)
