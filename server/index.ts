@@ -383,10 +383,6 @@ app.use((req, res, next) => {
   const { setupSimpleConversationsRoutes } = await import('./conversations-simple-routes');
   setupSimpleConversationsRoutes(app, storage);
   
-  // Add Upload routes
-  const { setupUploadRoutes } = await import('./routes/upload-routes');
-  setupUploadRoutes(app, storage);
-  
   // Initialize anamnesis system
   try {
     const { initializeAnamnesisSystem } = await import('./anamnesis-setup');
