@@ -165,30 +165,65 @@ export function MainConversationArea({
 
   const startRecording = async () => {
     try {
+      console.log('🎤 Starting audio recording...');
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
+          autoGainControl: true,
           sampleRate: 44100
         } 
       });
       
       streamRef.current = stream;
       
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      // Try different MIME types based on browser support
+      let mimeType = 'audio/webm;codecs=opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'audio/mp4';
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = ''; // Use default
+          }
+        }
+      }
       
+      console.log('🎤 Using MIME type:', mimeType || 'default');
+      
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       const chunks: BlobPart[] = [];
       
       recorder.ondataavailable = (event) => {
+        console.log('🎤 Data available:', event.data.size, 'bytes');
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
       };
       
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
+        console.log('🎤 Recording stopped, chunks:', chunks.length);
+        const finalMimeType = mimeType || 'audio/webm';
+        const blob = new Blob(chunks, { type: finalMimeType });
+        
+        console.log('🎤 Created blob:', {
+          size: blob.size,
+          type: blob.type,
+          recordingTime
+        });
+        
+        // Validate blob size
+        if (blob.size === 0) {
+          console.error('🎤 Empty audio blob detected');
+          alert('Erro: Áudio vazio. Tente gravar novamente por mais tempo.');
+          return;
+        }
+        
+        if (blob.size < 1000) {
+          console.warn('🎤 Very small audio blob:', blob.size, 'bytes');
+        }
+        
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
@@ -200,8 +235,13 @@ export function MainConversationArea({
         }
       };
       
+      recorder.onerror = (event) => {
+        console.error('🎤 MediaRecorder error:', event);
+        alert('Erro na gravação. Tente novamente.');
+      };
+      
       setMediaRecorder(recorder);
-      recorder.start();
+      recorder.start(1000); // Collect data every second
       setIsRecording(true);
       setRecordingTime(0);
       
@@ -210,8 +250,14 @@ export function MainConversationArea({
       }, 1000);
       
     } catch (error) {
-      console.error('Error starting recording:', error);
-      alert('Erro ao iniciar gravação. Verifique as permissões do microfone.');
+      console.error('🎤 Error starting recording:', error);
+      if (error.name === 'NotAllowedError') {
+        alert('Permissão de microfone negada. Por favor, permita o acesso ao microfone e tente novamente.');
+      } else if (error.name === 'NotFoundError') {
+        alert('Microfone não encontrado. Verifique se há um microfone conectado.');
+      } else {
+        alert('Erro ao iniciar gravação. Verifique as permissões do microfone.');
+      }
     }
   };
 
@@ -229,13 +275,49 @@ export function MainConversationArea({
   };
 
   const handleSendAudio = async () => {
-    if (!audioBlob || !selectedConversationId) return;
+    if (!audioBlob || !selectedConversationId) {
+      console.error('🎤 Cannot send audio: missing blob or conversation ID');
+      return;
+    }
     
     try {
+      console.log('🎤 Preparing to send audio:', {
+        blobSize: audioBlob.size,
+        blobType: audioBlob.type,
+        conversationId: selectedConversationId,
+        recordingTime
+      });
+
+      // Additional validation
+      if (audioBlob.size === 0) {
+        alert('Erro: Áudio vazio. Grave novamente.');
+        return;
+      }
+
+      if (recordingTime < 0.5) {
+        alert('Áudio muito curto. Grave por pelo menos meio segundo.');
+        return;
+      }
+
       const formData = new FormData();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const audioFile = new File([audioBlob], `voice-recording-${timestamp}.webm`, {
+      
+      // Determine file extension based on MIME type
+      let extension = 'webm';
+      if (audioBlob.type.includes('mp4')) {
+        extension = 'mp4';
+      } else if (audioBlob.type.includes('wav')) {
+        extension = 'wav';
+      }
+      
+      const audioFile = new File([audioBlob], `voice-recording-${timestamp}.${extension}`, {
         type: audioBlob.type || 'audio/webm'
+      });
+      
+      console.log('🎤 Created file:', {
+        name: audioFile.name,
+        size: audioFile.size,
+        type: audioFile.type
       });
       
       formData.append('file', audioFile);
@@ -243,19 +325,40 @@ export function MainConversationArea({
       formData.append('messageType', 'voice');
       formData.append('caption', 'Mensagem de voz');
 
+      console.log('🎤 Sending upload request...');
       const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
         method: 'POST',
         body: formData
       });
 
+      console.log('🎤 Upload response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Audio upload failed:', response.status, errorText);
-        throw new Error(`Upload failed: ${response.status}`);
+        console.error('🎤 Audio upload failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        
+        if (response.status === 413) {
+          alert('Áudio muito grande. Tente gravar um áudio mais curto.');
+        } else if (response.status === 400) {
+          alert('Formato de áudio não suportado. Tente novamente.');
+        } else if (response.status === 401) {
+          alert('Sessão expirada. Faça login novamente.');
+        } else {
+          alert(`Erro ao enviar áudio (${response.status}). Tente novamente.`);
+        }
+        return;
       }
 
       const result = await response.json();
-      console.log('Audio upload successful:', result);
+      console.log('🎤 Audio upload successful:', result);
 
       resetAudioState();
 
@@ -264,8 +367,13 @@ export function MainConversationArea({
       }, 100);
 
     } catch (error) {
-      console.error('Error uploading audio:', error);
-      alert('Erro ao enviar áudio. Tente novamente.');
+      console.error('🎤 Error uploading audio:', error);
+      
+      if (error.name === 'NetworkError' || error.message.includes('fetch')) {
+        alert('Erro de conexão. Verifique sua internet e tente novamente.');
+      } else {
+        alert('Erro ao enviar áudio. Tente novamente.');
+      }
     }
   };
 
