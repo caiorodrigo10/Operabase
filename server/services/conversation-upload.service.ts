@@ -413,13 +413,22 @@ export class ConversationUploadService {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      const { data: activeInstance, error: instanceError } = await supabase
+      console.log('🔍 UPLOAD: Querying WhatsApp instances for clinic:', params.clinicId);
+      
+      const { data: instanceArray, error: instanceError } = await supabase
         .from('whatsapp_numbers')
         .select('*')
         .eq('clinic_id', params.clinicId)
         .eq('status', 'open')
-        .limit(1)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      console.log('🔍 UPLOAD: Raw query result:', instanceArray);
+      console.log('🔍 UPLOAD: Query error:', instanceError);
+      
+      const activeInstance = instanceArray?.[0];
+      
+      console.log('🔍 UPLOAD: Selected instance:', activeInstance?.instance_name);
 
       if (instanceError) {
         console.error('❌ Error fetching WhatsApp instance:', instanceError);
