@@ -572,31 +572,84 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         }
       });
 
-      // Enviar para Evolution API em background usando referência do N8N
-      if (actualConversation?.contacts?.phone) {
-        setImmediate(async () => {
-          try {
-            console.log('📤 Sending to Evolution API with N8N format...', {
-              phone: actualConversation.contacts.phone,
-              content: content.substring(0, 50) + '...'
-            });
+      // Enviar para Evolution API em background usando instância ativa da clínica
+      setImmediate(async () => {
+        try {
+          // Buscar instância WhatsApp ativa da clínica
+          const { data: activeInstance } = await supabase
+            .from('whatsapp_numbers')
+            .select('*')
+            .eq('clinic_id', clinicId)
+            .eq('status', 'connected')
+            .limit(1)
+            .single();
+
+          if (!activeInstance) {
+            console.error('❌ No active WhatsApp instance found for clinic:', clinicId);
             
-            const evolutionUrl = 'https://n8n-evolution-api.4gmy9o.easypanel.host';
-            const evolutionApiKey = process.env.EVOLUTION_API_KEY;
-            const instanceName = 'Igor Avantto';
+            // Marcar mensagem como falha se não houver instância ativa
+            await supabase
+              .from('messages')
+              .update({ evolution_status: 'failed' })
+              .eq('id', formattedMessage.id);
             
-            // Usar formato exato do N8N
-            const response = await fetch(`${evolutionUrl}/message/sendText/${instanceName}`, {
-              method: 'POST',
-              headers: {
-                'apikey': evolutionApiKey,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                number: actualConversation.contacts.phone,
-                text: content
-              })
-            });
+            return;
+          }
+
+          console.log('✅ Active WhatsApp instance found:', {
+            instance_name: activeInstance.instance_name,
+            phone_number: activeInstance.phone_number,
+            status: activeInstance.status
+          });
+
+          // Buscar informações de contato para o número de destino
+          const { data: conversationWithContact } = await supabase
+            .from('conversations')
+            .select(`
+              id,
+              clinic_id,
+              contact_id,
+              contacts (
+                name,
+                email,
+                phone
+              )
+            `)
+            .eq('id', insertConversationId)
+            .single();
+
+          if (!conversationWithContact?.contacts?.phone) {
+            console.error('❌ No contact phone found for conversation:', insertConversationId);
+            
+            await supabase
+              .from('messages')
+              .update({ evolution_status: 'failed' })
+              .eq('id', formattedMessage.id);
+            
+            return;
+          }
+
+          console.log('📤 Sending to Evolution API with clinic instance...', {
+            phone: conversationWithContact.contacts.phone,
+            instance: activeInstance.instance_name,
+            content: content.substring(0, 50) + '...'
+          });
+          
+          const evolutionUrl = 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+          const evolutionApiKey = process.env.EVOLUTION_API_KEY;
+          
+          // Usar formato exato do N8N com instância da clínica
+          const response = await fetch(`${evolutionUrl}/message/sendText/${activeInstance.instance_name}`, {
+            method: 'POST',
+            headers: {
+              'apikey': evolutionApiKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              number: conversationWithContact.contacts.phone,
+              text: content
+            })
+          });
 
             if (response.ok) {
               const result = await response.json();
@@ -637,7 +690,6 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             }
           }
         });
-      }
 
       console.log('✅ Message saved to database, WhatsApp sending in background');
 

@@ -236,17 +236,16 @@ SESSION_SECRET=your_session_secret
 - Added window focus detection for instant updates when returning to tab
 - Optimized cache invalidation for real-time message delivery
 
-### June 25, 2025 - Evolution API Failure Indicators System Completed ✅
-- Added evolution_status column to messages table with values: 'pending', 'sent', 'failed'
-- Implemented visual failure indicator (red triangle) for failed WhatsApp messages in MessageBubble component
-- Enhanced backend to update message status based on Evolution API response
-- Fixed frontend data mapping in conversas.tsx to include evolution_status field
-- System tracks Evolution API success/failure and provides user feedback via UI indicators
-- Only successful Evolution API sends display without failure indicator as requested
-- Tested with forced failures: red triangle indicator appears correctly for failed messages
-- Complete database schema migration: conversations.id and messages.conversation_id now TEXT type
-- Scientific notation IDs (5.511965860124552e+24) preserve full precision without JavaScript loss
-- Database supports WhatsApp IDs of any length with proper foreign key relationships
+### June 25, 2025 - WhatsApp Instance Management by Clinic ✅
+- Implemented dynamic WhatsApp instance selection based on clinic configuration
+- System now queries whatsapp_numbers table to find active instances for each clinic
+- Replaced hardcoded "Igor Avantto" instance with clinic-specific instance lookup
+- Enhanced message sending to use correct Evolution API instance per clinic
+- Added comprehensive error handling for missing or inactive WhatsApp instances
+- Messages automatically marked as 'failed' if no active instance available for clinic
+- Created test instance 'clinic_1_main' for clinic 1 with 'connected' status
+- System now properly isolates WhatsApp communications by clinic tenant
+- Evolution API failure indicators system working with red triangle visual feedback
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
