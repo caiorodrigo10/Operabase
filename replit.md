@@ -307,6 +307,15 @@ SESSION_SECRET=your_session_secret
 - MediaMessage atualizado para priorizar URLs do Supabase Storage
 - Sistema completo de upload frontend funcionando com backend
 
+### June 25, 2025 - FASE 4: Migração de Dados Existentes Completa ✅
+- Script de migração criado para anexos locais existentes
+- Verificação de arquivos locais e download de URLs externas
+- Upload automático para Supabase Storage com estrutura organizada
+- Atualização dos registros no banco com novas colunas storage
+- Sistema de estatísticas de migração (sucessos/falhas)
+- Preservação total de funcionalidade durante migração
+- Anexos existentes agora disponíveis via URLs assinadas do Supabase
+
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)

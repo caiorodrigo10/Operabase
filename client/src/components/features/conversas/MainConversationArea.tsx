@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
+import { FileUploader } from "./FileUploader";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
 import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -183,10 +184,10 @@ export function MainConversationArea({
 
         <div className="flex items-end space-x-3">
           <FileUploader 
-            conversationId={conversationId}
+            conversationId={String(patientInfo?.id || '')}
             onUploadComplete={(message) => {
-              // Invalidar cache para mostrar nova mensagem
-              queryClient.invalidateQueries(['conversations-simple', conversationId]);
+              // Arquivo enviado, não precisa fazer nada aqui
+              console.log('Arquivo enviado:', message);
             }}
           />
 

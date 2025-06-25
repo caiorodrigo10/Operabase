@@ -363,6 +363,10 @@ app.use((req, res, next) => {
   const { setupConversationsRoutes } = await import('./conversations-routes');
   setupConversationsRoutes(app, storage);
   
+  // FASE 2: Add Upload routes
+  const { setupUploadRoutes } = await import('./routes/upload-routes');
+  setupUploadRoutes(app, storage);
+  
   // ETAPA 3: Initialize Redis Cache Service
   try {
     await redisCacheService.warmCache();
