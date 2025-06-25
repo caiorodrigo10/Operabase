@@ -2067,11 +2067,11 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log('📝 Updating message:', messageId, 'with:', updates);
       
+      // Usar apenas colunas que existem: evolution_status, updated_at
       const result = await db.execute(sql`
         UPDATE messages 
         SET 
           evolution_status = COALESCE(${updates.status || null}, evolution_status),
-          whatsapp_message_id = COALESCE(${updates.whatsapp_message_id || null}, whatsapp_message_id),
           updated_at = NOW()
         WHERE id = ${messageId}
         RETURNING *
@@ -2084,8 +2084,7 @@ export class PostgreSQLStorage implements IStorage {
       
       console.log('✅ Message updated successfully:', {
         id: result.rows[0].id,
-        evolution_status: result.rows[0].evolution_status,
-        whatsapp_message_id: result.rows[0].whatsapp_message_id
+        evolution_status: result.rows[0].evolution_status
       });
       return result.rows[0];
     } catch (error) {

@@ -182,11 +182,10 @@ export class ConversationUploadService {
             caption: mimeType.startsWith('audio/') ? undefined : caption
           });
 
-          // Atualizar status da mensagem
+          // Atualizar status da mensagem usando evolution_status
           if (whatsappResult.sent) {
             await this.storage.updateMessage(message.id, {
-              status: 'sent',
-              whatsapp_message_id: whatsappResult.messageId
+              status: 'sent'
             });
             console.log('✅ WhatsApp sent successfully');
           } else {
