@@ -67,7 +67,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               {message.attachments.map((attachment, index) => (
                 <MediaMessage
                   key={index}
-                  media_type={attachment.file_type}
+                  media_type={message.message_type || attachment.file_type}
                   media_url={attachment.file_url || attachment.whatsapp_media_url || ''}
                   media_filename={attachment.file_name}
                   media_size={attachment.file_size}

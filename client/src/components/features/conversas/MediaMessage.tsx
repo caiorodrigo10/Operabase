@@ -27,10 +27,14 @@ interface MediaMessageProps {
 }
 
 function getMediaTypeFromMimeType(mimeType: string): 'image' | 'video' | 'audio' | 'audio_file' | 'document' {
+  // Primeiro, verificar se é um tipo de mensagem direto
+  if (mimeType === 'audio_file') return 'audio_file'; // Áudio de arquivo upload
+  if (mimeType === 'audio_voice') return 'audio'; // Áudio de voz WhatsApp
+  
+  // Depois verificar MIME types tradicionais
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType.startsWith('video/')) return 'video';
-  if (mimeType.startsWith('audio/')) return 'audio';
-  if (mimeType === 'audio_file') return 'audio_file'; // Áudio de arquivo
+  if (mimeType.startsWith('audio/')) return 'audio'; // Áudio genérico do WhatsApp
   return 'document';
 }
 
