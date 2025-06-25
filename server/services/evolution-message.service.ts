@@ -179,8 +179,26 @@ export class EvolutionMessageService {
    */
   private async getInstanceForClinic(clinicId: number): Promise<string | null> {
     try {
-      // For Igor Venturin, use the active "Igor Avantto" instance
-      return 'Igor Avantto';
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: activeInstance } = await supabase
+        .from('whatsapp_numbers')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .eq('status', 'open')
+        .limit(1)
+        .single();
+
+      if (!activeInstance) {
+        console.error('❌ No active WhatsApp instance found for clinic:', clinicId);
+        return null;
+      }
+
+      return activeInstance.instance_name;
     } catch (error) {
       console.error('❌ Error getting instance for clinic:', error);
       return null;
