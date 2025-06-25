@@ -251,6 +251,8 @@ SESSION_SECRET=your_session_secret
 - Removidas todas as mensagens incorretas do dia 25, sistema funcionando com timestamps corretos
 - Corrigido problema de status: mensagens agora atualizam corretamente para 'sent' após envio
 - Ícones de erro removidos do frontend - todas as mensagens enviadas mostram status correto
+- Implementado sistema de feedback visual em tempo real: ícones de erro aparecem automaticamente após falha
+- Auto-refresh de status após 3 segundos sem necessidade de reload da página
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

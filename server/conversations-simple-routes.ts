@@ -685,14 +685,9 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               } else {
                 console.log('✅ Message status updated to sent for ID:', formattedMessage.id);
                 
-                // Verificar se a atualização realmente funcionou
-                const { data: checkMessage } = await supabase
-                  .from('messages')
-                  .select('evolution_status')
-                  .eq('id', formattedMessage.id)
-                  .single();
-                
-                console.log('🔍 Message status verification:', checkMessage?.evolution_status);
+                // Invalidate cache para atualização em tempo real
+                await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
+                console.log('🧹 Cache invalidated after successful send');
               }
               
             } else {
@@ -713,6 +708,10 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                 console.error('❌ Error updating message status to failed:', updateError);
               } else {
                 console.log('✅ Message status updated to failed for ID:', formattedMessage.id);
+                
+                // Invalidate cache para mostrar falha em tempo real
+                await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
+                console.log('🧹 Cache invalidated after failed send');
               }
             }
           } catch (error) {
