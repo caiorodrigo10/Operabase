@@ -189,12 +189,24 @@ export class ConversationUploadService {
   private sanitizeFilename(filename: string): string {
     if (!filename) return 'unnamed-file';
     
-    // Remove acentos e caracteres especiais
+    // Remover acentos e caracteres especiais de forma mais agressiva
     return filename
-      .normalize('NFD')
+      .normalize('NFD') // Decompor caracteres acentuados
       .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos
-      .replace(/[^a-zA-Z0-9.-]/g, '_') // Substitui caracteres especiais por underscore
+      .replace(/[àáâãäåæçèéêëìíîïñòóôõöøùúûüýÿ]/gi, (match) => {
+        const map: { [key: string]: string } = {
+          'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a', 'æ': 'ae',
+          'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+          'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+          'ñ': 'n', 'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
+          'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
+          'ý': 'y', 'ÿ': 'y'
+        };
+        return map[match.toLowerCase()] || match;
+      })
+      .replace(/[^a-zA-Z0-9.-]/g, '_') // Substitui qualquer caractere especial por underscore
       .replace(/_{2,}/g, '_') // Remove underscores duplos
+      .replace(/^_+|_+$/g, '') // Remove underscores no início e fim
       .toLowerCase();
   }
 
