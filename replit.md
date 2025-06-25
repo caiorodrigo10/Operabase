@@ -261,6 +261,9 @@ SESSION_SECRET=your_session_secret
 - Sistema rigoroso: status 'failed' APENAS quando Evolution API confirma definitivamente a falha
 - Erros de configuração/conexão mantêm 'pending' pois mensagem pode ter sido enviada
 - Corrigido crash do servidor: removido código duplicado que causava ReferenceError
+- Implementada lógica simplificada: status 'pending' = sucesso (sem ícone), só 'failed' mostra erro
+- Sistema otimizado: não detecta mais sucesso, apenas falhas confirmadas pela Evolution API
+- Interface mais limpa: mensagens aparecem sem ícone por padrão, erro só quando confirmado
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

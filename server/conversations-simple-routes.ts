@@ -696,24 +696,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             if (response.ok) {
               const result = await response.json();
               console.log('✅ Evolution API success:', result);
-              
-              // Atualizar status para 'sent' em caso de sucesso
-              console.log('🔄 Updating message status to sent for ID:', formattedMessage.id);
-              const { error: updateError } = await supabase
-                .from('messages')
-                .update({ evolution_status: 'sent' })
-                .eq('id', formattedMessage.id);
-              
-              if (updateError) {
-                console.error('❌ Error updating message status to sent:', updateError);
-                console.error('❌ Update error details:', JSON.stringify(updateError, null, 2));
-              } else {
-                console.log('✅ Message status updated to sent for ID:', formattedMessage.id);
-                
-                // Invalidate cache para atualização em tempo real
-                await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
-                console.log('🧹 Cache invalidated after successful send');
-              }
+              console.log('ℹ️ Mantendo status "pending" - assumindo sucesso (não atualizamos para "sent")');
               
             } else {
               const errorText = await response.text();
@@ -723,7 +706,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                 body: errorText
               });
               
-              // APENAS agora marcar como 'failed' - Evolution API confirmou a falha
+              // ÚNICO caso onde marcamos como 'failed' - Evolution API confirmou falha
               const { error: updateError } = await supabase
                 .from('messages')
                 .update({ evolution_status: 'failed' })
@@ -732,11 +715,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               if (updateError) {
                 console.error('❌ Error updating message status to failed:', updateError);
               } else {
-                console.log('✅ Message status updated to failed for ID:', formattedMessage.id, '- Evolution API confirmou falha');
+                console.log('🚨 Message marcada como FAILED - Evolution API confirmou falha definitiva');
                 
-                // Invalidate cache para mostrar falha em tempo real
+                // Invalidate cache para mostrar ícone de falha imediatamente
                 await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
-                console.log('🧹 Cache invalidated after confirmed failed send');
+                console.log('🧹 Cache invalidated - ícone de falha aparecerá imediatamente');
               }
             }
           } catch (error) {
