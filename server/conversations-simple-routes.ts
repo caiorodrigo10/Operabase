@@ -475,40 +475,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       let formattedMessage;
       
       try {
-        // Solução definitiva baseada na análise dos dados:
-        // Para conversas científicas, buscar uma mensagem existente e usar seu conversation_id
-        let validConversationId;
+        // Solução definitiva: usar contact_id como conversation_id para IDs científicos
+        // As mensagens AI usam este padrão e funcionam perfeitamente
+        const contactId = actualConversation.contact_id;
+        console.log('💾 Using contact_id as conversation_id (AI pattern):', contactId);
+        console.log('💾 This resolves foreign key issues with scientific notation IDs');
         
-        if (isScientificNotation) {
-          console.log('💾 Scientific notation detected, finding valid conversation_id from existing messages');
-          
-          // Buscar mensagens existentes desta conversa usando filtro de proximidade
-          const { data: existingMessages } = await supabase
-            .from('messages')
-            .select('conversation_id')
-            .order('timestamp', { ascending: false })
-            .limit(100);
-          
-          // Usar mesmo algoritmo de proximidade que funciona para leitura
-          const targetIdNum = parseFloat(actualConversation.id.toString());
-          const matchingMessage = existingMessages?.find(msg => {
-            const msgIdNum = parseFloat(msg.conversation_id.toString());
-            return Math.abs(msgIdNum - targetIdNum) < 1;
-          });
-          
-          if (matchingMessage) {
-            validConversationId = matchingMessage.conversation_id;
-            console.log('💾 Found valid conversation_id from existing message:', validConversationId);
-          } else {
-            // Se não encontrar mensagem existente, usar o contact_id que sabemos que é 45
-            validConversationId = actualConversation.contact_id;
-            console.log('💾 Using contact_id as fallback conversation_id:', validConversationId);
-          }
-        } else {
-          validConversationId = actualConversation.id;
-        }
-        
-        const useConversationId = validConversationId;
+        const useConversationId = contactId;
         
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
@@ -520,6 +493,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .select()
           .single();
         
+        console.log('💾 Insert attempt with conversation_id:', useConversationId);
         console.log('💾 Insert result:', { insertResult, insertError });
         console.log('💾 Insert error details:', JSON.stringify(insertError, null, 2));
         
