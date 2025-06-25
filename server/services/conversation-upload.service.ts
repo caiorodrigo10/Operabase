@@ -185,6 +185,18 @@ export class ConversationUploadService {
     }
   }
 
+  private sanitizeFilename(filename: string): string {
+    if (!filename) return 'unnamed-file';
+    
+    // Remove acentos e caracteres especiais
+    return filename
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos
+      .replace(/[^a-zA-Z0-9.-]/g, '_') // Substitui caracteres especiais por underscore
+      .replace(/_{2,}/g, '_') // Remove underscores duplos
+      .toLowerCase();
+  }
+
   private async uploadToSupabase(params: {
     file: Buffer;
     filename: string;
@@ -194,7 +206,8 @@ export class ConversationUploadService {
   }) {
     const timestamp = Date.now();
     const category = this.getCategoryFromMime(params.mimeType);
-    const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${params.filename}`;
+    const sanitizedFilename = this.sanitizeFilename(params.filename);
+    const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${sanitizedFilename}`;
 
     // Upload direto usando Supabase sem service intermediário
     const supabase = this.supabaseStorage['supabase'];
