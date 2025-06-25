@@ -236,12 +236,14 @@ SESSION_SECRET=your_session_secret
 - Added window focus detection for instant updates when returning to tab
 - Optimized cache invalidation for real-time message delivery
 
-### June 25, 2025 - Evolution API Failure Indicators System ✅
+### June 25, 2025 - Evolution API Failure Indicators System Completed ✅
 - Added evolution_status column to messages table with values: 'pending', 'sent', 'failed'
 - Implemented visual failure indicator (red triangle) for failed WhatsApp messages in MessageBubble component
 - Enhanced backend to update message status based on Evolution API response
+- Fixed frontend data mapping in conversas.tsx to include evolution_status field
 - System tracks Evolution API success/failure and provides user feedback via UI indicators
 - Only successful Evolution API sends display without failure indicator as requested
+- Tested with forced failures: red triangle indicator appears correctly for failed messages
 - Complete database schema migration: conversations.id and messages.conversation_id now TEXT type
 - Scientific notation IDs (5.511965860124552e+24) preserve full precision without JavaScript loss
 - Database supports WhatsApp IDs of any length with proper foreign key relationships
