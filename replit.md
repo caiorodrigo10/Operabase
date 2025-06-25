@@ -372,16 +372,17 @@ SESSION_SECRET=your_session_secret
 - Schema do banco totalmente alinhado: removido whatsapp_message_id, usado evolution_status existente
 - Sistema de upload 100% operacional e pronto para integração N8N
 
-### June 25, 2025 - Sistema de Diferenciação de Áudio Implementado ✅
-- Implementado sistema completo de diferenciação entre tipos de áudio
-- Backend: Tipo "audio_file" para uploads vs "audio_voice" para mensagens WhatsApp
-- Evolution API: Ambos os tipos enviam como "audio" mas são armazenados diferentemente
-- Frontend: Mensagens com tipo "audio_file" mostram "Áudio encaminhado" em texto pequeno
-- Preservada estrutura de UI existente com adição visual mínima e elegante
-- MessageBubble atualizado para passar message_type ao invés de apenas file_type
-- MediaMessage com lógica condicional para renderizar indicador apenas em uploads
-- Teste funcional criado na conversa do Caio Rodrigo demonstrando a diferenciação
-- Sistema mantém compatibilidade total com áudios WhatsApp existentes
+### June 25, 2025 - Sistema de Gravação de Áudio Simplificado ✅
+- Implementado sistema completo de gravação de áudio (audio_voice) com foco na simplicidade
+- FASE 1: MediaRecorder API integrado com upload direto para Supabase + WhatsApp
+- FASE 2: Preview avançado com waveform, controles play/pause e timeline profissional
+- FASE 3: Controles complexos removidos conforme feedback do usuário sobre simplicidade
+- Interface final: botão gravar → indicador simples → preview com waveform → envio
+- Sistema diferencia 3 tipos: audio (WhatsApp), audio_file (upload), audio_voice (gravação)
+- Integração completa com ConversationUploadService e EvolutionMessageService
+- Foco na experiência intuitiva: "clique para gravar, grave, envie facilmente"
+- Removidos controles desnecessários: qualidade, compressão, redução de ruído
+- Sistema otimizado para uso cotidiano em ambiente clínico
 
 ### June 25, 2025 - Evolution API V2 Integration Complete ✅
 - Fixed critical API structure issue: Evolution API V2 uses flat payload structure vs V1 nested format
