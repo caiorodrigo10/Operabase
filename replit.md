@@ -359,7 +359,7 @@ SESSION_SECRET=your_session_secret
 - Endpoints de upload: POST /api/conversations/:id/upload com suporte a caption
 - Mapeamento automático MIME types para Evolution API (image, video, document, audio)
 - Schema atualizado: message_attachments com campos Supabase Storage
-- Schema atualizado: messages com whatsapp_message_id para tracking
+- Adicionada coluna message_type na tabela messages para categorização automática
 - Validação de arquivos: 50MB máximo, tipos MIME específicos
 - Progress tracking duplo: Storage (50%) + WhatsApp (100%)
 - Estados visuais: Enviando → Processando → Enviado/Parcial/Erro
@@ -367,8 +367,8 @@ SESSION_SECRET=your_session_secret
 - Botão anexo conectado ao MainConversationArea funcionando
 - Sistema funciona com ou sem Evolution API configurada
 - Corrigido problema de sanitização de nomes de arquivo com caracteres especiais
-- Ajustado schema de banco para usar apenas colunas existentes na tabela message_attachments
-- Sistema de upload operacional com conversation_id correto e sanitização ultra-agressiva
+- Schema do banco totalmente alinhado: removido whatsapp_message_id, usado evolution_status existente
+- Sistema de upload 100% operacional e pronto para integração N8N
 
 ### June 25, 2025 - Sanitização Definitiva para Supabase Storage ✅
 - Implementado mapeamento completo de caracteres especiais (À→A, Ì→I, ç→c, etc.)
