@@ -38,6 +38,15 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
 
   // POST /api/conversations/:id/upload - SEM MIDDLEWARE DE AUTH para evitar 401
   app.post('/api/conversations/:id/upload', upload.single('file'), async (req: Request, res: Response) => {
+    console.log('🚨🚨🚨 UPLOAD HANDLER REACHED 🚨🚨🚨');
+    console.log('🚨 Handler - Request URL:', req.url);
+    console.log('🚨 Handler - Request path:', req.path);
+    console.log('🚨 Handler - Request method:', req.method);
+    console.log('🚨 Handler - Conversation ID param:', req.params.id);
+    console.log('🚨 Handler - Headers count:', Object.keys(req.headers).length);
+    console.log('🚨 Handler - Has file?:', !!req.file);
+    console.log('🚨 Handler - Body keys:', req.body ? Object.keys(req.body) : 'No body');
+    
     try {
       const conversationId = req.params.id;
       const { caption, sendToWhatsApp = 'true' } = req.body;

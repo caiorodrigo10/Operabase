@@ -285,6 +285,10 @@ export const isAuthenticated = async (req: any, res: any, next: any) => {
   }
   
   console.log('❌ Authentication failed - no valid session or token');
+  console.log('🚨 AUTH MIDDLEWARE - Final 401 response for:', req.path);
+  console.log('🚨 AUTH MIDDLEWARE - Headers:', Object.keys(req.headers));
+  console.log('🚨 AUTH MIDDLEWARE - Has session?:', !!req.session);
+  console.log('🚨 AUTH MIDDLEWARE - Session keys:', req.session ? Object.keys(req.session) : 'No session');
   res.status(401).json({ error: "Acesso negado" });
 };
 

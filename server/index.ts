@@ -90,13 +90,28 @@ app.use((req, res, next) => {
   setupUploadRoutes(app, storage);
   console.log('✅ Upload routes registered BEFORE middleware chain');
   
+  // DEBUGGING: Add comprehensive logging middleware for upload routes
+  app.use('/api/conversations/:id/upload', (req: any, res: any, next: any) => {
+    console.log('🚨 UPLOAD DEBUG - Middleware hit for upload route');
+    console.log('🚨 Request URL:', req.url);
+    console.log('🚨 Request path:', req.path);
+    console.log('🚨 Request method:', req.method);
+    console.log('🚨 Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('🚨 Session data:', JSON.stringify(req.session, null, 2));
+    console.log('🚨 User data:', req.user);
+    console.log('🚨 Body (partial):', req.body ? Object.keys(req.body) : 'No body');
+    next();
+  });
+
   // Apply Phase 3 observability middleware chain to all API routes (EXCEPT uploads)
   app.use('/api', (req: any, res: any, next: any) => {
     // Skip all middleware for upload routes - they're already registered above
     if (req.path.includes('/upload')) {
-      console.log('🔧 Skipping ALL middleware for upload:', req.path);
+      console.log('🔧 Middleware chain: Skipping for upload:', req.path);
       return next();
     }
+    
+    console.log('🔧 Middleware chain: Processing normal route:', req.path);
     // Apply normal middleware chain for other routes
     performanceTrackingMiddleware(req, res, () => {
       auditLoggingMiddleware(req, res, () => {
