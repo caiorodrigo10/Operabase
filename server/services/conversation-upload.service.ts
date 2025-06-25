@@ -395,21 +395,27 @@ export class ConversationUploadService {
     caption?: string;
   }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
     try {
-      // Buscar conversa para obter número WhatsApp
-      const conversation = await this.storage.getConversationById(params.conversationId);
-      if (!conversation?.whatsapp_chat_id) {
-        throw new Error('Conversa não possui número WhatsApp');
+      // Usar estrutura existente: buscar conversa com contact join
+      const conversation = await this.storage.getConversationDetail(params.conversationId);
+      if (!conversation?.contact?.phone) {
+        throw new Error('Conversa não possui contato com telefone');
       }
 
-      // Buscar instância ativa da clínica
+      // Limpar número de telefone para formato WhatsApp
+      const whatsappNumber = conversation.contact.phone.replace(/\D/g, '');
+      if (!whatsappNumber) {
+        throw new Error('Número de telefone inválido');
+      }
+
+      // Buscar instância ativa da clínica usando estrutura existente
       const whatsappInstance = await this.storage.getActiveWhatsAppInstance(params.clinicId);
       if (!whatsappInstance) {
         throw new Error('Nenhuma instância WhatsApp ativa encontrada');
       }
 
-      // Preparar payload
+      // Preparar payload Evolution API
       const payload = {
-        number: conversation.whatsapp_chat_id,
+        number: whatsappNumber,
         mediaMessage: {
           mediaType: params.mediaType,
           media: params.mediaUrl,
@@ -422,13 +428,17 @@ export class ConversationUploadService {
         }
       };
 
-      console.log('📡 Sending to Evolution API:', {
+      console.log('📡 Enviando para Evolution API:', {
         instance: whatsappInstance.instance_id,
-        number: conversation.whatsapp_chat_id,
-        mediaType: params.mediaType
+        number: whatsappNumber,
+        contact: conversation.contact.name,
+        mediaType: params.mediaType,
+        fileName: params.fileName
       });
 
       const result = await this.evolutionAPI.sendMedia(whatsappInstance.instance_id, payload);
+      
+      console.log('✅ Mídia enviada com sucesso:', result.key?.id);
       
       return {
         sent: true,
@@ -436,7 +446,7 @@ export class ConversationUploadService {
       };
 
     } catch (error) {
-      console.error('Evolution API error:', error);
+      console.error('❌ Erro Evolution API:', error);
       return {
         sent: false,
         error: error instanceof Error ? error.message : 'Unknown error'
