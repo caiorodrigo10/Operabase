@@ -89,9 +89,7 @@ export class ConversationUploadService {
       const message = await this.storage.createMessage({
         conversation_id: conversationId,
         sender_type: 'professional',
-        content: messageContent,
-        message_type: this.getMessageTypeFromMime(mimeType),
-        status: sendToWhatsApp ? 'pending' : 'sent'
+        content: messageContent
       });
 
       // 5. Criar attachment
