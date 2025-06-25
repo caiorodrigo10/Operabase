@@ -491,7 +491,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           .insert({
             conversation_id: insertConversationId,
             sender_type: 'professional',
-            content: content
+            content: content,
+            evolution_status: 'pending' // Inicialmente pendente
           })
           .select()
           .single();
@@ -598,6 +599,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             if (response.ok) {
               const result = await response.json();
               console.log('✅ Evolution API success:', result);
+              
+              // Atualizar status para 'sent' em caso de sucesso
+              await supabase
+                .from('messages')
+                .update({ evolution_status: 'sent' })
+                .eq('id', insertResult.id);
+              
             } else {
               const errorText = await response.text();
               console.error('❌ Evolution API error:', {
@@ -605,9 +613,25 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                 statusText: response.statusText,
                 body: errorText
               });
+              
+              // Atualizar status para 'failed' em caso de erro
+              await supabase
+                .from('messages')
+                .update({ evolution_status: 'failed' })
+                .eq('id', insertResult.id);
             }
           } catch (error) {
             console.error('❌ Evolution API network error:', error.message);
+            
+            // Marcar como falha em caso de erro de rede
+            try {
+              await supabase
+                .from('messages')
+                .update({ evolution_status: 'failed' })
+                .eq('id', insertResult.id);
+            } catch (updateError) {
+              console.error('❌ Failed to update message status:', updateError);
+            }
           }
         });
       }

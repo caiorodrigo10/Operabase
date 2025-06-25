@@ -86,26 +86,33 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           )}
         </div>
         
-        <span className={cn(
-          "text-xs text-gray-500 mt-1 block",
-          isReceived ? "text-left" : "text-right"
+        <div className={cn(
+          "flex items-center gap-1 mt-1",
+          isReceived ? "justify-start" : "justify-end"
         )}>
-          {(() => {
-            const timestamp = message.created_at || message.timestamp;
-            if (!timestamp) return '';
-            
-            try {
-              return new Date(timestamp).toLocaleTimeString('pt-BR', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false 
-              });
-            } catch (e) {
-              console.error('Error formatting timestamp:', timestamp, e);
-              return '';
-            }
-          })()}
-        </span>
+          <span className="text-xs text-gray-500">
+            {(() => {
+              const timestamp = message.created_at || message.timestamp;
+              if (!timestamp) return '';
+              
+              try {
+                return new Date(timestamp).toLocaleTimeString('pt-BR', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                });
+              } catch (e) {
+                console.error('Error formatting timestamp:', timestamp, e);
+                return '';
+              }
+            })()}
+          </span>
+          
+          {/* Indicador de falha na Evolution API para mensagens enviadas */}
+          {!isReceived && !isNote && message.evolution_status === 'failed' && (
+            <AlertTriangle className="w-3 h-3 text-red-500" title="Falha no envio via WhatsApp" />
+          )}
+        </div>
       </div>
       
       {/* Avatar/Icon for sent messages and notes (right side) */}
