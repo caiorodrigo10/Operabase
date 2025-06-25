@@ -370,6 +370,8 @@ SESSION_SECRET=your_session_secret
 - Sistema robusto contra qualquer caractere especial brasileiro ou internacional
 - Foreign key constraint resolvido com validação de conversation_id correto
 - Sistema de upload completamente estável e testado com múltiplos cenários
+- Erro de variável indefinida corrigido no modal de upload da interface
+- Modal de upload agora usa selectedConversationId corretamente
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
