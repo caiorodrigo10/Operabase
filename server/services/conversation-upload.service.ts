@@ -406,15 +406,32 @@ export class ConversationUploadService {
     try {
       console.log('🔍 Starting Evolution API media send process...');
       
-      // Buscar instância WhatsApp ativa da clínica usando método existente
-      const activeInstance = await this.storage.getActiveWhatsAppInstance(params.clinicId);
+      // Usar EXATAMENTE a mesma lógica do envio de texto (conversations-simple-routes.ts linha 592-598)
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: activeInstance, error: instanceError } = await supabase
+        .from('whatsapp_numbers')
+        .select('*')
+        .eq('clinic_id', params.clinicId)
+        .eq('status', 'open')
+        .limit(1)
+        .single();
+
+      if (instanceError) {
+        console.error('❌ Error fetching WhatsApp instance:', instanceError);
+        throw new Error('Erro ao buscar instância WhatsApp ativa');
+      }
 
       if (!activeInstance) {
         console.error('❌ No active WhatsApp instance found for clinic:', params.clinicId);
         throw new Error('Nenhuma instância WhatsApp ativa encontrada para esta clínica');
       }
 
-      console.log('✅ Active WhatsApp instance found:', {
+      console.log('✅ Active WhatsApp instance found (using text message logic):', {
         instance_name: activeInstance.instance_name,
         phone_number: activeInstance.phone_number,
         status: activeInstance.status
@@ -458,7 +475,7 @@ export class ConversationUploadService {
       const payload = {
         number: conversation.contact.phone,
         mediaMessage: {
-          mediaType: params.mediaType,  // CORRIGIDO: mediaType com T maiúsculo!
+          mediatype: params.mediaType,  // Evolution API espera 'mediatype' minúsculo
           fileName: params.fileName || 'attachment',
           media: params.mediaUrl,
           ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
@@ -469,14 +486,14 @@ export class ConversationUploadService {
         }
       };
       
-      console.log('🔧 CORRIGIDO - mediaType com T maiúsculo:');
+      console.log('🔧 CORRIGIDO - mediatype minúsculo (Evolution API):');
       console.log(JSON.stringify(payload, null, 2));
 
       console.log('📤 Evolution API - Payload completo sendo enviado:');
       console.log('📤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
       console.log('📤 Headers:', { 'Content-Type': 'application/json', 'apikey': '***HIDDEN***' });
       console.log('📤 Payload:', JSON.stringify(payload, null, 2));
-      console.log('📤 Campo mediaType:', payload.mediaMessage.mediaType);
+      console.log('📤 Campo mediatype:', payload.mediaMessage.mediatype);
       console.log('📤 Campo fileName:', payload.mediaMessage.fileName);
       console.log('📤 Campo media:', payload.mediaMessage.media?.substring(0, 100) + '...');
       console.log('📤 Campo number:', payload.number);
