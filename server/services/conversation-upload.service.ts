@@ -11,6 +11,7 @@ interface UploadParams {
   userId: number;
   caption?: string;
   sendToWhatsApp?: boolean;
+  messageType?: string; // Para distinguir audio_voice de outros tipos
 }
 
 interface N8NUploadParams {
@@ -101,7 +102,8 @@ export class ConversationUploadService {
       clinicId,
       userId,
       caption,
-      sendToWhatsApp = true
+      sendToWhatsApp = true,
+      messageType
     } = params;
 
     console.log(`📤 Starting upload: ${filename} (${mimeType}) for conversation ${conversationId}`);
@@ -170,8 +172,8 @@ export class ConversationUploadService {
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       
-      // Mapear MIME type para message_type automaticamente
-      const messageType = this.getMimeToMessageType(mimeType);
+      // Usar messageType fornecido ou mapear MIME type automaticamente
+      const finalMessageType = messageType || this.getMimeToMessageType(mimeType);
       
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada

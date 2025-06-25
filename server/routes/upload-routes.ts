@@ -60,11 +60,12 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
     
     try {
       const conversationId = req.params.id;
-      const { caption, sendToWhatsApp = 'true' } = req.body;
+      const { caption, sendToWhatsApp = 'true', messageType } = req.body;
       
       console.log('🔍 Upload request details:');
       console.log('🔍 Conversation ID:', conversationId);
       console.log('🔍 Caption:', caption);
+      console.log('🔍 Message Type:', messageType);
       console.log('🔍 Send to WhatsApp:', sendToWhatsApp);
       console.log('🔍 File info:', req.file ? {
         name: req.file.originalname,
@@ -144,7 +145,8 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         clinicId: finalProfile.clinic_id,
         userId: finalUser?.id || 1,
         caption: caption || undefined,
-        sendToWhatsApp: sendToWhatsApp === 'true'
+        sendToWhatsApp: sendToWhatsApp === 'true',
+        messageType: messageType || undefined // Para diferenciar audio_voice
       };
 
       console.log(`📋 Upload params:`, {
