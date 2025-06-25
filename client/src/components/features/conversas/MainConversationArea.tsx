@@ -58,25 +58,6 @@ export function MainConversationArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Audio recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [showAudioPreview, setShowAudioPreview] = useState(false);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  
-  // FASE 2: Audio Preview Controls
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // Simple audio recording - no complex controls needed
-
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
     if (messagesEndRef.current && timelineItems.length > 0) {
@@ -84,21 +65,6 @@ export function MainConversationArea({
       messagesEndRef.current.scrollIntoView({ behavior: "instant" });
     }
   }, [timelineItems]);
-
-  // Cleanup audio resources on unmount
-  useEffect(() => {
-    return () => {
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
-    };
-  }, [mediaRecorder]);
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
@@ -139,6 +105,59 @@ export function MainConversationArea({
     
     // Fechar modal
     setShowUploadModal(false);
+  };
+
+  // Handle audio recording sent from AudioRecorder component
+  const handleSendAudio = async (audioBlob: Blob) => {
+    if (!selectedConversationId) {
+      console.error('❌ No conversation selected for audio upload');
+      return;
+    }
+
+    try {
+      console.log('🎤 Uploading audio blob:', {
+        size: audioBlob.size,
+        type: audioBlob.type,
+        conversationId: selectedConversationId
+      });
+
+      // Create form data for upload
+      const formData = new FormData();
+      
+      // Create filename based on timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const audioFile = new File([audioBlob], `voice-recording-${timestamp}.webm`, {
+        type: audioBlob.type || 'audio/webm'
+      });
+      
+      formData.append('file', audioFile);
+      formData.append('sendToWhatsApp', 'true');
+      formData.append('messageType', 'voice'); // Indicate it's a voice message
+      formData.append('caption', 'Mensagem de voz');
+
+      // Upload audio to conversation
+      const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Audio upload failed:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Audio upload successful:', result);
+
+      // Scroll to new message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+
+    } catch (error) {
+      console.error('❌ Error uploading audio:', error);
+    }
   };
 
   // Audio recording functions
@@ -473,124 +492,9 @@ export function MainConversationArea({
           </Button>
         </div>
 
-        {/* Simple Audio Recording Interface */}
-        {isRecording && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-red-700">
-                  Gravando áudio... {formatTime(recordingTime)}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={stopRecording}
-                className="text-red-600 hover:text-red-800"
-              >
-                Parar
-              </Button>
-            </div>
-          </div>
-        )}
 
-        {/* FASE 2: Advanced Audio Preview with Playback Controls */}
-        {!isRecording && showAudioPreview && audioBlob && audioUrl && (
-          <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            {/* Hidden audio element for playback */}
-            <audio
-              ref={audioRef}
-              src={audioUrl}
-              onTimeUpdate={handleTimeUpdate}
-              onLoadedMetadata={handleLoadedMetadata}
-              onEnded={handleAudioEnded}
-              style={{ display: 'none' }}
-            />
-            
-            <div className="space-y-3">
-              {/* Header with title and duration */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Mic className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">Áudio gravado</p>
-                    <p className="text-xs text-blue-700">
-                      {formatTime(Math.floor(currentTime))} / {formatTime(Math.floor(duration || recordingTime))}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Play/Pause Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={togglePlayback}
-                  className="w-10 h-10 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full"
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </Button>
-              </div>
-              
-              {/* Waveform Progress Bar */}
-              <div className="space-y-2">
-                <div className="relative">
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || recordingTime}
-                    value={currentTime}
-                    onChange={handleSeek}
-                    className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer slider"
-                    style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((currentTime / (duration || recordingTime)) * 100)}%, #cbd5e1 ${((currentTime / (duration || recordingTime)) * 100)}%, #cbd5e1 100%)`
-                    }}
-                  />
-                </div>
-                
-                {/* Simulated Waveform Visualization */}
-                <div className="flex items-center justify-center space-x-1 h-8">
-                  {Array.from({ length: 32 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "w-1 rounded-full bg-blue-300 transition-all duration-150",
-                        i < (32 * (currentTime / (duration || recordingTime))) ? "bg-blue-500" : "bg-blue-200"
-                      )}
-                      style={{
-                        height: `${Math.random() * 20 + 8}px`,
-                        animation: isPlaying && i < (32 * (currentTime / (duration || recordingTime))) 
-                          ? `pulse 0.5s ease-in-out infinite alternate` 
-                          : 'none'
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex space-x-2 justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={cancelAudio}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={sendAudio}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Enviar
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+
+        {/* Audio recording now handled by AudioRecorder component */}
 
         <FileUploadModal
           isOpen={showUploadModal}
