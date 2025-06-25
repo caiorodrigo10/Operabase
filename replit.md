@@ -332,6 +332,9 @@ SESSION_SECRET=your_session_secret
 - URLs assinadas conectadas aos arquivos corretos: imagem, áudio, vídeo, PDF
 - Anexos exibindo corretamente na interface com nomes dos arquivos reais do Storage
 - Sistema de visualização de mídia funcionando com arquivos do Supabase Storage
+- Limpeza completa realizada: removidos anexos antigos e mensagens de teste
+- Criados anexos novos usando exclusivamente arquivos reais do Supabase Storage
+- Sistema funcionando com dados limpos e URLs assinadas válidas
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
