@@ -38,7 +38,10 @@ export function useUpload() {
       const response = await fetch(`/api/conversations/${conversationId}/upload`, {
         method: 'POST',
         body: formData,
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          // Não adicionar Content-Type - deixar o browser definir boundary para multipart
+        }
       });
 
       if (!response.ok) {
