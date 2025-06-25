@@ -2117,14 +2117,7 @@ export class PostgreSQLStorage implements IStorage {
           file_name: attachment.file_name,
           file_type: attachment.file_type,
           file_size: attachment.file_size,
-          file_url: attachment.file_url,
-          storage_bucket: attachment.storage_bucket,
-          storage_path: attachment.storage_path,
-          public_url: attachment.public_url,
-          signed_url: attachment.signed_url,
-          signed_url_expires: attachment.signed_url_expires,
-          whatsapp_media_id: attachment.whatsapp_media_id,
-          whatsapp_media_url: attachment.whatsapp_media_url
+          file_url: attachment.file_url || attachment.public_url
         })
         .returning();
       
