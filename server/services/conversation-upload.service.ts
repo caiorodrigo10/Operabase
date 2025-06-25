@@ -83,7 +83,10 @@ export class ConversationUploadService {
         clinicId
       });
 
-      // 4. Criar mensagem no banco
+      // 4. Sanitizar filename
+      const sanitizedFilename = this.sanitizeFilename(filename);
+      
+      // 5. Criar mensagem no banco
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${sanitizedFilename}`;
       const message = await this.storage.createMessage({
@@ -92,7 +95,7 @@ export class ConversationUploadService {
         content: messageContent
       });
 
-      // 5. Criar attachment
+      // 6. Criar attachment
       console.log('📎 Creating attachment record...');
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
@@ -213,8 +216,7 @@ export class ConversationUploadService {
 
     const timestamp = Date.now();
     const category = this.getCategoryFromMime(params.mimeType);
-    const sanitizedFilename = this.sanitizeFilename(params.filename);
-    const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${sanitizedFilename}`;
+    const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${params.filename}`;
 
     console.log('🗂️ Caminho de armazenamento:', storagePath);
 
