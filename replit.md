@@ -335,6 +335,8 @@ SESSION_SECRET=your_session_secret
 - Limpeza completa realizada: removidos anexos antigos e mensagens de teste
 - Criados anexos novos usando exclusivamente arquivos reais do Supabase Storage
 - Sistema funcionando com dados limpos e URLs assinadas válidas
+- Documentação completa atualizada incluindo integração Supabase Storage
+- Sistema de upload, visualização e armazenamento totalmente documentado
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
