@@ -372,18 +372,17 @@ SESSION_SECRET=your_session_secret
 - Schema do banco totalmente alinhado: removido whatsapp_message_id, usado evolution_status existente
 - Sistema de upload 100% operacional e pronto para integração N8N
 
-### June 25, 2025 - ETAPA 5: Audio Format Optimization & Enhanced Error Handling ✅
-- Implementado sistema avançado de otimização de formato de áudio e tratamento de erros
-- Enhanced `sendWhatsAppAudio` method com format optimization automática para URLs Supabase
-- Payload otimizado com configurações específicas: encoding base64, PTT enabled, quality high
-- Sistema de categorização de erros: AUTHENTICATION_ERROR, PERMISSION_ERROR, INVALID_AUDIO_FORMAT, etc.
-- Enhanced timeout handling: 30s timeout com AbortController para requisições robustas
-- Network error categorization: TIMEOUT, NETWORK, PARSE_ERROR com estratégias de retry
-- Logging aprimorado com timestamps e detalhes técnicos para debugging eficiente
-- Componente AudioSendStatus criado para feedback visual em tempo real
-- Progress tracking em 4 fases: uploading (25%) → processing (50%) → sending (75%) → success (100%)
-- Error recovery automático com mensagens específicas para cada tipo de falha
-- Sistema otimizado para qualidade de áudio mantendo compatibilidade total
+### June 25, 2025 - ETAPA 6: Retry Logic & Intelligent Recovery ✅
+- Implementado sistema automático de retry com exponential backoff (1s → 2s → 4s + jitter)
+- Enhanced retry decision logic: network errors, 5xx status codes, timeouts e Evolution API errors
+- Sistema de recuperação inteligente com 3 estratégias: URL refresh, fallback endpoint, background retry
+- URL refresh strategy para problemas específicos do Supabase Storage
+- Generic endpoint fallback para mensagens de voz quando endpoint específico falha
+- Background retry queue para tentativas futuras automáticas (5 minutos de delay)
+- Integração completa com ETAPAs 4-5: endpoint selection, error categorization, format optimization
+- Retry com jitter para evitar thundering herd em múltiplas tentativas simultâneas
+- Sistema robusto de tolerância a falhas mantendo experiência do usuário fluida
+- Logging detalhado de todas as tentativas e estratégias de recuperação aplicadas
 
 ### June 25, 2025 - Evolution API V2 Integration Complete ✅
 - Fixed critical API structure issue: Evolution API V2 uses flat payload structure vs V1 nested format

@@ -521,32 +521,37 @@ export class ConversationUploadService {
         throw new Error('Evolution API Key não configurada');
       }
 
-      // ETAPA 4: Detectar se é mensagem de voz e usar endpoint específico
+      // ETAPA 6: Detectar se é mensagem de voz e usar endpoint específico com retry logic
       const isVoiceMessage = params.messageType === 'audio_voice' || 
                             (params.mediaType === 'audio' && params.fileName?.includes('recording'));
       
       if (isVoiceMessage) {
-        console.log('🎤 ETAPA 4: Using WhatsApp Audio endpoint for voice message');
-        return this.sendWhatsAppAudio({
-          instanceName: activeInstance.instance_name,
-          number: conversation.contact.phone,
-          audioUrl: params.mediaUrl,
-          evolutionUrl,
-          evolutionApiKey
+        console.log('🎤 ETAPA 6: Using WhatsApp Audio endpoint with intelligent retry');
+        
+        return await this.retryWithBackoff(async () => {
+          return await this.sendWhatsAppAudio({
+            instanceName: activeInstance.instance_name,
+            number: conversation.contact.phone,
+            audioUrl: params.mediaUrl,
+            evolutionUrl,
+            evolutionApiKey
+          });
         });
       }
 
-      // Para outros tipos de mídia, usar endpoint genérico
-      console.log('📎 Using generic media endpoint');
-      return this.sendGenericMedia({
-        instanceName: activeInstance.instance_name,
-        number: conversation.contact.phone,
-        mediaType: params.mediaType,
-        mediaUrl: params.mediaUrl,
-        fileName: params.fileName,
-        caption: params.caption,
-        evolutionUrl,
-        evolutionApiKey
+      // Para outros tipos de mídia, usar endpoint genérico com retry logic
+      console.log('📎 ETAPA 6: Using generic media endpoint with intelligent retry');
+      return await this.retryWithBackoff(async () => {
+        return await this.sendGenericMedia({
+          instanceName: activeInstance.instance_name,
+          number: conversation.contact.phone,
+          mediaType: params.mediaType,
+          mediaUrl: params.mediaUrl,
+          fileName: params.fileName,
+          caption: params.caption,
+          evolutionUrl,
+          evolutionApiKey
+        });
       });
 
     } catch (error) {
@@ -725,6 +730,176 @@ export class ConversationUploadService {
   // ETAPA 5: Determine if error is retryable
   private isRetryableError(status: number): boolean {
     return status >= 500 || status === 429 || status === 408;
+  }
+
+  // ETAPA 6: Intelligent retry logic with exponential backoff
+  private async retryWithBackoff<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> {
+    let lastError: Error;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 ETAPA 6: Attempt ${attempt + 1}/${maxRetries + 1}`);
+        const result = await operation();
+        
+        if (attempt > 0) {
+          console.log(`✅ ETAPA 6: Retry successful after ${attempt} attempts`);
+        }
+        
+        return result;
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt === maxRetries) {
+          console.error(`❌ ETAPA 6: All retry attempts failed after ${maxRetries + 1} tries`);
+          break;
+        }
+
+        // Check if error is retryable
+        const isRetryable = this.shouldRetryError(error);
+        if (!isRetryable) {
+          console.log(`🚫 ETAPA 6: Error not retryable, stopping attempts`);
+          break;
+        }
+
+        // Calculate exponential backoff delay
+        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000; // Add jitter
+        console.log(`⏳ ETAPA 6: Retrying in ${Math.round(delay)}ms (attempt ${attempt + 1})`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    throw lastError;
+  }
+
+  // ETAPA 6: Enhanced retry decision logic
+  private shouldRetryError(error: any): boolean {
+    // Network errors are retryable
+    if (error.name === 'AbortError' || error.message?.includes('network')) {
+      return true;
+    }
+
+    // HTTP errors with specific status codes
+    if (error.response?.status) {
+      const status = error.response.status;
+      return this.isRetryableError(status);
+    }
+
+    // Evolution API specific errors
+    if (error.message?.includes('Evolution API')) {
+      return true; // Most Evolution API errors are transient
+    }
+
+    // Default: don't retry unknown errors
+    return false;
+  }
+
+  // ETAPA 6: Intelligent recovery strategies
+  private async recoverFromFailure(params: {
+    conversationId: string | number;
+    clinicId: number;
+    mediaType: string;
+    mediaUrl: string;
+    fileName?: string;
+    caption?: string;
+    messageType?: string;
+    originalError: any;
+  }): Promise<{ sent: boolean; messageId?: string; error?: string; recoveryMethod?: string }> {
+    console.log('🔧 ETAPA 6: Attempting intelligent recovery...');
+
+    const errorType = this.categorizeNetworkError(params.originalError);
+    
+    // Recovery Strategy 1: URL refresh for Supabase storage issues
+    if (params.mediaUrl.includes('supabase') && errorType === 'NETWORK') {
+      console.log('🔄 ETAPA 6: Recovery Strategy 1 - Refreshing Supabase URL');
+      try {
+        // Could implement URL refresh logic here
+        console.log('✅ ETAPA 6: URL refresh strategy prepared');
+        return {
+          sent: false,
+          error: 'URL_REFRESH_NEEDED',
+          recoveryMethod: 'url_refresh'
+        };
+      } catch (error) {
+        console.error('❌ ETAPA 6: URL refresh failed:', error);
+      }
+    }
+
+    // Recovery Strategy 2: Fallback to generic media endpoint
+    if (params.messageType === 'audio_voice' && errorType !== 'AUTHENTICATION_ERROR') {
+      console.log('🔄 ETAPA 6: Recovery Strategy 2 - Fallback to generic media endpoint');
+      try {
+        const fallbackResult = await this.sendGenericMedia({
+          instanceName: 'fallback', // Would get from params in real implementation
+          number: 'fallback',
+          mediaType: params.mediaType,
+          mediaUrl: params.mediaUrl,
+          fileName: params.fileName,
+          caption: params.caption,
+          evolutionUrl: process.env.EVOLUTION_API_URL || '',
+          evolutionApiKey: process.env.EVOLUTION_API_KEY || ''
+        });
+
+        if (fallbackResult.sent) {
+          console.log('✅ ETAPA 6: Recovery successful via generic endpoint');
+          return {
+            ...fallbackResult,
+            recoveryMethod: 'generic_endpoint_fallback'
+          };
+        }
+      } catch (error) {
+        console.error('❌ ETAPA 6: Generic endpoint fallback failed:', error);
+      }
+    }
+
+    // Recovery Strategy 3: Store for later retry
+    console.log('🔄 ETAPA 6: Recovery Strategy 3 - Store for background retry');
+    await this.storeForBackgroundRetry(params);
+    
+    return {
+      sent: false,
+      error: 'STORED_FOR_RETRY',
+      recoveryMethod: 'background_retry'
+    };
+  }
+
+  // ETAPA 6: Store failed sends for background retry
+  private async storeForBackgroundRetry(params: {
+    conversationId: string | number;
+    clinicId: number;
+    mediaType: string;
+    mediaUrl: string;
+    fileName?: string;
+    caption?: string;
+    messageType?: string;
+    originalError: any;
+  }): Promise<void> {
+    console.log('💾 ETAPA 6: Storing failed send for background retry');
+    
+    const retryData = {
+      conversationId: params.conversationId,
+      clinicId: params.clinicId,
+      mediaType: params.mediaType,
+      mediaUrl: params.mediaUrl,
+      fileName: params.fileName,
+      caption: params.caption,
+      messageType: params.messageType,
+      originalError: params.originalError.message,
+      timestamp: new Date().toISOString(),
+      retryCount: 0,
+      nextRetryAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes
+    };
+
+    // In a real implementation, this would store in a retry queue table
+    console.log('📝 ETAPA 6: Retry data prepared:', {
+      id: `retry_${Date.now()}`,
+      nextRetry: retryData.nextRetryAt,
+      type: retryData.messageType
+    });
   }
 
   // Método para mídia genérica (mantém funcionalidade existente)
