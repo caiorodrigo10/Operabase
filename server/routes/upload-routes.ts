@@ -41,8 +41,11 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
     console.log('🔥 UPLOAD ROUTE HIT - Before multer');
     console.log('🔥 URL:', req.url);
     console.log('🔥 Original URL:', req.originalUrl);
+    console.log('🔥 User-Agent:', req.headers['user-agent']);
+    console.log('🔥 Content-Type:', req.headers['content-type']);
     console.log('🔥 Headers Auth:', req.headers.authorization ? 'Present' : 'Missing');
     console.log('🔥 Session:', req.session ? 'Present' : 'Missing');
+    console.log('🔥 Cookies:', req.headers.cookie ? 'Present' : 'Missing');
     next();
   }, upload.single('file'), async (req: Request, res: Response) => {
     console.log('🚨🚨🚨 UPLOAD HANDLER REACHED 🚨🚨🚨');
@@ -57,6 +60,17 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
     try {
       const conversationId = req.params.id;
       const { caption, sendToWhatsApp = 'true' } = req.body;
+      
+      console.log('🔍 Upload request details:');
+      console.log('🔍 Conversation ID:', conversationId);
+      console.log('🔍 Caption:', caption);
+      console.log('🔍 Send to WhatsApp:', sendToWhatsApp);
+      console.log('🔍 File info:', req.file ? {
+        name: req.file.originalname,
+        size: req.file.size,
+        type: req.file.mimetype,
+        buffer: req.file.buffer ? 'Present' : 'Missing'
+      } : 'No file');
       
       console.log(`📤 Upload request for conversation ${conversationId}`);
       console.log(`📋 Request body:`, { caption, sendToWhatsApp });

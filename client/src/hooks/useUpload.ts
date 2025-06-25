@@ -35,6 +35,10 @@ export function useUpload() {
 
       console.log(`📤 Uploading file: ${file.name} (${file.size} bytes) to conversation ${conversationId}`);
 
+      console.log(`📤 Frontend: Making upload request to /api/conversations/${conversationId}/upload`);
+      console.log(`📤 Frontend: FormData keys:`, Array.from(formData.keys()));
+      console.log(`📤 Frontend: File info:`, file.name, file.size, file.type);
+      
       const response = await fetch(`/api/conversations/${conversationId}/upload`, {
         method: 'POST',
         body: formData,
@@ -43,6 +47,9 @@ export function useUpload() {
           // Não adicionar Content-Type - deixar o browser definir boundary para multipart
         }
       });
+      
+      console.log(`📤 Frontend: Response status:`, response.status);
+      console.log(`📤 Frontend: Response headers:`, Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
