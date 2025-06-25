@@ -443,6 +443,16 @@ export class ConversationUploadService {
 
       const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
       const evolutionApiKey = process.env.EVOLUTION_API_KEY;
+      
+      console.log('🔧 Evolution API Configuration Check:');
+      console.log('📍 URL:', evolutionUrl);
+      console.log('🔑 API Key exists:', !!evolutionApiKey);
+      console.log('🔑 API Key length:', evolutionApiKey?.length || 0);
+      
+      if (!evolutionApiKey) {
+        console.error('❌ EVOLUTION_API_KEY not found in environment variables');
+        throw new Error('Evolution API Key não configurada');
+      }
 
       // Payload conforme documentação Evolution API - campos obrigatórios sempre presentes
       const payload = {
