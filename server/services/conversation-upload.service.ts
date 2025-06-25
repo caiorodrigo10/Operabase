@@ -484,7 +484,7 @@ export class ConversationUploadService {
       const payload = {
         number: conversation.contact.phone,
         mediaMessage: {
-          mediatype: params.mediaType,  // Evolution API espera 'mediatype' minúsculo
+          mediaType: params.mediaType,  // Evolution API espera 'mediaType' com T maiúsculo
           fileName: params.fileName || 'attachment',
           media: params.mediaUrl,
           ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
@@ -495,16 +495,10 @@ export class ConversationUploadService {
         }
       };
       
-      console.log('🔧 CORRIGIDO - mediatype minúsculo (Evolution API):');
-      console.log(JSON.stringify(payload, null, 2));
-
-      console.log('📤 Evolution API - Payload completo sendo enviado:');
+      console.log('📤 Evolution API Payload (mediaType com T maiúsculo):');
       console.log('📤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
-      console.log('📤 Headers:', { 'Content-Type': 'application/json', 'apikey': '***HIDDEN***' });
-      console.log('📤 Payload:', JSON.stringify(payload, null, 2));
-      console.log('📤 Campo mediatype:', payload.mediaMessage.mediatype);
+      console.log('📤 Campo mediaType:', payload.mediaMessage.mediaType);
       console.log('📤 Campo fileName:', payload.mediaMessage.fileName);
-      console.log('📤 Campo media:', payload.mediaMessage.media?.substring(0, 100) + '...');
       console.log('📤 Campo number:', payload.number);
 
       // Usar formato exato do texto para mídia
