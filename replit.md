@@ -246,7 +246,8 @@ SESSION_SECRET=your_session_secret
 - Cleaned up test instance, now using only existing "open" instance for clinic 1
 - System properly isolates WhatsApp communications by clinic with single "open" instance
 - Evolution API failure indicators working with red triangle visual feedback
-- Fixed timezone issues: removed future messages from day 25, corrected to Brasília timezone
+- Fixed timezone issues: removed future messages from day 25, corrected to Brasília timezone (GMT-3)
+- Sistema agora salva mensagens com horário correto de Brasília no banco de dados
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

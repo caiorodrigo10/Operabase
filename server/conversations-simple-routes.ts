@@ -487,13 +487,24 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         
         console.log('💾 Using conversation_id for insert:', insertConversationId);
         
+        // Função para obter timestamp no horário de Brasília
+        const getBrasiliaTimestamp = () => {
+          const now = new Date();
+          const brasiliaOffset = -3 * 60; // GMT-3 em minutos
+          const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+          const brasiliaTime = new Date(utcTime + (brasiliaOffset * 60000));
+          return brasiliaTime.toISOString();
+        };
+
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
             conversation_id: insertConversationId,
             sender_type: 'professional',
             content: content,
-            evolution_status: 'pending' // Inicialmente pendente
+            timestamp: getBrasiliaTimestamp(),
+            device_type: 'manual',
+            evolution_status: 'pending'
           })
           .select()
           .single();
