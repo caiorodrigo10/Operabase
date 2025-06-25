@@ -7,9 +7,11 @@ import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploader } from "./FileUploader";
 import { FileUploadModal } from "./FileUploadModal";
+import { AudioRecordingPreview } from "./AudioRecordingPreview";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
 import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAudioRecorder, formatRecordingTime } from "@/hooks/useAudioRecorder";
 
 // Helper function to format date as "23 de Junho"
 const formatDateLabel = (date: string) => {
@@ -52,11 +54,23 @@ export function MainConversationArea({
   selectedConversationId
 }: MainConversationAreaProps) {
   const [message, setMessage] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+
+  // Audio recording hook
+  const {
+    recordingState,
+    recordingTime,
+    audioBlob,
+    audioUrl,
+    isSupported: isAudioSupported,
+    startRecording,
+    stopRecording,
+    clearRecording,
+    error: audioError
+  } = useAudioRecorder();
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
@@ -105,6 +119,30 @@ export function MainConversationArea({
     
     // Fechar modal
     setShowUploadModal(false);
+  };
+
+  // Audio recording handlers
+  const handleMicrophoneClick = async () => {
+    if (!isAudioSupported) {
+      console.error('❌ Audio recording not supported');
+      return;
+    }
+
+    if (recordingState === 'idle') {
+      await startRecording();
+    } else if (recordingState === 'recording') {
+      stopRecording();
+    }
+  };
+
+  const handleSendAudio = () => {
+    // TODO: Implement audio sending in next step
+    console.log('🎵 Sending audio:', { audioBlob, recordingTime });
+    clearRecording();
+  };
+
+  const handleCancelAudio = () => {
+    clearRecording();
   };
 
   if (!patientInfo) {
@@ -234,9 +272,14 @@ export function MainConversationArea({
             size="sm"
             className={cn(
               "text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10",
-              isRecording && "text-red-500 bg-red-50"
+              recordingState === 'recording' && "text-red-500 bg-red-50"
             )}
-            onClick={() => setIsRecording(!isRecording)}
+            onClick={handleMicrophoneClick}
+            disabled={!isAudioSupported}
+            title={isAudioSupported ? 
+              (recordingState === 'recording' ? 'Parar gravação' : 'Gravar áudio') : 
+              'Gravação de áudio não suportada'
+            }
           >
             <Mic className="w-4 h-4" />
           </Button>
