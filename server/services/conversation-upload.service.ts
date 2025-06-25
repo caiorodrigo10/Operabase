@@ -435,13 +435,13 @@ export class ConversationUploadService {
       const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
       const evolutionApiKey = process.env.EVOLUTION_API_KEY;
 
-      // Payload conforme documentação Evolution API
+      // Payload conforme documentação Evolution API - campos obrigatórios sempre presentes
       const payload = {
         number: conversation.contact.phone,
         mediaMessage: {
           mediatype: params.mediaType,
+          fileName: params.fileName || 'attachment', // fileName sempre obrigatório
           media: params.mediaUrl,
-          ...(params.fileName && { fileName: params.fileName }),
           ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
         },
         options: {
@@ -449,6 +449,15 @@ export class ConversationUploadService {
           presence: params.mediaType === 'audio' ? 'recording' : 'composing'
         }
       };
+
+      console.log('📤 Evolution API - Payload completo sendo enviado:');
+      console.log('📤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
+      console.log('📤 Headers:', { 'Content-Type': 'application/json', 'apikey': '***HIDDEN***' });
+      console.log('📤 Payload:', JSON.stringify(payload, null, 2));
+      console.log('📤 Campo mediatype:', payload.mediaMessage.mediatype);
+      console.log('📤 Campo fileName:', payload.mediaMessage.fileName);
+      console.log('📤 Campo media:', payload.mediaMessage.media?.substring(0, 100) + '...');
+      console.log('📤 Campo number:', payload.number);
 
       // Usar formato exato do texto para mídia
       const response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
