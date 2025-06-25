@@ -73,29 +73,30 @@ export class ConversationUploadService {
       // 1. Validar arquivo
       this.validateFile(file, mimeType, filename);
 
-      // 2. Upload para Supabase Storage
+      // 2. Sanitizar filename ANTES do upload
+      const sanitizedFilename = this.sanitizeFilename(filename);
+      
+      // 3. Upload para Supabase Storage com nome sanitizado
       console.log('📁 Uploading to Supabase Storage...');
+      console.log('🔧 Using sanitized filename for storage:', sanitizedFilename);
       const storageResult = await this.uploadToSupabase({
         file,
-        filename,
+        filename: sanitizedFilename, // Usar nome sanitizado
         mimeType,
         conversationId,
         clinicId
       });
-
-      // 4. Sanitizar filename
-      const sanitizedFilename = this.sanitizeFilename(filename);
       
-      // 5. Criar mensagem no banco (usar string conversation_id)
+      // 4. Criar mensagem no banco (usar string conversation_id)
       console.log('💾 Creating message in database...');
-      const messageContent = caption || `📎 ${sanitizedFilename}`;
+      const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       const message = await this.storage.createMessage({
         conversation_id: conversationId, // Manter como string 
         sender_type: 'professional',
         content: messageContent
       });
 
-      // 6. Criar attachment (preservar nome original para o usuário)
+      // 5. Criar attachment (preservar nome original para o usuário)
       console.log('📎 Creating attachment record...');
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
