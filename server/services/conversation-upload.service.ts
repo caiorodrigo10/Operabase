@@ -134,7 +134,7 @@ export class ConversationUploadService {
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       
       // Mapear MIME type para message_type automaticamente
-      const messageType = this.getMimeToMessageType(file.mimetype);
+      const messageType = this.getMimeToMessageType(file.mimetype || file.type || 'application/octet-stream');
       
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
