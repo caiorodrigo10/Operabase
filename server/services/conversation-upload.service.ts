@@ -171,8 +171,17 @@ export class ConversationUploadService {
 
       // 5. Enviar via Evolution API (se solicitado)
       if (sendToWhatsApp) {
-        console.log('📱 Sending via Evolution API...');
+        console.log('📱 INICIANDO envio via Evolution API...');
+        console.log('📱 sendToWhatsApp =', sendToWhatsApp);
+        console.log('📱 Parâmetros para sendToEvolution:', {
+          conversationId,
+          clinicId,
+          mediaType: this.getEvolutionMediaType(mimeType),
+          mediaUrl: storageResult.signed_url,
+          fileName: this.shouldIncludeFileName(mimeType) ? filename : undefined
+        });
         try {
+          console.log('📱 Chamando this.sendToEvolution...');
           whatsappResult = await this.sendToEvolution({
             conversationId,
             clinicId,
