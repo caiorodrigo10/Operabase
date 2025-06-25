@@ -274,7 +274,7 @@ export function MainConversationArea({
         <FileUploadModal
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
-          conversationId={String(patientInfo?.id || '')}
+          conversationId={conversationId || selectedConversationId || ''}
           onUploadSuccess={handleUploadSuccess}
         />
       </div>
