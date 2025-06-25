@@ -286,6 +286,16 @@ SESSION_SECRET=your_session_secret
 - Estrutura atual de conversas 100% preservada - zero impacto nas funcionalidades existentes
 - Sistema preparado para FASE 2 (Backend Upload Service)
 
+### June 25, 2025 - FASE 2: Backend Upload Service Implementado ✅
+- Criado SupabaseStorageService para gerenciar uploads, downloads e URLs assinadas
+- Implementado sistema de upload com estrutura organizada: clinic-{id}/conversation-{id}/{category}/
+- Categorização automática: images, audio, videos, documents, others
+- Validação de tipos MIME e tamanho de arquivo (50MB máximo)  
+- Endpoints implementados: POST /upload, POST /renew-url, DELETE /attachments
+- URLs assinadas com expiração de 24 horas e renovação automática
+- Integração completa com tabela message_attachments via Drizzle ORM
+- Sistema de cleanup automático em caso de falhas no upload
+
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)
