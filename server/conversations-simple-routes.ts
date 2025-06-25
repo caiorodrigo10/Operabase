@@ -629,6 +629,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             .eq('id', insertConversationId)
             .single();
 
+          console.log('🔍 Conversation lookup result:', {
+            insertConversationId,
+            found: !!conversationWithContact,
+            phone: conversationWithContact?.contacts?.phone
+          });
+
           if (!conversationWithContact?.contacts?.phone) {
             console.error('❌ No contact phone found for conversation:', insertConversationId);
             
