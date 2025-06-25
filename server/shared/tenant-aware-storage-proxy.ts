@@ -378,6 +378,10 @@ export class TenantAwareStorageProxy implements IStorage {
     return this.storage.createMessage(message);
   }
 
+  async updateMessage(messageId: number, updates: any): Promise<any> {
+    return this.storage.updateMessage(messageId, updates);
+  }
+
   async createAttachment(attachment: any): Promise<any> {
     return this.storage.createAttachment(attachment);
   }

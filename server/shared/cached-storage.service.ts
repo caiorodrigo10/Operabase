@@ -193,6 +193,18 @@ export class CachedStorageService {
     return result;
   }
 
+  async updateMessage(messageId: number, updates: any) {
+    const result = await this.baseStorage.updateMessage(messageId, updates);
+
+    // Invalidate related caches - we need to get conversation_id from the result
+    if (result && result.conversation_id) {
+      await intelligentCache.invalidate('CONVERSATIONS', `messages:${result.conversation_id}:100`, updates.clinic_id);
+      await intelligentCache.invalidate('CONVERSATIONS', `detail:${result.conversation_id}`, updates.clinic_id);
+    }
+
+    return result;
+  }
+
   /**
    * Cached medical records operations
    */
