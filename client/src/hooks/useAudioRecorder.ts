@@ -79,12 +79,15 @@ export function useAudioRecorder(): AudioRecorderHook {
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
         ? 'audio/webm' 
         : 'audio/mp4';
+      
+      console.log('🎵 Creating MediaRecorder with type:', mimeType);
         
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
 
       // Handle data available
       mediaRecorder.ondataavailable = (event) => {
+        console.log('🎵 Data available, size:', event.data.size);
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
@@ -92,6 +95,7 @@ export function useAudioRecorder(): AudioRecorderHook {
 
       // Handle recording stop
       mediaRecorder.onstop = () => {
+        console.log('🎵 Recording stopped, creating blob...');
         const blob = new Blob(chunksRef.current, { type: mimeType });
         setAudioBlob(blob);
         
@@ -99,6 +103,7 @@ export function useAudioRecorder(): AudioRecorderHook {
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         
+        console.log('🎵 Audio URL created:', url);
         setRecordingState('stopped');
         stopTimer();
         
@@ -109,19 +114,25 @@ export function useAudioRecorder(): AudioRecorderHook {
         }
       };
 
+      // Handle recording start
+      mediaRecorder.onstart = () => {
+        console.log('🎵 MediaRecorder started successfully');
+        setRecordingState('recording');
+        setRecordingTime(0);
+        startTimer();
+      };
+
       // Handle errors
       mediaRecorder.onerror = (event) => {
-        console.error('MediaRecorder error:', event);
+        console.error('❌ MediaRecorder error:', event);
         setError('Erro durante a gravação');
         setRecordingState('idle');
         stopTimer();
       };
 
       // Start recording
+      console.log('🎵 Starting MediaRecorder...');
       mediaRecorder.start(1000); // Collect data every second
-      setRecordingState('recording');
-      setRecordingTime(0);
-      startTimer();
 
     } catch (err) {
       console.error('❌ Error starting recording:', err);
