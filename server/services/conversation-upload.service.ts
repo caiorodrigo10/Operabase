@@ -129,19 +129,17 @@ export class ConversationUploadService {
       
       console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
       
-      // 5. Criar mensagem no banco (usar ID numérico da conversa) com horário de Brasília
+      // 5. Criar mensagem no banco (usar ID numérico da conversa) - deixar PostgreSQL criar timestamp automaticamente
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       
-      // Criar timestamp em horário de Brasília (GMT-3)
-      const now = new Date();
-      const brasilTime = new Date(now.getTime() - (3 * 60 * 60 * 1000)); // Subtrair 3 horas
-      
+      // Deixar PostgreSQL criar timestamp automaticamente igual mensagens de texto
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
         sender_type: 'professional',
         content: messageContent,
-        timestamp: brasilTime // Adicionar timestamp correto
+        message_type: 'media',
+        device_type: 'system'
       });
 
       // 6. Criar attachment (preservar nome original para o usuário)

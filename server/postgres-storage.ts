@@ -2034,16 +2034,28 @@ export class PostgreSQLStorage implements IStorage {
       console.log('💾 Creating message with data:', {
         conversation_id: message.conversation_id,
         sender_type: message.sender_type,
-        content: message.content
+        content: message.content,
+        timestamp_provided: !!message.timestamp
       });
       
+      // Sempre usar apenas os campos básicos - PostgreSQL criará timestamp automaticamente
       const result = await db.execute(sql`
-        INSERT INTO messages (conversation_id, sender_type, content)
-        VALUES (${String(message.conversation_id)}, ${message.sender_type}, ${message.content})
+        INSERT INTO messages (conversation_id, sender_type, content, message_type, device_type)
+        VALUES (
+          ${String(message.conversation_id)}, 
+          ${message.sender_type}, 
+          ${message.content},
+          ${message.message_type || 'text'},
+          ${message.device_type || 'system'}
+        )
         RETURNING *
       `);
       
-      console.log('✅ Message created successfully:', result.rows[0]);
+      console.log('✅ Message created with automatic timestamp:', {
+        id: result.rows[0].id,
+        timestamp: result.rows[0].timestamp,
+        content: result.rows[0].content
+      });
       return result.rows[0];
     } catch (error) {
       console.error('Error creating message:', error);
