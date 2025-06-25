@@ -1,7 +1,7 @@
-# Plano: Sistema de Upload de Arquivos - Supabase Storage
+# Plano: Sistema de Upload de Arquivos - Supabase Storage + Evolution API
 
 ## 🎯 Objetivo
-Implementar sistema completo de upload de arquivos (imagem, vídeo, áudio, documentos) conectado ao botão de anexo existente, usando Supabase Storage com estrutura organizada por cliente.
+Implementar sistema completo de upload de arquivos (imagem, vídeo, áudio, documentos) conectado ao botão de anexo existente, usando **Supabase Storage** para armazenamento interno e **Evolution API** para envio automático via WhatsApp.
 
 ## 📋 Funcionalidades Principais
 
@@ -77,7 +77,7 @@ interface FileUploadModalProps {
 />
 ```
 
-### **FASE 2: Backend Upload Service**
+### **FASE 2: Backend Upload Service - Integração Dupla**
 
 #### Endpoint de Upload
 ```typescript
@@ -88,7 +88,8 @@ Content-Type: multipart/form-data
 {
   file: File,
   clinicId: number,
-  messageContent?: string
+  caption?: string, // Caption para WhatsApp
+  sendToWhatsApp?: boolean // Default: true
 }
 
 // Response:
@@ -97,22 +98,42 @@ Content-Type: multipart/form-data
   message: MessageWithAttachment,
   attachment: MessageAttachment,
   signedUrl: string,
-  expiresAt: string
+  expiresAt: string,
+  whatsapp: {
+    sent: boolean,
+    messageId?: string,
+    error?: string
+  }
 }
 ```
 
-#### UploadService Class
+#### UploadService Class - Integração Dupla
 ```typescript
 class ConversationUploadService {
-  // Upload com categorização automática
+  // Upload principal com integração dupla
   async uploadFile(params: {
     file: Buffer,
     filename: string,
     mimeType: string,
     conversationId: string,
     clinicId: number,
-    userId: number
+    userId: number,
+    caption?: string,
+    sendToWhatsApp?: boolean
   }): Promise<UploadResult>;
+
+  // Upload para Supabase Storage
+  private async uploadToSupabase(params: UploadParams): Promise<StorageResult>;
+  
+  // Envio para Evolution API
+  private async sendToEvolution(params: {
+    mediaType: 'image' | 'video' | 'document' | 'audio',
+    mediaUrl: string,
+    fileName?: string,
+    caption?: string,
+    whatsappNumber: string,
+    instanceId: string
+  }): Promise<EvolutionResult>;
 
   // Gerar URLs assinadas
   async generateSignedUrl(storagePath: string): Promise<string>;
@@ -125,27 +146,70 @@ class ConversationUploadService {
 }
 ```
 
-### **FASE 3: Database Integration**
+### **FASE 3: Database Integration + WhatsApp**
 
-#### Criação Automática de Mensagem
+#### Fluxo Completo - Integração Dupla
 ```typescript
 // Fluxo completo:
 1. Upload do arquivo para Supabase Storage
 2. Criação da mensagem na tabela messages
 3. Criação do attachment na tabela message_attachments
 4. Geração de URL assinada (24h)
-5. Invalidação do cache da conversa
-6. Notificação WebSocket (se disponível)
+5. **ENVIO VIA EVOLUTION API**:
+   - Buscar instância ativa da clínica
+   - Determinar número WhatsApp do paciente
+   - Enviar mídia via Evolution sendMedia
+   - Atualizar status da mensagem
+6. Invalidação do cache da conversa
+7. Notificação WebSocket (se disponível)
 ```
 
-#### Schema da Mensagem com Anexo
+#### Mapeamento Evolution API
+```typescript
+// Conversão MIME -> Evolution mediaType
+const evolutionTypeMapping = {
+  'image/jpeg': 'image',
+  'image/png': 'image',
+  'image/gif': 'image',
+  'image/webp': 'image',
+  'video/mp4': 'video',
+  'video/mov': 'video',
+  'video/avi': 'video',
+  'audio/mp3': 'audio',
+  'audio/mpeg': 'audio',
+  'audio/wav': 'audio',
+  'audio/ogg': 'audio',
+  'application/pdf': 'document',
+  'application/msword': 'document',
+  'text/*': 'document'
+};
+
+// Payload Evolution API
+interface EvolutionMediaPayload {
+  number: string; // WhatsApp do paciente
+  mediaMessage: {
+    mediaType: 'image' | 'video' | 'document' | 'audio';
+    fileName?: string; // Apenas para documentos
+    caption?: string; // Não para áudio
+    media: string; // URL pública assinada do Supabase
+  };
+  options?: {
+    delay?: number;
+    presence?: 'composing' | 'recording';
+  };
+}
+```
+
+#### Schema da Mensagem com Anexo + WhatsApp
 ```typescript
 interface MessageWithAttachment {
   id: number;
   conversation_id: string;
   sender_type: 'professional' | 'patient';
-  content: string; // "📎 [filename] enviado"
+  content: string; // Caption ou "📎 [filename] enviado"
   message_type: 'image' | 'video' | 'audio' | 'document';
+  status: 'pending' | 'sent' | 'failed'; // Status WhatsApp
+  whatsapp_message_id?: string; // ID retornado pela Evolution
   created_at: string;
   
   message_attachments: {
@@ -156,6 +220,8 @@ interface MessageWithAttachment {
     file_url: string; // URL assinada
     storage_path: string;
     signed_url_expires: string;
+    whatsapp_sent: boolean; // Enviado via WhatsApp?
+    whatsapp_error?: string; // Erro de envio
   }[];
 }
 ```
@@ -191,21 +257,31 @@ interface MessageWithAttachment {
 
 ## 🔄 Fluxo de Upload
 
-### **Passo a Passo**
+### **Passo a Passo - Fluxo Duplo**
 1. **Usuário clica no botão anexo** → Abre modal
-2. **Seleciona arquivo(s)** → Validação client-side
-3. **Confirma envio** → Inicia upload
-4. **Upload para Storage** → Progress feedback
+2. **Seleciona arquivo(s) + caption** → Validação client-side
+3. **Confirma envio** → Inicia upload duplo
+4. **Upload para Storage** → Progress feedback (50%)
 5. **Criação de mensagem** → Banco de dados
-6. **Retorna para conversa** → Anexo visível
-7. **Cache invalidation** → Lista atualizada
+6. **Envio via Evolution API** → Progress feedback (100%)
+7. **Retorna para conversa** → Anexo visível + status WhatsApp
+8. **Cache invalidation** → Lista atualizada
 
-### **Tratamento de Erros**
+### **Estados da Mensagem**
+- **📤 Enviando**: Upload em progresso
+- **⏳ Processando**: Enviando via WhatsApp
+- **✅ Enviado**: Sucesso total (Storage + WhatsApp)
+- **⚠️ Parcial**: Storage OK, WhatsApp falhou
+- **❌ Erro**: Falha completa
+
+### **Tratamento de Erros - Cenários Duplos**
 - **Arquivo muito grande**: Modal de erro com limite
 - **Tipo não suportado**: Lista de tipos aceitos
-- **Falha no upload**: Retry automático (3x)
+- **Falha Storage**: Retry automático (3x), erro total
+- **Falha WhatsApp**: Arquivo salvo, mas não enviado (modo degradado)
+- **Instância WhatsApp offline**: Armazenar para retry posterior
+- **Número WhatsApp inválido**: Salvar como nota interna
 - **Erro de rede**: Mensagem "Verifique conexão"
-- **Storage indisponível**: "Tente novamente em instantes"
 
 ## 🔒 Segurança e Validação
 
@@ -242,40 +318,76 @@ interface UploadMetrics {
 - Upload time > 30s
 - Arquivos suspeitos
 
-## 🚀 Cronograma de Implementação
+## 🚀 Cronograma de Implementação - Integração Dupla
 
-### **Dia 1: Frontend Base**
-- [ ] FileUploadModal component
+### **Dia 1: Frontend Base + Caption**
+- [ ] FileUploadModal component com campo caption
 - [ ] Integração com MainConversationArea
-- [ ] Validação client-side
-- [ ] Progress tracking
+- [ ] Validação client-side + preview
+- [ ] Progress tracking duplo (Storage + WhatsApp)
 
-### **Dia 2: Backend Service**
-- [ ] Upload endpoint
+### **Dia 2: Backend Supabase Storage**
+- [ ] Upload endpoint base
 - [ ] SupabaseStorageService updates
 - [ ] Database integration
-- [ ] Error handling
+- [ ] URL assinada generation
 
-### **Dia 3: Integração e Testes**
+### **Dia 3: Evolution API Integration**
+- [ ] EvolutionService para sendMedia
+- [ ] Mapeamento MIME → mediaType
+- [ ] Error handling e retry logic
+- [ ] Status tracking (pending/sent/failed)
+
+### **Dia 4: Integração Completa**
 - [ ] Frontend + Backend integration
 - [ ] Cache invalidation
-- [ ] Visual testing
-- [ ] Performance optimization
+- [ ] Visual feedback para estados
+- [ ] Testing completo
 
-### **Dia 4: Polimento**
+### **Dia 5: Polimento + Monitoramento**
 - [ ] UI/UX refinements
-- [ ] Error messages
+- [ ] Error messages específicos
+- [ ] Métricas de sucesso WhatsApp
 - [ ] Documentation update
-- [ ] Deployment
 
-## ❓ Decisões Pendentes
+## ❓ Decisões Pendentes - Integração WhatsApp
 
-1. **Múltiplos arquivos**: Permitir upload simultâneo?
-2. **Compressão**: Comprimir imagens/vídeos automaticamente?
-3. **Thumbnails**: Gerar thumbnails automáticos?
-4. **Histórico**: Mostrar histórico de uploads?
-5. **Permissions**: Diferentes permissões por tipo de usuário?
+1. **Múltiplos arquivos**: Permitir upload simultâneo? (Recomendo: Não, WhatsApp é sequencial)
+2. **Caption obrigatório**: Exigir caption para todos os tipos? (Recomendo: Opcional, exceto documentos)
+3. **Retry WhatsApp**: Quantas tentativas se Evolution falhar? (Recomendo: 3x com backoff)
+4. **Fallback mode**: Se WhatsApp falhar, salvar como nota interna? (Recomendo: Sim)
+5. **URL pública**: Evolution precisa de URL pública - usar signed URL do Supabase? (Recomendo: Sim)
+6. **Compressão**: Comprimir automaticamente antes do WhatsApp? (Recomendo: Apenas > 25MB)
+7. **Presence indicator**: Mostrar "enviando foto/gravando áudio" no WhatsApp? (Recomendo: Sim)
+
+## 🔄 Referências Técnicas
+
+### **Evolution API sendMedia**
+```javascript
+// Endpoint: POST /message/sendMedia/{instance}
+// Headers: { 'apikey': 'YOUR_API_KEY' }
+{
+  "number": "5511999999999", // WhatsApp do paciente
+  "mediaMessage": {
+    "mediaType": "image", // image, video, document, audio
+    "fileName": "documento.pdf", // Apenas para documents
+    "caption": "Resultado do seu exame", // Não para audio
+    "media": "https://supabase.url/signed-url" // URL pública
+  },
+  "options": {
+    "delay": 1000, // ms antes de enviar
+    "presence": "composing" // composing | recording
+  }
+}
+```
+
+### **Integração com Sistema Existente**
+- **Usar instância ativa da clínica**: Sistema já identifica instância "open"
+- **Usar número WhatsApp do paciente**: conversation.whatsapp_chat_id
+- **Manter compatibilidade**: Sistema funciona mesmo se Evolution falhar
+- **Logs consistentes**: Usar mesmo sistema de logs do envio de texto
 
 ---
 
+**✅ PLANO ATUALIZADO - Integração Supabase Storage + Evolution API WhatsApp**  
 **Aguardando aprovação para iniciar implementação** 🚦
