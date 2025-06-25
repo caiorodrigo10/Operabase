@@ -395,27 +395,61 @@ export class ConversationUploadService {
     caption?: string;
   }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
     try {
-      // Usar método existente: getConversationById da interface IStorage
-      const conversation = await this.storage.getConversationById(params.conversationId);
-      if (!conversation?.contact?.phone) {
+      console.log('🔍 Starting Evolution API media send process...');
+      
+      // Buscar instância WhatsApp ativa da clínica usando Supabase (igual ao texto)
+      const { data: activeInstance, error: instanceError } = await supabase
+        .from('whatsapp_numbers')
+        .select('*')
+        .eq('clinic_id', params.clinicId)
+        .eq('status', 'open')
+        .single();
+
+      if (instanceError || !activeInstance) {
+        console.error('❌ No WhatsApp instance found for clinic:', params.clinicId);
+        throw new Error('Nenhuma instância WhatsApp ativa encontrada para esta clínica');
+      }
+
+      // Buscar conversa com contato usando Supabase (igual ao texto)
+      const { data: conversationWithContact, error: convError } = await supabase
+        .from('conversations')
+        .select(`
+          id,
+          conversation_id,
+          clinic_id,
+          contact_id,
+          contacts (
+            id,
+            name,
+            phone,
+            email
+          )
+        `)
+        .eq('conversation_id', params.conversationId)
+        .single();
+
+      if (convError || !conversationWithContact?.contacts?.phone) {
+        console.error('❌ Conversation or contact phone not found:', convError);
         throw new Error('Conversa não possui contato com telefone');
       }
 
-      // Limpar número de telefone para formato WhatsApp (com código do país)
-      const whatsappNumber = conversation.contact.phone.replace(/\D/g, '');
-      if (!whatsappNumber) {
-        throw new Error('Número de telefone inválido');
-      }
+      const phone = conversationWithContact.contacts.phone;
+      const contactName = conversationWithContact.contacts.name;
 
-      // Buscar instância ativa da clínica
-      const whatsappInstance = await this.storage.getActiveWhatsAppInstance(params.clinicId);
-      if (!whatsappInstance) {
-        throw new Error('Nenhuma instância WhatsApp ativa encontrada');
-      }
+      console.log('📤 Sending media to Evolution API:', {
+        phone: phone,
+        instance: activeInstance.instance_name,
+        contact: contactName,
+        mediaType: params.mediaType,
+        fileName: params.fileName
+      });
 
-      // Preparar payload conforme documentação Evolution API
+      // Usar mesmo formato da Evolution API para texto
+      const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+      const evolutionApiKey = process.env.EVOLUTION_API_KEY;
+
       const payload = {
-        number: whatsappNumber,
+        number: phone,
         mediaMessage: {
           mediaType: params.mediaType,
           media: params.mediaUrl,
@@ -424,30 +458,43 @@ export class ConversationUploadService {
         },
         options: {
           delay: 1000,
-          presence: params.mediaType === 'audio' ? 'recording' as const : 'composing' as const
+          presence: params.mediaType === 'audio' ? 'recording' : 'composing'
         }
       };
 
-      console.log('📡 Enviando para Evolution API:', {
-        instance: whatsappInstance.instance_id,
-        number: whatsappNumber,
-        contact: conversation.contact.name,
-        mediaType: params.mediaType,
-        fileName: params.fileName,
-        mediaUrl: params.mediaUrl.substring(0, 50) + '...'
+      const response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
+        method: 'POST',
+        headers: {
+          'apikey': evolutionApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
 
-      const result = await this.evolutionAPI.sendMedia(whatsappInstance.instance_id, payload);
-      
-      console.log('✅ Mídia enviada com sucesso via WhatsApp:', result.key?.id);
-      
-      return {
-        sent: true,
-        messageId: result.key?.id
-      };
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Evolution API media success:', result);
+        
+        return {
+          sent: true,
+          messageId: result.key?.id
+        };
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Evolution API media error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        
+        return {
+          sent: false,
+          error: `Evolution API error: ${response.status} - ${errorText}`
+        };
+      }
 
     } catch (error) {
-      console.error('❌ Erro Evolution API:', error);
+      console.error('❌ Evolution API media send failed:', error);
       return {
         sent: false,
         error: error instanceof Error ? error.message : 'Unknown error'
