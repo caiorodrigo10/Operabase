@@ -397,59 +397,77 @@ export class ConversationUploadService {
     try {
       console.log('🔍 Starting Evolution API media send process...');
       
-      // Buscar instância WhatsApp ativa da clínica usando Supabase (igual ao texto)
+      // Buscar instância WhatsApp ativa da clínica (mesmo padrão do texto)
       const { data: activeInstance, error: instanceError } = await supabase
         .from('whatsapp_numbers')
         .select('*')
         .eq('clinic_id', params.clinicId)
         .eq('status', 'open')
+        .limit(1)
         .single();
 
-      if (instanceError || !activeInstance) {
-        console.error('❌ No WhatsApp instance found for clinic:', params.clinicId);
+      if (instanceError) {
+        console.error('❌ Error fetching WhatsApp instance:', instanceError);
+        throw new Error('Erro de configuração de instância');
+      }
+
+      if (!activeInstance) {
+        console.error('❌ No active WhatsApp instance found for clinic:', params.clinicId);
         throw new Error('Nenhuma instância WhatsApp ativa encontrada para esta clínica');
       }
 
-      // Buscar conversa com contato usando Supabase (igual ao texto)
-      const { data: conversationWithContact, error: convError } = await supabase
+      console.log('✅ Active WhatsApp instance found:', {
+        instance_name: activeInstance.instance_name,
+        phone_number: activeInstance.phone_number,
+        status: activeInstance.status
+      });
+
+      // Buscar informações de contato (mesmo padrão do texto)
+      const { data: conversationWithContact, error: contactError } = await supabase
         .from('conversations')
         .select(`
           id,
-          conversation_id,
           clinic_id,
           contact_id,
           contacts (
-            id,
             name,
-            phone,
-            email
+            email,
+            phone
           )
         `)
         .eq('conversation_id', params.conversationId)
         .single();
 
-      if (convError || !conversationWithContact?.contacts?.phone) {
-        console.error('❌ Conversation or contact phone not found:', convError);
+      console.log('🔍 Conversation lookup result:', {
+        conversationId: params.conversationId,
+        found: !!conversationWithContact,
+        phone: conversationWithContact?.contacts?.phone,
+        error: contactError
+      });
+
+      if (contactError) {
+        console.error('❌ Error fetching conversation contact:', contactError);
+        throw new Error('Erro de configuração de contato');
+      }
+
+      if (!conversationWithContact?.contacts?.phone) {
+        console.error('❌ No contact phone found for conversation:', params.conversationId);
         throw new Error('Conversa não possui contato com telefone');
       }
 
-      const phone = conversationWithContact.contacts.phone;
-      const contactName = conversationWithContact.contacts.name;
-
-      console.log('📤 Sending media to Evolution API:', {
-        phone: phone,
+      console.log('📤 Sending to Evolution API with clinic instance...', {
+        phone: conversationWithContact.contacts.phone,
         instance: activeInstance.instance_name,
-        contact: contactName,
         mediaType: params.mediaType,
         fileName: params.fileName
       });
 
-      // Usar mesmo formato da Evolution API para texto
       const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
       const evolutionApiKey = process.env.EVOLUTION_API_KEY;
 
+      // Payload conforme documentação Evolution API
       const payload = {
-        number: phone,
+        number: conversationWithContact.contacts.phone,
         mediaMessage: {
           mediaType: params.mediaType,
           media: params.mediaUrl,
@@ -462,6 +480,7 @@ export class ConversationUploadService {
         }
       };
 
+      // Usar formato exato do texto para mídia
       const response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
         method: 'POST',
         headers: {
@@ -474,6 +493,7 @@ export class ConversationUploadService {
       if (response.ok) {
         const result = await response.json();
         console.log('✅ Evolution API media success:', result);
+        console.log('ℹ️ Mantendo status "pending" - assumindo sucesso');
         
         return {
           sent: true,
@@ -481,7 +501,7 @@ export class ConversationUploadService {
         };
       } else {
         const errorText = await response.text();
-        console.error('❌ Evolution API media error:', {
+        console.error('❌ Evolution API confirmou falha de mídia:', {
           status: response.status,
           statusText: response.statusText,
           body: errorText
