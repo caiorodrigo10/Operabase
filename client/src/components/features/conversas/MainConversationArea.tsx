@@ -1,38 +1,58 @@
-import { useState, useEffect, useRef } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { Send, Paperclip, Mic, MessageCircle, FileText, Info, Play, Pause, X, Check } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
-import { FileUploader } from "./FileUploader";
 import { FileUploadModal } from "./FileUploadModal";
-import { AudioRecorder } from "./AudioRecorder";
-import { TimelineItem, PatientInfo } from "@/types/conversations";
-import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText, Play, Pause, Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-// Helper function to format date as "23 de Junho"
-const formatDateLabel = (date: string) => {
-  const messageDate = new Date(date);
-  return messageDate.toLocaleDateString('pt-BR', {
-    day: 'numeric',
-    month: 'long'
-  });
+// Simple date formatting function
+const formatDateLabel = (dateString: string) => {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  if (date.toDateString() === today.toDateString()) {
+    return 'Hoje';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Ontem';
+  } else {
+    return date.toLocaleDateString('pt-BR', { 
+      day: 'numeric', 
+      month: 'short' 
+    });
+  }
 };
 
-// Helper function to check if item should show date header
+interface TimelineItem {
+  id: string | number;
+  type: 'message' | 'event' | 'action';
+  data: any;
+}
+
+interface PatientInfo {
+  id: string | number;
+  name: string;
+  phone?: string;
+  lastMessage?: string;
+  unreadCount?: number;
+  avatar?: string;
+}
+
 const shouldShowDateHeader = (currentItem: TimelineItem, previousItem?: TimelineItem): boolean => {
-  if (!currentItem.data?.timestamp && !currentItem.data?.created_at) return false;
+  if (!previousItem) return true;
   
-  const currentDate = new Date(currentItem.data?.timestamp || currentItem.data?.created_at);
+  const currentDate = currentItem.data?.timestamp || currentItem.data?.created_at;
+  const previousDate = previousItem.data?.timestamp || previousItem.data?.created_at;
   
-  if (!previousItem) return true; // First item always shows date
+  if (!currentDate || !previousDate) return false;
   
-  const prevDate = new Date(previousItem.data?.timestamp || previousItem.data?.created_at || '');
+  const current = new Date(currentDate);
+  const previous = new Date(previousDate);
   
-  // Show date header if it's a different day
-  return currentDate.toDateString() !== prevDate.toDateString();
+  return current.toDateString() !== previous.toDateString();
 };
 
 interface MainConversationAreaProps {
@@ -41,7 +61,7 @@ interface MainConversationAreaProps {
   onSendMessage?: (message: string, isNote?: boolean) => void;
   showInfoButton?: boolean;
   onInfoClick?: () => void;
-  selectedConversationId?: string | number; // Para uploads
+  selectedConversationId?: string | number;
 }
 
 export function MainConversationArea({
@@ -67,11 +87,12 @@ export function MainConversationArea({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
     if (messagesEndRef.current && timelineItems.length > 0) {
-      // Posicionamento instantâneo sem animação
       messagesEndRef.current.scrollIntoView({ behavior: "instant" });
     }
   }, [timelineItems]);
@@ -95,52 +116,50 @@ export function MainConversationArea({
   }, [mediaRecorder, audioUrl]);
 
   const handleSendMessage = () => {
-    if (!message.trim()) return;
-    
-    console.log('🚀 MainConversationArea: Sending message:', message);
-    console.log('🚀 onSendMessage function:', !!onSendMessage);
-    
-    if (onSendMessage) {
+    if (message.trim() && onSendMessage) {
       onSendMessage(message.trim(), isNoteMode);
       setMessage("");
-      // Scroll suave apenas para novas mensagens enviadas
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    } else {
-      console.error('❌ onSendMessage function not provided');
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  const handleUploadSuccess = (result: any) => {
-    console.log('✅ Upload successful:', result);
-    
-    // Notificar usuário sobre o resultado
-    if (result.data?.whatsapp?.sent) {
-      console.log('📱 Arquivo enviado via WhatsApp');
-    } else if (result.data?.whatsapp?.error) {
-      console.log('⚠️ Arquivo salvo, mas falha no WhatsApp:', result.data.whatsapp.error);
-    } else {
-      console.log('💾 Arquivo salvo internamente');
+  const handleFileUpload = async (files: File[], caption?: string) => {
+    if (!selectedConversationId) return;
+
+    try {
+      const formData = new FormData();
+      files.forEach(file => formData.append('file', file));
+      if (caption) formData.append('caption', caption);
+      formData.append('sendToWhatsApp', 'true');
+
+      const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      console.log('Files uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading files:', error);
     }
     
-    // Fechar modal
     setShowUploadModal(false);
   };
 
-  // Handle audio recording sent from AudioRecorder component
   const handleMicrophoneClick = async () => {
     if (isRecording) {
       stopRecording();
     } else {
-      startRecording();
+      await startRecording();
     }
   };
 
@@ -175,7 +194,6 @@ export function MainConversationArea({
         setAudioUrl(url);
         setShowAudioPreview(true);
         
-        // Stop all tracks
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
           streamRef.current = null;
@@ -187,7 +205,6 @@ export function MainConversationArea({
       setIsRecording(true);
       setRecordingTime(0);
       
-      // Start timer
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
@@ -215,16 +232,7 @@ export function MainConversationArea({
     if (!audioBlob || !selectedConversationId) return;
     
     try {
-      console.log('🎤 Uploading audio blob:', {
-        size: audioBlob.size,
-        type: audioBlob.type,
-        conversationId: selectedConversationId
-      });
-
-      // Create form data for upload
       const formData = new FormData();
-      
-      // Create filename based on timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const audioFile = new File([audioBlob], `voice-recording-${timestamp}.webm`, {
         type: audioBlob.type || 'audio/webm'
@@ -235,7 +243,6 @@ export function MainConversationArea({
       formData.append('messageType', 'voice');
       formData.append('caption', 'Mensagem de voz');
 
-      // Upload audio to conversation
       const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
         method: 'POST',
         body: formData
@@ -243,23 +250,21 @@ export function MainConversationArea({
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Audio upload failed:', response.status, errorText);
+        console.error('Audio upload failed:', response.status, errorText);
         throw new Error(`Upload failed: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('✅ Audio upload successful:', result);
+      console.log('Audio upload successful:', result);
 
-      // Reset audio state
       resetAudioState();
 
-      // Scroll to new message
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
 
     } catch (error) {
-      console.error('❌ Error uploading audio:', error);
+      console.error('Error uploading audio:', error);
       alert('Erro ao enviar áudio. Tente novamente.');
     }
   };
@@ -268,6 +273,7 @@ export function MainConversationArea({
     setAudioBlob(null);
     setShowAudioPreview(false);
     setRecordingTime(0);
+    setIsPlaying(false);
     
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
@@ -283,122 +289,7 @@ export function MainConversationArea({
   const handleCancelAudio = () => {
     resetAudioState();
   };
-      };
-      updateVolume();
 
-      const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
-      });
-
-      const chunks: Blob[] = [];
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { 
-          type: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
-        });
-        setAudioBlob(blob);
-        setShowAudioPreview(true);
-        
-        // FASE 2: Create audio URL for playback
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-        
-        // Cleanup stream
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-      };
-
-      recorder.start(1000);
-      setMediaRecorder(recorder);
-      setIsRecording(true);
-      setRecordingTime(0);
-      setAudioChunks([]);
-      streamRef.current = stream;
-
-      // Start timer
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-
-    } catch (error) {
-      console.error('Erro ao acessar microfone:', error);
-      alert('Erro ao acessar o microfone. Verifique as permissões.');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-    }
-    setIsRecording(false);
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
-    }
-  };
-
-  const handleMicrophoneClick = async () => {
-    if (!isRecording) {
-      await startRecording();
-    } else {
-      stopRecording();
-    }
-  };
-
-  const sendAudio = async () => {
-    if (!audioBlob || !selectedConversationId) return;
-
-    try {
-      const formData = new FormData();
-      const fileName = `voice_${Date.now()}.webm`;
-      formData.append('files', audioBlob, fileName);
-      formData.append('messageType', 'audio_voice'); // Specify as voice recording
-
-      const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        // Reset audio state
-        setAudioBlob(null);
-        setShowAudioPreview(false);
-        setRecordingTime(0);
-        console.log('Áudio enviado com sucesso');
-      } else {
-        console.error('Erro ao enviar áudio');
-        alert('Erro ao enviar áudio. Tente novamente.');
-      }
-    } catch (error) {
-      console.error('Erro ao enviar áudio:', error);
-      alert('Erro ao enviar áudio. Verifique sua conexão.');
-    }
-  };
-
-  const cancelAudio = () => {
-    setAudioBlob(null);
-    setShowAudioPreview(false);
-    setRecordingTime(0);
-    
-    // FASE 2: Cleanup audio URL and reset playback state
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-      setAudioUrl(null);
-    }
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setDuration(0);
-  };
-
-  // FASE 2: Audio Playback Controls
   const togglePlayback = () => {
     if (!audioRef.current) return;
     
@@ -410,32 +301,6 @@ export function MainConversationArea({
     setIsPlaying(!isPlaying);
   };
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-    setCurrentTime(0);
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  };
-
-  // Format recording time
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -476,7 +341,6 @@ export function MainConversationArea({
 
               return (
                 <div key={item.id}>
-                  {/* Date Header */}
                   {showDateHeader && dateToShow && (
                     <div className="flex justify-center my-4">
                       <div className="bg-blue-500 text-white text-sm font-medium px-3 py-1 rounded-full">
@@ -485,7 +349,6 @@ export function MainConversationArea({
                     </div>
                   )}
                   
-                  {/* Timeline Item */}
                   {item.type === 'message' ? (
                     <MessageBubble message={item.data as any} />
                   ) : item.type === 'action' ? (
@@ -496,15 +359,79 @@ export function MainConversationArea({
                 </div>
               );
             })}
-            {/* Scroll anchor - invisible element at the end */}
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
+      {/* Recording Interface - RED BLOCK */}
+      {isRecording && (
+        <div className="flex-shrink-0 bg-red-50 border-t border-red-200 p-4">
+          <div className="flex items-center justify-between bg-red-500 text-white p-3 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+              <span className="font-medium">Gravando...</span>
+              <span className="text-red-100">{formatTime(recordingTime)}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMicrophoneClick}
+              className="text-white hover:bg-red-600"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Audio Preview Interface - BLUE BLOCK */}
+      {showAudioPreview && audioUrl && (
+        <div className="flex-shrink-0 bg-blue-50 border-t border-blue-200 p-4">
+          <div className="bg-blue-500 text-white p-3 rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={togglePlayback}
+                  className="text-white hover:bg-blue-600 w-8 h-8 p-0"
+                >
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </Button>
+                <span className="text-sm">Áudio gravado ({formatTime(recordingTime)})</span>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelAudio}
+                  className="text-white hover:bg-blue-600"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSendAudio}
+                  className="text-white hover:bg-blue-600"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <audio
+              ref={audioRef}
+              src={audioUrl}
+              onEnded={() => setIsPlaying(false)}
+              className="hidden"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Input Area - Fixed at Bottom */}
       <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-        {/* Mensagem/Nota Toggle Buttons */}
         <div className="flex mb-3 space-x-2">
           <Button
             variant={!isNoteMode ? "default" : "outline"}
@@ -588,18 +515,16 @@ export function MainConversationArea({
             <Send className="w-4 h-4" />
           </Button>
         </div>
+      </div>
 
-
-
-        {/* Audio recording now handled by AudioRecorder component */}
-
+      {/* Upload Modal */}
+      {showUploadModal && (
         <FileUploadModal
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
-          conversationId={String(selectedConversationId || '')}
-          onUploadSuccess={handleUploadSuccess}
+          onUpload={handleFileUpload}
         />
-      </div>
+      )}
     </div>
   );
 }
