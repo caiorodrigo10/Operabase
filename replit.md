@@ -326,6 +326,8 @@ SESSION_SECRET=your_session_secret
 - Estrutura organizada por clínica e conversa no Supabase Storage
 - Mensagens com anexos conectadas à conversa do Caio Rodrigo para demonstração
 - URLs assinadas válidas permitindo visualização dos arquivos no frontend
+- Criado attachment de teste funcional na conversa do Caio Rodrigo
+- Sistema de mensagens com anexos operacional usando schema compatível
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
