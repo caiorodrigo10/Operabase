@@ -26,10 +26,11 @@ interface MediaMessageProps {
   className?: string;
 }
 
-function getMediaTypeFromMimeType(mimeType: string): 'image' | 'video' | 'audio' | 'document' {
+function getMediaTypeFromMimeType(mimeType: string): 'image' | 'video' | 'audio' | 'audio_file' | 'document' {
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType.startsWith('video/')) return 'video';
   if (mimeType.startsWith('audio/')) return 'audio';
+  if (mimeType === 'audio_file') return 'audio_file'; // Áudio de arquivo
   return 'document';
 }
 
@@ -219,7 +220,9 @@ export function MediaMessage({
     );
   }
 
-  if (actualMediaType === 'audio') {
+  if (actualMediaType === 'audio' || actualMediaType === 'audio_file') {
+    const isAudioFile = actualMediaType === 'audio_file';
+    
     return (
       <div className={cn("min-w-[200px] max-w-[280px]", className)}>
         <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
@@ -257,6 +260,13 @@ export function MediaMessage({
               setProgress(percentage);
             }}
           />
+          
+          {/* Indicador para áudio de arquivo */}
+          {isAudioFile && (
+            <div className="mt-2">
+              <span className="text-xs text-gray-500 italic">Áudio encaminhado</span>
+            </div>
+          )}
         </div>
         
         {/* Transcription Section */}

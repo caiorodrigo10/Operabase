@@ -58,7 +58,7 @@ export class ConversationUploadService {
   // Mapear MIME type para message_type
   private getMimeToMessageType(mimeType: string): string {
     if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('audio/')) return 'audio';
+    if (mimeType.startsWith('audio/')) return 'audio_file'; // Upload de arquivo de áudio
     if (mimeType.startsWith('video/')) return 'video';
     if (mimeType === 'application/pdf' || 
         mimeType.includes('document') || 
@@ -571,6 +571,8 @@ export class ConversationUploadService {
   }
 
   private getEvolutionMediaType(mimeType: string): 'image' | 'video' | 'document' | 'audio' {
+    // Para Evolution API, sempre usar "audio" independente do tipo
+    if (mimeType.startsWith('audio/')) return 'audio';
     return evolutionTypeMapping[mimeType] || 'document';
   }
 
