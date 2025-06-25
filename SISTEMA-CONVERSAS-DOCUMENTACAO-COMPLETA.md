@@ -1,11 +1,18 @@
 # Sistema de Conversas - Documentação Técnica Completa
 
-**Data de Atualização**: 24 de Junho de 2025  
-**Versão**: 3.0 - Sistema Definitivo com Evolution API
+**Data de Atualização**: 25 de Junho de 2025  
+**Versão**: 4.0 - Sistema Completo com Upload de Arquivos e Diferenciação de Áudio
 
 ## 📋 Visão Geral
 
-O Sistema de Conversas é um módulo multi-tenant completo que gerencia comunicações entre profissionais de saúde e pacientes através de WhatsApp, utilizando a Evolution API. O sistema suporta conversas em tempo real, status de entrega inteligente e isolamento completo entre clínicas.
+O Sistema de Conversas é um módulo multi-tenant completo que gerencia comunicações entre profissionais de saúde e pacientes através de WhatsApp, utilizando a Evolution API V2. O sistema suporta conversas em tempo real, upload de arquivos com dupla integração (Supabase Storage + WhatsApp), diferenciação inteligente de tipos de áudio, status de entrega inteligente e isolamento completo entre clínicas.
+
+### Principais Funcionalidades v4.0
+- **Upload de Arquivos**: Sistema dual com Supabase Storage e envio automático para WhatsApp
+- **Diferenciação de Áudio**: Distinção visual entre áudios do WhatsApp vs arquivos enviados
+- **Evolution API V2**: Integração com estrutura de payload atualizada
+- **Supabase Storage**: Armazenamento organizado com URLs assinadas temporárias
+- **Sanitização Avançada**: Limpeza automática de nomes de arquivo com caracteres especiais
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -14,9 +21,10 @@ O Sistema de Conversas é um módulo multi-tenant completo que gerencia comunica
 1. **Backend API** - Express.js com TypeScript
 2. **Frontend** - React 18 com TanStack Query
 3. **Database** - Supabase (PostgreSQL) com isolamento multi-tenant
-4. **Cache** - Redis para performance otimizada
-5. **WhatsApp Integration** - Evolution API
-6. **Real-time** - Socket.IO com fallback para polling
+4. **File Storage** - Supabase Storage com buckets organizados
+5. **Cache** - Redis para performance otimizada
+6. **WhatsApp Integration** - Evolution API V2
+7. **Real-time** - Socket.IO com fallback para polling
 
 ## 📊 Estrutura de Banco de Dados
 
@@ -128,14 +136,42 @@ CREATE TABLE messages (
 CREATE TABLE message_attachments (
   id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   message_id INTEGER NOT NULL,
+  clinic_id INTEGER NOT NULL,
+  
+  -- Informações do arquivo
   file_name VARCHAR NOT NULL,
   file_type VARCHAR NOT NULL,         -- MIME type
   file_size INTEGER,
-  file_path VARCHAR,                  -- Caminho do arquivo
-  media_type VARCHAR,                 -- audio, image, document
+  
+  -- URLs (sistema legado - mantido para compatibilidade)
+  file_path VARCHAR,                  -- Caminho legado
+  file_url TEXT,                      -- URL local antiga
+  
+  -- Supabase Storage Integration (Sistema atual)
+  storage_bucket VARCHAR DEFAULT 'conversation-attachments',
+  storage_path VARCHAR,               -- clinic-{id}/conversation-{id}/{category}/filename
+  public_url TEXT,                    -- URL pública (se aplicável)
+  signed_url TEXT,                    -- URL temporária assinada (24h)
+  signed_url_expires TIMESTAMP,      -- Expiração da URL assinada
+  
+  -- WhatsApp metadata
+  whatsapp_media_id VARCHAR,          -- ID da mídia no WhatsApp
+  whatsapp_media_url TEXT,           -- URL da mídia no WhatsApp
+  
+  -- Metadata de mídia
+  media_type VARCHAR,                 -- audio, image, document, video
+  thumbnail_url TEXT,                 -- Thumbnail para vídeos/imagens
+  duration INTEGER,                   -- Duração para áudio/vídeo (segundos)
+  width INTEGER,                      -- Largura para imagens/vídeos
+  height INTEGER,                     -- Altura para imagens/vídeos
+  
   created_at TIMESTAMP DEFAULT NOW(),
   
+  -- Índices para performance
   INDEX idx_attachments_message (message_id),
+  INDEX idx_attachments_clinic (clinic_id),
+  INDEX idx_attachments_type (file_type),
+  INDEX idx_attachments_storage (storage_bucket, storage_path),
   FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
 );
 ```
@@ -255,6 +291,319 @@ if (response.ok) {
   await updateMessageStatus(messageId, 'failed');
   // Invalidar cache para mostrar ícone de erro imediatamente
   await invalidateCache(conversationId);
+}
+```
+
+## 📁 Sistema de Upload de Arquivos
+
+### 1. Fluxo de Upload Completo
+```
+[Frontend] → [Validação] → [Supabase Storage] → [Database] → [Evolution API] → [WhatsApp]
+     ↓              ↓              ↓              ↓              ↓              ↓
+ File Selection  MIME/Size     Organized      Message+      Media Send    Message
+   + Preview    Validation     Storage      Attachment      Payload      Delivery
+```
+
+### 2. Estrutura de Armazenamento Supabase
+```
+conversation-attachments/
+├── clinic-1/
+│   ├── conversation-123456789/
+│   │   ├── images/
+│   │   │   ├── 1750884807768-photo_2025-06-25.jpg
+│   │   │   └── 1750884807769-screenshot.png
+│   │   ├── audio/
+│   │   │   ├── 1750884807768-elevenlabs_sarah_voice.mp3
+│   │   │   └── 1750884807769-consultation_recording.ogg
+│   │   ├── videos/
+│   │   │   └── 1750884807770-examination_video.mp4
+│   │   ├── documents/
+│   │   │   ├── 1750884807771-exam_results.pdf
+│   │   │   └── 1750884807772-prescription.doc
+│   │   └── others/
+│   │       └── 1750884807773-unknown_file.xyz
+│   └── conversation-987654321/
+│       └── ...
+└── clinic-2/
+    └── ...
+```
+
+### 3. ConversationUploadService
+```typescript
+class ConversationUploadService {
+  // Upload para Supabase Storage + Evolution API
+  async uploadFile(params: {
+    file: Buffer;
+    filename: string;
+    mimeType: string;
+    conversationId: string;
+    clinicId: number;
+    caption?: string;
+    sendToWhatsApp?: boolean;
+  }) {
+    // 1. Sanitizar nome do arquivo
+    const sanitizedFilename = this.sanitizeFilename(params.filename);
+    
+    // 2. Determinar categoria e caminho
+    const category = this.getCategoryFromMime(params.mimeType);
+    const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${Date.now()}-${sanitizedFilename}`;
+    
+    // 3. Upload para Supabase Storage
+    const { data: storageData } = await supabase.storage
+      .from('conversation-attachments')
+      .upload(storagePath, params.file, {
+        contentType: params.mimeType,
+        upsert: false
+      });
+    
+    // 4. Gerar URL assinada (24h)
+    const { data: signedUrlData } = await supabase.storage
+      .from('conversation-attachments')
+      .createSignedUrl(storagePath, 86400);
+    
+    // 5. Salvar no banco (message + attachment)
+    const message = await this.createMessageWithAttachment({
+      conversationId: params.conversationId,
+      messageType: this.getMimeToMessageType(params.mimeType),
+      signedUrl: signedUrlData.signedUrl,
+      storagePath,
+      ...params
+    });
+    
+    // 6. Enviar para WhatsApp (se habilitado)
+    if (params.sendToWhatsApp) {
+      await this.sendToEvolutionAPI(params);
+    }
+    
+    return { message, signedUrl: signedUrlData.signedUrl };
+  }
+  
+  private sanitizeFilename(filename: string): string {
+    return filename
+      .normalize('NFD')                    // Decomposição Unicode
+      .replace(/[\u0300-\u036f]/g, '')    // Remove acentos
+      .replace(/[^a-zA-Z0-9.-]/g, '-')    // Substitui caracteres especiais
+      .replace(/-+/g, '-')                // Remove hífens duplos
+      .replace(/^-|-$/g, '')              // Remove hífens das bordas
+      .toLowerCase();                     // Converte para minúsculas
+  }
+  
+  private getCategoryFromMime(mimeType: string): string {
+    if (mimeType.startsWith('image/')) return 'images';
+    if (mimeType.startsWith('video/')) return 'videos';
+    if (mimeType.startsWith('audio/')) return 'audio';
+    if (mimeType.includes('pdf') || mimeType.includes('doc')) return 'documents';
+    return 'others';
+  }
+  
+  private getMimeToMessageType(mimeType: string): string {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('audio/')) return 'audio_file'; // Upload = audio_file
+    if (mimeType.startsWith('video/')) return 'video';
+    return 'document';
+  }
+}
+```
+
+### 4. Evolution API V2 - Estrutura de Payload
+```typescript
+// Evolution API V2 - Estrutura PLANA (não aninhada)
+interface EvolutionV2MediaPayload {
+  number: string;              // Número do destinatário
+  mediatype: 'image' | 'video' | 'document' | 'audio';
+  mimetype: string;           // MIME type do arquivo
+  media: string;              // Base64 do arquivo
+  fileName?: string;          // Nome do arquivo (para documentos)
+  caption?: string;           // Legenda opcional
+}
+
+// DIFERENÇA da V1:
+// V1: { number, mediaMessage: { mediatype, media, ... } } ❌
+// V2: { number, mediatype, media, ... }                    ✅
+
+const sendMediaToWhatsApp = async (params) => {
+  const payload = {
+    number: params.contactNumber,
+    mediatype: getEvolutionMediaType(params.mimeType),
+    mimetype: params.mimeType,
+    media: params.fileBase64,
+    ...(shouldIncludeFileName(params.mimeType) && { fileName: params.filename }),
+    ...(params.caption && { caption: params.caption })
+  };
+  
+  const response = await fetch(`${evolutionUrl}/message/sendMedia/${instanceName}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': evolutionApiKey
+    },
+    body: JSON.stringify(payload)
+  });
+  
+  return response.json();
+};
+```
+
+## 🎵 Sistema de Diferenciação de Áudio
+
+### 1. Tipos de Áudio Suportados
+
+| Tipo | Origem | Backend (message_type) | Evolution API | Frontend Display |
+|------|--------|----------------------|---------------|------------------|
+| Voz WhatsApp | Gravação no app WhatsApp | `audio` ou `audio_voice` | `audio` | Player normal |
+| Arquivo Upload | Upload via TaskMed | `audio_file` | `audio` | Player + "Áudio encaminhado" |
+
+### 2. Implementação Backend
+```typescript
+// ConversationUploadService - Diferenciação automática
+private getMimeToMessageType(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('audio/')) return 'audio_file'; // Upload sempre = audio_file
+  if (mimeType.startsWith('video/')) return 'video';
+  return 'document';
+}
+
+// Para Evolution API - Ambos enviam como "audio"
+private getEvolutionMediaType(mimeType: string): 'image' | 'video' | 'document' | 'audio' {
+  if (mimeType.startsWith('audio/')) return 'audio'; // Sempre "audio" para WhatsApp
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  return 'document';
+}
+```
+
+### 3. Implementação Frontend
+```typescript
+// MediaMessage.tsx - Função de detecção
+function getMediaTypeFromMimeType(mimeType: string): 'image' | 'video' | 'audio' | 'audio_file' | 'document' {
+  // Primeiro verificar tipo de mensagem direto (prioridade)
+  if (mimeType === 'audio_file') return 'audio_file';    // Upload de arquivo
+  if (mimeType === 'audio_voice') return 'audio';        // Voz do WhatsApp
+  
+  // Depois verificar MIME types tradicionais
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';     // Áudio genérico
+  return 'document';
+}
+
+// MessageBubble.tsx - Passagem do message_type
+{message.attachments.map((attachment, index) => (
+  <MediaMessage
+    key={index}
+    media_type={message.message_type || attachment.file_type} // Prioriza message_type
+    media_url={attachment.file_url || attachment.whatsapp_media_url || ''}
+    media_filename={attachment.file_name}
+    media_size={attachment.file_size}
+    media_duration={attachment.duration}
+    media_thumbnail={attachment.thumbnail_url}
+  />
+))}
+
+// MediaMessage.tsx - Renderização condicional
+if (actualMediaType === 'audio' || actualMediaType === 'audio_file') {
+  const isAudioFile = actualMediaType === 'audio_file';
+  
+  return (
+    <div className="audio-player">
+      {/* Player de áudio normal */}
+      <AudioPlayer {...props} />
+      
+      {/* Indicador visual APENAS para uploads */}
+      {isAudioFile && (
+        <div className="mt-2">
+          <span className="text-xs text-gray-500 italic">Áudio encaminhado</span>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## 🔗 Endpoints de API Atualizados
+
+### Upload de Arquivos
+```typescript
+// POST /api/conversations/:id/upload
+// Multipart form data com arquivo + metadados
+interface UploadRequest {
+  file: File;                 // Arquivo (max 50MB)
+  caption?: string;           // Legenda opcional
+  sendToWhatsApp?: boolean;   // Enviar via WhatsApp (default: true)
+}
+
+interface UploadResponse {
+  success: boolean;
+  data: {
+    message: {
+      id: number;
+      conversation_id: string;
+      message_type: string;    // audio_file, image, video, document
+      content: string;         // "📎 filename.ext"
+      timestamp: string;
+      evolution_status: string;
+    };
+    attachment: {
+      id: number;
+      file_name: string;
+      file_type: string;       // MIME type
+      file_size: number;
+      signed_url: string;      // URL temporária (24h)
+      storage_path: string;
+    };
+    whatsapp?: {
+      sent: boolean;
+      message_id?: string;
+      error?: string;
+    };
+  };
+}
+
+// POST /api/attachments/:id/renew-url
+// Renovação de URL assinada expirada
+interface RenewUrlResponse {
+  success: boolean;
+  signed_url: string;
+  expires_at: string;
+}
+
+// DELETE /api/attachments/:id
+// Remoção de anexo (soft delete)
+interface DeleteResponse {
+  success: boolean;
+  message: string;
+}
+```
+
+### Conversas Atualizadas
+```typescript
+// GET /api/conversations-simple/:id
+// Inclui anexos do Supabase Storage
+interface ConversationDetailResponse {
+  conversation: {
+    id: string;
+    contact_name: string;
+    contact_phone: string;
+    status: string;
+  };
+  messages: Array<{
+    id: number;
+    content: string;
+    message_type: 'text' | 'image' | 'audio' | 'audio_file' | 'video' | 'document';
+    sender_type: string;
+    timestamp: string;
+    evolution_status?: string;
+    attachments?: Array<{
+      id: number;
+      file_name: string;
+      file_type: string;
+      file_size?: number;
+      signed_url?: string;       // URL assinada do Supabase
+      whatsapp_media_url?: string; // URL do WhatsApp
+      duration?: number;
+      thumbnail_url?: string;
+    }>;
+  }>;
 }
 ```
 
