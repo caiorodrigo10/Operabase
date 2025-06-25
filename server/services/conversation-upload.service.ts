@@ -129,13 +129,19 @@ export class ConversationUploadService {
       
       console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
       
-      // 5. Criar mensagem no banco (usar ID numérico da conversa)
+      // 5. Criar mensagem no banco (usar ID numérico da conversa) com horário de Brasília
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
+      
+      // Criar timestamp em horário de Brasília (GMT-3)
+      const now = new Date();
+      const brasilTime = new Date(now.getTime() - (3 * 60 * 60 * 1000)); // Subtrair 3 horas
+      
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
         sender_type: 'professional',
-        content: messageContent
+        content: messageContent,
+        timestamp: brasilTime // Adicionar timestamp correto
       });
 
       // 6. Criar attachment (preservar nome original para o usuário)
