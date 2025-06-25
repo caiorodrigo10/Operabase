@@ -56,6 +56,7 @@ const evolutionTypeMapping: Record<string, 'image' | 'video' | 'document' | 'aud
   'audio/wav': 'audio',
   'audio/ogg': 'audio',
   'audio/m4a': 'audio',
+  'audio/webm': 'audio',
   'application/pdf': 'document',
   'application/msword': 'document',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
@@ -179,7 +180,7 @@ export class ConversationUploadService {
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
         sender_type: 'professional',
         content: messageContent,
-        message_type: messageType, // Tipo mapeado automaticamente
+        message_type: finalMessageType, // Usar tipo fornecido ou mapeado automaticamente
         ai_action: 'file_upload' // Indicar que foi upload de arquivo
       });
 
