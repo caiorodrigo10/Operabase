@@ -397,19 +397,8 @@ export class ConversationUploadService {
     try {
       console.log('🔍 Starting Evolution API media send process...');
       
-      // Buscar instância WhatsApp ativa da clínica (mesmo padrão do texto)
-      const { data: activeInstance, error: instanceError } = await supabase
-        .from('whatsapp_numbers')
-        .select('*')
-        .eq('clinic_id', params.clinicId)
-        .eq('status', 'open')
-        .limit(1)
-        .single();
-
-      if (instanceError) {
-        console.error('❌ Error fetching WhatsApp instance:', instanceError);
-        throw new Error('Erro de configuração de instância');
-      }
+      // Buscar instância WhatsApp ativa da clínica usando método existente
+      const activeInstance = await this.storage.getActiveWhatsAppInstance(params.clinicId);
 
       if (!activeInstance) {
         console.error('❌ No active WhatsApp instance found for clinic:', params.clinicId);
@@ -422,41 +411,22 @@ export class ConversationUploadService {
         status: activeInstance.status
       });
 
-      // Buscar informações de contato (mesmo padrão do texto)
-      const { data: conversationWithContact, error: contactError } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          clinic_id,
-          contact_id,
-          contacts (
-            name,
-            email,
-            phone
-          )
-        `)
-        .eq('conversation_id', params.conversationId)
-        .single();
+      // Buscar informações de contato usando método existente
+      const conversation = await this.storage.getConversationById(params.conversationId);
 
       console.log('🔍 Conversation lookup result:', {
         conversationId: params.conversationId,
-        found: !!conversationWithContact,
-        phone: conversationWithContact?.contacts?.phone,
-        error: contactError
+        found: !!conversation,
+        phone: conversation?.contact?.phone
       });
 
-      if (contactError) {
-        console.error('❌ Error fetching conversation contact:', contactError);
-        throw new Error('Erro de configuração de contato');
-      }
-
-      if (!conversationWithContact?.contacts?.phone) {
+      if (!conversation?.contact?.phone) {
         console.error('❌ No contact phone found for conversation:', params.conversationId);
         throw new Error('Conversa não possui contato com telefone');
       }
 
       console.log('📤 Sending to Evolution API with clinic instance...', {
-        phone: conversationWithContact.contacts.phone,
+        phone: conversation.contact.phone,
         instance: activeInstance.instance_name,
         mediaType: params.mediaType,
         fileName: params.fileName
@@ -467,7 +437,7 @@ export class ConversationUploadService {
 
       // Payload conforme documentação Evolution API
       const payload = {
-        number: conversationWithContact.contacts.phone,
+        number: conversation.contact.phone,
         mediaMessage: {
           mediaType: params.mediaType,
           media: params.mediaUrl,
