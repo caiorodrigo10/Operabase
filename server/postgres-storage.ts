@@ -2055,14 +2055,11 @@ export class PostgreSQLStorage implements IStorage {
     try {
       const result = await db.execute(sql`
         INSERT INTO message_attachments (
-          message_id, clinic_id, file_name, file_type, file_size, file_url,
-          storage_bucket, storage_path, signed_url, signed_url_expires
+          message_id, clinic_id, file_name, file_type, file_size, file_url
         )
         VALUES (
           ${attachment.message_id}, ${attachment.clinic_id}, ${attachment.file_name}, 
-          ${attachment.file_type}, ${attachment.file_size}, ${attachment.file_url},
-          ${attachment.storage_bucket || null}, ${attachment.storage_path || null},
-          ${attachment.signed_url || null}, ${attachment.signed_url_expires || null}
+          ${attachment.file_type}, ${attachment.file_size}, ${attachment.file_url}
         )
         RETURNING *
       `);

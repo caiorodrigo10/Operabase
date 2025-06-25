@@ -351,6 +351,9 @@ SESSION_SECRET=your_session_secret
 - Fallback inteligente: arquivo salvo mesmo se WhatsApp falhar
 - Botão anexo conectado ao MainConversationArea funcionando
 - Sistema funciona com ou sem Evolution API configurada
+- Corrigido problema de sanitização de nomes de arquivo com caracteres especiais
+- Ajustado schema de banco para usar apenas colunas existentes na tabela message_attachments
+- Sistema de upload operacional com conversation_id correto e sanitização ultra-agressiva
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

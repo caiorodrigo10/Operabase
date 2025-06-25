@@ -95,7 +95,7 @@ export class ConversationUploadService {
         content: messageContent
       });
 
-      // 6. Criar attachment
+      // 6. Criar attachment (usando apenas colunas que existem)
       console.log('📎 Creating attachment record...');
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
@@ -103,11 +103,7 @@ export class ConversationUploadService {
         file_name: sanitizedFilename,
         file_type: mimeType,
         file_size: file.length,
-        file_url: storageResult.signed_url,
-        storage_bucket: 'conversation-attachments',
-        storage_path: storageResult.storage_path,
-        signed_url: storageResult.signed_url,
-        signed_url_expires: storageResult.expires_at
+        file_url: storageResult.signed_url
       });
 
       let whatsappResult = { sent: false, messageId: undefined, error: undefined };
@@ -190,33 +186,40 @@ export class ConversationUploadService {
     if (!filename) return 'unnamed-file';
     
     console.log('🔧 Sanitizing filename:', filename);
+    console.log('🔧 Filename bytes:', Buffer.from(filename).toString('hex'));
     
-    // Aplicar sanitização mais simples e efetiva
-    const sanitized = filename
-      // Primeiro, remover extensão para processar separadamente
-      .replace(/\.[^/.]+$/, (ext) => {
-        const name = filename.slice(0, -ext.length);
-        const cleanName = name
-          // Substituir caracteres problemáticos diretamente
-          .replace(/[àáâãäåæ]/gi, 'a')
-          .replace(/[çć]/gi, 'c')
-          .replace(/[èéêë]/gi, 'e')
-          .replace(/[ìíîï]/gi, 'i')
-          .replace(/[ñń]/gi, 'n')
-          .replace(/[òóôõöø]/gi, 'o')
-          .replace(/[ùúûü]/gi, 'u')
-          .replace(/[ýÿ]/gi, 'y')
-          // Remover espaços e caracteres especiais
-          .replace(/\s+/g, '_')
-          .replace(/[^a-zA-Z0-9._-]/g, '_')
-          .replace(/_{2,}/g, '_')
-          .replace(/^_+|_+$/g, '');
-        
-        return cleanName + ext.toLowerCase();
-      });
+    // Sanitização ultra-agressiva para remover TODOS os caracteres problemáticos
+    let sanitized = filename
+      // Primeiro passo: remover caracteres especiais byte por byte
+      .split('')
+      .map(char => {
+        const code = char.charCodeAt(0);
+        // Manter apenas ASCII básico: letras, números, ponto, hífen
+        if ((code >= 48 && code <= 57) ||  // 0-9
+            (code >= 65 && code <= 90) ||  // A-Z
+            (code >= 97 && code <= 122) || // a-z
+            code === 46 ||                 // .
+            code === 45) {                 // -
+          return char;
+        } else if (code === 32) {          // espaço
+          return '_';
+        } else {
+          return '_'; // Qualquer outro caractere vira underscore
+        }
+      })
+      .join('')
+      // Limpar underscores excessivos
+      .replace(/_{2,}/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase();
+    
+    // Se ficou vazio, usar nome padrão
+    if (!sanitized || sanitized === '.') {
+      sanitized = 'file_' + Date.now();
+    }
     
     console.log('✅ Sanitized filename:', sanitized);
-    return sanitized.toLowerCase();
+    return sanitized;
   }
 
   private async uploadToSupabase(params: {
