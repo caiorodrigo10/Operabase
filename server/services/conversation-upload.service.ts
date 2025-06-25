@@ -439,7 +439,7 @@ export class ConversationUploadService {
       const payload = {
         number: conversation.contact.phone,
         mediaMessage: {
-          mediaType: params.mediaType,
+          mediatype: params.mediaType,
           media: params.mediaUrl,
           ...(params.fileName && { fileName: params.fileName }),
           ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
