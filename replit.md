@@ -322,6 +322,8 @@ SESSION_SECRET=your_session_secret
 - Sistema de upload e visualização funcionando completamente
 - Anexos de teste criados diretamente no Supabase Storage: imagem, áudio e vídeo
 - URLs assinadas funcionando para acesso aos arquivos via sistema
+- Arquivos de teste criados diretamente no bucket: imagem, áudio, vídeo e PDF
+- Estrutura organizada por clínica e conversa no Supabase Storage
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
