@@ -529,7 +529,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           sender_name: 'Caio Rodrigo',
           direction: 'outbound',
           message_type: 'text',
-          timestamp: new Date(newMessage.timestamp).toISOString(),
+          timestamp: getBrasiliaTimestamp(),
           evolution_status: newMessage.evolution_status || 'pending',
           attachments: []
         };
