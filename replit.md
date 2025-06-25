@@ -372,6 +372,8 @@ SESSION_SECRET=your_session_secret
 - Sistema de upload completamente estável e testado com múltiplos cenários
 - Erro de variável indefinida corrigido no modal de upload da interface
 - Modal de upload agora usa selectedConversationId corretamente
+- Props do MainConversationArea corrigidas para incluir selectedConversationId
+- Sistema de upload via interface web completamente funcional
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

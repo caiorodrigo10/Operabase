@@ -360,6 +360,7 @@ export default function ConversasPage() {
               timelineItems={timelineItems}
               patientInfo={currentPatientInfo}
               onSendMessage={handleSendMessage}
+              selectedConversationId={selectedConversationId}
             />
           </div>
         )}
@@ -386,6 +387,7 @@ export default function ConversasPage() {
             onSendMessage={handleSendMessage}
             showInfoButton={true}
             onInfoClick={() => setShowPatientInfo(true)}
+            selectedConversationId={selectedConversationId}
           />
           
           <Dialog open={showPatientInfo} onOpenChange={setShowPatientInfo}>

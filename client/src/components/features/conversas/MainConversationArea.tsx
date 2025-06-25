@@ -40,6 +40,7 @@ interface MainConversationAreaProps {
   onSendMessage?: (message: string, isNote?: boolean) => void;
   showInfoButton?: boolean;
   onInfoClick?: () => void;
+  selectedConversationId?: string | number; // Para uploads
 }
 
 export function MainConversationArea({
@@ -47,7 +48,8 @@ export function MainConversationArea({
   patientInfo,
   onSendMessage,
   showInfoButton = false,
-  onInfoClick
+  onInfoClick,
+  selectedConversationId
 }: MainConversationAreaProps) {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -274,7 +276,7 @@ export function MainConversationArea({
         <FileUploadModal
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
-          conversationId={selectedConversationId || ''}
+          conversationId={String(selectedConversationId || '')}
           onUploadSuccess={handleUploadSuccess}
         />
       </div>
