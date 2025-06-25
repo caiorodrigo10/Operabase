@@ -2028,6 +2028,15 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  // Função para obter timestamp no horário de Brasília (GMT-3)
+  private getBrasiliaTimestamp(): string {
+    const now = new Date();
+    const brasiliaOffset = -3 * 60; // GMT-3 em minutos
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const brasiliaTime = new Date(utcTime + (brasiliaOffset * 60000));
+    return brasiliaTime.toISOString();
+  }
+
   // Additional methods for upload system
   async createMessage(message: any): Promise<any> {
     try {
@@ -2038,20 +2047,26 @@ export class PostgreSQLStorage implements IStorage {
         timestamp_provided: !!message.timestamp
       });
       
-      // Usar schema atualizado com message_type
+      // Usar timestamp explícito no horário de Brasília para consistência
+      const brasiliaTimestamp = message.timestamp || this.getBrasiliaTimestamp();
+      
+      console.log('🇧🇷 Using Brasília timestamp:', brasiliaTimestamp);
+      
+      // Usar schema atualizado com message_type e timestamp explícito
       const result = await db.execute(sql`
-        INSERT INTO messages (conversation_id, sender_type, content, message_type, ai_action)
+        INSERT INTO messages (conversation_id, sender_type, content, message_type, ai_action, timestamp)
         VALUES (
           ${String(message.conversation_id)}, 
           ${message.sender_type}, 
           ${message.content},
           ${message.message_type || 'text'},
-          ${message.ai_action || null}
+          ${message.ai_action || null},
+          ${brasiliaTimestamp}
         )
         RETURNING *
       `);
       
-      console.log('✅ Message created with automatic timestamp:', {
+      console.log('✅ Message created with Brasília timestamp:', {
         id: result.rows[0].id,
         timestamp: result.rows[0].timestamp,
         content: result.rows[0].content
