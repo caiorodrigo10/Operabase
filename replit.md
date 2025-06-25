@@ -347,10 +347,10 @@ SESSION_SECRET=your_session_secret
 - Corrigido problema de fuso horário: mensagens agora salvas com horário correto GMT-3 (Brasil)
 - Sistema ajustado para horário de Brasília em envio de mensagens e uploads
 - Sistema de upload completamente funcional: frontend + backend + storage + horário correto
-- Limpeza de dados: script Drizzle ORM criado e executado para remover mensagens de teste do dia 25/06 após 14h
+- Limpeza de dados: script Drizzle ORM corrigido (created_at) e executado para remover mensagens de teste do dia 25/06 após 14h
 - Anexos relacionados removidos automaticamente respeitando foreign key constraints
 - Contadores de conversas atualizados após limpeza dos dados de teste
-- Verificação automática confirmou remoção completa das mensagens de teste
+- Verificação automática confirmou remoção completa das mensagens de teste do Caio Rodrigo
 
 ### June 25, 2025 - Sistema de Upload Completo Implementado ✅
 - Implementado FileUploadModal com drag-and-drop e preview de arquivos
