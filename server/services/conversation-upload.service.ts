@@ -87,12 +87,47 @@ export class ConversationUploadService {
         clinicId
       });
       
-      // 4. Validar que conversation existe e obter ID correto
+      // 4. Validar que conversation existe usando Supabase direto (compatível com IDs científicos)
       console.log('🔍 Validating conversation exists...');
-      const conversation = await this.storage.getConversationById(conversationId);
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      let conversation;
+      const isScientificNotation = typeof conversationId === 'string' && conversationId.includes('e+');
+      
+      if (isScientificNotation) {
+        // Para IDs científicos, usar busca robusta como no endpoint GET
+        console.log('🔬 Scientific notation ID detected, using robust lookup');
+        const { data: allConversations } = await supabase
+          .from('conversations')
+          .select('id, contact_id, clinic_id')
+          .eq('clinic_id', clinicId);
+        
+        const paramIdNum = parseFloat(conversationId);
+        conversation = allConversations?.find(conv => {
+          const convIdNum = parseFloat(conv.id.toString());
+          return Math.abs(convIdNum - paramIdNum) < 1;
+        });
+      } else {
+        // Para IDs normais, busca direta
+        const { data } = await supabase
+          .from('conversations')
+          .select('id, contact_id, clinic_id')
+          .eq('id', conversationId)
+          .eq('clinic_id', clinicId)
+          .single();
+        conversation = data;
+      }
+
       if (!conversation) {
+        console.error(`❌ Conversation not found: ${conversationId} for clinic ${clinicId}`);
         throw new Error(`Conversation ${conversationId} not found`);
       }
+      
+      console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
       
       // 5. Criar mensagem no banco (usar ID numérico da conversa)
       console.log('💾 Creating message in database...');
