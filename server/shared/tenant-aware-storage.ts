@@ -235,6 +235,27 @@ export class TenantAwareStorage implements IStorage {
     return this.storage.getMessagesByConversation(conversationId, filters);
   }
 
+  // Upload system methods - pass through without tenant filtering
+  async getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined> {
+    return this.storage.getUserProfile(userId);
+  }
+  
+  async createMessage(message: any): Promise<any> {
+    return this.storage.createMessage(message);
+  }
+
+  async createAttachment(attachment: any): Promise<any> {
+    return this.storage.createAttachment(attachment);
+  }
+
+  async getActiveWhatsAppInstance(clinicId: number): Promise<any> {
+    return this.storage.getActiveWhatsAppInstance(clinicId);
+  }
+
+  async getConversationById(id: string): Promise<any> {
+    return this.storage.getConversationById(id);
+  }
+
   // Pass through remaining methods without tenant filtering
   async addUserToClinic(userId: string, clinicId: number, role: string, isProfessional: boolean): Promise<any> {
     return this.storage.addUserToClinic(userId, clinicId, role, isProfessional);

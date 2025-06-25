@@ -369,6 +369,27 @@ export class TenantAwareStorageProxy implements IStorage {
     return this.storage.deleteWhatsAppNumber(id);
   }
 
+  // Upload system methods - pass through without tenant filtering
+  async getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined> {
+    return this.storage.getUserProfile(userId);
+  }
+  
+  async createMessage(message: any): Promise<any> {
+    return this.storage.createMessage(message);
+  }
+
+  async createAttachment(attachment: any): Promise<any> {
+    return this.storage.createAttachment(attachment);
+  }
+
+  async getActiveWhatsAppInstance(clinicId: number): Promise<any> {
+    return this.storage.getActiveWhatsAppInstance(clinicId);
+  }
+
+  async getConversationById(id: string): Promise<any> {
+    return this.storage.getConversationById(id);
+  }
+
   // Pass through any additional methods without modification
   [key: string]: any;
 }
