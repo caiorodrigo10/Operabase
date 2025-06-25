@@ -2142,20 +2142,75 @@ export class PostgreSQLStorage implements IStorage {
 
   async getConversationById(id: string): Promise<any> {
     try {
+      console.log('🔍 Getting conversation with contact data for ID:', id);
+      
       const conversationIdNum = parseInt(id);
       if (!isNaN(conversationIdNum)) {
         const result = await db.execute(sql`
-          SELECT * FROM conversations WHERE id = ${conversationIdNum}
+          SELECT 
+            c.*,
+            ct.id as contact_id,
+            ct.name as contact_name,
+            ct.phone as contact_phone,
+            ct.email as contact_email
+          FROM conversations c
+          LEFT JOIN contacts ct ON c.contact_id = ct.id
+          WHERE c.id = ${conversationIdNum}
         `);
-        return result.rows[0];
+        
+        if (result.rows[0]) {
+          const conversation = {
+            ...result.rows[0],
+            contact: {
+              id: result.rows[0].contact_id,
+              name: result.rows[0].contact_name,
+              phone: result.rows[0].contact_phone,
+              email: result.rows[0].contact_email
+            }
+          };
+          console.log('✅ Found conversation with contact:', {
+            id: conversation.id,
+            contact_name: conversation.contact.name,
+            contact_phone: conversation.contact.phone
+          });
+          return conversation;
+        }
       }
       
       const result = await db.execute(sql`
-        SELECT * FROM conversations WHERE conversation_id = ${id}
+        SELECT 
+          c.*,
+          ct.id as contact_id,
+          ct.name as contact_name,
+          ct.phone as contact_phone,
+          ct.email as contact_email
+        FROM conversations c
+        LEFT JOIN contacts ct ON c.contact_id = ct.id
+        WHERE c.conversation_id = ${id}
       `);
-      return result.rows[0];
+      
+      if (result.rows[0]) {
+        const conversation = {
+          ...result.rows[0],
+          contact: {
+            id: result.rows[0].contact_id,
+            name: result.rows[0].contact_name,
+            phone: result.rows[0].contact_phone,
+            email: result.rows[0].contact_email
+          }
+        };
+        console.log('✅ Found conversation with contact:', {
+          id: conversation.id,
+          contact_name: conversation.contact.name,
+          contact_phone: conversation.contact.phone
+        });
+        return conversation;
+      }
+      
+      console.log('❌ Conversation not found:', id);
+      return null;
     } catch (error) {
-      console.error('Error getting conversation:', error);
+      console.error('❌ Error getting conversation:', error);
       throw error;
     }
   }
