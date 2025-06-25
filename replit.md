@@ -277,13 +277,14 @@ SESSION_SECRET=your_session_secret
 - Documentado que mensagens de pacientes e IA são inseridas diretamente pelo N8N no Supabase
 - TaskMed apenas lê mensagens externas, mas controla completamente mensagens enviadas pelo sistema
 
-### June 25, 2025 - FASE 1: Supabase Storage Setup ✅
+### June 25, 2025 - FASE 1: Supabase Storage Setup Completa ✅
+- Atualizado schema Drizzle ORM com colunas do Supabase Storage na tabela message_attachments
 - Criado bucket 'conversation-attachments' no Supabase Storage com limite de 50MB
 - Configurado para arquivos privados com tipos MIME permitidos (imagens, áudio, vídeo, documentos)
-- Adicionadas colunas à tabela message_attachments: storage_bucket, storage_path, public_url, signed_url, signed_url_expires
-- Implementadas políticas RLS básicas para segurança multi-tenant
-- Estrutura atual de conversas preservada - nenhuma funcionalidade existente afetada
-- Sistema preparado para migração gradual do armazenamento local para Supabase Storage
+- Adicionadas colunas: storage_bucket, storage_path, public_url, signed_url, signed_url_expires
+- Schema aplicado via npm run db:push com sucesso
+- Estrutura atual de conversas 100% preservada - zero impacto nas funcionalidades existentes
+- Sistema preparado para FASE 2 (Backend Upload Service)
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

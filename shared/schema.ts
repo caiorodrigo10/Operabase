@@ -560,7 +560,14 @@ export const message_attachments = pgTable("message_attachments", {
   file_name: varchar("file_name", { length: 255 }).notNull(),
   file_type: varchar("file_type", { length: 100 }).notNull(), // mime type
   file_size: integer("file_size"), // em bytes
-  file_url: text("file_url"), // URL do arquivo (local ou cloud)
+  file_url: text("file_url"), // URL do arquivo (local - mantido para compatibilidade)
+  
+  // Supabase Storage Integration (FASE 1 - Nova estrutura)
+  storage_bucket: varchar("storage_bucket", { length: 100 }).default("conversation-attachments"),
+  storage_path: varchar("storage_path", { length: 500 }), // Caminho no Supabase Storage
+  public_url: text("public_url"), // URL pública (se aplicável)
+  signed_url: text("signed_url"), // URL assinada temporária
+  signed_url_expires: timestamp("signed_url_expires"), // Expiração da URL assinada
   
   // Dados do WhatsApp
   whatsapp_media_id: varchar("whatsapp_media_id", { length: 255 }),
@@ -576,6 +583,7 @@ export const message_attachments = pgTable("message_attachments", {
 }, (table) => [
   index("idx_attachments_message").on(table.message_id),
   index("idx_attachments_clinic").on(table.clinic_id),
+  index("idx_attachments_storage_path").on(table.storage_path), // Novo índice para Supabase Storage
 ]);
 
 // Zod schemas para validação
