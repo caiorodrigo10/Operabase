@@ -736,10 +736,11 @@ export class ConversationUploadService {
       console.log('📎 Creating N8N attachment...');
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
-        filename: filename, // Nome original na mensagem
-        file_type: this.getMessageTypeFromMime(mimeType),
+        clinic_id: clinicId,
+        file_name: filename, // Nome original na mensagem
+        file_type: mimeType, // MIME type original
         file_size: file.length,
-        mime_type: mimeType,
+        file_url: storageResult.publicUrl || null, // Compatibilidade
         storage_bucket: storageResult.bucket,
         storage_path: storageResult.path,
         public_url: storageResult.publicUrl,

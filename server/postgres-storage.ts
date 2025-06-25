@@ -7,7 +7,7 @@ import {
 } from "./domains/auth/auth.schema";
 
 import { 
-  whatsapp_numbers
+  whatsapp_numbers, message_attachments
 } from "../shared/schema";
 
 import { 
@@ -2109,17 +2109,26 @@ export class PostgreSQLStorage implements IStorage {
 
   async createAttachment(attachment: any): Promise<any> {
     try {
-      const result = await db.execute(sql`
-        INSERT INTO message_attachments (
-          message_id, clinic_id, file_name, file_type, file_size, file_url
-        )
-        VALUES (
-          ${attachment.message_id}, ${attachment.clinic_id}, ${attachment.file_name}, 
-          ${attachment.file_type}, ${attachment.file_size}, ${attachment.file_url}
-        )
-        RETURNING *
-      `);
-      return result.rows[0];
+      const [result] = await db
+        .insert(message_attachments)
+        .values({
+          message_id: attachment.message_id,
+          clinic_id: attachment.clinic_id,
+          file_name: attachment.file_name,
+          file_type: attachment.file_type,
+          file_size: attachment.file_size,
+          file_url: attachment.file_url,
+          storage_bucket: attachment.storage_bucket,
+          storage_path: attachment.storage_path,
+          public_url: attachment.public_url,
+          signed_url: attachment.signed_url,
+          signed_url_expires: attachment.signed_url_expires,
+          whatsapp_media_id: attachment.whatsapp_media_id,
+          whatsapp_media_url: attachment.whatsapp_media_url
+        })
+        .returning();
+      
+      return result;
     } catch (error) {
       console.error('Error creating attachment:', error);
       throw error;
