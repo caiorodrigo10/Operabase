@@ -324,6 +324,8 @@ SESSION_SECRET=your_session_secret
 - URLs assinadas funcionando para acesso aos arquivos via sistema
 - Arquivos de teste criados diretamente no bucket: imagem, áudio, vídeo e PDF
 - Estrutura organizada por clínica e conversa no Supabase Storage
+- Mensagens com anexos conectadas à conversa do Caio Rodrigo para demonstração
+- URLs assinadas válidas permitindo visualização dos arquivos no frontend
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
