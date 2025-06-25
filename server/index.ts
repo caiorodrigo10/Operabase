@@ -382,6 +382,7 @@ app.use((req, res, next) => {
   // Add Simple Conversations routes with WebSocket integration
   const { setupSimpleConversationsRoutes } = await import('./conversations-simple-routes');
   setupSimpleConversationsRoutes(app, storage);
+  setupUploadRoutes(app, storage);
   
   // Initialize anamnesis system
   try {
