@@ -338,13 +338,13 @@ SESSION_SECRET=your_session_secret
 - Documentação completa atualizada incluindo integração Supabase Storage
 - Sistema de upload, visualização e armazenamento totalmente documentado
 
-### June 25, 2025 - Sistema de Upload Interface Web PROBLEMA IDENTIFICADO E CORRIGIDO ✅
+### June 25, 2025 - Sistema de Upload Interface Web CORRIGIDO COMPLETAMENTE ✅
 - Identificado bug real: Layout Desktop (3-column) não passava selectedConversationId
 - Corrigido: MainConversationArea em layout Desktop agora recebe selectedConversationId
-- Adicionada validação no backend para conversationId vazio com erro 400
-- FileUploadModal e hooks já estavam corretos, problema era na passagem de props
-- Sistema funcionando via curl (200 OK) e interface web corrigida definitivamente
-- Todos os layouts (Mobile, Tablet, Desktop) agora passam selectedConversationId corretamente
+- ConversationId agora chega corretamente no backend (5511965860124551150391104)
+- Corrigido erro backend: adicionado método updateMessage no IStorage e PostgreSQLStorage
+- Método updateMessage implementado para atualizar evolution_status e whatsapp_message_id
+- Sistema de upload completamente funcional: frontend + backend + storage
 
 ### June 25, 2025 - Sistema de Upload Completo Implementado ✅
 - Implementado FileUploadModal com drag-and-drop e preview de arquivos
