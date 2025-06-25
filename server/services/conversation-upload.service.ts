@@ -204,14 +204,27 @@ export class ConversationUploadService {
     conversationId: string;
     clinicId: number;
   }) {
+    console.log('📤 Iniciando upload para Supabase Storage...');
+    console.log('📋 Parâmetros:', {
+      filename: params.filename,
+      mimeType: params.mimeType,
+      fileSize: params.file.length,
+      conversationId: params.conversationId,
+      clinicId: params.clinicId
+    });
+
     const timestamp = Date.now();
     const category = this.getCategoryFromMime(params.mimeType);
     const sanitizedFilename = this.sanitizeFilename(params.filename);
     const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${sanitizedFilename}`;
 
+    console.log('🗂️ Caminho de armazenamento:', storagePath);
+
     // Upload direto usando Supabase sem service intermediário
     const supabase = this.supabaseStorage['supabase'];
     const bucketName = 'conversation-attachments';
+    
+    console.log('📤 Fazendo upload para bucket:', bucketName);
     
     const { data, error } = await supabase.storage
       .from(bucketName)
@@ -227,11 +240,22 @@ export class ConversationUploadService {
 
     console.log('✅ Upload direto realizado com sucesso:', data.path);
 
-    const signedUrl = await this.supabaseStorage.createSignedUrl(storagePath);
+    // Gerar URL assinada usando método direto também
+    console.log('🔗 Gerando URL assinada...');
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from(bucketName)
+      .createSignedUrl(storagePath, 86400); // 24 horas
+
+    if (signedError) {
+      console.error('❌ Erro ao gerar URL assinada:', signedError);
+      throw new Error(`Erro ao gerar URL assinada: ${signedError.message}`);
+    }
+
+    console.log('✅ URL assinada gerada com sucesso');
     
     return {
       storage_path: storagePath,
-      signed_url: signedUrl,
+      signed_url: signedData.signedUrl,
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
     };
   }

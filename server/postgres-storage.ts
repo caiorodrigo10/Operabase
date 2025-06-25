@@ -2031,11 +2031,19 @@ export class PostgreSQLStorage implements IStorage {
   // Additional methods for upload system
   async createMessage(message: any): Promise<any> {
     try {
+      console.log('💾 Creating message with data:', {
+        conversation_id: message.conversation_id,
+        sender_type: message.sender_type,
+        content: message.content
+      });
+      
       const result = await db.execute(sql`
-        INSERT INTO messages (conversation_id, sender_type, content, message_type, status, device_type, whatsapp_message_id)
-        VALUES (${message.conversation_id}, ${message.sender_type}, ${message.content}, ${message.message_type || 'text'}, ${message.status || 'sent'}, ${message.device_type || 'system'}, ${message.whatsapp_message_id || null})
+        INSERT INTO messages (conversation_id, sender_type, content)
+        VALUES (${message.conversation_id}, ${message.sender_type}, ${message.content})
         RETURNING *
       `);
+      
+      console.log('✅ Message created successfully:', result.rows[0]);
       return result.rows[0];
     } catch (error) {
       console.error('Error creating message:', error);
