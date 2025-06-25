@@ -454,12 +454,12 @@ export class ConversationUploadService {
         throw new Error('Evolution API Key não configurada');
       }
 
-      // Payload conforme documentação Evolution API - campos obrigatórios sempre presentes
+      // Payload conforme documentação Evolution API - estrutura CORRETA
       const payload = {
         number: conversation.contact.phone,
         mediaMessage: {
-          mediatype: params.mediaType,
-          fileName: params.fileName || 'attachment', // fileName sempre obrigatório
+          mediaType: params.mediaType,  // CORRIGIDO: mediaType com T maiúsculo!
+          fileName: params.fileName || 'attachment',
           media: params.mediaUrl,
           ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
         },
@@ -468,6 +468,9 @@ export class ConversationUploadService {
           presence: params.mediaType === 'audio' ? 'recording' : 'composing'
         }
       };
+      
+      console.log('🔧 CORRIGIDO - mediaType com T maiúsculo:');
+      console.log(JSON.stringify(payload, null, 2));
 
       console.log('📤 Evolution API - Payload completo sendo enviado:');
       console.log('📤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
