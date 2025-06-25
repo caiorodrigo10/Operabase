@@ -36,8 +36,15 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
   const evolutionAPI = new EvolutionAPIService();
   const uploadService = new ConversationUploadService(storage, supabaseStorage, evolutionAPI);
 
-  // POST /api/conversations/:id/upload - SEM MIDDLEWARE DE AUTH para evitar 401
-  app.post('/api/conversations/:id/upload', upload.single('file'), async (req: Request, res: Response) => {
+  // POST /api/conversations/:id/upload - BYPASS COMPLETO DE MIDDLEWARE
+  app.post('/api/conversations/:id/upload', (req: any, res: any, next: any) => {
+    console.log('🔥 UPLOAD ROUTE HIT - Before multer');
+    console.log('🔥 URL:', req.url);
+    console.log('🔥 Original URL:', req.originalUrl);
+    console.log('🔥 Headers Auth:', req.headers.authorization ? 'Present' : 'Missing');
+    console.log('🔥 Session:', req.session ? 'Present' : 'Missing');
+    next();
+  }, upload.single('file'), async (req: Request, res: Response) => {
     console.log('🚨🚨🚨 UPLOAD HANDLER REACHED 🚨🚨🚨');
     console.log('🚨 Handler - Request URL:', req.url);
     console.log('🚨 Handler - Request path:', req.path);

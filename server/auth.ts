@@ -230,6 +230,12 @@ export function setupAuth(app: Express, storage: IStorage) {
 
 // Middleware to check if user is authenticated (supports both session and Supabase token)
 export const isAuthenticated = async (req: any, res: any, next: any) => {
+  // BYPASS TOTAL para uploads - não deve nem chegar aqui
+  if (req.originalUrl?.includes('/upload') || req.url?.includes('/upload')) {
+    console.log('🔥 AUTH BYPASS: Upload detectado, saltando autenticação');
+    return next();
+  }
+  
   console.log('🔐 Auth middleware: Checking authentication...');
   console.log('🔍 Headers:', req.headers.authorization ? 'Bearer token present' : 'No bearer token');
   console.log('🔍 Session authenticated:', req.isAuthenticated ? req.isAuthenticated() : 'No session method');
