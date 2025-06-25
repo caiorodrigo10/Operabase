@@ -734,7 +734,7 @@ export class ConversationUploadService {
 
       // 6. Criar attachment no banco
       console.log('📎 Creating N8N attachment...');
-      const attachment = await this.storage.createMessageAttachment({
+      const attachment = await this.storage.createAttachment({
         message_id: message.id,
         filename: filename, // Nome original na mensagem
         file_type: this.getMessageTypeFromMime(mimeType),

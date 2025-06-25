@@ -8,7 +8,6 @@ import fetch from 'node-fetch';
 import FormData from 'form-data';
 
 const API_BASE = 'http://localhost:5000';
-const N8N_API_KEY = 'taskmed-n8n-integration-2025-secure-key';
 
 // Test parameters
 const TEST_CONVERSATION_ID = '5598876940345511948922493'; // Igor Venturin conversation
@@ -197,9 +196,6 @@ async function testSuccessfulUpload(fileType, fileData) {
 
     const response = await fetch(`${API_BASE}/api/n8n/upload`, {
       method: 'POST',
-      headers: {
-        'x-api-key': N8N_API_KEY
-      },
       body: formData
     });
 
@@ -238,7 +234,6 @@ async function testBinaryStreamUpload() {
     const response = await fetch(`${API_BASE}/api/n8n/upload`, {
       method: 'POST',
       headers: {
-        'x-api-key': N8N_API_KEY,
         'content-type': 'application/octet-stream',
         'x-filename': fileData.filename,
         'x-mime-type': fileData.mimeType,
