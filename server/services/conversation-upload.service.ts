@@ -491,11 +491,22 @@ export class ConversationUploadService {
         throw new Error('Evolution API Key não configurada');
       }
 
+      // Helper para MIME types - V2 API
+      const getMimeTypeV2 = (mediaType: string): string => {
+        const mimeTypes = {
+          'image': 'image/png',
+          'video': 'video/mp4', 
+          'audio': 'audio/mpeg',
+          'document': 'application/pdf'
+        };
+        return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
+      };
+
       // Payload V2 Evolution API - estrutura CORRETA com campos diretos
       const payload = {
         number: conversation.contact.phone,
         mediatype: params.mediaType,  // Campo direto no root
-        mimetype: getMimeType(params.mediaType),
+        mimetype: getMimeTypeV2(params.mediaType),
         media: params.mediaUrl,
         fileName: params.fileName || 'attachment',
         delay: 1000,

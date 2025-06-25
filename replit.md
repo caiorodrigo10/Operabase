@@ -370,25 +370,15 @@ SESSION_SECRET=your_session_secret
 - Schema do banco totalmente alinhado: removido whatsapp_message_id, usado evolution_status existente
 - Sistema de upload 100% operacional e pronto para integração N8N
 
-### June 25, 2025 - Sanitização Definitiva para Supabase Storage ✅
-- Implementado mapeamento completo de caracteres especiais (À→A, Ì→I, ç→c, etc.)
-- Sistema de transliteração para caracteres acentuados e especiais brasileiros
-- Validação rigorosa contra padrão Supabase: ^[a-zA-Z0-9._-]+$
-- Fallback inteligente para casos extremos (emojis, caracteres asiáticos)
-- Preservação do nome original no banco para exibição ao usuário
-- Nome sanitizado usado apenas para storage, mantendo experiência do usuário
-- Resolução definitiva do erro "Invalid key" com caracteres como "às", "ção", etc.
-- Sistema de upload 100% funcional com arquivos contendo caracteres especiais
-- Sanitização completa: converte "às" → "as", "ção" → "cao", etc. automaticamente
-- Upload realizado com sucesso para Supabase Storage usando nomes sanitizados
-- Nome original preservado no banco para exibição correta ao usuário
-- Sistema robusto contra qualquer caractere especial brasileiro ou internacional
-- Foreign key constraint resolvido com validação de conversation_id correto
-- Sistema de upload completamente estável e testado com múltiplos cenários
-- Erro de variável indefinida corrigido no modal de upload da interface
-- Modal de upload agora usa selectedConversationId corretamente
-- Props do MainConversationArea corrigidas para incluir selectedConversationId
-- Sistema de upload via interface web completamente funcional
+### June 25, 2025 - Evolution API V2 Integration Complete ✅
+- Fixed critical API structure issue: Evolution API V2 uses flat payload structure vs V1 nested format
+- Corrected payload from nested `mediaMessage` object to direct root-level fields
+- Implemented proper V2 structure: number, mediatype, mimetype, fileName, media fields at root
+- Added MIME type mapping helper for proper content type detection
+- Successfully tested with WhatsApp message ID: 3EB07A582C7D179F2391CD4C518B085B
+- Evolution API now returns proper success response with WhatsApp URLs and metadata
+- Complete dual upload system: Supabase Storage + WhatsApp Evolution API working
+- Sistema de upload definitivamente funcional com API V2 da Evolution
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
