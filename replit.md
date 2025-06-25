@@ -363,6 +363,11 @@ SESSION_SECRET=your_session_secret
 - Preservação do nome original no banco para exibição ao usuário
 - Nome sanitizado usado apenas para storage, mantendo experiência do usuário
 - Resolução definitiva do erro "Invalid key" com caracteres como "às", "ção", etc.
+- Sistema de upload 100% funcional com arquivos contendo caracteres especiais
+- Sanitização completa: converte "às" → "as", "ção" → "cao", etc. automaticamente
+- Upload realizado com sucesso para Supabase Storage usando nomes sanitizados
+- Nome original preservado no banco para exibição correta ao usuário
+- Sistema robusto contra qualquer caractere especial brasileiro ou internacional
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
