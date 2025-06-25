@@ -600,17 +600,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           if (instanceError) {
             console.error('❌ Error fetching WhatsApp instance:', instanceError);
             
-            const { error: failError } = await supabase
-              .from('messages')
-              .update({ evolution_status: 'failed' })
-              .eq('id', formattedMessage.id);
-            
-            if (failError) {
-              console.error('❌ Error updating to failed (instance error):', failError);
-            } else {
-              console.log('✅ Message marked as failed - instance error');
-              await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
-            }
+            // NÃO marcar como failed - é erro de configuração, não falha da Evolution API  
+            console.log('📝 Message ID', formattedMessage.id, 'mantém status "pending" - erro de configuração de instância');
             return;
           }
 
@@ -658,17 +649,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           if (contactError) {
             console.error('❌ Error fetching conversation contact:', contactError);
             
-            const { error: failError } = await supabase
-              .from('messages')
-              .update({ evolution_status: 'failed' })
-              .eq('id', formattedMessage.id);
-            
-            if (failError) {
-              console.error('❌ Error updating to failed (contact error):', failError);
-            } else {
-              console.log('✅ Message marked as failed - contact error');
-              await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
-            }
+            // NÃO marcar como failed - é erro de configuração, não falha da Evolution API
+            console.log('📝 Message ID', formattedMessage.id, 'mantém status "pending" - erro de configuração de contato');
             return;
           }
 
@@ -735,13 +717,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               
             } else {
               const errorText = await response.text();
-              console.error('❌ Evolution API error:', {
+              console.error('❌ Evolution API confirmou falha:', {
                 status: response.status,
                 statusText: response.statusText,
                 body: errorText
               });
               
-              // Atualizar status para 'failed' em caso de erro
+              // APENAS agora marcar como 'failed' - Evolution API confirmou a falha
               const { error: updateError } = await supabase
                 .from('messages')
                 .update({ evolution_status: 'failed' })
@@ -750,37 +732,20 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               if (updateError) {
                 console.error('❌ Error updating message status to failed:', updateError);
               } else {
-                console.log('✅ Message status updated to failed for ID:', formattedMessage.id);
+                console.log('✅ Message status updated to failed for ID:', formattedMessage.id, '- Evolution API confirmou falha');
                 
                 // Invalidate cache para mostrar falha em tempo real
                 await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
-                console.log('🧹 Cache invalidated after failed send');
+                console.log('🧹 Cache invalidated after confirmed failed send');
               }
             }
           } catch (error) {
-            console.error('❌ Evolution API network error:', error.message);
+            console.error('⚠️ Evolution API erro de conexão/rede:', error.message);
+            console.log('ℹ️ Mantendo status "pending" - Evolution API não respondeu definitivamente');
             
-            // Marcar como falha em caso de erro de rede
-            const { error: networkError } = await supabase
-              .from('messages')
-              .update({ evolution_status: 'failed' })
-              .eq('id', formattedMessage.id);
-            
-            if (networkError) {
-              console.error('❌ Error updating to failed (network error):', networkError);
-            } else {
-              console.log('✅ Message marked as failed - network error');
-              await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
-            }
-            try {
-              await supabase
-                .from('messages')
-                .update({ evolution_status: 'failed' })
-                .eq('id', formattedMessage.id);
-              console.log('✅ Message status updated to failed for ID:', formattedMessage.id);
-            } catch (updateError) {
-              console.error('❌ Failed to update message status:', updateError);
-            }
+            // NÃO marcar como falha - apenas erro de rede/conexão
+            // Mensagem pode ter sido enviada mesmo com erro de resposta
+            console.log('📝 Message ID', formattedMessage.id, 'mantém status "pending" - sem confirmação definitiva da Evolution');
           }
         });
 
