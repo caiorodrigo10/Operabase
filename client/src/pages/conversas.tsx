@@ -152,6 +152,7 @@ export default function ConversasPage() {
             media_size: msg.attachments?.[0]?.file_size || undefined,
             media_duration: msg.attachments?.[0]?.duration || undefined,
             media_thumbnail: msg.attachments?.[0]?.thumbnail_url || undefined,
+            evolution_status: msg.evolution_status,
             attachments: msg.attachments || []
           }
         });

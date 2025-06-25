@@ -631,6 +631,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
                 .from('messages')
                 .update({ evolution_status: 'failed' })
                 .eq('id', formattedMessage.id);
+              console.log('✅ Message status updated to failed for ID:', formattedMessage.id);
             } catch (updateError) {
               console.error('❌ Failed to update message status:', updateError);
             }
