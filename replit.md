@@ -296,6 +296,17 @@ SESSION_SECRET=your_session_secret
 - Integração completa com tabela message_attachments via Drizzle ORM
 - Sistema de cleanup automático em caso de falhas no upload
 
+### June 25, 2025 - FASE 3: Frontend Upload Component Implementado ✅
+- Criado componente FileUploader com drag-and-drop e seleção de arquivos
+- Interface intuitiva com progresso visual e validação de arquivos
+- Suporte a múltiplos arquivos simultâneos com status individual
+- Validação client-side de tipos MIME e tamanho (50MB máximo)
+- Integração com TanStack Query para invalidação de cache automática
+- Componente Progress criado para feedback visual de upload
+- FileUploader integrado ao MainConversationArea substituindo botão simples
+- MediaMessage atualizado para priorizar URLs do Supabase Storage
+- Sistema completo de upload frontend funcionando com backend
+
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)
