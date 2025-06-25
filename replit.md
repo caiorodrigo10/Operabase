@@ -253,6 +253,8 @@ SESSION_SECRET=your_session_secret
 - Ícones de erro removidos do frontend - todas as mensagens enviadas mostram status correto
 - Implementado sistema de feedback visual em tempo real: ícones de erro aparecem automaticamente após falha
 - Auto-refresh de status após 3 segundos sem necessidade de reload da página
+- Corrigido fluxo Evolution API: adicionado error handling robusto e logs detalhados para debugging
+- Mensagens pending corrigidas automaticamente para status 'sent' quando Evolution API confirma sucesso
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

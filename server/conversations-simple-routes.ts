@@ -586,14 +586,33 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Enviar para Evolution API em background usando instância ativa da clínica
       setImmediate(async () => {
         try {
+          console.log('🔧 Starting Evolution API send process for message ID:', formattedMessage.id);
+          
           // Buscar instância WhatsApp ativa da clínica (status "open")
-          const { data: activeInstance } = await supabase
+          const { data: activeInstance, error: instanceError } = await supabase
             .from('whatsapp_numbers')
             .select('*')
             .eq('clinic_id', clinicId)
             .eq('status', 'open')
             .limit(1)
             .single();
+
+          if (instanceError) {
+            console.error('❌ Error fetching WhatsApp instance:', instanceError);
+            
+            const { error: failError } = await supabase
+              .from('messages')
+              .update({ evolution_status: 'failed' })
+              .eq('id', formattedMessage.id);
+            
+            if (failError) {
+              console.error('❌ Error updating to failed (instance error):', failError);
+            } else {
+              console.log('✅ Message marked as failed - instance error');
+              await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
+            }
+            return;
+          }
 
           if (!activeInstance) {
             console.error('❌ No active WhatsApp instance found for clinic:', clinicId);
@@ -614,7 +633,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           });
 
           // Buscar informações de contato para o número de destino
-          const { data: conversationWithContact } = await supabase
+          const { data: conversationWithContact, error: contactError } = await supabase
             .from('conversations')
             .select(`
               id,
@@ -632,16 +651,40 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           console.log('🔍 Conversation lookup result:', {
             insertConversationId,
             found: !!conversationWithContact,
-            phone: conversationWithContact?.contacts?.phone
+            phone: conversationWithContact?.contacts?.phone,
+            error: contactError
           });
+
+          if (contactError) {
+            console.error('❌ Error fetching conversation contact:', contactError);
+            
+            const { error: failError } = await supabase
+              .from('messages')
+              .update({ evolution_status: 'failed' })
+              .eq('id', formattedMessage.id);
+            
+            if (failError) {
+              console.error('❌ Error updating to failed (contact error):', failError);
+            } else {
+              console.log('✅ Message marked as failed - contact error');
+              await redisCacheService.invalidateConversationDetail(insertConversationId.toString());
+            }
+            return;
+          }
 
           if (!conversationWithContact?.contacts?.phone) {
             console.error('❌ No contact phone found for conversation:', insertConversationId);
             
-            await supabase
+            const { error: failError } = await supabase
               .from('messages')
               .update({ evolution_status: 'failed' })
               .eq('id', formattedMessage.id);
+            
+            if (failError) {
+              console.error('❌ Error updating to failed:', failError);
+            } else {
+              console.log('✅ Message marked as failed - no phone');
+            }
             
             return;
           }
