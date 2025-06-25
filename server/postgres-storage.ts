@@ -2038,15 +2038,14 @@ export class PostgreSQLStorage implements IStorage {
         timestamp_provided: !!message.timestamp
       });
       
-      // Sempre usar apenas os campos básicos - PostgreSQL criará timestamp automaticamente
+      // Usar apenas colunas que existem na tabela real do banco
       const result = await db.execute(sql`
-        INSERT INTO messages (conversation_id, sender_type, content, message_type, device_type)
+        INSERT INTO messages (conversation_id, sender_type, content, ai_action)
         VALUES (
           ${String(message.conversation_id)}, 
           ${message.sender_type}, 
           ${message.content},
-          ${message.message_type || 'text'},
-          ${message.device_type || 'system'}
+          ${message.ai_action || null}
         )
         RETURNING *
       `);

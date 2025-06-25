@@ -133,13 +133,12 @@ export class ConversationUploadService {
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       
-      // Deixar PostgreSQL criar timestamp automaticamente igual mensagens de texto
+      // Usar apenas campos que existem na tabela real - PostgreSQL cria timestamp automaticamente
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
         sender_type: 'professional',
         content: messageContent,
-        message_type: 'media',
-        device_type: 'system'
+        ai_action: 'file_upload' // Indicar que foi upload de arquivo
       });
 
       // 6. Criar attachment (preservar nome original para o usuário)
