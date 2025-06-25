@@ -442,25 +442,77 @@ export function useSendMessage() {
 }
 ```
 
-## 🔄 Fluxo Completo de Mensagem
+## 🔄 Responsabilidades do Sistema
 
-### 1. Envio de Mensagem
+### ⚠️ IMPORTANTE: Divisão de Responsabilidades
+
+O sistema TaskMed possui responsabilidades específicas bem definidas para o fluxo de mensagens:
+
+#### 🟢 **O QUE CONTROLAMOS (Sistema TaskMed)**
+- **Mensagens Enviadas pelo Sistema**: Mensagens que os profissionais de saúde enviam através da interface web
+- **Processamento de Envio**: Integração com Evolution API para enviar mensagens via WhatsApp
+- **Status de Entrega**: Controle do status das mensagens enviadas (pending, failed)
+- **Interface do Usuário**: Visualização de todas as mensagens em tempo real
+
+#### 🔴 **O QUE NÃO CONTROLAMOS (Responsabilidade Externa)**
+- **Mensagens dos Pacientes**: Recebidas diretamente pelo N8N via webhook da Evolution API
+- **Respostas da IA**: Processadas e enviadas pelo N8N com base nas mensagens dos pacientes
+- **Inserção no Banco**: N8N escreve diretamente no Supabase as mensagens recebidas e respostas da IA
+
+### 📊 Fluxo Completo Detalhado
+
+#### 1. **Mensagens Enviadas pelo Sistema (Controlamos)**
 ```
-1. Frontend → API: POST /api/conversations-simple/{id}/messages
-2. Backend → Database: INSERT message (status: 'pending')
-3. Backend → Cache: Invalidate conversation cache
-4. Backend → Evolution API: Send message (background)
-5. Evolution Response → Database: Update status if failed
-6. Frontend ← API: Immediate response (optimistic UI)
+1. Profissional digita mensagem na interface web
+2. Frontend → API TaskMed: POST /api/conversations-simple/{id}/messages
+3. TaskMed → Supabase: INSERT message (status: 'pending')
+4. TaskMed → Evolution API: Enviar mensagem via WhatsApp
+5. Evolution API → WhatsApp: Entrega a mensagem ao paciente
+6. Se falha: TaskMed atualiza status para 'failed'
+7. Frontend atualiza interface em tempo real
 ```
 
-### 2. Recebimento via Webhook
+#### 2. **Mensagens dos Pacientes (N8N Controla)**
 ```
-1. Evolution API → N8N Webhook
-2. N8N → Backend: POST /api/webhook/whatsapp/message  
-3. Backend → Database: INSERT message
-4. Backend → WebSocket: Emit new message
-5. Frontend ← WebSocket: Real-time update
+1. Paciente envia mensagem pelo WhatsApp
+2. Evolution API → N8N: Webhook com mensagem recebida
+3. N8N → Supabase: INSERT message diretamente (sender_type: 'patient')
+4. TaskMed → Frontend: LÊ mensagem do Supabase e exibe
+```
+
+#### 3. **Respostas da IA (N8N Controla)**
+```
+1. N8N processa mensagem do paciente
+2. N8N → IA: Gera resposta contextual
+3. N8N → Supabase: INSERT message (sender_type: 'ai')
+4. N8N → Evolution API: Envia resposta da IA via WhatsApp
+5. TaskMed → Frontend: LÊ resposta da IA do Supabase e exibe
+```
+
+### 📋 **Resumo das Responsabilidades**
+
+| Tipo de Mensagem | Quem Controla | Onde Processa | Como TaskMed Interage |
+|------------------|---------------|---------------|----------------------|
+| **Enviadas pelo Sistema** | TaskMed | API TaskMed → Evolution | Controla envio e status |
+| **Recebidas dos Pacientes** | N8N | Webhook → Supabase | Apenas LÊ do banco |
+| **Respostas da IA** | N8N | N8N → IA → Supabase | Apenas LÊ do banco |
+
+### 🔍 **Identificação de Origem das Mensagens**
+
+```typescript
+// Como identificamos quem enviou cada mensagem:
+interface Message {
+  sender_type: 'patient' | 'professional' | 'ai' | 'system';
+  device_type: 'manual' | 'system';
+  evolution_status: 'pending' | 'sent' | 'failed';
+}
+
+// Mensagens que controlamos (TaskMed):
+sender_type: 'professional' + device_type: 'system' = Enviada pela interface web
+
+// Mensagens que apenas lemos (N8N):
+sender_type: 'patient' = Recebida do paciente via N8N
+sender_type: 'ai' = Resposta da IA via N8N
 ```
 
 ## 🛡️ Isolamento Multi-Tenant
@@ -597,6 +649,8 @@ const { data: recentMessages } = await supabase
 2. **Reliability**: Fallback gracioso quando Evolution API não responde
 3. **UX**: Feedback visual imediato com optimistic updates
 4. **Scalability**: Arquitetura preparada para 1000+ usuários simultâneos
+5. **Divisão Clara**: Separação de responsabilidades entre TaskMed (envio) e N8N (recebimento/IA) evita conflitos
+6. **Single Source of Truth**: Supabase como banco central acessado por ambos os sistemas
 
 ---
 

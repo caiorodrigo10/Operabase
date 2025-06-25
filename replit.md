@@ -273,6 +273,9 @@ SESSION_SECRET=your_session_secret
 - Incluído sistema de identificação de conversas com IDs científicos
 - Documentada integração Evolution API com instâncias dinâmicas por clínica
 - Especificado sistema de cache Redis e otimizações de performance
+- Clarificada divisão de responsabilidades: TaskMed controla envio, N8N controla recebimento e IA
+- Documentado que mensagens de pacientes e IA são inseridas diretamente pelo N8N no Supabase
+- TaskMed apenas lê mensagens externas, mas controla completamente mensagens enviadas pelo sistema
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
