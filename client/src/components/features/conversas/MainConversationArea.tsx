@@ -148,7 +148,7 @@ export function MainConversationArea({
 
       {/* Input Area - Fixed at Bottom */}
       <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-        {/* Reply/Note Toggle Buttons */}
+        {/* Mensagem/Nota Toggle Buttons */}
         <div className="flex mb-3 space-x-2">
           <Button
             variant={!isNoteMode ? "default" : "outline"}
@@ -162,7 +162,7 @@ export function MainConversationArea({
             )}
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Reply</span>
+            <span>Mensagem</span>
           </Button>
           
           <Button
@@ -177,7 +177,7 @@ export function MainConversationArea({
             )}
           >
             <FileText className="w-4 h-4" />
-            <span>Note</span>
+            <span>Nota</span>
           </Button>
         </div>
 
