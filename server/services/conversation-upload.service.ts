@@ -467,6 +467,17 @@ export class ConversationUploadService {
         fileName: params.fileName
       });
 
+      // Helper para MIME types
+      const getMimeType = (mediaType: string): string => {
+        const mimeTypes = {
+          'image': 'image/png',
+          'video': 'video/mp4', 
+          'audio': 'audio/mpeg',
+          'document': 'application/pdf'
+        };
+        return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
+      };
+
       const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
       const evolutionApiKey = process.env.EVOLUTION_API_KEY;
       
@@ -484,18 +495,19 @@ export class ConversationUploadService {
       const payload = {
         number: conversation.contact.phone,
         mediatype: params.mediaType,  // Campo direto no root
-        mimetype: this.getMimeType(params.mediaType),
+        mimetype: getMimeType(params.mediaType),
         media: params.mediaUrl,
         fileName: params.fileName || 'attachment',
         delay: 1000,
         ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
       };
       
-      console.log('📤 Evolution API Payload (mediaType com T maiúsculo):');
+      console.log('📤 Evolution API V2 Payload (campos diretos):');
       console.log('📤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
-      console.log('📤 Campo mediaType:', payload.mediaMessage.mediaType);
-      console.log('📤 Campo fileName:', payload.mediaMessage.fileName);
-      console.log('📤 Campo number:', payload.number);
+      console.log('📤 mediatype:', payload.mediatype);
+      console.log('📤 mimetype:', payload.mimetype);
+      console.log('📤 fileName:', payload.fileName);
+      console.log('📤 number:', payload.number);
 
       // Usar formato exato do texto para mídia
       const response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
