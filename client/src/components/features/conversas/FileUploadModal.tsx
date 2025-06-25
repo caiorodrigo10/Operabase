@@ -106,6 +106,10 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const handleUpload = async () => {
     if (files.length === 0) return;
 
+    console.log('📤 FileUploadModal: Starting upload with conversationId:', conversationId);
+    console.log('📤 FileUploadModal: conversationId type:', typeof conversationId);
+    console.log('📤 FileUploadModal: conversationId length:', conversationId?.length);
+
     setStatus('uploading');
     setProgress(0);
     
@@ -119,6 +123,14 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
       }
       
       setStatus('processing');
+      
+      console.log('📤 FileUploadModal: Calling uploadMutation with:', {
+        conversationId,
+        fileName: file.name,
+        fileSize: file.size,
+        caption: caption.trim() || undefined,
+        sendToWhatsApp
+      });
       
       const uploadResult = await uploadMutation.mutateAsync({
         conversationId,

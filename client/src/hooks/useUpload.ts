@@ -28,6 +28,14 @@ export function useUpload() {
 
   return useMutation({
     mutationFn: async ({ conversationId, file, caption, sendToWhatsApp = true }: UploadParams): Promise<UploadResult> => {
+      console.log('📤 useUpload: Received parameters:', {
+        conversationId,
+        conversationIdType: typeof conversationId,
+        conversationIdLength: conversationId?.length,
+        fileName: file.name,
+        fileSize: file.size
+      });
+
       const formData = new FormData();
       formData.append('file', file);
       if (caption) formData.append('caption', caption);

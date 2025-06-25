@@ -343,6 +343,7 @@ SESSION_SECRET=your_session_secret
 - FileUploadModal não recebia conversationId como prop, enviava string vazia
 - Corrigido: adicionada prop conversationId ao FileUploadModal
 - MainConversationArea agora passa selectedConversationId corretamente
+- Páginas/Conversas/index.tsx atualizada para passar selectedConversationId
 - Sistema funcionando via curl (200 OK) e interface web corrigida
 - Logs de debug mantidos para confirmar funcionamento
 
