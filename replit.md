@@ -265,6 +265,15 @@ SESSION_SECRET=your_session_secret
 - Sistema otimizado: não detecta mais sucesso, apenas falhas confirmadas pela Evolution API
 - Interface mais limpa: mensagens aparecem sem ícone por padrão, erro só quando confirmado
 
+### June 24, 2025 - Documentação Completa do Sistema de Conversas ✅
+- Criada documentação técnica completa de toda arquitetura de conversas
+- Documentadas todas as tabelas: conversations, messages, message_attachments, whatsapp_numbers
+- Especificados tipos TypeScript para frontend e backend
+- Documentados endpoints de API e hooks React customizados
+- Incluído sistema de identificação de conversas com IDs científicos
+- Documentada integração Evolution API com instâncias dinâmicas por clínica
+- Especificado sistema de cache Redis e otimizações de performance
+
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
 - Adicionados ícones de status: relógio (enviando), check duplo (enviado), alerta (erro)
