@@ -328,6 +328,8 @@ SESSION_SECRET=your_session_secret
 - URLs assinadas válidas permitindo visualização dos arquivos no frontend
 - Criado attachment de teste funcional na conversa do Caio Rodrigo
 - Sistema de mensagens com anexos operacional usando schema compatível
+- Anexos atualizados para usar arquivos reais do Supabase Storage
+- URLs assinadas conectadas aos arquivos corretos: imagem, áudio, vídeo, PDF
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
