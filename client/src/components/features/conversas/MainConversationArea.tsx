@@ -6,6 +6,7 @@ import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploader } from "./FileUploader";
+import { FileUploadModal } from "./FileUploadModal";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
 import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ export function MainConversationArea({
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isNoteMode, setIsNoteMode] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +87,11 @@ export function MainConversationArea({
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleUploadSuccess = (result: any) => {
+    console.log('Upload successful:', result);
+    // Cache invalidation será implementado na próxima etapa
   };
 
   if (!patientInfo) {
