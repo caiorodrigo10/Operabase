@@ -57,8 +57,15 @@ export function MainConversationArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Simple audio recording state
+  // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [showAudioPreview, setShowAudioPreview] = useState(false);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
@@ -67,6 +74,21 @@ export function MainConversationArea({
       messagesEndRef.current.scrollIntoView({ behavior: "instant" });
     }
   }, [timelineItems]);
+
+  // Cleanup audio resources on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+    };
+  }, [mediaRecorder]);
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
@@ -109,10 +131,121 @@ export function MainConversationArea({
     setShowUploadModal(false);
   };
 
-  // Simple audio recording handler
-  const handleMicrophoneClick = () => {
-    console.log('🎤 Simple microphone click');
-    setIsRecording(!isRecording);
+  // Audio recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+      });
+
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { 
+          type: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+        });
+        setAudioBlob(blob);
+        setShowAudioPreview(true);
+        
+        // Cleanup stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+      };
+
+      recorder.start(1000);
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingTime(0);
+      setAudioChunks([]);
+      streamRef.current = stream;
+
+      // Start timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Erro ao acessar microfone:', error);
+      alert('Erro ao acessar o microfone. Verifique as permissões.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    setIsRecording(false);
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+  };
+
+  const handleMicrophoneClick = async () => {
+    if (!isRecording) {
+      await startRecording();
+    } else {
+      stopRecording();
+    }
+  };
+
+  const sendAudio = async () => {
+    if (!audioBlob || !selectedConversationId) return;
+
+    try {
+      const formData = new FormData();
+      const fileName = `voice_${Date.now()}.webm`;
+      formData.append('files', audioBlob, fileName);
+      formData.append('messageType', 'audio_voice'); // Specify as voice recording
+
+      const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        // Reset audio state
+        setAudioBlob(null);
+        setShowAudioPreview(false);
+        setRecordingTime(0);
+        console.log('Áudio enviado com sucesso');
+      } else {
+        console.error('Erro ao enviar áudio');
+        alert('Erro ao enviar áudio. Tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar áudio:', error);
+      alert('Erro ao enviar áudio. Verifique sua conexão.');
+    }
+  };
+
+  const cancelAudio = () => {
+    setAudioBlob(null);
+    setShowAudioPreview(false);
+    setRecordingTime(0);
+  };
+
+  // Format recording time
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (!patientInfo) {
@@ -265,22 +398,56 @@ export function MainConversationArea({
           </Button>
         </div>
 
-        {/* Simple Recording State */}
+        {/* Recording State */}
         {isRecording && (
           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
               <span className="text-sm text-red-700">
-                Gravando áudio...
+                Gravando áudio... {formatTime(recordingTime)}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsRecording(false)}
+                onClick={stopRecording}
                 className="ml-auto text-red-600 hover:text-red-800"
               >
                 Parar
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Audio Preview */}
+        {showAudioPreview && audioBlob && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Mic className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Áudio gravado</p>
+                  <p className="text-xs text-blue-700">{formatTime(recordingTime)}</p>
+                </div>
+              </div>
+              <div className="flex space-x-2 ml-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelAudio}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={sendAudio}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Enviar
+                </Button>
+              </div>
             </div>
           </div>
         )}
