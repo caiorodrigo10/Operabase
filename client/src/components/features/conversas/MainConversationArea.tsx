@@ -8,7 +8,7 @@ import { ActionNotification } from "./ActionNotification";
 import { FileUploader } from "./FileUploader";
 import { FileUploadModal } from "./FileUploadModal";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
-import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText, Play, Pause } from "lucide-react";
+import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText, Play, Pause, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Helper function to format date as "23 de Junho"
@@ -73,6 +73,14 @@ export function MainConversationArea({
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // FASE 3: Audio Quality Controls
+  const [audioQuality, setAudioQuality] = useState<'high' | 'medium' | 'low'>('medium');
+  const [compressionLevel, setCompressionLevel] = useState(0.7);
+  const [noiseReduction, setNoiseReduction] = useState(true);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [volumeLevel, setVolumeLevel] = useState(0);
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
@@ -144,10 +152,33 @@ export function MainConversationArea({
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
-          noiseSuppression: true,
+          noiseSuppression: noiseReduction,
           autoGainControl: true,
+          sampleRate: audioQuality === 'high' ? 48000 : audioQuality === 'medium' ? 44100 : 22050
         }
       });
+
+      // FASE 3: Setup audio analysis for real-time volume monitoring
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyserNode = audioCtx.createAnalyser();
+      analyserNode.fftSize = 256;
+      source.connect(analyserNode);
+      
+      setAudioContext(audioCtx);
+      setAnalyser(analyserNode);
+      
+      // Start volume monitoring
+      const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+      const updateVolume = () => {
+        if (analyserNode && isRecording) {
+          analyserNode.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+          setVolumeLevel(average / 255);
+          requestAnimationFrame(updateVolume);
+        }
+      };
+      updateVolume();
 
       const recorder = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
