@@ -2063,6 +2063,37 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  async updateMessage(messageId: number, updates: any): Promise<any> {
+    try {
+      console.log('📝 Updating message:', messageId, 'with:', updates);
+      
+      const result = await db.execute(sql`
+        UPDATE messages 
+        SET 
+          status = COALESCE(${updates.status || null}, status),
+          whatsapp_message_id = COALESCE(${updates.whatsapp_message_id || null}, whatsapp_message_id),
+          updated_at = NOW()
+        WHERE id = ${messageId}
+        RETURNING *
+      `);
+      
+      if (result.rows.length === 0) {
+        console.log('⚠️ Message not found for update:', messageId);
+        return null;
+      }
+      
+      console.log('✅ Message updated successfully:', {
+        id: result.rows[0].id,
+        status: result.rows[0].status,
+        whatsapp_message_id: result.rows[0].whatsapp_message_id
+      });
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating message:', error);
+      throw error;
+    }
+  }
+
   async createAttachment(attachment: any): Promise<any> {
     try {
       const result = await db.execute(sql`
