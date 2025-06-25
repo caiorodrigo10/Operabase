@@ -357,6 +357,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
           message_type: messageType,
           timestamp: msg.timestamp,
+          evolution_status: msg.evolution_status || 'sent',
           attachments: msgAttachments
         };
       });
@@ -605,7 +606,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               await supabase
                 .from('messages')
                 .update({ evolution_status: 'sent' })
-                .eq('id', insertResult.id);
+                .eq('id', formattedMessage.id);
               
             } else {
               const errorText = await response.text();
@@ -619,7 +620,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               await supabase
                 .from('messages')
                 .update({ evolution_status: 'failed' })
-                .eq('id', insertResult.id);
+                .eq('id', formattedMessage.id);
             }
           } catch (error) {
             console.error('❌ Evolution API network error:', error.message);
@@ -629,7 +630,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               await supabase
                 .from('messages')
                 .update({ evolution_status: 'failed' })
-                .eq('id', insertResult.id);
+                .eq('id', formattedMessage.id);
             } catch (updateError) {
               console.error('❌ Failed to update message status:', updateError);
             }

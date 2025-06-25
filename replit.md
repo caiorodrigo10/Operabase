@@ -236,16 +236,15 @@ SESSION_SECRET=your_session_secret
 - Added window focus detection for instant updates when returning to tab
 - Optimized cache invalidation for real-time message delivery
 
-### June 25, 2025 - Complete Database Schema Migration to TEXT IDs ✅
-- **BREAKING CHANGE**: Migrated both conversations.id and messages.conversation_id from NUMERIC to TEXT
-- Removed foreign key constraint "messages_conversation_id_fkey" temporarily for migration
-- Successfully altered conversations.id column type from numeric to text
-- Successfully altered messages.conversation_id column type from numeric to text  
-- Recreated foreign key constraint with TEXT compatibility
-- **Resolution**: Scientific notation IDs (5.511965860124552e+24) now preserve full precision as strings
-- Database schema now supports WhatsApp IDs of any length without JavaScript precision loss
-- System handles both regular numeric IDs and large scientific notation IDs seamlessly
-- All existing data migrated successfully with preserved relationships
+### June 25, 2025 - Evolution API Failure Indicators System ✅
+- Added evolution_status column to messages table with values: 'pending', 'sent', 'failed'
+- Implemented visual failure indicator (red triangle) for failed WhatsApp messages in MessageBubble component
+- Enhanced backend to update message status based on Evolution API response
+- System tracks Evolution API success/failure and provides user feedback via UI indicators
+- Only successful Evolution API sends display without failure indicator as requested
+- Complete database schema migration: conversations.id and messages.conversation_id now TEXT type
+- Scientific notation IDs (5.511965860124552e+24) preserve full precision without JavaScript loss
+- Database supports WhatsApp IDs of any length with proper foreign key relationships
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

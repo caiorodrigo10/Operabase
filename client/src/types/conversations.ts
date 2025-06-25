@@ -41,6 +41,7 @@ export interface Message {
   media_size?: number;
   media_duration?: number; // for audio/video in seconds
   media_thumbnail?: string; // for video thumbnails
+  evolution_status?: 'pending' | 'sent' | 'failed';
   attachments?: MessageAttachment[];
 }
 
