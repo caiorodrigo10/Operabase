@@ -2039,7 +2039,7 @@ export class PostgreSQLStorage implements IStorage {
       
       const result = await db.execute(sql`
         INSERT INTO messages (conversation_id, sender_type, content)
-        VALUES (${message.conversation_id}, ${message.sender_type}, ${message.content})
+        VALUES (${String(message.conversation_id)}, ${message.sender_type}, ${message.content})
         RETURNING *
       `);
       

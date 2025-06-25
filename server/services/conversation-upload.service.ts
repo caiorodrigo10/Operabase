@@ -86,11 +86,11 @@ export class ConversationUploadService {
       // 4. Sanitizar filename
       const sanitizedFilename = this.sanitizeFilename(filename);
       
-      // 5. Criar mensagem no banco
+      // 5. Criar mensagem no banco (usar string conversation_id)
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${sanitizedFilename}`;
       const message = await this.storage.createMessage({
-        conversation_id: conversationId,
+        conversation_id: conversationId, // Manter como string 
         sender_type: 'professional',
         content: messageContent
       });
@@ -189,25 +189,34 @@ export class ConversationUploadService {
   private sanitizeFilename(filename: string): string {
     if (!filename) return 'unnamed-file';
     
-    // Remover acentos e caracteres especiais de forma mais agressiva
-    return filename
-      .normalize('NFD') // Decompor caracteres acentuados
-      .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos
-      .replace(/[àáâãäåæçèéêëìíîïñòóôõöøùúûüýÿ]/gi, (match) => {
-        const map: { [key: string]: string } = {
-          'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a', 'æ': 'ae',
-          'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
-          'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
-          'ñ': 'n', 'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
-          'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
-          'ý': 'y', 'ÿ': 'y'
-        };
-        return map[match.toLowerCase()] || match;
-      })
-      .replace(/[^a-zA-Z0-9.-]/g, '_') // Substitui qualquer caractere especial por underscore
-      .replace(/_{2,}/g, '_') // Remove underscores duplos
-      .replace(/^_+|_+$/g, '') // Remove underscores no início e fim
-      .toLowerCase();
+    console.log('🔧 Sanitizing filename:', filename);
+    
+    // Aplicar sanitização mais simples e efetiva
+    const sanitized = filename
+      // Primeiro, remover extensão para processar separadamente
+      .replace(/\.[^/.]+$/, (ext) => {
+        const name = filename.slice(0, -ext.length);
+        const cleanName = name
+          // Substituir caracteres problemáticos diretamente
+          .replace(/[àáâãäåæ]/gi, 'a')
+          .replace(/[çć]/gi, 'c')
+          .replace(/[èéêë]/gi, 'e')
+          .replace(/[ìíîï]/gi, 'i')
+          .replace(/[ñń]/gi, 'n')
+          .replace(/[òóôõöø]/gi, 'o')
+          .replace(/[ùúûü]/gi, 'u')
+          .replace(/[ýÿ]/gi, 'y')
+          // Remover espaços e caracteres especiais
+          .replace(/\s+/g, '_')
+          .replace(/[^a-zA-Z0-9._-]/g, '_')
+          .replace(/_{2,}/g, '_')
+          .replace(/^_+|_+$/g, '');
+        
+        return cleanName + ext.toLowerCase();
+      });
+    
+    console.log('✅ Sanitized filename:', sanitized);
+    return sanitized.toLowerCase();
   }
 
   private async uploadToSupabase(params: {
