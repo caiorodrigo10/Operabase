@@ -667,10 +667,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               console.log('✅ Evolution API success:', result);
               
               // Atualizar status para 'sent' em caso de sucesso
-              await supabase
+              const { error: updateError } = await supabase
                 .from('messages')
                 .update({ evolution_status: 'sent' })
                 .eq('id', formattedMessage.id);
+              
+              if (updateError) {
+                console.error('❌ Error updating message status to sent:', updateError);
+              } else {
+                console.log('✅ Message status updated to sent for ID:', formattedMessage.id);
+              }
               
             } else {
               const errorText = await response.text();
@@ -681,10 +687,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               });
               
               // Atualizar status para 'failed' em caso de erro
-              await supabase
+              const { error: updateError } = await supabase
                 .from('messages')
                 .update({ evolution_status: 'failed' })
                 .eq('id', formattedMessage.id);
+              
+              if (updateError) {
+                console.error('❌ Error updating message status to failed:', updateError);
+              } else {
+                console.log('✅ Message status updated to failed for ID:', formattedMessage.id);
+              }
             }
           } catch (error) {
             console.error('❌ Evolution API network error:', error.message);

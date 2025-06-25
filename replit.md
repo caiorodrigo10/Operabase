@@ -248,6 +248,7 @@ SESSION_SECRET=your_session_secret
 - Evolution API failure indicators working with red triangle visual feedback
 - Fixed timezone issues: removed future messages from day 25, corrected to Brasília timezone (GMT-3)
 - Sistema agora salva mensagens com horário correto de Brasília no banco de dados
+- Removidas todas as mensagens incorretas do dia 25, sistema funcionando com timestamps corretos
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
