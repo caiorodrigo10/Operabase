@@ -216,7 +216,8 @@ export class ConversationUploadService {
             mediaType: this.getEvolutionMediaType(mimeType),
             mediaUrl: storageResult.signed_url,
             fileName: this.shouldIncludeFileName(mimeType) ? filename : undefined,
-            caption: mimeType.startsWith('audio/') ? undefined : caption
+            caption: mimeType.startsWith('audio/') ? undefined : caption,
+            messageType: this.getMimeToMessageType(mimeType) // ETAPA 4: Passar tipo de mensagem
           });
 
           // Atualizar status da mensagem usando evolution_status
@@ -430,6 +431,7 @@ export class ConversationUploadService {
     mediaUrl: string;
     fileName?: string;
     caption?: string;
+    messageType?: string; // ETAPA 4: Para detectar audio_voice
   }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
     try {
       console.log('🔍 Starting Evolution API media send process...');
@@ -519,40 +521,68 @@ export class ConversationUploadService {
         throw new Error('Evolution API Key não configurada');
       }
 
-      // Helper para MIME types - V2 API
-      const getMimeTypeV2 = (mediaType: string): string => {
-        const mimeTypes = {
-          'image': 'image/png',
-          'video': 'video/mp4', 
-          'audio': 'audio/mpeg',
-          'document': 'application/pdf'
-        };
-        return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
-      };
-
-      // Payload V2 Evolution API - estrutura CORRETA com campos diretos
-      const payload = {
-        number: conversation.contact.phone,
-        mediatype: params.mediaType,  // Campo direto no root
-        mimetype: getMimeTypeV2(params.mediaType),
-        media: params.mediaUrl,
-        fileName: params.fileName || 'attachment',
-        delay: 1000,
-        ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
-      };
+      // ETAPA 4: Detectar se é mensagem de voz e usar endpoint específico
+      const isVoiceMessage = params.messageType === 'audio_voice' || 
+                            (params.mediaType === 'audio' && params.fileName?.includes('recording'));
       
-      console.log('📤 Evolution API V2 Payload (campos diretos):');
-      console.log('📤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
-      console.log('📤 mediatype:', payload.mediatype);
-      console.log('📤 mimetype:', payload.mimetype);
-      console.log('📤 fileName:', payload.fileName);
-      console.log('📤 number:', payload.number);
+      if (isVoiceMessage) {
+        console.log('🎤 ETAPA 4: Using WhatsApp Audio endpoint for voice message');
+        return this.sendWhatsAppAudio({
+          instanceName: activeInstance.instance_name,
+          number: conversation.contact.phone,
+          audioUrl: params.mediaUrl,
+          evolutionUrl,
+          evolutionApiKey
+        });
+      }
 
-      // Usar formato exato do texto para mídia
-      const response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
+      // Para outros tipos de mídia, usar endpoint genérico
+      console.log('📎 Using generic media endpoint');
+      return this.sendGenericMedia({
+        instanceName: activeInstance.instance_name,
+        number: conversation.contact.phone,
+        mediaType: params.mediaType,
+        mediaUrl: params.mediaUrl,
+        fileName: params.fileName,
+        caption: params.caption,
+        evolutionUrl,
+        evolutionApiKey
+      });
+
+    } catch (error) {
+      console.error('❌ Evolution API media send failed:', error);
+      return {
+        sent: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  // ETAPA 4: Método específico para áudios de voz usando /sendWhatsAppAudio
+  private async sendWhatsAppAudio(params: {
+    instanceName: string;
+    number: string;
+    audioUrl: string;
+    evolutionUrl: string;
+    evolutionApiKey: string;
+  }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
+    const payload = {
+      number: params.number,
+      audio: params.audioUrl, // URL ou base64 do áudio
+      delay: 1000,
+      // O Evolution API automaticamente configura ptt: true para áudios de voz
+    };
+
+    console.log('🎤 WhatsApp Audio API Payload:');
+    console.log('📤 URL:', `${params.evolutionUrl}/message/sendWhatsAppAudio/${params.instanceName}`);
+    console.log('📤 number:', payload.number);
+    console.log('📤 audio URL length:', params.audioUrl.length);
+
+    try {
+      const response = await fetch(`${params.evolutionUrl}/message/sendWhatsAppAudio/${params.instanceName}`, {
         method: 'POST',
         headers: {
-          'apikey': evolutionApiKey,
+          'apikey': params.evolutionApiKey,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
@@ -560,8 +590,13 @@ export class ConversationUploadService {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Evolution API media success:', result);
-        console.log('ℹ️ Mantendo status "pending" - assumindo sucesso');
+        console.log('✅ WhatsApp Audio API success:', {
+          messageId: result.key?.id,
+          status: result.status,
+          audioMessage: !!result.message?.audioMessage,
+          duration: result.message?.audioMessage?.seconds,
+          ptt: result.message?.audioMessage?.ptt
+        });
         
         return {
           sent: true,
@@ -569,7 +604,7 @@ export class ConversationUploadService {
         };
       } else {
         const errorText = await response.text();
-        console.error('❌ Evolution API confirmou falha de mídia:', {
+        console.error('❌ WhatsApp Audio API error:', {
           status: response.status,
           statusText: response.statusText,
           body: errorText
@@ -577,12 +612,88 @@ export class ConversationUploadService {
         
         return {
           sent: false,
-          error: `Evolution API error: ${response.status} - ${errorText}`
+          error: `WhatsApp Audio API error: ${response.status} - ${errorText}`
         };
       }
-
     } catch (error) {
-      console.error('❌ Evolution API media send failed:', error);
+      console.error('❌ WhatsApp Audio API request failed:', error);
+      return {
+        sent: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  // Método para mídia genérica (mantém funcionalidade existente)
+  private async sendGenericMedia(params: {
+    instanceName: string;
+    number: string;
+    mediaType: string;
+    mediaUrl: string;
+    fileName?: string;
+    caption?: string;
+    evolutionUrl: string;
+    evolutionApiKey: string;
+  }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
+    // Helper para mapeamento MIME type
+    const getMimeTypeV2 = (mediaType: string): string => {
+      const mimeTypes = {
+        'image': 'image/png',
+        'video': 'video/mp4', 
+        'audio': 'audio/mpeg',
+        'document': 'application/pdf'
+      };
+      return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
+    };
+
+    const payload = {
+      number: params.number,
+      mediatype: params.mediaType,
+      mimetype: getMimeTypeV2(params.mediaType),
+      media: params.mediaUrl,
+      fileName: params.fileName || 'attachment',
+      delay: 1000,
+      ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
+    };
+    
+    console.log('📎 Generic Media API Payload:');
+    console.log('📤 URL:', `${params.evolutionUrl}/message/sendMedia/${params.instanceName}`);
+    console.log('📤 mediatype:', payload.mediatype);
+    console.log('📤 fileName:', payload.fileName);
+
+    try {
+      const response = await fetch(`${params.evolutionUrl}/message/sendMedia/${params.instanceName}`, {
+        method: 'POST',
+        headers: {
+          'apikey': params.evolutionApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Generic Media API success:', result);
+        
+        return {
+          sent: true,
+          messageId: result.key?.id
+        };
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Generic Media API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        
+        return {
+          sent: false,
+          error: `Generic Media API error: ${response.status} - ${errorText}`
+        };
+      }
+    } catch (error) {
+      console.error('❌ Generic Media API request failed:', error);
       return {
         sent: false,
         error: error instanceof Error ? error.message : 'Unknown error'

@@ -372,17 +372,17 @@ SESSION_SECRET=your_session_secret
 - Schema do banco totalmente alinhado: removido whatsapp_message_id, usado evolution_status existente
 - Sistema de upload 100% operacional e pronto para integração N8N
 
-### June 25, 2025 - Sistema de Gravação de Áudio Simplificado ✅
-- Implementado sistema completo de gravação de áudio (audio_voice) com foco na simplicidade
-- FASE 1: MediaRecorder API integrado com upload direto para Supabase + WhatsApp
-- FASE 2: Preview avançado com waveform, controles play/pause e timeline profissional
-- FASE 3: Controles complexos removidos conforme feedback do usuário sobre simplicidade
-- Interface final: botão gravar → indicador simples → preview com waveform → envio
-- Sistema diferencia 3 tipos: audio (WhatsApp), audio_file (upload), audio_voice (gravação)
-- Integração completa com ConversationUploadService e EvolutionMessageService
-- Foco na experiência intuitiva: "clique para gravar, grave, envie facilmente"
-- Removidos controles desnecessários: qualidade, compressão, redução de ruído
-- Sistema otimizado para uso cotidiano em ambiente clínico
+### June 25, 2025 - ETAPA 4: Evolution API Audio Optimization ✅
+- Implementado sistema de otimização específica para mensagens de áudio no WhatsApp
+- Criado endpoint duplo: `/sendWhatsAppAudio` para mensagens de voz vs `/sendMedia` para outros arquivos
+- Sistema de detecção inteligente: audio_voice usa endpoint especializado, outros tipos usam genérico
+- Método `sendWhatsAppAudio` com payload otimizado: audio field, automatic PTT configuration
+- Método `sendGenericMedia` mantém compatibilidade com imagens, vídeos e documentos
+- Logs detalhados específicos para cada tipo de envio: áudio vs mídia genérica
+- Enhanced error handling com contexto específico para cada endpoint Evolution API
+- Backward compatibility: sistema funciona para todos os tipos de arquivo existentes
+- Performance otimizada: mensagens de voz processadas via endpoint específico do WhatsApp
+- Sistema preparado para ETAPA 5-7: format optimization, error handling, real-time status
 
 ### June 25, 2025 - Evolution API V2 Integration Complete ✅
 - Fixed critical API structure issue: Evolution API V2 uses flat payload structure vs V1 nested format
