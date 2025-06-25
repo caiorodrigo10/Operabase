@@ -196,20 +196,10 @@ export class ConversationUploadService {
     const category = this.getCategoryFromMime(params.mimeType);
     const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${params.filename}`;
 
-    // Preparar metadados para upload
-    const metadata = {
-      originalName: params.filename,
-      mimeType: params.mimeType,
-      size: params.file.length,
-      clinicId: params.clinicId,
-      conversationId: parseInt(params.conversationId)
-    };
-
-    console.log('📋 Upload metadata:', metadata);
-
-    const result = await this.supabaseStorage.uploadFile(
+    const result = await this.supabaseStorage.uploadFileLegacy(
       params.file,
-      metadata
+      storagePath,
+      params.mimeType
     );
 
     const signedUrl = await this.supabaseStorage.createSignedUrl(storagePath, 24 * 60 * 60); // 24 hours
