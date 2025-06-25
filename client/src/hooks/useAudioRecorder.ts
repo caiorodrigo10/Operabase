@@ -59,15 +59,14 @@ export function useAudioRecorder(): AudioRecorderHook {
 
     try {
       setError(null);
+      setRecordingState('recording');
+      setRecordingTime(0);
+      
       console.log('🎤 Requesting microphone access...');
       
-      // Request microphone access
+      // Request microphone access with simple configuration
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
+        audio: true
       });
       
       console.log('✅ Microphone access granted');
@@ -75,7 +74,7 @@ export function useAudioRecorder(): AudioRecorderHook {
       streamRef.current = stream;
       chunksRef.current = [];
 
-      // Create MediaRecorder
+      // Create MediaRecorder with simpler configuration
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
         ? 'audio/webm' 
         : 'audio/mp4';
@@ -96,6 +95,13 @@ export function useAudioRecorder(): AudioRecorderHook {
       // Handle recording stop
       mediaRecorder.onstop = () => {
         console.log('🎵 Recording stopped, creating blob...');
+        if (chunksRef.current.length === 0) {
+          console.warn('⚠️ No audio data collected');
+          setError('Nenhum áudio foi gravado. Tente novamente.');
+          setRecordingState('idle');
+          return;
+        }
+        
         const blob = new Blob(chunksRef.current, { type: mimeType });
         setAudioBlob(blob);
         
@@ -106,20 +112,6 @@ export function useAudioRecorder(): AudioRecorderHook {
         console.log('🎵 Audio URL created:', url);
         setRecordingState('stopped');
         stopTimer();
-        
-        // Cleanup stream
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-      };
-
-      // Handle recording start
-      mediaRecorder.onstart = () => {
-        console.log('🎵 MediaRecorder started successfully');
-        setRecordingState('recording');
-        setRecordingTime(0);
-        startTimer();
       };
 
       // Handle errors
@@ -130,9 +122,12 @@ export function useAudioRecorder(): AudioRecorderHook {
         stopTimer();
       };
 
-      // Start recording
+      // Start recording without collection interval to avoid auto-stop
       console.log('🎵 Starting MediaRecorder...');
-      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorder.start();
+      
+      // Start timer
+      startTimer();
 
     } catch (err) {
       console.error('❌ Error starting recording:', err);

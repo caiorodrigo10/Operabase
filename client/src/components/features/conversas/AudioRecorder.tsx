@@ -53,7 +53,7 @@ export function AudioRecorder({ onSendAudio, className }: AudioRecorderProps) {
   }
 
   return (
-    <div className={className}>
+    <>
       {!showRecorder ? (
         <Button
           variant="ghost"
@@ -65,26 +65,43 @@ export function AudioRecorder({ onSendAudio, className }: AudioRecorderProps) {
           <Mic className="w-4 h-4" />
         </Button>
       ) : (
-        <div className="w-full space-y-3">
+        <Button
+          variant={recordingState === 'recording' ? "destructive" : "ghost"}
+          size="sm"
+          className={cn(
+            "flex-shrink-0 w-10 h-10",
+            recordingState === 'recording' 
+              ? "bg-red-500 hover:bg-red-600 text-white animate-pulse" 
+              : "text-gray-500 hover:text-gray-700"
+          )}
+          title={recordingState === 'recording' ? "Parar gravação" : "Gravar áudio"}
+          onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
+        >
+          {recordingState === 'recording' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+        </Button>
+      )}
+
+      {/* Recording UI - positioned outside the flex row */}
+      {showRecorder && (
+        <div className="absolute bottom-full left-0 right-0 mb-2 z-10">
           {/* Recording Interface */}
           {recordingState === 'recording' && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                   <span className="text-sm text-red-700">
-                    Gravando áudio... {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:
+                    Gravando... {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:
                     {(recordingTime % 60).toString().padStart(2, '0')}
                   </span>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleStopRecording}
-                  className="text-red-600 hover:text-red-800"
+                  onClick={handleCancel}
+                  className="text-gray-600 hover:text-gray-800"
                 >
-                  <MicOff className="w-4 h-4 mr-1" />
-                  Parar
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -92,7 +109,7 @@ export function AudioRecorder({ onSendAudio, className }: AudioRecorderProps) {
 
           {/* Error Display */}
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="shadow-lg">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="whitespace-pre-line text-sm">
                 {error}
@@ -102,30 +119,17 @@ export function AudioRecorder({ onSendAudio, className }: AudioRecorderProps) {
 
           {/* Audio Preview */}
           {recordingState === 'stopped' && audioUrl && (
-            <AudioRecordingPreview
-              audioUrl={audioUrl}
-              recordingTime={recordingTime}
-              onSend={handleSendAudio}
-              onCancel={handleCancel}
-            />
-          )}
-
-          {/* Cancel Button (when not recording and no audio) */}
-          {recordingState === 'idle' && !audioUrl && !error && (
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-                className="text-gray-600 hover:text-gray-800"
-              >
-                <X className="w-4 h-4 mr-1" />
-                Cancelar
-              </Button>
+            <div className="bg-white border border-gray-200 rounded-lg shadow-lg">
+              <AudioRecordingPreview
+                audioUrl={audioUrl}
+                recordingTime={recordingTime}
+                onSend={handleSendAudio}
+                onCancel={handleCancel}
+              />
             </div>
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
