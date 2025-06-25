@@ -85,19 +85,29 @@ app.use((req, res, next) => {
   // Make storage available to all routes
   app.set('storage', storage);
   
-  // Apply Phase 3 observability middleware chain to all API routes
-  app.use('/api', performanceTrackingMiddleware);
-  app.use('/api', auditLoggingMiddleware);
-  app.use('/api', cacheInterceptorMiddleware as any);
-  // Apply tenant isolation but skip for upload routes
+  // ✅ CRITICAL: Setup upload routes BEFORE middlewares to avoid auth issues
+  const { setupUploadRoutes } = await import('./routes/upload-routes');
+  setupUploadRoutes(app, storage);
+  console.log('✅ Upload routes registered BEFORE middleware chain');
+  
+  // Apply Phase 3 observability middleware chain to all API routes (EXCEPT uploads)
   app.use('/api', (req: any, res: any, next: any) => {
+    // Skip all middleware for upload routes - they're already registered above
     if (req.path.includes('/upload')) {
-      console.log('🔧 Bypassing tenant isolation for upload:', req.path);
+      console.log('🔧 Skipping ALL middleware for upload:', req.path);
       return next();
     }
-    return tenantIsolationMiddleware(req, res, next);
+    // Apply normal middleware chain for other routes
+    performanceTrackingMiddleware(req, res, () => {
+      auditLoggingMiddleware(req, res, () => {
+        cacheInterceptorMiddleware(req, res, () => {
+          tenantIsolationMiddleware(req, res, () => {
+            cacheInvalidationMiddleware(req, res, next);
+          });
+        });
+      });
+    });
   });
-  app.use('/api', cacheInvalidationMiddleware as any);
   
   // Setup optimized routes first for better performance
   setupOptimizedRoutes(app);
@@ -370,9 +380,7 @@ app.use((req, res, next) => {
   const { setupConversationsRoutes } = await import('./conversations-routes');
   setupConversationsRoutes(app, storage);
   
-  // FASE 2: Add Upload routes
-  const { setupUploadRoutes } = await import('./routes/upload-routes');
-  setupUploadRoutes(app, storage);
+  // Upload routes already registered BEFORE middleware chain above
   
   // ETAPA 3: Initialize Redis Cache Service
   try {

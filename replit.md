@@ -338,13 +338,13 @@ SESSION_SECRET=your_session_secret
 - Documentação completa atualizada incluindo integração Supabase Storage
 - Sistema de upload, visualização e armazenamento totalmente documentado
 
-### June 25, 2025 - Sistema de Upload Interface Web COMPLETAMENTE CORRIGIDO ✅
-- Identificado e corrigido problema real: middleware tenantIsolationMiddleware interceptava uploads
-- Adicionado bypass específico para rotas de upload no middleware chain
-- Sistema curl funcionando (200 OK) e interface web agora liberada
-- Tenant isolation pulando corretamente rotas /upload e /api/conversations/*/upload
-- Backend processando uploads: Supabase Storage + mensagens + anexos no banco
-- Sistema de upload web funcionando sem bloqueios de autenticação
+### June 25, 2025 - Sistema de Upload Interface Web DEFINITIVAMENTE CORRIGIDO ✅
+- Problema raiz identificado: rotas de upload registradas DEPOIS dos middlewares globais
+- Implementada solução definitiva: rotas de upload registradas ANTES da aplicação de middlewares
+- Ordem de execução corrigida: Upload Routes → Middlewares → Outras Routes
+- Sistema curl funcionando (200 OK) e interface web completamente liberada
+- Eliminado bypass complexo: rotas de upload agora executam sem middleware interceptor
+- Backend processando uploads: Supabase Storage + mensagens + anexos no banco sem bloqueios
 
 ### June 25, 2025 - Sistema de Upload Completo Implementado ✅
 - Implementado FileUploadModal com drag-and-drop e preview de arquivos
