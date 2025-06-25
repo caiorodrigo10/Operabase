@@ -330,6 +330,8 @@ SESSION_SECRET=your_session_secret
 - Sistema de mensagens com anexos operacional usando schema compatível
 - Anexos atualizados para usar arquivos reais do Supabase Storage
 - URLs assinadas conectadas aos arquivos corretos: imagem, áudio, vídeo, PDF
+- Anexos exibindo corretamente na interface com nomes dos arquivos reais do Storage
+- Sistema de visualização de mídia funcionando com arquivos do Supabase Storage
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos
