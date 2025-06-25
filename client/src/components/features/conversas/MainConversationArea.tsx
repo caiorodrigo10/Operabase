@@ -8,7 +8,7 @@ import { ActionNotification } from "./ActionNotification";
 import { FileUploader } from "./FileUploader";
 import { FileUploadModal } from "./FileUploadModal";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
-import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
+import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText, Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Helper function to format date as "23 de Junho"
@@ -66,6 +66,13 @@ export function MainConversationArea({
   const [showAudioPreview, setShowAudioPreview] = useState(false);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  
+  // FASE 2: Audio Preview Controls
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
@@ -161,6 +168,10 @@ export function MainConversationArea({
         setAudioBlob(blob);
         setShowAudioPreview(true);
         
+        // FASE 2: Create audio URL for playback
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+        
         // Cleanup stream
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
@@ -239,6 +250,52 @@ export function MainConversationArea({
     setAudioBlob(null);
     setShowAudioPreview(false);
     setRecordingTime(0);
+    
+    // FASE 2: Cleanup audio URL and reset playback state
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+  };
+
+  // FASE 2: Audio Playback Controls
+  const togglePlayback = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
   };
 
   // Format recording time
@@ -418,20 +475,83 @@ export function MainConversationArea({
           </div>
         )}
 
-        {/* Audio Preview - Only when NOT recording */}
-        {!isRecording && showAudioPreview && audioBlob && (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Mic className="w-4 h-4 text-blue-600" />
+        {/* FASE 2: Advanced Audio Preview with Playback Controls */}
+        {!isRecording && showAudioPreview && audioBlob && audioUrl && (
+          <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            {/* Hidden audio element for playback */}
+            <audio
+              ref={audioRef}
+              src={audioUrl}
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+              onEnded={handleAudioEnded}
+              style={{ display: 'none' }}
+            />
+            
+            <div className="space-y-3">
+              {/* Header with title and duration */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Mic className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">Áudio gravado</p>
+                    <p className="text-xs text-blue-700">
+                      {formatTime(Math.floor(currentTime))} / {formatTime(Math.floor(duration || recordingTime))}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Áudio gravado</p>
-                  <p className="text-xs text-blue-700">{formatTime(recordingTime)}</p>
+                
+                {/* Play/Pause Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={togglePlayback}
+                  className="w-10 h-10 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full"
+                >
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </Button>
+              </div>
+              
+              {/* Waveform Progress Bar */}
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    type="range"
+                    min="0"
+                    max={duration || recordingTime}
+                    value={currentTime}
+                    onChange={handleSeek}
+                    className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((currentTime / (duration || recordingTime)) * 100)}%, #cbd5e1 ${((currentTime / (duration || recordingTime)) * 100)}%, #cbd5e1 100%)`
+                    }}
+                  />
+                </div>
+                
+                {/* Simulated Waveform Visualization */}
+                <div className="flex items-center justify-center space-x-1 h-8">
+                  {Array.from({ length: 32 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "w-1 rounded-full bg-blue-300 transition-all duration-150",
+                        i < (32 * (currentTime / (duration || recordingTime))) ? "bg-blue-500" : "bg-blue-200"
+                      )}
+                      style={{
+                        height: `${Math.random() * 20 + 8}px`,
+                        animation: isPlaying && i < (32 * (currentTime / (duration || recordingTime))) 
+                          ? `pulse 0.5s ease-in-out infinite alternate` 
+                          : 'none'
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
-              <div className="flex space-x-2 ml-auto">
+              
+              {/* Action Buttons */}
+              <div className="flex space-x-2 justify-end">
                 <Button
                   variant="ghost"
                   size="sm"

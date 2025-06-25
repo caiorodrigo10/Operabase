@@ -41,11 +41,11 @@
   --sidebar-ring: hsl(220, 14.3%, 4.1%);
 }
 
-/* Range Slider Styles */
+/* FASE 2: Audio Range Slider Styles */
 input[type="range"]::-webkit-slider-thumb {
   appearance: none;
-  height: 20px;
-  width: 20px;
+  height: 16px;
+  width: 16px;
   border-radius: 50%;
   background: #3b82f6;
   cursor: pointer;
@@ -54,11 +54,29 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 input[type="range"]::-moz-range-thumb {
-  height: 20px;
-  width: 20px;
+  height: 16px;
+  width: 16px;
   border-radius: 50%;
   background: #3b82f6;
   cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* FASE 2: Waveform Animation */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.waveform-bar {
+  transition: all 0.2s ease-in-out;
+}
+
+.waveform-bar.active {
+  background-color: #3b82f6 !important;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.4);
+}
   border: 2px solid #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border: none;
