@@ -445,7 +445,7 @@ export function MainConversationArea({
           </Button>
         </div>
 
-        <div className="flex items-end space-x-3">
+        <div className="flex items-end space-x-3 relative">
           <Button
             variant="ghost"
             size="sm"
@@ -472,10 +472,12 @@ export function MainConversationArea({
             />
           </div>
 
-          <AudioRecorder 
-            onSendAudio={handleSendAudio}
-            className="flex-shrink-0"
-          />
+          <div className="flex-shrink-0 relative">
+            <AudioRecorder 
+              onSendAudio={handleSendAudio}
+              className=""
+            />
+          </div>
 
           <Button
             onClick={handleSendMessage}

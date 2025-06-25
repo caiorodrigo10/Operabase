@@ -53,7 +53,7 @@ export function AudioRecorder({ onSendAudio, className }: AudioRecorderProps) {
   }
 
   return (
-    <>
+    <div className={className}>
       {!showRecorder ? (
         <Button
           variant="ghost"
@@ -81,55 +81,31 @@ export function AudioRecorder({ onSendAudio, className }: AudioRecorderProps) {
         </Button>
       )}
 
-      {/* Recording UI - positioned outside the flex row */}
-      {showRecorder && (
+      {/* Error Display */}
+      {error && (
         <div className="absolute bottom-full left-0 right-0 mb-2 z-10">
-          {/* Recording Interface */}
-          {recordingState === 'recording' && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-red-700">
-                    Gravando... {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:
-                    {(recordingTime % 60).toString().padStart(2, '0')}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancel}
-                  className="text-gray-600 hover:text-gray-800"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Error Display */}
-          {error && (
-            <Alert variant="destructive" className="shadow-lg">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="whitespace-pre-line text-sm">
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Audio Preview */}
-          {recordingState === 'stopped' && audioUrl && (
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg">
-              <AudioRecordingPreview
-                audioUrl={audioUrl}
-                recordingTime={recordingTime}
-                onSend={handleSendAudio}
-                onCancel={handleCancel}
-              />
-            </div>
-          )}
+          <Alert variant="destructive" className="shadow-lg">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="whitespace-pre-line text-sm">
+              {error}
+            </AlertDescription>
+          </Alert>
         </div>
       )}
-    </>
+
+      {/* Audio Preview */}
+      {recordingState === 'stopped' && audioUrl && (
+        <div className="absolute bottom-full left-0 right-0 mb-2 z-10">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-lg">
+            <AudioRecordingPreview
+              audioUrl={audioUrl}
+              recordingTime={recordingTime}
+              onSend={handleSendAudio}
+              onCancel={handleCancel}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
