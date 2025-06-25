@@ -486,21 +486,110 @@ export function MainConversationArea({
           </Button>
         </div>
 
-        {/* Audio Recording Interface - Single State */}
+        {/* FASE 3: Advanced Audio Recording Interface with Quality Controls */}
         {isRecording && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-red-700">
-                Gravando áudio... {formatTime(recordingTime)}
-              </span>
+          <div className="mt-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            {/* Recording Status Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-red-700 font-medium">Gravando áudio...</span>
+                <span className="text-red-600 text-sm">{formatTime(recordingTime)}</span>
+              </div>
+              <Button variant="ghost" size="sm">
+                <Settings className="h-4 w-4 text-gray-600" />
+              </Button>
+            </div>
+
+            {/* Audio Quality Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Quality Control */}
+              <div>
+                <label className="text-xs text-gray-700 font-medium mb-1 block">Qualidade de Áudio</label>
+                <select 
+                  value={audioQuality} 
+                  onChange={(e) => setAudioQuality(e.target.value as 'high' | 'medium' | 'low')}
+                  className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="high">Alta Qualidade (48kHz)</option>
+                  <option value="medium">Qualidade Média (44kHz)</option>
+                  <option value="low">Qualidade Básica (22kHz)</option>
+                </select>
+              </div>
+
+              {/* Noise Reduction */}
+              <div>
+                <label className="text-xs text-gray-700 font-medium mb-1 block">Controles Avançados</label>
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={noiseReduction}
+                      onChange={(e) => setNoiseReduction(e.target.checked)}
+                      className="mr-2 text-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">Redução de Ruído</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Volume Level Indicator - Real-time */}
+            <div className="mb-4">
+              <label className="text-xs text-gray-700 font-medium mb-2 block">
+                Nível de Volume em Tempo Real
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-3 rounded-full transition-all duration-100",
+                      volumeLevel > 0.8 ? "bg-red-500" : 
+                      volumeLevel > 0.5 ? "bg-yellow-500" : "bg-green-500"
+                    )}
+                    style={{ width: `${volumeLevel * 100}%` }}
+                  />
+                </div>
+                <span className="text-sm font-mono text-gray-600 w-12 text-right">
+                  {Math.round(volumeLevel * 100)}%
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Silêncio</span>
+                <span>Ideal</span>
+                <span>Alto</span>
+              </div>
+            </div>
+
+            {/* Compression Level Control */}
+            <div className="mb-4">
+              <label className="text-xs text-gray-700 font-medium mb-2 block">
+                Nível de Compressão: {Math.round(compressionLevel * 100)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={compressionLevel}
+                onChange={(e) => setCompressionLevel(parseFloat(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-slider"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Sem compressão</span>
+                <span>Máxima compressão</span>
+              </div>
+            </div>
+
+            {/* Recording Actions */}
+            <div className="flex justify-center">
               <Button
-                variant="ghost"
+                variant="destructive"
                 size="sm"
                 onClick={stopRecording}
-                className="ml-auto text-red-600 hover:text-red-800"
+                className="px-6"
               >
-                Parar
+                Parar Gravação
               </Button>
             </div>
           </div>
