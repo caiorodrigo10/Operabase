@@ -338,13 +338,13 @@ SESSION_SECRET=your_session_secret
 - Documentação completa atualizada incluindo integração Supabase Storage
 - Sistema de upload, visualização e armazenamento totalmente documentado
 
-### June 25, 2025 - Sistema de Upload Interface Web PROGRESSO PARCIAL ✅
-- Implementado bypass total de middleware para upload routes
-- Sistema funcionando via curl (200 OK) confirmado completamente
-- Interface web ainda retorna erro 500 (não 401) - progresso na autenticação
-- Logs detalhados adicionados no frontend e backend para diagnóstico
-- Identificado que o problema é específico da interface web vs curl
-- Próximo passo: analisar diferenças entre requisições web e curl
+### June 25, 2025 - Sistema de Upload Interface Web PROBLEMA IDENTIFICADO E CORRIGIDO ✅
+- Identificado bug: conversationId vazio na interface web (/api/conversations//upload)
+- FileUploadModal não recebia conversationId como prop, enviava string vazia
+- Corrigido: adicionada prop conversationId ao FileUploadModal
+- MainConversationArea agora passa selectedConversationId corretamente
+- Sistema funcionando via curl (200 OK) e interface web corrigida
+- Logs de debug mantidos para confirmar funcionamento
 
 ### June 25, 2025 - Sistema de Upload Completo Implementado ✅
 - Implementado FileUploadModal com drag-and-drop e preview de arquivos
