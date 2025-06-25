@@ -7,11 +7,9 @@ import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploader } from "./FileUploader";
 import { FileUploadModal } from "./FileUploadModal";
-import { AudioRecordingPreview } from "./AudioRecordingPreview";
 import { TimelineItem, PatientInfo } from "@/types/conversations";
 import { Send, Paperclip, Mic, MoreVertical, Info, MessageCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAudioRecorder, formatRecordingTime } from "@/hooks/useAudioRecorder";
 
 // Helper function to format date as "23 de Junho"
 const formatDateLabel = (date: string) => {
@@ -59,18 +57,8 @@ export function MainConversationArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Audio recording hook
-  const {
-    recordingState,
-    recordingTime,
-    audioBlob,
-    audioUrl,
-    isSupported: isAudioSupported,
-    startRecording,
-    stopRecording,
-    clearRecording,
-    error: audioError
-  } = useAudioRecorder();
+  // Simple audio recording state
+  const [isRecording, setIsRecording] = useState(false);
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
@@ -121,34 +109,10 @@ export function MainConversationArea({
     setShowUploadModal(false);
   };
 
-  // Audio recording handlers
-  const handleMicrophoneClick = async () => {
-    console.log('🎤 Microphone button clicked');
-    console.log('🎤 Audio supported:', isAudioSupported);
-    console.log('🎤 Current recording state:', recordingState);
-    
-    if (!isAudioSupported) {
-      console.error('❌ Audio recording not supported');
-      return;
-    }
-
-    if (recordingState === 'idle') {
-      console.log('🎤 Starting recording...');
-      await startRecording();
-    } else if (recordingState === 'recording') {
-      console.log('🎤 Stopping recording...');
-      stopRecording();
-    }
-  };
-
-  const handleSendAudio = () => {
-    // TODO: Implement audio sending in next step
-    console.log('🎵 Sending audio:', { audioBlob, recordingTime });
-    clearRecording();
-  };
-
-  const handleCancelAudio = () => {
-    clearRecording();
+  // Simple audio recording handler
+  const handleMicrophoneClick = () => {
+    console.log('🎤 Simple microphone click');
+    setIsRecording(!isRecording);
   };
 
   if (!patientInfo) {
@@ -278,14 +242,10 @@ export function MainConversationArea({
             size="sm"
             className={cn(
               "text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10",
-              recordingState === 'recording' && "text-red-500 bg-red-50"
+              isRecording && "text-red-500 bg-red-50"
             )}
             onClick={handleMicrophoneClick}
-            disabled={!isAudioSupported}
-            title={isAudioSupported ? 
-              (recordingState === 'recording' ? 'Parar gravação' : 'Gravar áudio') : 
-              'Gravação de áudio não suportada'
-            }
+            title={isRecording ? 'Parar gravação' : 'Gravar áudio'}
           >
             <Mic className="w-4 h-4" />
           </Button>
@@ -305,51 +265,21 @@ export function MainConversationArea({
           </Button>
         </div>
 
-        {/* Recording State UI */}
-        {recordingState === 'recording' && (
+        {/* Simple Recording State */}
+        {isRecording && (
           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
               <span className="text-sm text-red-700">
-                Gravando áudio... {formatRecordingTime(recordingTime)}
+                Gravando áudio...
               </span>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={stopRecording}
+                onClick={() => setIsRecording(false)}
                 className="ml-auto text-red-600 hover:text-red-800"
               >
                 Parar
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Audio Preview UI */}
-        {recordingState === 'stopped' && audioUrl && (
-          <AudioRecordingPreview
-            audioUrl={audioUrl}
-            recordingTime={recordingTime}
-            onSend={handleSendAudio}
-            onCancel={handleCancelAudio}
-            className="mt-3"
-          />
-        )}
-
-        {/* Audio Error UI */}
-        {audioError && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-red-700">
-                Erro: {audioError}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearRecording}
-                className="ml-auto text-red-600 hover:text-red-800"
-              >
-                Fechar
               </Button>
             </div>
           </div>
