@@ -368,6 +368,8 @@ SESSION_SECRET=your_session_secret
 - Upload realizado com sucesso para Supabase Storage usando nomes sanitizados
 - Nome original preservado no banco para exibição correta ao usuário
 - Sistema robusto contra qualquer caractere especial brasileiro ou internacional
+- Foreign key constraint resolvido com validação de conversation_id correto
+- Sistema de upload completamente estável e testado com múltiplos cenários
 
 ### June 24, 2025 - Sistema de Envio de Mensagens Definitivo ✅
 - Implementado sistema de update otimista na UI com indicadores visuais completos

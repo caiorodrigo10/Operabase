@@ -91,12 +91,16 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       const finalProfile = userProfile || { clinic_id: 1 };
       console.log('✅ User profile found:', finalProfile);
 
+      // Debug: verificar conversation_id recebido
+      console.log('🔍 Raw conversation_id from route:', conversationId);
+      console.log('🔍 Type of conversation_id:', typeof conversationId);
+      
       // Preparar parâmetros de upload
       const uploadParams = {
         file: req.file.buffer,
         filename: req.file.originalname,
         mimeType: req.file.mimetype,
-        conversationId,
+        conversationId: conversationId, // Usar string diretamente
         clinicId: finalProfile.clinic_id,
         userId: finalUser?.id || 1,
         caption: caption || undefined,

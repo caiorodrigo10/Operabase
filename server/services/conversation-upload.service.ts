@@ -87,16 +87,23 @@ export class ConversationUploadService {
         clinicId
       });
       
-      // 4. Criar mensagem no banco (usar string conversation_id)
+      // 4. Validar que conversation existe e obter ID correto
+      console.log('🔍 Validating conversation exists...');
+      const conversation = await this.storage.getConversationById(conversationId);
+      if (!conversation) {
+        throw new Error(`Conversation ${conversationId} not found`);
+      }
+      
+      // 5. Criar mensagem no banco (usar ID numérico da conversa)
       console.log('💾 Creating message in database...');
       const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
       const message = await this.storage.createMessage({
-        conversation_id: conversationId, // Manter como string 
+        conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
         sender_type: 'professional',
         content: messageContent
       });
 
-      // 5. Criar attachment (preservar nome original para o usuário)
+      // 6. Criar attachment (preservar nome original para o usuário)
       console.log('📎 Creating attachment record...');
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
