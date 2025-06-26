@@ -210,19 +210,27 @@ export function MainConversationArea({
         console.log('🎤 Created blob:', {
           size: blob.size,
           type: blob.type,
-          recordingTime
+          recordingTime,
+          chunksCount: chunks.length
         });
         
-        // Validate blob size
-        if (blob.size === 0) {
-          console.error('🎤 Empty audio blob detected');
-          alert('Erro: Áudio vazio. Tente gravar novamente por mais tempo.');
+        // Only validate if recording was actually attempted for a reasonable time
+        if (recordingTime < 1 && blob.size === 0) {
+          console.error('🎤 Recording stopped too quickly, likely initialization issue');
+          alert('Erro: Gravação não iniciou corretamente. Tente novamente.');
+          resetAudioState();
           return;
         }
         
-        if (blob.size < 1000) {
-          console.warn('🎤 Very small audio blob:', blob.size, 'bytes');
+        // For very short recordings, still allow if there's data
+        if (blob.size === 0) {
+          console.error('🎤 Empty audio blob detected');
+          alert('Erro: Áudio vazio. Tente gravar por mais tempo.');
+          resetAudioState();
+          return;
         }
+        
+        console.log('🎤 Audio recorded successfully:', blob.size, 'bytes');
         
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
@@ -238,16 +246,27 @@ export function MainConversationArea({
       recorder.onerror = (event) => {
         console.error('🎤 MediaRecorder error:', event);
         alert('Erro na gravação. Tente novamente.');
+        resetAudioState();
+      };
+
+      recorder.onstart = () => {
+        console.log('🎤 MediaRecorder started successfully');
       };
       
       setMediaRecorder(recorder);
-      recorder.start(1000); // Collect data every second
+      
+      // Set states immediately
       setIsRecording(true);
       setRecordingTime(0);
       
+      // Start timer
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
+      
+      // Start recording
+      console.log('🎤 Starting recorder...');
+      recorder.start(100); // Collect data every 100ms for better responsiveness
       
     } catch (error) {
       console.error('🎤 Error starting recording:', error);
@@ -262,8 +281,23 @@ export function MainConversationArea({
   };
 
   const stopRecording = () => {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
+    console.log('🎤 Attempting to stop recording...');
+    
+    if (mediaRecorder) {
+      console.log('🎤 MediaRecorder state:', mediaRecorder.state);
+      
+      if (mediaRecorder.state === 'recording') {
+        console.log('🎤 Stopping MediaRecorder...');
+        mediaRecorder.stop();
+      } else if (mediaRecorder.state === 'paused') {
+        console.log('🎤 Resuming and stopping MediaRecorder...');
+        mediaRecorder.resume();
+        mediaRecorder.stop();
+      } else {
+        console.log('🎤 MediaRecorder not in recording state:', mediaRecorder.state);
+      }
+    } else {
+      console.error('🎤 No MediaRecorder instance found');
     }
     
     if (recordingIntervalRef.current) {
