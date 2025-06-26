@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Clock, Users, BookOpen, Save, Loader2, AlertCircle } from 'lucide-react';
+import { Bot, Clock, Users, BookOpen, Save, Loader2, AlertCircle, MessageSquare } from 'lucide-react';
 import { 
   useLiviaConfiguration, 
   useCreateLiviaConfiguration, 

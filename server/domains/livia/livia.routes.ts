@@ -8,6 +8,11 @@ import { tenantContext } from '../../shared/tenant-context.provider';
 export function createLiviaRoutes(storage: IStorage): Router {
   const router = Router();
 
+  // Test endpoint (no auth required)
+  router.get('/livia/test', async (req, res) => {
+    res.json({ message: 'Livia routes working', timestamp: new Date().toISOString() });
+  });
+
   // GET /api/livia/config - Get current Livia configuration for the clinic
   router.get('/livia/config', isAuthenticated, async (req, res) => {
     try {
