@@ -133,9 +133,21 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           throw new Error('EVOLUTION_API_KEY não configurada');
         }
         
+        // Create a simpler public URL for Evolution API
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL!, 
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        
+        // Create a shorter URL without long tokens
+        const { data: publicUrlData } = await supabase.storage
+          .from('conversation-attachments')
+          .getPublicUrl(storageResult.storage_path);
+        
         const whatsappPayload = {
           number: phoneNumber,
-          audio: storageResult.signed_url
+          audio: publicUrlData.publicUrl
         };
           
           const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`, {

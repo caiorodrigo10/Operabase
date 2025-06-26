@@ -175,11 +175,29 @@ export function MainConversationArea({
       return;
     }
     
-    // Usar o sistema de upload existente com messageType específico para áudio gravado
+    // Usar rota isolada para áudio gravado
     try {
-      console.log('📤 Starting audio upload...');
-      await handleFileUpload([audioFile], 'Áudio gravado');
-      console.log('✅ Audio upload completed');
+      console.log('📤 Starting audio upload via isolated route...');
+      
+      const formData = new FormData();
+      formData.append('file', audioFile);
+      
+      const response = await fetch(`/api/conversations/${selectedConversationId}/upload-voice`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Upload response error:', errorText);
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Audio upload via isolated route successful:', result);
+      
+      // Invalidate cache to refresh conversation
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
     } catch (error) {
       console.error('❌ Audio upload failed:', error);
     } finally {
