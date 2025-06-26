@@ -18,10 +18,7 @@ export function useCreateLiviaConfiguration() {
   
   return useMutation({
     mutationFn: (data: Omit<InsertLiviaConfiguration, 'clinic_id'>) => 
-      apiRequest('/api/livia/config', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('/api/livia/config', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/livia/config'] });
     },
@@ -34,10 +31,7 @@ export function useUpdateLiviaConfiguration() {
   
   return useMutation({
     mutationFn: (data: UpdateLiviaConfiguration) => 
-      apiRequest('/api/livia/config', {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('/api/livia/config', 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/livia/config'] });
     },
@@ -50,9 +44,7 @@ export function useDeleteLiviaConfiguration() {
   
   return useMutation({
     mutationFn: () => 
-      apiRequest('/api/livia/config', {
-        method: 'DELETE',
-      }),
+      apiRequest('/api/livia/config', 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/livia/config'] });
     },
