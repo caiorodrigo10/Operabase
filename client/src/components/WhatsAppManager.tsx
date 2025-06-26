@@ -22,6 +22,52 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
   const queryClient = useQueryClient();
   const [selectedQR, setSelectedQR] = useState<{ qrCode: string; instanceName: string; numberId?: number } | null>(null);
   const [pollingEnabled, setPollingEnabled] = useState(false);
+  
+  // QR Code timeout states
+  const [qrExpired, setQrExpired] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  // QR timeout functions
+  const startQRTimeout = () => {
+    console.log('⏰ Starting QR timeout countdown (30 seconds)');
+    setQrExpired(false);
+    setCountdown(30);
+    
+    const timer = setTimeout(() => {
+      console.log('⚠️ QR Code expired after 30 seconds');
+      setQrExpired(true);
+    }, 30000);
+    
+    setTimeoutId(timer);
+  };
+
+  const resetQRTimeout = () => {
+    console.log('🔄 Resetting QR timeout');
+    setQrExpired(false);
+    setCountdown(30);
+    
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
+    
+    // Start new timeout if QR is still active
+    if (selectedQR) {
+      startQRTimeout();
+    }
+  };
+
+  const clearQRTimeout = () => {
+    console.log('🧹 Clearing QR timeout');
+    setQrExpired(false);
+    setCountdown(30);
+    
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
+  };
 
   // Query to fetch WhatsApp numbers with conditional polling
   const { data: whatsappNumbers = [], isLoading } = useQuery({
@@ -65,6 +111,17 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
     setPollingEnabled(shouldPoll);
   }, [whatsappNumbers, selectedQR]);
 
+  // QR countdown effect
+  useEffect(() => {
+    if (selectedQR && !qrExpired && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [selectedQR, qrExpired, countdown]);
+
   // Auto-close QR dialog when instance becomes connected
   useEffect(() => {
     console.log('🔍 Checking for connected instances:', {
@@ -85,6 +142,9 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
       if (connectedNumber) {
         console.log('✅ Closing QR dialog - WhatsApp connected!');
         
+        // Clear timeout when connected
+        clearQRTimeout();
+        
         // Force refetch to update the UI immediately
         queryClient.invalidateQueries({ queryKey: [`/api/whatsapp/numbers/${clinicId}`] });
         
@@ -101,6 +161,39 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
     }
   }, [whatsappNumbers, selectedQR, toast]);
 
+  // Mutation to regenerate QR code
+  const regenerateQRMutation = useMutation({
+    mutationFn: () => apiRequest(`/api/whatsapp/regenerate-qr`, 'POST', { 
+      instanceName: selectedQR?.instanceName 
+    }),
+    onSuccess: async (response) => {
+      const data = await response.json();
+      console.log('✅ QR Code regenerated successfully:', data);
+      
+      // Update existing QR code
+      setSelectedQR(prev => prev ? {
+        ...prev,
+        qrCode: data.qrCode
+      } : null);
+      
+      // Reset timeout states
+      resetQRTimeout();
+      
+      toast({
+        title: "QR Code atualizado",
+        description: "Escaneie o novo código para conectar"
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Error regenerating QR code:', error);
+      toast({
+        title: "Erro ao gerar novo QR",
+        description: error.message || "Não foi possível gerar novo QR Code",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Mutation to start connection
   const startConnectionMutation = useMutation({
     mutationFn: () => apiRequest(`/api/whatsapp/connect`, 'POST', { clinicId, userId: parseInt(userId) }),
@@ -111,12 +204,15 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         description: "Escaneie o QR Code para conectar seu WhatsApp"
       });
       
-      // Show QR code dialog
+      // Show QR code dialog and start timeout
       setSelectedQR({
         qrCode: data.qrCode,
         instanceName: data.instanceName,
         numberId: data.id
       });
+      
+      // Start QR timeout
+      startQRTimeout();
       
       // Refresh list
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
@@ -352,6 +448,9 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         {/* QR Code Dialog */}
         <Dialog open={!!selectedQR} onOpenChange={(open) => {
           if (!open && selectedQR) {
+            // Clear timeout when closing dialog
+            clearQRTimeout();
+            
             // Check if this instance was never connected, and if so, clean it up
             setTimeout(() => {
               const wasConnected = whatsappNumbers.some(num => 
@@ -403,18 +502,62 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                   }
                 })()}
 
-                <div className="p-4 bg-white rounded-lg">
+                {/* QR Code Container with expiration overlay */}
+                <div className="relative p-4 bg-white rounded-lg">
                   <img 
                     src={selectedQR.qrCode} 
                     alt="QR Code WhatsApp" 
-                    className="w-64 h-64"
+                    className={`w-64 h-64 ${qrExpired ? 'filter blur-sm opacity-50' : ''}`}
                   />
+                  
+                  {/* Expiration overlay with regenerate button */}
+                  {qrExpired && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                      <div className="text-center text-white">
+                        <p className="mb-4 font-medium">QR Code expirado</p>
+                        <Button 
+                          onClick={() => {
+                            console.log('🔄 User clicked regenerate QR button');
+                            regenerateQRMutation.mutate();
+                          }}
+                          disabled={regenerateQRMutation.isPending}
+                          className="bg-white text-black hover:bg-gray-100"
+                        >
+                          {regenerateQRMutation.isPending ? (
+                            <>
+                              <div className="w-4 h-4 mr-2 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                              Gerando...
+                            </>
+                          ) : (
+                            'Gerar Novo QR Code'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Countdown and instructions */}
                 <div className="text-center text-sm text-muted-foreground">
-                  <p>1. Abra o WhatsApp no seu celular</p>
-                  <p>2. Toque em Menu → Dispositivos conectados</p>
-                  <p>3. Toque em "Conectar um dispositivo"</p>
-                  <p>4. Aponte seu celular para esta tela para capturar o código</p>
+                  {!qrExpired && (
+                    <div className="mb-2">
+                      <p className={`font-medium ${countdown <= 10 ? 'text-orange-500' : 'text-blue-600'}`}>
+                        Código válido por: {countdown}s
+                      </p>
+                      {countdown <= 10 && (
+                        <p className="text-orange-500 text-xs">
+                          Código expirando em breve...
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="space-y-1">
+                    <p>1. Abra o WhatsApp no seu celular</p>
+                    <p>2. Toque em Menu → Dispositivos conectados</p>
+                    <p>3. Toque em "Conectar um dispositivo"</p>
+                    <p>4. Aponte seu celular para esta tela para capturar o código</p>
+                  </div>
                 </div>
               </div>
             )}

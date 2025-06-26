@@ -152,6 +152,59 @@ router.get('/api/whatsapp/status/:instanceName', async (req, res) => {
 
 // Old webhook endpoint removed - now handled by whatsapp-webhook-routes.ts
 
+// Regenerate QR code for existing instance
+router.post('/api/whatsapp/regenerate-qr', async (req, res) => {
+  try {
+    const { instanceName } = req.body;
+    
+    console.log('🔄 Regenerating QR code for instance:', instanceName);
+    
+    if (!instanceName) {
+      console.log('❌ Instance name is required for QR regeneration');
+      return res.status(400).json({ error: 'Instance name is required' });
+    }
+
+    // Validate instance exists in database
+    const storage = await getStorage();
+    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+    
+    if (!whatsappNumber) {
+      console.log('❌ Instance not found in database:', instanceName);
+      return res.status(404).json({ error: 'Instance not found' });
+    }
+
+    console.log('✅ Found instance in database:', {
+      id: whatsappNumber.id,
+      instanceName: whatsappNumber.instance_name,
+      status: whatsappNumber.status,
+      clinicId: whatsappNumber.clinic_id
+    });
+
+    // Call Evolution API to generate new QR code
+    const qrResult = await evolutionApi.getQRCode(instanceName);
+    
+    if (!qrResult.success) {
+      console.log('❌ Evolution API failed to generate QR:', qrResult.error);
+      return res.status(500).json({ error: qrResult.error });
+    }
+
+    console.log('✅ New QR code generated successfully for instance:', instanceName);
+
+    // Update database status to connecting (in case it was in error state)
+    await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'connecting');
+
+    res.json({ 
+      qrCode: qrResult.qrCode || qrResult.data?.qrCode || qrResult.data?.base64,
+      instanceName: instanceName,
+      regenerated: true,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error regenerating QR code:', error);
+    res.status(500).json({ error: 'Failed to regenerate QR code' });
+  }
+});
+
 // Disconnect WhatsApp number
 router.post('/api/whatsapp/disconnect/:id', async (req, res) => {
   try {
