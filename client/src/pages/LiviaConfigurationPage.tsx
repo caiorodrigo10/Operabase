@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Save, RefreshCw, Users, BookOpen, MessageSquare, Settings, Phone, Brain, Clock, UserCheck, Shield, Bot } from 'lucide-react';
+import { Loader2, Save, RefreshCw, Users, BookOpen, MessageSquare, Settings, Phone, Brain, Clock, UserCheck, Shield, Bot, ArrowLeft } from 'lucide-react';
+import { Link } from 'wouter';
 import { 
   useLiviaConfiguration, 
   useWhatsAppNumbers, 
@@ -112,6 +113,16 @@ export default function LiviaConfigurationPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl space-y-6">
+      {/* Back Button */}
+      <div className="mb-4">
+        <Link href="/trabalhadores-digitais">
+          <Button variant="outline" size="sm" className="flex items-center gap-2 hover:bg-white/80">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        </Link>
+      </div>
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

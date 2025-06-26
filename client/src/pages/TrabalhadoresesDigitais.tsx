@@ -1,18 +1,7 @@
 import { Bot, Users, BarChart3, BookOpen, ChevronLeft } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-
 export default function TrabalhadoresesDigitais() {
-  const { toast } = useToast();
-
-  const handleCardClick = (title: string, description: string) => {
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: `${title} estará disponível em breve`,
-      variant: "default",
-    });
-  };
 
   const assistants = [
     {
@@ -168,13 +157,10 @@ export default function TrabalhadoresesDigitais() {
                     </Link>
                   ) : (
                     <Button 
-                      className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white border-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(assistant.name, assistant.description);
-                      }}
+                      className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-gray-400 hover:bg-gray-500 text-white border-0"
+                      disabled
                     >
-                      Configurar {assistant.name}
+                      Em breve
                     </Button>
                   )}
                 </div>
