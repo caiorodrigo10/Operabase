@@ -297,6 +297,15 @@ export function MainConversationArea({
           onUpload={handleFileUpload}
         />
       )}
+
+      {/* Audio Recorder Modal */}
+      {showAudioRecorder && (
+        <AudioRecorder
+          isOpen={showAudioRecorder}
+          onClose={() => setShowAudioRecorder(false)}
+          onAudioReady={handleAudioReady}
+        />
+      )}
     </div>
   );
 }
