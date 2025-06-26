@@ -102,6 +102,8 @@ export function MainConversationArea({
     }
   };
 
+
+
   const handleFileUpload = async (files: File[], caption?: string) => {
     if (!selectedConversationId) {
       console.error('❌ No selectedConversationId for file upload');

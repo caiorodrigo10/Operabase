@@ -47,8 +47,16 @@ export function AudioRecorder({ isOpen, onClose, onAudioReady }: AudioRecorderPr
   // Auto-fechar quando áudio estiver pronto e for enviado
   const handleSendAudio = () => {
     if (audioFile) {
-      console.log('🎤 Sending audio and cleaning up resources');
+      console.log('🎤 AudioRecorder: Sending audio file to MainConversationArea', {
+        fileName: audioFile.name,
+        fileSize: audioFile.size,
+        fileType: audioFile.type,
+        duration: duration
+      });
+      
       onAudioReady(audioFile);
+      
+      console.log('🎤 AudioRecorder: Audio sent, cleaning up resources');
       // Limpar recursos IMEDIATAMENTE após envio
       reset();
       onClose();
