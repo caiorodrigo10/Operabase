@@ -18,7 +18,7 @@ const upload = multer({
     const allowedTypes = [
       'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
       'video/mp4', 'video/mov', 'video/avi', 'video/webm',
-      'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/webm',
+      'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/webm', 'audio/mp4',
       'application/pdf', 'application/msword', 
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain'
@@ -604,15 +604,27 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
     upload.single('file'),
     async (req: any, res: Response) => {
       console.log('📥 N8N Upload request received');
-      console.log('🔍 Headers:', {
-        'content-type': req.headers['content-type'],
+      console.log('🔍 Request Details:', {
+        method: req.method,
+        url: req.url,
+        ip: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+      console.log('🔍 All Headers:', req.headers);
+      console.log('🔍 Content-Type:', req.headers['content-type']);
+      console.log('🔍 File Info Headers:', {
         'x-filename': req.headers['x-filename'],
         'x-mime-type': req.headers['x-mime-type'],
         'x-conversation-id': req.headers['x-conversation-id'],
-        'x-clinic-id': req.headers['x-clinic-id']
+        'x-clinic-id': req.headers['x-clinic-id'],
+        'x-caption': req.headers['x-caption'],
+        'x-whatsapp-message-id': req.headers['x-whatsapp-message-id'],
+        'x-timestamp': req.headers['x-timestamp']
       });
 
       try {
+        console.log('🔍 Processing file data...');
+        
         // Extrair dados do arquivo (multer ou headers)
         let fileData: Buffer;
         let filename: string;
@@ -620,15 +632,31 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         
         if (req.file) {
           // Via multipart/form-data
+          console.log('📂 File received via multipart/form-data:', {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            hasBuffer: !!req.file.buffer
+          });
           fileData = req.file.buffer;
           filename = req.file.originalname;
           mimeType = req.file.mimetype;
         } else if (req.n8nFile) {
           // Via binary stream
+          console.log('📂 File received via binary stream:', {
+            filename: req.n8nFile.filename,
+            mimeType: req.n8nFile.mimeType,
+            size: req.n8nFile.buffer?.length,
+            hasBuffer: !!req.n8nFile.buffer
+          });
           fileData = req.n8nFile.buffer;
           filename = req.n8nFile.filename;
           mimeType = req.n8nFile.mimeType;
         } else {
+          console.log('❌ No file data found in request');
+          console.log('🔍 Request file:', req.file);
+          console.log('🔍 Request n8nFile:', req.n8nFile);
+          console.log('🔍 Request body keys:', Object.keys(req.body || {}));
           return res.status(400).json({
             success: false,
             error: 'No file data received',
@@ -640,7 +668,15 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         const conversationId = req.headers['x-conversation-id'] || req.body.conversationId;
         const clinicId = parseInt(req.headers['x-clinic-id'] || req.body.clinicId);
         
+        console.log('🔍 Parameter extraction:', {
+          conversationId,
+          clinicId,
+          clinicIdRaw: req.headers['x-clinic-id'] || req.body.clinicId,
+          isClinicIdValid: !isNaN(clinicId)
+        });
+        
         if (!conversationId) {
+          console.log('❌ Missing conversation ID');
           return res.status(400).json({
             success: false,
             error: 'Missing conversation ID',
@@ -649,6 +685,11 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         }
 
         if (!clinicId || isNaN(clinicId)) {
+          console.log('❌ Invalid clinic ID:', {
+            provided: req.headers['x-clinic-id'] || req.body.clinicId,
+            parsed: clinicId,
+            isNaN: isNaN(clinicId)
+          });
           return res.status(400).json({
             success: false,
             error: 'Missing or invalid clinic ID',
@@ -732,7 +773,14 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         });
 
       } catch (error) {
-        console.error('❌ N8N Upload error:', error);
+        console.error('❌ N8N Upload error:', {
+          error: error instanceof Error ? error.message : error,
+          stack: error instanceof Error ? error.stack : undefined,
+          conversationId: req.headers['x-conversation-id'],
+          clinicId: req.headers['x-clinic-id'],
+          filename: req.headers['x-filename'],
+          mimeType: req.headers['x-mime-type']
+        });
         
         const errorMessage = error instanceof Error ? error.message : 'Internal server error';
         
