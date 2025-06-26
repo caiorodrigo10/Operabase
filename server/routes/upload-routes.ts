@@ -145,11 +145,24 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         if (instanceCheckResponse.ok) {
           const instances = await instanceCheckResponse.json();
           console.log('✅ STEP 4.4: Instâncias disponíveis:', instances.length);
-          const activeInstance = instances.find((inst: any) => inst.instance.instanceName === instanceName);
+          if (instances && instances.length > 0) {
+            console.log('🔍 STEP 4.4: Estrutura da primeira instância:', JSON.stringify(instances[0], null, 2));
+          } else {
+            console.log('❌ STEP 4.4: Nenhuma instância retornada pela Evolution API');
+          }
+          
+          // Corrigir estrutura de acesso - testar diferentes possibilidades
+          const activeInstance = instances.find((inst: any) => {
+            const instName = inst.instanceName || inst.instance?.instanceName || inst.name;
+            return instName === instanceName;
+          });
+          
           if (activeInstance) {
-            console.log('✅ STEP 4.4: Instância ativa:', activeInstance.instance.status);
+            const status = activeInstance.status || activeInstance.instance?.status || 'unknown';
+            console.log('✅ STEP 4.4: Instância ativa:', status);
           } else {
             console.error('❌ STEP 4.4: Instância não encontrada na Evolution API');
+            console.log('🔍 STEP 4.4: Instâncias encontradas:', instances.map((inst: any) => inst.instanceName || inst.instance?.instanceName || inst.name));
           }
         } else {
           console.error('❌ STEP 4.4: Falha ao verificar instâncias:', instanceCheckResponse.status);
