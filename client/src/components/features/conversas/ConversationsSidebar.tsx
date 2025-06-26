@@ -6,6 +6,26 @@ import { Conversation, ConversationFilter } from "@/types/conversations";
 import { cn } from "@/lib/utils";
 import { Search, Bot, Calendar } from "lucide-react";
 
+// Função helper para formatação segura de horário
+const formatTimestamp = (timestamp: string | null | undefined): string => {
+  if (!timestamp) return '';
+  
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'America/Sao_Paulo'
+    });
+  } catch (error) {
+    console.error('Error formatting timestamp:', error);
+    return '';
+  }
+};
+
 interface ConversationsSidebarProps {
   conversations: Conversation[];
   selectedConversationId?: number;
@@ -109,13 +129,8 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
             )}>
               {conversation.patient_name}
             </h3>
-            <span className="text-xs text-gray-400 flex-shrink-0">
-              {conversation.last_message_at ? new Date(conversation.last_message_at).toLocaleTimeString('pt-BR', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false,
-                timeZone: 'America/Sao_Paulo'
-              }) : ''}
+            <span className="text-xs text-gray-400 flex-shrink-0 min-w-[50px]">
+              {formatTimestamp(conversation.last_message_at || conversation.timestamp)}
             </span>
           </div>
 
