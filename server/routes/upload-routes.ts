@@ -105,9 +105,28 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       
       // 4. BYPASS DIRETO para Evolution API /sendWhatsAppAudio
       try {
-        const conversation = await storage.getConversationWithContact(conversationId);
-        const instances = await storage.getWhatsAppInstances(1);
-        const activeInstance = instances.find(i => i.status === 'open');
+        // Buscar conversa e contato via query direta no Supabase
+        const { data: conversation } = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            contact_id,
+            contacts!inner(
+              id,
+              phone,
+              name
+            )
+          `)
+          .eq('id', conversationId)
+          .single();
+        
+        // Buscar instâncias WhatsApp via query direta
+        const { data: instances } = await supabase
+          .from('whatsapp_numbers')
+          .select('*')
+          .eq('clinic_id', 1)
+          .eq('status', 'open');
+        const activeInstance = instances && instances.length > 0 ? instances[0] : null;
         
         if (conversation && activeInstance) {
           console.log('🎤 BYPASS: Enviando direto para /sendWhatsAppAudio');
