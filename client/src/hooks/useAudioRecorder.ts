@@ -276,10 +276,27 @@ TENTE:
 
   // Stop recording
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && recordingState === 'recording') {
+    console.log('🎵 Stopping recording...');
+    console.log('🎵 MediaRecorder state:', mediaRecorderRef.current?.state);
+    console.log('🎵 Current recording state:', recordingState);
+    
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log('🎵 Actually stopping MediaRecorder...');
       mediaRecorderRef.current.stop();
     }
-  }, [recordingState]);
+    
+    // Force stop the stream to release microphone immediately
+    if (streamRef.current) {
+      console.log('🎵 Stopping media stream tracks...');
+      streamRef.current.getTracks().forEach(track => {
+        console.log('🎵 Stopping track:', track.label, track.readyState);
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+    
+    stopTimer();
+  }, [recordingState, stopTimer]);
 
   // Pause recording
   const pauseRecording = useCallback(() => {
