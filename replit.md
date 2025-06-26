@@ -156,6 +156,14 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - Clean File Message Display Implementation ✅
+- **Hide Auto-Generated Names**: Messages with files no longer show system-generated filenames automatically
+- **Smart Content Filtering**: Implemented intelligent detection of auto-generated vs meaningful text content
+- **User Text Priority**: Only displays text content when users intentionally write messages with file attachments
+- **Pattern Recognition**: Detects common auto-generated patterns (timestamps, file extensions, system messages)
+- **Clean Interface**: File attachments appear without clutter, showing only relevant user-written text
+- **Consistent Behavior**: Applied to all file types (audio, images, documents, videos)
+
 ### June 26, 2025 - Audio Playback System Fixed & Real HTML5 Audio Implementation ✅
 - **Fixed Audio Playback**: Replaced mock timer-based audio simulation with real HTML5 audio elements
 - **Supabase Storage Integration**: Audio files from Supabase Storage now play correctly using signed URLs
