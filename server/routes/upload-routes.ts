@@ -133,21 +133,26 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           throw new Error('EVOLUTION_API_KEY não configurada');
         }
         
-        // Create a simpler public URL for Evolution API
+        // Create temporary signed URL with shorter expiration for Evolution API
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
           process.env.SUPABASE_URL!, 
           process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
         
-        // Create a shorter URL without long tokens
-        const { data: publicUrlData } = await supabase.storage
+        // Create signed URL with 2 hour expiration (enough for Evolution API processing)
+        const { data: shortSignedData, error: shortSignedError } = await supabase.storage
           .from('conversation-attachments')
-          .getPublicUrl(storageResult.storage_path);
+          .createSignedUrl(storageResult.storage_path, 2 * 60 * 60); // 2 hours
+        
+        if (shortSignedError) {
+          console.error('❌ Erro ao gerar URL temporária:', shortSignedError);
+          throw new Error('Falha ao criar URL de acesso temporário');
+        }
         
         const whatsappPayload = {
           number: phoneNumber,
-          audio: publicUrlData.publicUrl
+          audio: shortSignedData.signedUrl
         };
           
           const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`, {

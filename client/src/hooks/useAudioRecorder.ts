@@ -53,9 +53,19 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       streamRef.current = stream;
       audioChunksRef.current = [];
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      // Try OGG first (WhatsApp native), fallback to WebM if not supported
+      let mimeType = 'audio/ogg;codecs=opus';
+      let fileExtension = 'ogg';
+      
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm;codecs=opus';
+        fileExtension = 'webm';
+        console.log('⚠️ OGG not supported, using WebM');
+      } else {
+        console.log('✅ Using OGG format (WhatsApp native)');
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       
       mediaRecorderRef.current = mediaRecorder;
 
@@ -69,16 +79,16 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
         console.log('🎤 Recording stopped, processing audio...');
         
         const audioBlob = new Blob(audioChunksRef.current, { 
-          type: 'audio/webm;codecs=opus' 
+          type: mimeType 
         });
         
         const audioUrl = URL.createObjectURL(audioBlob);
         
-        // Create audio file
+        // Create audio file with dynamic extension
         const audioFile = new File(
           [audioBlob], 
-          `gravacao_${Date.now()}.webm`, 
-          { type: 'audio/webm;codecs=opus' }
+          `gravacao_${Date.now()}.${fileExtension}`, 
+          { type: mimeType }
         );
 
         // Get the actual recording duration from the timer
