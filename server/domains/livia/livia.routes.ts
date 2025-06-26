@@ -32,9 +32,10 @@ export function createLiviaRoutes(storage: IStorage): Router {
   });
 
   // POST /api/livia/config - Create new Livia configuration
-  router.post('/livia/config', requireAuth, async (req, res) => {
+  router.post('/livia/config', isAuthenticated, async (req, res) => {
     try {
-      const clinicId = await getTenantId(req, storage);
+      const context = tenantContext.getContext();
+      const clinicId = context?.clinicId || (req.user as any)?.clinic_id || 1;
       
       // Validate request body
       const validatedData = insertLiviaConfigurationSchema.parse({
@@ -69,9 +70,10 @@ export function createLiviaRoutes(storage: IStorage): Router {
   });
 
   // PUT /api/livia/config - Update Livia configuration
-  router.put('/livia/config', requireAuth, async (req, res) => {
+  router.put('/livia/config', isAuthenticated, async (req, res) => {
     try {
-      const clinicId = await getTenantId(req, storage);
+      const context = tenantContext.getContext();
+      const clinicId = context?.clinicId || (req.user as any)?.clinic_id || 1;
       
       // Validate request body
       const validatedData = updateLiviaConfigurationSchema.parse(req.body);
@@ -101,9 +103,10 @@ export function createLiviaRoutes(storage: IStorage): Router {
   });
 
   // DELETE /api/livia/config - Delete Livia configuration
-  router.delete('/livia/config', requireAuth, async (req, res) => {
+  router.delete('/livia/config', isAuthenticated, async (req, res) => {
     try {
-      const clinicId = await getTenantId(req, storage);
+      const context = tenantContext.getContext();
+      const clinicId = context?.clinicId || (req.user as any)?.clinic_id || 1;
       
       const deleted = await storage.deleteLiviaConfiguration(clinicId);
       
@@ -123,9 +126,10 @@ export function createLiviaRoutes(storage: IStorage): Router {
   });
 
   // GET /api/livia/config/n8n - Special endpoint for N8N integration with enhanced data
-  router.get('/livia/config/n8n', requireAuth, async (req, res) => {
+  router.get('/livia/config/n8n', isAuthenticated, async (req, res) => {
     try {
-      const clinicId = await getTenantId(req, storage);
+      const context = tenantContext.getContext();
+      const clinicId = context?.clinicId || (req.user as any)?.clinic_id || 1;
       
       const config = await storage.getLiviaConfigurationForN8N(clinicId);
       
