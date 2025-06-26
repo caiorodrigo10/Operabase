@@ -132,7 +132,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   });
 
   // NOVO: Endpoint para invalidar cache e reordenar conversas em tempo real
-  app.patch('/api/conversations/:id/update-timestamp', async (req: Request, res: Response) => {
+  app.patch('/api/conversations-simple/:id/update-timestamp', async (req: Request, res: Response) => {
     try {
       const conversationId = req.params.id;
       const clinicId = 1; // Hardcoded for testing
@@ -142,15 +142,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Invalidar cache Redis para forçar reload
       await redisCacheService.invalidateConversations(clinicId);
       
-      // ETAPA 2: Emitir evento WebSocket para atualização em tempo real
-      const webSocketServer = getWebSocketServer();
-      if (webSocketServer) {
-        webSocketServer.emitToClinic(clinicId, 'conversation:updated', {
-          conversationId,
-          timestamp: new Date().toISOString()
-        });
-        console.log('📡 WebSocket event emitted: conversation:updated');
-      }
+      // ETAPA 2: Cache invalidation para reordenação automática
+      console.log('📡 Cache invalidated for real-time conversation reordering');
       
       res.json({ success: true, message: 'Conversation timestamp updated' });
       
