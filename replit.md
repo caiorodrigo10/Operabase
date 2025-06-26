@@ -156,6 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - N8N File Upload System Complete Implementation ✅
+- **Complete N8N Integration**: Sistema completo de recebimento de arquivos via N8N API funcionando em produção
+- **Caption Logic Perfect**: Arquivos SEM caption mostram mensagem vazia (só anexo), COM caption mostram texto do cliente
+- **Backend Robust**: API `/api/n8n/upload` com autenticação, sanitização de headers e rate limiting
+- **Storage Organized**: Supabase Storage com estrutura organizada por clínica/conversa/categoria
+- **Database Consistent**: Mensagens e anexos relacionados corretamente com timestamps GMT-3
+- **Frontend Clean**: Interface limpa exibindo arquivos com texto opcional do cliente
+- **Security Complete**: Headers sanitizados, API key de 64 chars, timeout protection
+- **File Types Supported**: Imagens, áudios, vídeos, documentos com MIME type detection
+- **WhatsApp Integration**: Metadados do WhatsApp preservados para sincronização
+- **Error Recovery**: Sistema robusto com fallback e tratamento de erros completo
+- **Documentation**: Documentação técnica completa criada em N8N-FILE-UPLOAD-SYSTEM-DOCUMENTATION.md
+- **Production Ready**: Sistema testado e validado recebendo arquivos reais via WhatsApp/N8N
+
 ### June 26, 2025 - Smart Timestamp System Implementation ✅
 - **Real Last Message Detection**: Backend now uses actual timestamp from latest message instead of conversation.updated_at
 - **Intelligent Date Formatting**: Messages from today show time format (14:30), other days show date format (25 Jun, 2 Jan)
