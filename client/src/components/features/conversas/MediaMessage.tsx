@@ -107,7 +107,7 @@ export function MediaMessage({
   // Initialize audio element when media_url changes
   useEffect(() => {
     if (media_url && (actualMediaType === 'audio' || actualMediaType === 'audio_file')) {
-      console.log('🎵 Initializing audio player:', { media_url, actualMediaType });
+      // Initialize audio player for Supabase Storage files
       
       // Create audio element
       const audio = new Audio();
@@ -147,7 +147,7 @@ export function MediaMessage({
       };
 
       const handleCanPlay = () => {
-        console.log('🎵 Audio can play:', { duration: audio.duration, readyState: audio.readyState });
+        // Audio is ready to play
       };
       
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);

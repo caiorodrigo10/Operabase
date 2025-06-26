@@ -156,6 +156,15 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - Audio Playback System Fixed & Real HTML5 Audio Implementation ✅
+- **Fixed Audio Playback**: Replaced mock timer-based audio simulation with real HTML5 audio elements
+- **Supabase Storage Integration**: Audio files from Supabase Storage now play correctly using signed URLs
+- **Real-time Progress**: Implemented proper audio timeline tracking, seeking, and play/pause controls
+- **Error Handling**: Added comprehensive error detection for codec issues and network problems
+- **Cross-browser Support**: Removed CORS restrictions that were blocking audio playback
+- **Debug System**: Enhanced logging to identify and resolve audio format compatibility issues
+- **User Confirmed**: Audio playback now working correctly for both sent and received audio messages
+
 ### June 26, 2025 - Audio MP4 Support Added to N8N Integration ✅
 - **Audio MP4 Files**: Added support for audio/mp4 MIME type in Evolution API mapping
 - **MIME Type Validation**: Updated evolutionTypeMapping to include 'audio/mp4': 'audio'
