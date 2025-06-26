@@ -142,6 +142,10 @@ app.use((req, res, next) => {
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
   
+  // Setup isolated audio voice routes (bypass for recorded audio)
+  const { setupAudioVoiceRoutes } = await import('./routes/audio-voice-routes');
+  setupAudioVoiceRoutes(app, storage);
+  
   // Supabase Storage schema already exists - no need to apply
   
   // Add MCP logging middleware for all MCP routes
