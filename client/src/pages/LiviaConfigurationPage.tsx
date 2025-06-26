@@ -38,6 +38,15 @@ export default function LiviaConfigurationPage() {
   const { data: professionals, isLoading: professionalsLoading } = useProfessionals();
   const { data: knowledgeBases, isLoading: knowledgeBasesLoading } = useKnowledgeBases();
   
+  // Debug logs
+  console.log('🔍 Livia Config Debug - Data:', {
+    config,
+    whatsappNumbers,
+    professionals: professionals,
+    knowledgeBases: knowledgeBases,
+    isLoading: { configLoading, whatsappLoading, professionalsLoading, knowledgeBasesLoading }
+  });
+  
   // Mutations
   const createConfig = useCreateLiviaConfiguration();
   const updateConfig = useUpdateLiviaConfiguration();
