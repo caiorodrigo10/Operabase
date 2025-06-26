@@ -96,6 +96,18 @@ export function MainConversationArea({
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Debug logs for interface state
+  console.log('🔍 Interface State Check:', {
+    recordingState,
+    recordingTime,
+    hasAudioBlob: !!audioBlob,
+    hasAudioUrl: !!audioUrl,
+    shouldShowRedBlock: recordingState === 'recording',
+    shouldShowBlueBlock: recordingState === 'stopped' && !!audioUrl,
+    isAudioSupported,
+    audioError
+  });
+
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
     if (messagesEndRef.current && timelineItems.length > 0) {
@@ -153,10 +165,25 @@ export function MainConversationArea({
   };
 
   const handleMicrophoneClick = async () => {
+    console.log('🎤 Microphone clicked! Current state:', {
+      recordingState,
+      recordingTime,
+      audioBlob: !!audioBlob,
+      audioUrl: !!audioUrl,
+      isAudioSupported
+    });
+
     if (recordingState === 'recording') {
+      console.log('🎤 Stopping recording...');
       stopRecording();
     } else {
-      await startRecording();
+      console.log('🎤 Starting recording...');
+      try {
+        await startRecording();
+        console.log('🎤 Recording started successfully');
+      } catch (error) {
+        console.error('🎤 Error starting recording:', error);
+      }
     }
   };
 
@@ -281,6 +308,7 @@ export function MainConversationArea({
       {/* Recording Interface - RED BLOCK */}
       {recordingState === 'recording' && (
         <div className="flex-shrink-0 bg-red-50 border-t border-red-200 p-4">
+          {console.log('🔴 RED BLOCK IS RENDERING - Recording in progress')}
           <div className="flex items-center justify-between bg-red-500 text-white p-3 rounded-lg">
             <div className="flex items-center space-x-3">
               <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
@@ -302,6 +330,7 @@ export function MainConversationArea({
       {/* Audio Preview Interface - BLUE BLOCK */}
       {recordingState === 'stopped' && audioUrl && (
         <div className="flex-shrink-0 bg-blue-50 border-t border-blue-200 p-4">
+          {console.log('🔵 BLUE BLOCK IS RENDERING - Audio ready for preview')}
           <div className="bg-blue-500 text-white p-3 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">

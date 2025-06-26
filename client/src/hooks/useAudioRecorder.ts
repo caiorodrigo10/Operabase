@@ -48,6 +48,7 @@ export function useAudioRecorder(): AudioRecorderHook {
 
   // Start recording
   const startRecording = useCallback(async () => {
+    console.log('🎤 useAudioRecorder: startRecording called');
     console.log('🎵 Starting audio recording...');
     
     if (!isSupported) {
