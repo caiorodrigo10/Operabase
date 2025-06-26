@@ -521,12 +521,20 @@ export class ConversationUploadService {
         throw new Error('Evolution API Key não configurada');
       }
 
-      // ETAPA 6: Detectar se é mensagem de voz e usar endpoint específico com retry logic
+      // Detectar se é mensagem de voz gravada vs arquivo de áudio
       const isVoiceMessage = params.messageType === 'audio_voice' || 
-                            (params.mediaType === 'audio' && params.fileName?.includes('recording'));
+                            params.fileName?.includes('gravacao_') ||
+                            params.fileName?.toLowerCase().includes('recording');
+      
+      console.log('🔍 Audio detection:', {
+        messageType: params.messageType,
+        fileName: params.fileName,
+        isVoiceMessage,
+        mediaType: params.mediaType
+      });
       
       if (isVoiceMessage) {
-        console.log('🎤 ETAPA 6: Using WhatsApp Audio endpoint with intelligent retry');
+        console.log('🎤 Using /sendWhatsAppAudio endpoint for voice message');
         
         return await this.retryWithBackoff(async () => {
           return await this.sendWhatsAppAudio({
@@ -539,19 +547,17 @@ export class ConversationUploadService {
         });
       }
 
-      // Para outros tipos de mídia, usar endpoint genérico com retry logic
-      console.log('📎 ETAPA 6: Using generic media endpoint with intelligent retry');
-      return await this.retryWithBackoff(async () => {
-        return await this.sendGenericMedia({
-          instanceName: activeInstance.instance_name,
-          number: conversation.contact.phone,
-          mediaType: params.mediaType,
-          mediaUrl: params.mediaUrl,
-          fileName: params.fileName,
-          caption: params.caption,
-          evolutionUrl,
-          evolutionApiKey
-        });
+      // Para outros tipos de mídia, usar endpoint genérico
+      console.log('📎 Using /sendMedia endpoint for media file');
+      return await this.sendGenericMedia({
+        instanceName: activeInstance.instance_name,
+        number: conversation.contact.phone,
+        mediaType: params.mediaType,
+        mediaUrl: params.mediaUrl,
+        fileName: params.fileName,
+        caption: params.caption,
+        evolutionUrl,
+        evolutionApiKey
       });
 
     } catch (error) {
