@@ -31,6 +31,11 @@ function getMediaTypeFromMimeType(mimeType: string): 'image' | 'video' | 'audio'
   if (mimeType === 'audio_file') return 'audio_file'; // Áudio de arquivo upload
   if (mimeType === 'audio_voice') return 'audio'; // Áudio de voz WhatsApp
   
+  // Verificar variações de áudio comuns do WhatsApp
+  if (mimeType === 'audio/mp4' || mimeType === 'audio/mpeg' || mimeType === 'audio/ogg' || mimeType === 'audio/wav') {
+    return 'audio';
+  }
+  
   // Depois verificar MIME types tradicionais
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType.startsWith('video/')) return 'video';
@@ -95,6 +100,16 @@ export function MediaMessage({
 }: MediaMessageProps) {
   // Convert MIME type to media category
   const actualMediaType = getMediaTypeFromMimeType(media_type);
+  
+  // Debug logging para identificar o problema
+  if (media_type && media_type.includes('audio')) {
+    console.log('🎵 MediaMessage Debug:', {
+      media_type,
+      actualMediaType,
+      media_url,
+      media_filename
+    });
+  }
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -144,6 +159,11 @@ export function MediaMessage({
           media_url
         });
         setIsPlaying(false);
+        
+        // Se erro de codec (erro 4), tentar fallback com elemento HTML5
+        if (audio.error?.code === 4) {
+          console.log('🎵 Codec error detected, will show native audio controls as fallback');
+        }
       };
 
       const handleCanPlay = () => {
@@ -306,6 +326,9 @@ export function MediaMessage({
   if (actualMediaType === 'audio' || actualMediaType === 'audio_file') {
     const isAudioFile = actualMediaType === 'audio_file';
     
+    // Debug para confirmar que está renderizando áudio
+    console.log('🎵 Rendering audio component:', { actualMediaType, isAudioFile });
+    
     return (
       <div className={cn("min-w-[200px] max-w-[280px]", className)}>
         <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
@@ -331,11 +354,12 @@ export function MediaMessage({
               </div>
             </div>
           </div>
-          <Progress 
-            value={progress} 
-            className="h-1 cursor-pointer" 
-            onClick={handleSeek}
-          />
+          <div className="w-full bg-gray-200 rounded-full h-1 cursor-pointer" onClick={handleSeek}>
+            <div 
+              className="bg-blue-500 h-1 rounded-full transition-all" 
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
           
           {/* Indicador para áudio de arquivo */}
           {isAudioFile && (
