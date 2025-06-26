@@ -85,17 +85,24 @@ export function useAudioRecorder(): AudioRecorderHook {
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
 
-      // Handle data available
+      // Handle data available - only collect when manually stopped
       mediaRecorder.ondataavailable = (event) => {
-        console.log('🎵 Data available, size:', event.data.size);
-        if (event.data.size > 0) {
+        console.log('🎵 Data available, size:', event.data.size, 'state:', mediaRecorder.state);
+        if (event.data.size > 0 && mediaRecorder.state !== 'recording') {
+          // Only save chunks when recording is actually stopped by user
           chunksRef.current.push(event.data);
+          console.log('🎵 Chunk saved, total chunks:', chunksRef.current.length);
+        } else if (mediaRecorder.state === 'recording') {
+          console.log('🎵 Ignoring data while recording is active');
         }
       };
 
       // Handle recording stop
       mediaRecorder.onstop = () => {
         console.log('🎵 Recording stopped, creating blob...');
+        console.log('🎵 Chunks collected:', chunksRef.current.length);
+        console.log('🎵 Total size:', chunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0), 'bytes');
+        
         if (chunksRef.current.length === 0) {
           console.warn('⚠️ No audio data collected');
           setError('Nenhum áudio foi gravado. Tente novamente.');
@@ -103,7 +110,19 @@ export function useAudioRecorder(): AudioRecorderHook {
           return;
         }
         
-        const blob = new Blob(chunksRef.current, { type: mimeType });
+        // Filter out empty chunks
+        const validChunks = chunksRef.current.filter(chunk => chunk.size > 0);
+        console.log('🎵 Valid chunks after filtering:', validChunks.length);
+        
+        if (validChunks.length === 0) {
+          console.warn('⚠️ No valid audio chunks');
+          setError('Nenhum áudio foi gravado. Tente novamente.');
+          setRecordingState('idle');
+          return;
+        }
+        
+        const blob = new Blob(validChunks, { type: mimeType });
+        console.log('🎵 Final blob size:', blob.size, 'bytes');
         setAudioBlob(blob);
         
         // Create URL for preview
@@ -123,9 +142,9 @@ export function useAudioRecorder(): AudioRecorderHook {
         stopTimer();
       };
 
-      // Start recording without collection interval to avoid auto-stop
+      // Start recording with longer collection interval to avoid auto-stop
       console.log('🎵 Starting MediaRecorder...');
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Collect data every second instead of immediately
       
       // Start timer
       startTimer();
