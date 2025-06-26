@@ -180,14 +180,10 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           throw new Error('EVOLUTION_API_KEY não configurada');
         }
         
-        // Usar mesmo formato que funciona no sistema de mídia existente
+        // Formato específico para /sendWhatsAppAudio conforme documentação Evolution API V2
         const whatsappPayload = {
           number: phoneNumber,
-          mediaMessage: {
-            mediaType: 'audio',
-            media: storageResult.signed_url,
-            fileName: filename
-          }
+          audio: storageResult.signed_url
         };
           
           console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
