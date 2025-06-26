@@ -35,6 +35,8 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
   const streamRef = useRef<MediaStream | null>(null);
   const audioReadyCallbackRef = useRef<((audioFile: File) => void) | null>(null);
   const volumeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingStartTimeRef = useRef<number>(0);
 
   const startRecording = useCallback(async () => {
     try {
@@ -79,11 +81,16 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
           { type: 'audio/webm;codecs=opus' }
         );
 
+        // Get the actual recording duration from the timer
+        const recordingDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
+        
         setState(prev => ({
           ...prev,
           isRecording: false,
           audioUrl,
-          volume: 0
+          volume: 0,
+          duration: recordingDuration,
+          currentTime: 0
         }));
 
         // Trigger callback with audio file
@@ -100,6 +107,9 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
 
       mediaRecorder.start(1000); // Collect data every 1 second
       
+      // Start recording timer
+      recordingStartTimeRef.current = Date.now();
+      
       setState(prev => ({
         ...prev,
         isRecording: true,
@@ -107,6 +117,15 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
         duration: 0,
         currentTime: 0
       }));
+
+      // Start recording timer to track duration
+      recordingTimerRef.current = setInterval(() => {
+        const elapsed = (Date.now() - recordingStartTimeRef.current) / 1000;
+        setState(prev => ({
+          ...prev,
+          currentTime: elapsed
+        }));
+      }, 100);
 
       // Start volume monitoring
       const audioContext = new AudioContext();
@@ -144,9 +163,15 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       mediaRecorderRef.current.stop();
     }
     
+    // Stop all timers
     if (volumeIntervalRef.current) {
       clearInterval(volumeIntervalRef.current);
       volumeIntervalRef.current = null;
+    }
+    
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
     }
   }, [state.isRecording]);
 
@@ -155,8 +180,11 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       if (!audioRef.current) {
         audioRef.current = new Audio(state.audioUrl);
         
+        // Set loop to false to prevent infinite playback
+        audioRef.current.loop = false;
+        
         audioRef.current.ontimeupdate = () => {
-          if (audioRef.current) {
+          if (audioRef.current && !audioRef.current.ended) {
             setState(prev => ({
               ...prev,
               currentTime: audioRef.current!.currentTime
@@ -165,7 +193,8 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
         };
         
         audioRef.current.onloadedmetadata = () => {
-          if (audioRef.current) {
+          if (audioRef.current && isFinite(audioRef.current.duration)) {
+            // Only update duration if it's a valid finite number
             setState(prev => ({
               ...prev,
               duration: audioRef.current!.duration
@@ -180,9 +209,24 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
             currentTime: 0
           }));
         };
+
+        audioRef.current.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          setState(prev => ({
+            ...prev,
+            isPlaying: false
+          }));
+        };
       }
       
-      audioRef.current.play();
+      audioRef.current.play().catch(error => {
+        console.error('Failed to play audio:', error);
+        setState(prev => ({
+          ...prev,
+          isPlaying: false
+        }));
+      });
+      
       setState(prev => ({
         ...prev,
         isPlaying: true
@@ -212,10 +256,15 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       audioRef.current = null;
     }
     
-    // Clear intervals
+    // Clear all intervals
     if (volumeIntervalRef.current) {
       clearInterval(volumeIntervalRef.current);
       volumeIntervalRef.current = null;
+    }
+    
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
     }
     
     // Clean up stream
@@ -228,6 +277,9 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
     if (state.audioUrl) {
       URL.revokeObjectURL(state.audioUrl);
     }
+    
+    // Reset timers
+    recordingStartTimeRef.current = 0;
     
     // Reset state
     setState({
