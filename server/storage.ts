@@ -2,7 +2,7 @@ import {
   users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
   clinic_users, clinic_invitations, calendar_integrations, medical_records, password_reset_tokens,
-  appointment_tags,
+  appointment_tags, livia_configurations,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
@@ -20,6 +20,7 @@ import {
   type MedicalRecord, type InsertMedicalRecord,
   type PasswordResetToken, type InsertPasswordResetToken,
   type AppointmentTag, type InsertAppointmentTag,
+  type LiviaConfiguration, type InsertLiviaConfiguration, type UpdateLiviaConfiguration,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -181,6 +182,20 @@ export interface IStorage {
   createAttachment(attachment: any): Promise<any>;
   getActiveWhatsAppInstance(clinicId: number): Promise<any>;
   getConversationById(id: string): Promise<any>;
+
+  // Livia AI Configuration
+  getLiviaConfiguration(clinicId: number): Promise<LiviaConfiguration | undefined>;
+  createLiviaConfiguration(config: InsertLiviaConfiguration): Promise<LiviaConfiguration>;
+  updateLiviaConfiguration(clinicId: number, updates: Partial<UpdateLiviaConfiguration>): Promise<LiviaConfiguration | undefined>;
+  deleteLiviaConfiguration(clinicId: number): Promise<boolean>;
+  getLiviaConfigurationForN8N(clinicId: number): Promise<{
+    clinic_id: number;
+    general_prompt: string;
+    whatsapp_number?: string;
+    off_settings: { duration: number; unit: string };
+    professionals: Array<{ id: number; name: string; specialty?: string }>;
+    knowledge_bases: Array<{ id: number; name: string; description?: string }>;
+  } | undefined>;
 }
 
 export class MemStorage implements IStorage {

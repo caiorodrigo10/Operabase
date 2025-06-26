@@ -7,7 +7,9 @@ import {
 } from "./domains/auth/auth.schema";
 
 import { 
-  whatsapp_numbers, message_attachments
+  whatsapp_numbers, message_attachments, livia_configurations,
+  type WhatsAppNumber, type InsertWhatsAppNumber,
+  type LiviaConfiguration, type InsertLiviaConfiguration, type UpdateLiviaConfiguration
 } from "../shared/schema";
 
 import { 
@@ -2244,6 +2246,108 @@ export class PostgreSQLStorage implements IStorage {
     } catch (error) {
       console.error('❌ Error getting conversation:', error);
       throw error;
+    }
+  }
+
+  // Livia AI Configuration Methods
+  async getLiviaConfiguration(clinicId: number): Promise<LiviaConfiguration | undefined> {
+    const [result] = await db.select()
+      .from(livia_configurations)
+      .where(eq(livia_configurations.clinic_id, clinicId));
+    return result;
+  }
+
+  async createLiviaConfiguration(config: InsertLiviaConfiguration): Promise<LiviaConfiguration> {
+    const [result] = await db.insert(livia_configurations)
+      .values(config)
+      .returning();
+    return result;
+  }
+
+  async updateLiviaConfiguration(clinicId: number, updates: Partial<UpdateLiviaConfiguration>): Promise<LiviaConfiguration | undefined> {
+    const [result] = await db.update(livia_configurations)
+      .set({ ...updates, updated_at: new Date() })
+      .where(eq(livia_configurations.clinic_id, clinicId))
+      .returning();
+    return result;
+  }
+
+  async deleteLiviaConfiguration(clinicId: number): Promise<boolean> {
+    const result = await db.delete(livia_configurations)
+      .where(eq(livia_configurations.clinic_id, clinicId));
+    return result.rowCount > 0;
+  }
+
+  async getLiviaConfigurationForN8N(clinicId: number): Promise<{
+    clinic_id: number;
+    general_prompt: string;
+    whatsapp_number?: string;
+    off_settings: { duration: number; unit: string };
+    professionals: Array<{ id: number; name: string; specialty?: string }>;
+    knowledge_bases: Array<{ id: number; name: string; description?: string }>;
+  } | undefined> {
+    try {
+      // Get Livia configuration
+      const config = await this.getLiviaConfiguration(clinicId);
+      if (!config) return undefined;
+
+      // Get WhatsApp number details if configured
+      let whatsappNumber;
+      if (config.whatsapp_number_id) {
+        const whatsapp = await this.getWhatsAppNumber(config.whatsapp_number_id);
+        whatsappNumber = whatsapp?.phone;
+      }
+
+      // Get professionals details
+      const professionals = [];
+      if (config.professional_ids && config.professional_ids.length > 0) {
+        const professionalsData = await db.select({
+          id: users.id,
+          name: users.name,
+          specialty: users.specialty
+        })
+        .from(users)
+        .where(sql`${users.id} = ANY(${config.professional_ids})`);
+        
+        professionals.push(...professionalsData.map(p => ({
+          id: p.id,
+          name: p.name || '',
+          specialty: p.specialty || undefined
+        })));
+      }
+
+      // Get knowledge bases details
+      const knowledgeBases = [];
+      if (config.knowledge_base_ids && config.knowledge_base_ids.length > 0) {
+        // Import rag_knowledge_bases from shared schema
+        const { rag_knowledge_bases } = await import("../shared/schema");
+        
+        const kbData = await db.select({
+          id: rag_knowledge_bases.id,
+          name: rag_knowledge_bases.name,
+          description: rag_knowledge_bases.description
+        })
+        .from(rag_knowledge_bases)
+        .where(sql`${rag_knowledge_bases.id} = ANY(${config.knowledge_base_ids})`);
+        
+        knowledgeBases.push(...kbData.map(kb => ({
+          id: kb.id,
+          name: kb.name,
+          description: kb.description || undefined
+        })));
+      }
+
+      return {
+        clinic_id: config.clinic_id,
+        general_prompt: config.general_prompt,
+        whatsapp_number: whatsappNumber,
+        off_settings: config.off_settings,
+        professionals,
+        knowledge_bases: knowledgeBases
+      };
+    } catch (error) {
+      console.error('Error getting Livia configuration for N8N:', error);
+      return undefined;
     }
   }
 }
