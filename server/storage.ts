@@ -175,6 +175,20 @@ export interface IStorage {
   updateWhatsAppConnectionFromWebhook(instanceName: string, updateData: any): Promise<boolean>;
   deleteWhatsAppNumber(id: number): Promise<boolean>;
   
+  // Livia Configuration methods
+  getLiviaConfiguration(clinicId: number): Promise<LiviaConfiguration | undefined>;
+  createLiviaConfiguration(config: InsertLiviaConfiguration): Promise<LiviaConfiguration>;
+  updateLiviaConfiguration(clinicId: number, updates: Partial<UpdateLiviaConfiguration>): Promise<LiviaConfiguration | undefined>;
+  deleteLiviaConfiguration(clinicId: number): Promise<boolean>;
+  getLiviaConfigurationForN8N(clinicId: number): Promise<{
+    clinic_id: number;
+    general_prompt: string;
+    whatsapp_number?: { id: number; phone_number: string };
+    off_settings: { duration: number; unit: string };
+    professionals: { id: string; name: string; specialty?: string }[];
+    knowledge_bases: { id: number; name: string; description?: string }[];
+  } | undefined>;
+  
   // Upload system methods
   getUserProfile(userId: string): Promise<{ clinic_id: number } | undefined>;
   createMessage(message: any): Promise<any>;
@@ -1129,6 +1143,32 @@ export class MemStorage implements IStorage {
 
   async deleteWhatsAppNumber(id: number): Promise<boolean> {
     return false;
+  }
+
+  // Livia Configuration stub methods
+  async getLiviaConfiguration(clinicId: number): Promise<LiviaConfiguration | undefined> {
+    console.log(`📝 MemStorage stub: get Livia config for clinic ${clinicId}`);
+    return undefined;
+  }
+
+  async createLiviaConfiguration(config: InsertLiviaConfiguration): Promise<LiviaConfiguration> {
+    console.log(`📝 MemStorage stub: create Livia config`, config);
+    throw new Error("MemStorage stub: Livia configuration not implemented");
+  }
+
+  async updateLiviaConfiguration(clinicId: number, updates: Partial<UpdateLiviaConfiguration>): Promise<LiviaConfiguration | undefined> {
+    console.log(`📝 MemStorage stub: update Livia config for clinic ${clinicId}`, updates);
+    return undefined;
+  }
+
+  async deleteLiviaConfiguration(clinicId: number): Promise<boolean> {
+    console.log(`📝 MemStorage stub: delete Livia config for clinic ${clinicId}`);
+    return false;
+  }
+
+  async getLiviaConfigurationForN8N(clinicId: number): Promise<any> {
+    console.log(`📝 MemStorage stub: get Livia config for N8N for clinic ${clinicId}`);
+    return undefined;
   }
 }
 

@@ -36,20 +36,54 @@ export function createLiviaRoutes(storage: IStorage): Router {
   // GET /api/livia/config - Get current Livia configuration for the clinic
   router.get('/livia/config', isAuthenticated, async (req, res) => {
     try {
+      console.log('🔍 LIVIA CONFIG DEBUG: Starting request');
+      console.log('🔍 LIVIA CONFIG DEBUG: User object:', JSON.stringify(req.user, null, 2));
+      
       const context = tenantContext.getContext();
+      console.log('🔍 LIVIA CONFIG DEBUG: Tenant context:', context);
+      
       const clinicId = context?.clinicId || (req.user as any)?.clinic_id || 1;
+      console.log('🔍 LIVIA CONFIG DEBUG: Clinic ID:', clinicId);
+      console.log('🔍 LIVIA CONFIG DEBUG: Storage object type:', typeof storage);
+      console.log('🔍 LIVIA CONFIG DEBUG: Storage constructor:', storage.constructor.name);
+      console.log('🔍 LIVIA CONFIG DEBUG: getLiviaConfiguration method exists?', typeof storage.getLiviaConfiguration === 'function');
       
       const config = await storage.getLiviaConfiguration(clinicId);
+      console.log('🔍 LIVIA CONFIG DEBUG: Got config result:', config);
       
       if (!config) {
-        return res.status(404).json({ 
-          error: 'Configuração da Livia não encontrada' 
-        });
+        console.log('⚠️ LIVIA CONFIG DEBUG: No configuration found, creating default one');
+        // Create default configuration
+        const defaultConfig = {
+          clinic_id: clinicId,
+          general_prompt: `Você é Livia, assistente virtual especializada da nossa clínica médica. Seja sempre empática, profissional e prestativa.
+
+Suas principais responsabilidades:
+- Responder dúvidas sobre procedimentos e horários
+- Auxiliar no agendamento de consultas
+- Fornecer informações gerais sobre a clínica
+- Identificar situações de urgência
+
+Mantenha um tom acolhedor e use linguagem simples. Em caso de dúvidas médicas específicas, sempre oriente a procurar um profissional.`,
+          whatsapp_number_id: null,
+          off_duration: 30,
+          off_unit: 'minutos',
+          selected_professional_ids: [],
+          connected_knowledge_base_ids: [],
+          is_active: true
+        };
+        
+        console.log('🔍 LIVIA CONFIG DEBUG: Attempting to create default config');
+        const createdConfig = await storage.createLiviaConfiguration(defaultConfig);
+        console.log('🔍 LIVIA CONFIG DEBUG: Created config:', createdConfig);
+        return res.json(createdConfig);
       }
       
+      console.log('✅ LIVIA CONFIG DEBUG: Configuration found:', config);
       res.json(config);
     } catch (error) {
-      console.error('Error getting Livia configuration:', error);
+      console.error('❌ LIVIA CONFIG DEBUG: Error getting Livia configuration:', error);
+      console.error('❌ LIVIA CONFIG DEBUG: Error stack:', error.stack);
       res.status(500).json({ 
         error: 'Erro interno do servidor ao buscar configuração da Livia' 
       });
