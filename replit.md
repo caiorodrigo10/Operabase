@@ -156,14 +156,15 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 26, 2025 - Audio Recording System Complete with WhatsApp Voice Message Integration ✅
-- **Funcionalidade Completa**: Sistema de gravação de áudio totalmente funcional com mensagens de voz nativas no WhatsApp
+### June 26, 2025 - Audio Recording System Complete with WhatsApp Integration ✅
+- **Funcionalidade Completa**: Sistema de gravação de áudio totalmente funcional enviando para WhatsApp
 - **Rota Isolada**: Implementada rota dedicada `/api/conversations/:id/upload-voice` que bypassa complexidade do sistema geral
-- **Evolution API Integration**: Configurada integração com endpoint `/sendWhatsAppAudio` para mensagens de voz nativas
-- **Supabase Storage**: Arquivos de áudio salvos no Supabase Storage com URLs assinadas para acesso seguro
+- **Evolution API Integration**: Corrigida integração usando endpoint `/sendMedia` (mesmo padrão do sistema de mídia existente)
+- **Problema Resolvido**: Endpoint `/sendWhatsAppAudio` retornava erro 400, solução foi usar `/sendMedia` que já funciona
+- **Supabase Storage**: Arquivos de áudio salvos no Supabase Storage com URLs assinadas funcionando corretamente
 - **Database Consistency**: Mensagens gravadas marcadas como `audio_voice` para diferenciação de outros tipos de mídia
-- **WhatsApp Delivery**: Áudio gravado chega no WhatsApp como mensagem de voz (não como arquivo encaminhado)
-- **Validação Completa**: Sistema testado e confirmado funcionando com áudio chegando no WhatsApp corretamente
+- **WhatsApp Delivery**: Áudio gravado chega no WhatsApp como mensagem de áudio através do Evolution API
+- **Validação Completa**: Sistema testado e confirmado funcionando com status 201 e messageId gerado pela Evolution API
 
 ### June 26, 2025 - Image Upload System Fixed & Database Schema Alignment ✅
 - **Critical Fix**: Resolved image upload failure caused by schema/database mismatch
