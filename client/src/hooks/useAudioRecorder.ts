@@ -106,18 +106,26 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
 
   // Limpar recursos
   const cleanup = useCallback(() => {
+    console.log('🧹 Cleanup called - releasing all resources');
     stopTimer();
     
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      console.log('🔇 Stopping all media tracks in cleanup');
+      streamRef.current.getTracks().forEach(track => {
+        console.log('🔇 Stopping track in cleanup:', track.kind, track.label, 'readyState:', track.readyState);
+        track.stop();
+      });
       streamRef.current = null;
+      console.log('✅ Stream cleared in cleanup');
     }
     
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current = null;
+      console.log('✅ MediaRecorder cleared in cleanup');
     }
     
     chunksRef.current = [];
+    console.log('✅ Audio chunks cleared in cleanup');
   }, [stopTimer]);
 
   // Processar áudio gravado
@@ -168,12 +176,22 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       setDuration(0);
       
       // Solicitar permissão de microfone
+      console.log('🎤 Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
         }
+      });
+      
+      console.log('🎤 Microphone stream obtained:', {
+        tracks: stream.getTracks().map(track => ({
+          kind: track.kind,
+          label: track.label,
+          readyState: track.readyState,
+          enabled: track.enabled
+        }))
       });
       
       streamRef.current = stream;
@@ -250,9 +268,19 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       
       console.log('🎤 Stopping recording - Final duration:', currentDuration, 'ms');
       
+      // Parar o MediaRecorder primeiro
       mediaRecorderRef.current.stop();
       setState('stopped');
       stopTimer();
+      
+      // IMPORTANTE: Liberar o microfone imediatamente após parar a gravação
+      console.log('🔒 Releasing microphone stream...');
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          console.log('🔇 Stopping track:', track.kind, track.label);
+          track.stop();
+        });
+      }
     }
   }, [state, stopTimer]);
 
