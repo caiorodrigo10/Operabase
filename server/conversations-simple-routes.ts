@@ -64,7 +64,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Evita N+1 queries por conversa individual
       const conversationIds = (conversationsData || []).map(c => c.id);
       
-      // Batch load últimas mensagens
+      // Batch load últimas mensagens com timezone GMT-3 (Brasília)
       const { data: lastMessages } = await supabase
         .from('messages')
         .select('conversation_id, content, timestamp')
@@ -75,27 +75,44 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const lastMessageMap = {};
       lastMessages?.forEach(msg => {
         if (!lastMessageMap[msg.conversation_id]) {
-          lastMessageMap[msg.conversation_id] = msg;
+          // Converte timestamp para GMT-3 (Brasília)
+          const brasiliaTime = new Date(msg.timestamp);
+          lastMessageMap[msg.conversation_id] = {
+            ...msg,
+            timestamp: brasiliaTime.toISOString()
+          };
         }
       });
 
       // Format for frontend com dados otimizados - fix large ID handling
-      const formattedConversations = (conversationsData || []).map(conv => ({
-        id: conv.id.toString(), // Convert to string to preserve large numbers
-        clinic_id: conv.clinic_id,
-        contact_id: conv.contact_id,
-        status: conv.status || 'active',
-        created_at: conv.created_at,
-        updated_at: conv.updated_at,
-        contact_name: conv.contacts?.name || `Contato ${conv.contact_id}`,
-        contact_phone: conv.contacts?.phone || '',
-        contact_email: conv.contacts?.email || '',
-        contact_status: conv.contacts?.status || 'active',
-        last_message: lastMessageMap[conv.id]?.content || 'Nenhuma mensagem ainda',
-        last_message_at: lastMessageMap[conv.id]?.timestamp || conv.updated_at,
-        total_messages: 0, // Será calculado se necessário
-        unread_count: 0 // Será calculado dinamicamente quando necessário
-      }));
+      const formattedConversations = (conversationsData || []).map(conv => {
+        const lastMsg = lastMessageMap[conv.id];
+        const lastMessageTime = lastMsg?.timestamp || conv.updated_at;
+        
+        return {
+          id: conv.id.toString(), // Convert to string to preserve large numbers
+          clinic_id: conv.clinic_id,
+          contact_id: conv.contact_id,
+          status: conv.status || 'active',
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
+          contact_name: conv.contacts?.name || `Contato ${conv.contact_id}`,
+          contact_phone: conv.contacts?.phone || '',
+          contact_email: conv.contacts?.email || '',
+          contact_status: conv.contacts?.status || 'active',
+          last_message: lastMsg?.content || 'Nenhuma mensagem ainda',
+          last_message_at: lastMessageTime,
+          total_messages: 0, // Será calculado se necessário
+          unread_count: 0 // Será calculado dinamicamente quando necessário
+        };
+      });
+
+      // Ordenar conversas por timestamp da última mensagem (mais recente primeiro)
+      formattedConversations.sort((a, b) => {
+        const timeA = new Date(a.last_message_at).getTime();
+        const timeB = new Date(b.last_message_at).getTime();
+        return timeB - timeA; // Ordem decrescente (mais recente primeiro)
+      });
 
       // ETAPA 3: Cache the result for next requests
       await redisCacheService.cacheConversations(clinicId, formattedConversations);
@@ -111,6 +128,35 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.error('❌ Error fetching conversations:', error);
       console.error('❌ Error details:', error.message);
       res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
+  // NOVO: Endpoint para invalidar cache e reordenar conversas em tempo real
+  app.patch('/api/conversations/:id/update-timestamp', async (req: Request, res: Response) => {
+    try {
+      const conversationId = req.params.id;
+      const clinicId = 1; // Hardcoded for testing
+      
+      console.log('🔄 Invalidating cache for conversation update:', conversationId);
+      
+      // Invalidar cache Redis para forçar reload
+      await redisCacheService.invalidateConversations(clinicId);
+      
+      // ETAPA 2: Emitir evento WebSocket para atualização em tempo real
+      const webSocketServer = getWebSocketServer();
+      if (webSocketServer) {
+        webSocketServer.emitToClinic(clinicId, 'conversation:updated', {
+          conversationId,
+          timestamp: new Date().toISOString()
+        });
+        console.log('📡 WebSocket event emitted: conversation:updated');
+      }
+      
+      res.json({ success: true, message: 'Conversation timestamp updated' });
+      
+    } catch (error) {
+      console.error('❌ Error updating conversation timestamp:', error);
+      res.status(500).json({ error: 'Erro ao atualizar timestamp da conversa' });
     }
   });
 

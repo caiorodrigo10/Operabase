@@ -101,10 +101,11 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
               {conversation.patient_name}
             </h3>
             <span className="text-xs text-gray-400 flex-shrink-0">
-              {conversation.updated_at ? new Date(conversation.updated_at).toLocaleTimeString('pt-BR', { 
+              {conversation.last_message_at ? new Date(conversation.last_message_at).toLocaleTimeString('pt-BR', { 
                 hour: '2-digit', 
                 minute: '2-digit',
-                hour12: false 
+                hour12: false,
+                timeZone: 'America/Sao_Paulo'
               }) : ''}
             </span>
           </div>
