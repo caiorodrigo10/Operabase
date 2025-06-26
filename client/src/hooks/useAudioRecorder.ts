@@ -195,16 +195,28 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       };
       
       mediaRecorder.onstop = async () => {
+        console.log('🎤 MediaRecorder stopped, processing audio...');
+        console.log('📊 Audio chunks collected:', chunksRef.current.length);
+        console.log('⏱️ Final duration captured:', finalDurationRef.current, 'ms');
+        
         try {
           const audioBlob = new Blob(chunksRef.current, { 
             type: supportedMimeType! 
           });
           
+          console.log('🎵 Audio blob created:', {
+            size: audioBlob.size,
+            type: audioBlob.type,
+            duration: finalDurationRef.current
+          });
+          
           // Usar a duração capturada no momento da parada
           const file = await processAudioBlob(audioBlob, finalDurationRef.current);
+          console.log('✅ Audio file ready:', file.name, file.size, 'bytes');
           setAudioFile(file);
           setState('ready');
         } catch (error) {
+          console.error('❌ Error in onstop handler:', error);
           // Error já tratado no processAudioBlob
         }
       };
@@ -216,9 +228,11 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       };
       
       // Iniciar gravação
+      console.log('🎤 Starting MediaRecorder with supported MIME type:', supportedMimeType);
       mediaRecorder.start(100); // Coleta dados a cada 100ms
       setState('recording');
       startTimer();
+      console.log('⏱️ Recording timer started');
       
     } catch (error) {
       setError('permission_denied');

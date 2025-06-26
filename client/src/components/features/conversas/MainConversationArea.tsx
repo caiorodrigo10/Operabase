@@ -168,6 +168,7 @@ export function MainConversationArea({
     
     if (!selectedConversationId) {
       console.error('❌ No conversation selected for audio upload');
+      setShowAudioRecorder(false);
       return;
     }
     
@@ -176,9 +177,12 @@ export function MainConversationArea({
       console.log('📤 Starting audio upload...');
       await handleFileUpload([audioFile], 'Áudio gravado');
       console.log('✅ Audio upload completed');
-      setShowAudioRecorder(false);
     } catch (error) {
       console.error('❌ Audio upload failed:', error);
+    } finally {
+      // SEMPRE fechar o modal e limpar recursos
+      console.log('🔒 Closing audio recorder modal');
+      setShowAudioRecorder(false);
     }
   };
 
