@@ -150,19 +150,41 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
         
-        // Create signed URL with 2 hour expiration (enough for Evolution API processing)
-        const { data: shortSignedData, error: shortSignedError } = await supabase.storage
-          .from('conversation-attachments')
-          .createSignedUrl(storagePath, 2 * 60 * 60); // 2 hours
+        // Testar diferentes tipos de URL para Evolution API
         
-        if (shortSignedError) {
-          console.error('❌ Erro ao gerar URL temporária:', shortSignedError);
-          throw new Error('Falha ao criar URL de acesso temporário');
+        // 1. Tentar URL pública primeiro (se possível)
+        const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/conversation-attachments/${storagePath}`;
+        
+        console.log('🔍 TESTE: Tentando URL pública:', publicUrl);
+        
+        // Verificar se arquivo é acessível publicamente
+        const publicTest = await fetch(publicUrl, { method: 'HEAD' });
+        console.log('🔍 TESTE: URL pública acessível:', publicTest.ok);
+        
+        let audioUrl;
+        
+        if (publicTest.ok) {
+          audioUrl = publicUrl;
+          console.log('✅ USANDO: URL pública');
+        } else {
+          // 2. Usar URL assinada com expiração curta (1 hora)
+          const { data: shortSignedData, error: shortSignedError } = await supabase.storage
+            .from('conversation-attachments')
+            .createSignedUrl(storagePath, 60 * 60); // 1 hora
+          
+          if (shortSignedError) {
+            console.error('❌ Erro ao gerar URL temporária:', shortSignedError);
+            throw new Error('Falha ao criar URL de acesso temporário');
+          }
+          
+          audioUrl = shortSignedData.signedUrl;
+          console.log('✅ USANDO: URL assinada');
         }
         
+        // Formato correto conforme documentação Evolution API
         const whatsappPayload = {
           number: phoneNumber,
-          audio: shortSignedData.signedUrl
+          audio: audioUrl
         };
           
           console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
