@@ -163,8 +163,10 @@ SESSION_SECRET=your_session_secret
 - **Backend Optimization**: Query enhanced to fetch real last message per conversation with proper timestamp handling
 - **Frontend Smart Logic**: Automatic detection of same-day vs different-day messages for appropriate formatting
 - **Cache System**: Redis cache invalidation working correctly with fresh data on timestamp updates
+- **Double Timezone Fix**: Resolved frontend double conversion issue causing wrong dates to display
 - **User Validated**: Conversation sidebar now displays accurate timestamps matching actual last message times
 - **Format Examples**: Today's messages show "15:22", yesterday shows "25 Jun", older shows "23 Jun"
+- **Caio Rodrigo Test**: Now correctly shows "07:26" for today's message instead of incorrect "24 jun"
 
 ### June 26, 2025 - Clean File Message Display Implementation ✅
 - **Hide Auto-Generated Names**: Messages with files no longer show system-generated filenames automatically

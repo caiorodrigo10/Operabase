@@ -25,16 +25,14 @@ const formatMessageTimestamp = (timestamp: string | null | undefined): string =>
       return messageDate.toLocaleTimeString('pt-BR', { 
         hour: '2-digit', 
         minute: '2-digit',
-        hour12: false,
-        timeZone: 'America/Sao_Paulo'
+        hour12: false
       });
     }
     
-    // Dia diferente: mostrar dia e mês (ex: "25 Mar", "2 Jan")
+    // Dia diferente: mostrar dia e mês (ex: "25 jun", "2 jan")
     return messageDate.toLocaleDateString('pt-BR', {
       day: 'numeric',
-      month: 'short',
-      timeZone: 'America/Sao_Paulo'
+      month: 'short'
     }).replace('.', ''); // Remove o ponto do mês abreviado
   } catch (error) {
     console.error('Error formatting timestamp:', error);
