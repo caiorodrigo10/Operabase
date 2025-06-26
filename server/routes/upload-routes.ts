@@ -104,17 +104,27 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       });
       
       // 4. BYPASS DIRETO para Evolution API usando EvolutionMessageService
+      console.log('🎤 STEP 4: Iniciando integração com Evolution API...');
       try {
         // Usar o mesmo padrão do EvolutionMessageService
+        console.log('🔍 STEP 4.1: Buscando detalhes da conversa...');
         const conversationDetails = await getConversationDetails(conversationId);
         if (!conversationDetails) {
+          console.error('❌ STEP 4.1: Conversa não encontrada');
           throw new Error('Conversation not found');
         }
+        console.log('✅ STEP 4.1: Conversa encontrada:', conversationDetails.contact_phone);
 
+        console.log('🔍 STEP 4.2: Formatando número de telefone...');
         const phoneNumber = formatPhoneNumber(conversationDetails.contact_phone);
+        console.log('✅ STEP 4.2: Número formatado:', phoneNumber);
+        
+        console.log('🔍 STEP 4.3: Buscando instância WhatsApp...');
         const instanceName = await getInstanceForClinic(conversationDetails.clinic_id);
+        console.log('✅ STEP 4.3: Instância encontrada:', instanceName);
         
         if (!instanceName) {
+          console.error('❌ STEP 4.3: Nenhuma instância WhatsApp encontrada para clínica');
           throw new Error('No WhatsApp instance found for this clinic');
         }
 
@@ -143,7 +153,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         // Create signed URL with 2 hour expiration (enough for Evolution API processing)
         const { data: shortSignedData, error: shortSignedError } = await supabase.storage
           .from('conversation-attachments')
-          .createSignedUrl(storageResult.storage_path, 2 * 60 * 60); // 2 hours
+          .createSignedUrl(storagePath, 2 * 60 * 60); // 2 hours
         
         if (shortSignedError) {
           console.error('❌ Erro ao gerar URL temporária:', shortSignedError);
@@ -155,6 +165,12 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           audio: shortSignedData.signedUrl
         };
           
+          console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
+            url: `${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`,
+            payload: whatsappPayload,
+            headers: { 'Content-Type': 'application/json', 'apikey': '***' }
+          });
+          
           const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`, {
             method: 'POST',
             headers: {
@@ -164,8 +180,27 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
             body: JSON.stringify(whatsappPayload)
           });
           
-          const result = await response.json();
-          console.log('🎤 Evolution API Response:', response.status);
+          let result;
+          const responseText = await response.text();
+          
+          try {
+            result = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('❌ Erro ao parsear resposta da Evolution API:', {
+              status: response.status,
+              statusText: response.statusText,
+              responseText: responseText,
+              parseError: parseError.message
+            });
+            result = { error: 'Response parsing failed', responseText };
+          }
+          
+          console.log('🎤 Evolution API Response Detalhada:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            result: result
+          });
           
           if (response.ok && result.key) {
             await storage.updateMessage(message.id, { evolution_status: 'sent' });
@@ -177,7 +212,13 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
               message: 'Mensagem de voz enviada com sucesso!'
             });
           } else {
-            console.log('❌ Evolution API falhou:', response.status, result);
+            console.log('❌ Evolution API falhou:', {
+              status: response.status,
+              statusText: response.statusText,
+              result,
+              url: `${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`,
+              payload: whatsappPayload
+            });
             await storage.updateMessage(message.id, { evolution_status: 'failed' });
           }
 
