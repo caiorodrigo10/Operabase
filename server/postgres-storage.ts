@@ -1952,14 +1952,13 @@ export class PostgreSQLStorage implements IStorage {
       console.log('📦 Dados para atualizar:', updateObj);
       console.log('📦 Dados recebidos originalmente:', updateData);
       
-      // Use Drizzle for the update
+      // Use Drizzle for the update (temporarily excluding disconnected_at until column is created)
       const result = await db.execute(sql`
         UPDATE whatsapp_numbers 
         SET 
           status = ${updateObj.status || sql`status`},
           phone_number = ${updateObj.phone_number || sql`phone_number`},
           connected_at = ${updateObj.connected_at || sql`connected_at`},
-          disconnected_at = ${updateObj.disconnected_at || sql`disconnected_at`},
           last_seen = ${updateObj.last_seen || sql`last_seen`},
           updated_at = NOW()
         WHERE instance_name = ${instanceName}

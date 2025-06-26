@@ -18,11 +18,13 @@ router.get('/api/whatsapp/numbers/:clinicId', async (req, res) => {
     const storage = await getStorage();
     const allNumbers = await storage.getWhatsAppNumbers(clinicId);
     
-    // Only return numbers that are connected (validated via webhook)
-    const connectedNumbers = allNumbers.filter(number => number.status === 'open');
+    // Return all numbers except those still connecting (to avoid showing incomplete instances)
+    const activeNumbers = allNumbers.filter(number => 
+      number.status === 'open' || number.status === 'disconnected'
+    );
     
-    console.log(`📱 WhatsApp numbers for clinic ${clinicId}: ${allNumbers.length} total, ${connectedNumbers.length} connected`);
-    res.json(connectedNumbers);
+    console.log(`📱 WhatsApp numbers for clinic ${clinicId}: ${allNumbers.length} total, ${activeNumbers.filter(n => n.status === 'open').length} connected, ${activeNumbers.filter(n => n.status === 'disconnected').length} disconnected`);
+    res.json(activeNumbers);
   } catch (error) {
     console.error('Error fetching WhatsApp numbers:', error);
     res.status(500).json({ error: 'Failed to fetch WhatsApp numbers' });

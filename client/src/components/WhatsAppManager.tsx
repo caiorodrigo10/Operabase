@@ -197,6 +197,44 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
     }
   });
 
+  // Mutation to reconnect existing instance
+  const reconnectMutation = useMutation({
+    mutationFn: (instanceName: string) => apiRequest(`/api/whatsapp/reconnect`, 'POST', { 
+      instanceName 
+    }),
+    onSuccess: async (response) => {
+      const data = await response.json();
+      console.log('✅ Instance reconnection initiated:', data);
+      
+      // Set up QR code for reconnection
+      setSelectedQR({
+        qrCode: data.qrCode,
+        instanceName: data.instanceName,
+        numberId: data.numberId,
+        timestamp: data.timestamp
+      });
+      
+      // Start QR timeout countdown
+      resetQRTimeout();
+      
+      // Invalidate query to refresh the list
+      queryClient.invalidateQueries({ queryKey: [`/api/whatsapp/numbers/${clinicId}`] });
+      
+      toast({
+        title: "Reconectando WhatsApp",
+        description: `Escaneie o QR Code para reconectar o número ${data.previousPhone || 'anterior'}`
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Error reconnecting WhatsApp:', error);
+      toast({
+        title: "Erro na reconexão",
+        description: error.message || "Não foi possível iniciar a reconexão",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Mutation to start connection
   const startConnectionMutation = useMutation({
     mutationFn: () => apiRequest(`/api/whatsapp/connect`, 'POST', { clinicId, userId: parseInt(userId) }),
@@ -361,12 +399,17 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          // TODO: Implement reconnection logic
                           console.log('🔄 Reconnecting instance:', number.instance_name);
+                          reconnectMutation.mutate(number.instance_name);
                         }}
+                        disabled={reconnectMutation.isPending}
                         className="text-blue-600 hover:text-blue-700"
                       >
-                        <RotateCcw className="w-4 h-4" />
+                        {reconnectMutation.isPending ? (
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-4 h-4" />
+                        )}
                       </Button>
                     )}
                     
@@ -484,9 +527,14 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Conectar WhatsApp</DialogTitle>
+              <DialogTitle>
+                {selectedQR?.numberId ? 'Reconectar WhatsApp' : 'Conectar WhatsApp'}
+              </DialogTitle>
               <DialogDescription>
-                Escaneie o QR Code com seu WhatsApp para conectar
+                {selectedQR?.numberId 
+                  ? 'Escaneie o QR Code com seu WhatsApp para reconectar este número'
+                  : 'Escaneie o QR Code com seu WhatsApp para conectar'
+                }
               </DialogDescription>
             </DialogHeader>
             
