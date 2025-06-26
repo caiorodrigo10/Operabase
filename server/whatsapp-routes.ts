@@ -4,11 +4,12 @@ import { getStorage } from './storage';
 import { evolutionApi } from './whatsapp-evolution-service';
 import { insertWhatsAppNumberSchema } from '@shared/schema';
 import { systemLogsService } from './services/system-logs.service';
+import { isAuthenticated } from './auth';
 
 const router = Router();
 
 // Get all WhatsApp numbers for current clinic (tenant-aware)
-router.get('/api/whatsapp/numbers', async (req, res) => {
+router.get('/api/whatsapp/numbers', isAuthenticated, async (req, res) => {
   try {
     const user = (req as any).user;
     if (!user) {
