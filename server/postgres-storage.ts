@@ -41,7 +41,7 @@ import {
 import { 
   sessions,
   analytics_metrics, ai_templates, pipeline_stages, pipeline_opportunities, 
-  pipeline_history, pipeline_activities, appointment_tags, whatsapp_numbers,
+  pipeline_history, pipeline_activities, appointment_tags,
   type AnalyticsMetric,
   type AiTemplate,
   type PipelineStage,
