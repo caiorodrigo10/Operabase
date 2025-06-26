@@ -47,27 +47,17 @@ function shouldHideContent(message: Message): boolean {
       /^arquivo\s+(recebido|enviado)/i,
       /^mídia\s+(recebida|enviada)/i,
       /^audio\s+mp4\s+de\s+teste\s+do\s+paciente$/i,
-      /^.udio\s+do\s+paciente$/i,
-      /^[ãáâàä]udio\s+do\s+paciente$/i,
-      /^(audio|áudio|ãudio)\s+(mp4|wav|mp3|ogg)\s+.*(paciente|cliente)/i,
+      /^ãudio\s+do\s+paciente$/i,
+      /^áudio\s+do\s+paciente$/i,
+      /^Ãudio\s+do\s+paciente$/,
     ];
     
     const isAutoDescription = autoDescriptionPatterns.some(pattern => pattern.test(trimmedContent));
     
-    // Debug logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Content hiding evaluation:', { 
-        content: trimmedContent,
-        contentLength: trimmedContent.length,
-        firstChar: trimmedContent.charCodeAt(0),
-        isReceived,
-        hasAttachments,
-        isAutoDescription,
-        shouldHide: isAutoDescription
-      });
-    }
+    // Also check for exact string match for encoding issues
+    const isExactMatch = trimmedContent === "Ãudio do paciente";
     
-    return isAutoDescription;
+    return isAutoDescription || isExactMatch;
   }
   
   // For all other cases, use the general auto-generated content detection
