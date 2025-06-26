@@ -50,19 +50,39 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       
       console.log('🎤 BYPASS: Processando áudio gravado direto para /sendWhatsAppAudio');
       
-      // 1. Upload para Supabase Storage
-      const supabaseStorage = new SupabaseStorageService();
+      // 1. Upload direto para Supabase sem service intermediário
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      
       const timestamp = Date.now();
       const sanitizedFilename = `voice_${timestamp}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const storagePath = `clinic-1/conversation-${conversationId}/audio/${sanitizedFilename}`;
       
-      const storageResult = await supabaseStorage.uploadFile({
-        file: req.file.buffer,
-        filename: sanitizedFilename,
-        mimeType: req.file.mimetype,
-        conversationId,
-        clinicId: 1,
-        category: 'audio'
-      });
+      console.log('📁 Uploading voice to path:', storagePath);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('conversation-attachments')
+        .upload(storagePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: true
+        });
+      
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+      
+      // Gerar URL assinada
+      const { data: signedData } = await supabase.storage
+        .from('conversation-attachments')
+        .createSignedUrl(storagePath, 86400); // 24 horas
+      
+      const storageResult = {
+        signed_url: signedData?.signedUrl,
+        file_url: signedData?.signedUrl
+      };
       
       // 2. Salvar mensagem FORÇANDO audio_voice
       const message = await storage.createMessage({
