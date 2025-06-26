@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Send, Paperclip, Mic, MessageCircle, FileText, Info } from "lucide-react";
+import { Send, Paperclip, Mic, MessageCircle, FileText, Info, Bot } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
@@ -78,6 +78,7 @@ export function MainConversationArea({
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+  const [isAIActive, setIsAIActive] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -295,6 +296,22 @@ export function MainConversationArea({
           >
             <FileText className="w-4 h-4" />
             <span>Nota Interna</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAIActive(!isAIActive)}
+            className={cn(
+              "flex items-center space-x-2 transition-all",
+              isAIActive
+                ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200"
+            )}
+            title={isAIActive ? "IA ativada - clique para desativar" : "IA desativada - clique para ativar"}
+          >
+            <Bot className="w-4 h-4" />
+            <span>IA</span>
           </Button>
 
           {showInfoButton && (
