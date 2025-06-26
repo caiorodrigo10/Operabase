@@ -67,7 +67,7 @@ export const sanitizeN8NHeaders = (req: any, res: Response, next: NextFunction) 
   next();
 };
 
-validateN8NRequest = (req: Request, res: Response, next: NextFunction) => {
+export const validateN8NRequest = (req: Request, res: Response, next: NextFunction) => {
   // Verificar parâmetros obrigatórios
   const conversationId = req.headers['x-conversation-id'] || req.body?.conversationId;
   const clinicId = req.headers['x-clinic-id'] || req.body?.clinicId;

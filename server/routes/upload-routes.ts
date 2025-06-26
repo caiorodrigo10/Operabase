@@ -624,19 +624,17 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           ip: req.ip,
           userAgent: req.headers['user-agent']
         });
-      console.log('🔍 All Headers:', req.headers);
-      console.log('🔍 Content-Type:', req.headers['content-type']);
-      console.log('🔍 File Info Headers:', {
-        'x-filename': req.headers['x-filename'],
-        'x-mime-type': req.headers['x-mime-type'],
-        'x-conversation-id': req.headers['x-conversation-id'],
-        'x-clinic-id': req.headers['x-clinic-id'],
-        'x-caption': req.headers['x-caption'],
-        'x-whatsapp-message-id': req.headers['x-whatsapp-message-id'],
-        'x-timestamp': req.headers['x-timestamp']
-      });
-
-      try {
+        console.log('🔍 All Headers:', req.headers);
+        console.log('🔍 Content-Type:', req.headers['content-type']);
+        console.log('🔍 File Info Headers:', {
+          'x-filename': req.headers['x-filename'],
+          'x-mime-type': req.headers['x-mime-type'],
+          'x-conversation-id': req.headers['x-conversation-id'],
+          'x-clinic-id': req.headers['x-clinic-id'],
+          'x-caption': req.headers['x-caption'],
+          'x-whatsapp-message-id': req.headers['x-whatsapp-message-id'],
+          'x-timestamp': req.headers['x-timestamp']
+        });
         console.log('🔍 Processing file data...');
         
         // Extrair dados do arquivo (multer ou headers)
