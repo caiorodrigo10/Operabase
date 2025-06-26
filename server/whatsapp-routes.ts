@@ -7,6 +7,33 @@ import { systemLogsService } from './services/system-logs.service';
 
 const router = Router();
 
+// Get all WhatsApp numbers for current clinic (tenant-aware)
+router.get('/api/whatsapp/numbers', async (req, res) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // For now, assume clinic ID 1 (could be enhanced with user.clinic_id)
+    const clinicId = 1;
+    
+    const storage = await getStorage();
+    const allNumbers = await storage.getWhatsAppNumbers(clinicId);
+    
+    // Return all numbers except those still connecting (to avoid showing incomplete instances)
+    const activeNumbers = allNumbers.filter(number => 
+      number.status === 'open' || number.status === 'disconnected'
+    );
+    
+    console.log(`📱 WhatsApp numbers for clinic ${clinicId}: ${allNumbers.length} total, ${activeNumbers.filter(n => n.status === 'open').length} connected, ${activeNumbers.filter(n => n.status === 'disconnected').length} disconnected`);
+    res.json(activeNumbers);
+  } catch (error) {
+    console.error('Error fetching WhatsApp numbers:', error);
+    res.status(500).json({ error: 'Failed to fetch WhatsApp numbers' });
+  }
+});
+
 // Get all WhatsApp numbers for a clinic
 router.get('/api/whatsapp/numbers/:clinicId', async (req, res) => {
   try {
