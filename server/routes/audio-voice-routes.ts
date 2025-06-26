@@ -8,6 +8,7 @@ import multer from 'multer';
 import { IStorage } from '../storage';
 import { SupabaseStorageService } from '../services/supabase-storage.service';
 import { EvolutionAPIService } from '../services/evolution-api.service';
+import fetch from 'node-fetch';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -17,9 +18,14 @@ const upload = multer({
 });
 
 export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
+  console.log('🎤 Registrando rota isolada de áudio gravado...');
+  
   // Rota dedicada para áudio gravado
   app.post('/api/conversations/:id/upload-voice', upload.single('file'), async (req: Request, res: Response) => {
     console.log('🎤 ROTA ISOLADA ÁUDIO GRAVADO ATIVADA');
+    
+    // Adicionar headers JSON
+    res.setHeader('Content-Type', 'application/json');
     
     try {
       const conversationId = req.params.id;
@@ -105,7 +111,7 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
           audioUrl: storageResult.signed_url
         });
         
-        // CHAMADA DIRETA para sendWhatsAppAudio
+        // CHAMADA DIRETA para sendWhatsAppAudio (bypass completo)
         const evolutionUrl = process.env.EVOLUTION_API_URL!;
         const evolutionApiKey = process.env.EVOLUTION_API_KEY!;
         
@@ -114,7 +120,8 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
           media: storageResult.signed_url
         };
         
-        console.log('🎤 Payload /sendWhatsAppAudio:', whatsappPayload);
+        console.log('🎤 BYPASS DIRETO - Payload /sendWhatsAppAudio:', whatsappPayload);
+        console.log('🎤 URL:', `${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`);
         
         const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`, {
           method: 'POST',
@@ -122,7 +129,8 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
             'Content-Type': 'application/json',
             'apikey': evolutionApiKey
           },
-          body: JSON.stringify(whatsappPayload)
+          body: JSON.stringify(whatsappPayload),
+          timeout: 10000
         });
         
         const result = await response.json();

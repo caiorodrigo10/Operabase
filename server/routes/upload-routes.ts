@@ -32,6 +32,125 @@ const upload = multer({
 });
 
 export function setupUploadRoutes(app: Express, storage: IStorage) {
+  
+  // ROTA ISOLADA PARA ÁUDIO GRAVADO - BYPASS COMPLETO
+  app.post('/api/conversations/:id/upload-voice', upload.single('file'), async (req: Request, res: Response) => {
+    console.log('🎤 ROTA ISOLADA ÁUDIO GRAVADO ATIVADA');
+    
+    try {
+      const conversationId = req.params.id;
+      const { caption } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          error: 'Nenhum arquivo enviado'
+        });
+      }
+      
+      console.log('🎤 BYPASS: Processando áudio gravado direto para /sendWhatsAppAudio');
+      
+      // 1. Upload para Supabase Storage
+      const supabaseStorage = new SupabaseStorageService();
+      const timestamp = Date.now();
+      const sanitizedFilename = `voice_${timestamp}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      
+      const storageResult = await supabaseStorage.uploadFile({
+        file: req.file.buffer,
+        filename: sanitizedFilename,
+        mimeType: req.file.mimetype,
+        conversationId,
+        clinicId: 1,
+        category: 'audio'
+      });
+      
+      // 2. Salvar mensagem FORÇANDO audio_voice
+      const message = await storage.createMessage({
+        conversation_id: conversationId,
+        sender_type: 'professional',
+        content: caption || 'Mensagem de voz',
+        message_type: 'audio_voice', // FORÇADO
+        ai_action: 'voice_upload'
+      });
+      
+      // 3. Criar attachment
+      const attachment = await storage.createAttachment({
+        message_id: message.id,
+        clinic_id: 1,
+        file_name: req.file.originalname,
+        file_type: req.file.mimetype,
+        file_size: req.file.size,
+        file_url: storageResult.signed_url
+      });
+      
+      // 4. BYPASS DIRETO para Evolution API /sendWhatsAppAudio
+      try {
+        const conversation = await storage.getConversationWithContact(conversationId);
+        const instances = await storage.getWhatsAppInstances(1);
+        const activeInstance = instances.find(i => i.status === 'open');
+        
+        if (conversation && activeInstance) {
+          console.log('🎤 BYPASS: Enviando direto para /sendWhatsAppAudio');
+          
+          const evolutionUrl = process.env.EVOLUTION_API_URL!;
+          const evolutionApiKey = process.env.EVOLUTION_API_KEY!;
+          
+          const whatsappPayload = {
+            number: conversation.contact.phone,
+            media: storageResult.signed_url
+          };
+          
+          const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': evolutionApiKey
+            },
+            body: JSON.stringify(whatsappPayload)
+          });
+          
+          const result = await response.json();
+          console.log('🎤 Evolution API Response:', response.status);
+          
+          if (response.ok && result.key) {
+            await storage.updateMessage(message.id, { status: 'sent' });
+            console.log('✅ SUCESSO: Áudio enviado via /sendWhatsAppAudio');
+            
+            return res.json({
+              success: true,
+              data: { message, attachment, whatsapp: { sent: true, messageId: result.key.id } },
+              message: 'Mensagem de voz enviada com sucesso!'
+            });
+          }
+        }
+        
+        // Fallback se WhatsApp falhar
+        await storage.updateMessage(message.id, { status: 'failed' });
+        return res.json({
+          success: true,
+          data: { message, attachment, whatsapp: { sent: false } },
+          message: 'Áudio salvo, mas falha no envio WhatsApp'
+        });
+        
+      } catch (whatsappError) {
+        console.error('❌ WhatsApp error:', whatsappError);
+        await storage.updateMessage(message.id, { status: 'failed' });
+        
+        return res.json({
+          success: true,
+          data: { message, attachment, whatsapp: { sent: false } },
+          message: 'Áudio salvo, mas falha no envio WhatsApp'
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Voice upload error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro interno'
+      });
+    }
+  });
   // Inicializar serviços
   const supabaseStorage = new SupabaseStorageService();
   const evolutionAPI = new EvolutionAPIService();
