@@ -101,15 +101,7 @@ export function MediaMessage({
   // Convert MIME type to media category
   const actualMediaType = getMediaTypeFromMimeType(media_type);
   
-  // Debug logging para identificar o problema
-  if (media_type && media_type.includes('audio')) {
-    console.log('🎵 MediaMessage Debug:', {
-      media_type,
-      actualMediaType,
-      media_url,
-      media_filename
-    });
-  }
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -117,6 +109,7 @@ export function MediaMessage({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcription, setTranscription] = useState<string | null>(null);
   const [showTranscription, setShowTranscription] = useState(false);
+  const [hasPlaybackError, setHasPlaybackError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Initialize audio element when media_url changes
@@ -160,9 +153,10 @@ export function MediaMessage({
         });
         setIsPlaying(false);
         
-        // Se erro de codec (erro 4), tentar fallback com elemento HTML5
+        // Se erro de codec (erro 4), ativar fallback HTML5
         if (audio.error?.code === 4) {
           console.log('🎵 Codec error detected, will show native audio controls as fallback');
+          setHasPlaybackError(true);
         }
       };
 
@@ -326,48 +320,78 @@ export function MediaMessage({
   if (actualMediaType === 'audio' || actualMediaType === 'audio_file') {
     const isAudioFile = actualMediaType === 'audio_file';
     
-    // Debug para confirmar que está renderizando áudio
-    console.log('🎵 Rendering audio component:', { actualMediaType, isAudioFile });
+
     
     return (
       <div className={cn("min-w-[200px] max-w-[280px]", className)}>
-        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
-          <div className="flex items-center gap-3 mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-8 h-8 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-              onClick={handlePlayPause}
+        {hasPlaybackError ? (
+          // Fallback: Use native HTML5 audio controls for codec issues
+          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
+            <div className="flex items-center gap-3 mb-2">
+              <FileAudio className="w-8 h-8 text-blue-500" />
+              <div className="flex-1">
+                <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Áudio
+                </div>
+                <div className="text-xs text-gray-500">
+                  {media_filename || 'Arquivo de áudio'}
+                </div>
+              </div>
+            </div>
+            <audio 
+              controls 
+              className="w-full h-8"
+              src={media_url}
+              preload="metadata"
             >
-              {isPlaying ? (
-                <Pause className="w-4 h-4" />
-              ) : (
-                <Play className="w-4 h-4 ml-0.5" />
-              )}
-            </Button>
-            <div className="flex-1">
-              <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Áudio
+              Seu navegador não suporta reprodução de áudio.
+            </audio>
+            {isAudioFile && (
+              <div className="mt-2">
+                <span className="text-xs text-gray-500 italic">Áudio encaminhado</span>
               </div>
-              <div className="text-xs text-gray-500">
-                {formatDuration(currentTime)} / {formatDuration(duration || media_duration)}
+            )}
+          </div>
+        ) : (
+          // Custom audio player
+          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border">
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-8 h-8 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={handlePlayPause}
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4" />
+                ) : (
+                  <Play className="w-4 h-4 ml-0.5" />
+                )}
+              </Button>
+              <div className="flex-1">
+                <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Áudio
+                </div>
+                <div className="text-xs text-gray-500">
+                  {formatDuration(currentTime)} / {formatDuration(duration || media_duration)}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-1 cursor-pointer" onClick={handleSeek}>
-            <div 
-              className="bg-blue-500 h-1 rounded-full transition-all" 
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          
-          {/* Indicador para áudio de arquivo */}
-          {isAudioFile && (
-            <div className="mt-2">
-              <span className="text-xs text-gray-500 italic">Áudio encaminhado</span>
+            <div className="w-full bg-gray-200 rounded-full h-1 cursor-pointer" onClick={handleSeek}>
+              <div 
+                className="bg-blue-500 h-1 rounded-full transition-all" 
+                style={{ width: `${progress}%` }}
+              ></div>
             </div>
-          )}
-        </div>
+            
+            {/* Indicador para áudio de arquivo */}
+            {isAudioFile && (
+              <div className="mt-2">
+                <span className="text-xs text-gray-500 italic">Áudio encaminhado</span>
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Transcription Section */}
         <div className="mt-2 space-y-2">
