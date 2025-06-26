@@ -5,6 +5,7 @@ import { ConversationUploadService } from '../services/conversation-upload.servi
 import { SupabaseStorageService } from '../services/supabase-storage.service';
 import { EvolutionAPIService } from '../services/evolution-api.service';
 import { validateN8NRequest, parseN8NUpload } from '../n8n-auth';
+import { validateN8NApiKey, n8nRateLimiter } from '../middleware/n8n-auth.middleware';
 
 // Configurar multer para upload em memória
 const upload = multer({
@@ -594,8 +595,10 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
     }
   });
 
-  // POST /api/n8n/upload - Endpoint para receber arquivos do N8N
+  // POST /api/n8n/upload - Endpoint para receber arquivos do N8N (PROTEGIDO COM API KEY)
   app.post('/api/n8n/upload', 
+    n8nRateLimiter,
+    validateN8NApiKey,
     validateN8NRequest,
     parseN8NUpload,
     upload.single('file'),
