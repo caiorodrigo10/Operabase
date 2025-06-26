@@ -7,6 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploadModal } from "./FileUploadModal";
+import { AudioRecorder } from "./AudioRecorder";
 
 // Simple date formatting function
 const formatDateLabel = (dateString: string) => {
@@ -76,6 +77,7 @@ export function MainConversationArea({
   const [message, setMessage] = useState("");
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -126,9 +128,9 @@ export function MainConversationArea({
     setShowUploadModal(false);
   };
 
-  const handleMicrophoneClick = () => {
-    // Audio recording functionality removed - button does nothing
-    console.log('🎤 Audio recording disabled');
+  const handleAudioReady = async (audioFile: File) => {
+    // Usar o sistema de upload existente com messageType específico para áudio gravado
+    await handleFileUpload([audioFile], 'Áudio gravado');
   };
 
   if (!patientInfo) {
@@ -265,8 +267,8 @@ export function MainConversationArea({
             variant="ghost"
             size="sm"
             className="text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10"
-            title="Gravar áudio (desabilitado)"
-            onClick={handleMicrophoneClick}
+            title="Gravar áudio"
+            onClick={() => setShowAudioRecorder(true)}
           >
             <Mic className="w-4 h-4" />
           </Button>
