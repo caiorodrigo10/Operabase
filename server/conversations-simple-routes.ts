@@ -64,17 +64,19 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Evita N+1 queries por conversa individual
       const conversationIds = (conversationsData || []).map(c => c.id);
       
-      // Batch load últimas mensagens de cada conversa (mais recente primeiro)
+      // Batch load últimas mensagens de cada conversa (melhorada para garantir precisão)
       const { data: allMessages } = await supabase
         .from('messages')
-        .select('conversation_id, content, timestamp')
+        .select('conversation_id, content, timestamp, id')
         .in('conversation_id', conversationIds)
-        .order('timestamp', { ascending: false });
+        .not('timestamp', 'is', null)
+        .order('timestamp', { ascending: false })
+        .order('id', { ascending: false });
       
       // Agrupa por conversation_id para pegar APENAS a última mensagem real
       const lastMessageMap = {};
       allMessages?.forEach(msg => {
-        if (!lastMessageMap[msg.conversation_id]) {
+        if (!lastMessageMap[msg.conversation_id] && msg.timestamp) {
           // Usa timezone correto do Brasil (America/Sao_Paulo)
           const messageDate = new Date(msg.timestamp);
           const brasiliaTime = new Date(messageDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
@@ -90,7 +92,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Format for frontend com dados otimizados - fix large ID handling
       const formattedConversations = (conversationsData || []).map(conv => {
         const lastMsg = lastMessageMap[conv.id];
-        const lastMessageTime = lastMsg?.timestamp || conv.updated_at;
+        const lastMessageTime = lastMsg?.timestamp || conv.created_at; // Use created_at only for conversations without messages
         
         return {
           id: conv.id.toString(), // Convert to string to preserve large numbers
