@@ -142,6 +142,33 @@ app.use((req, res, next) => {
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
   
+  // Apply storage schema fix on startup
+  try {
+    console.log('🔧 Applying Supabase Storage schema fix...');
+    const { sql } = await import('drizzle-orm');
+    const { PostgreSQLStorage } = await import('./postgres-storage');
+    
+    const postgresStorage = new PostgreSQLStorage();
+    const db = (postgresStorage as any).db;
+    
+    await db.execute(sql`
+      ALTER TABLE message_attachments 
+      ADD COLUMN IF NOT EXISTS storage_bucket VARCHAR(100) DEFAULT 'conversation-attachments',
+      ADD COLUMN IF NOT EXISTS storage_path VARCHAR(500),
+      ADD COLUMN IF NOT EXISTS public_url TEXT,
+      ADD COLUMN IF NOT EXISTS signed_url TEXT,
+      ADD COLUMN IF NOT EXISTS signed_url_expires TIMESTAMP;
+    `);
+    
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_message_attachments_storage_path ON message_attachments(storage_path);
+    `);
+    
+    console.log('✅ Supabase Storage schema applied successfully');
+  } catch (error) {
+    console.error('⚠️ Storage schema fix failed:', error.message);
+  }
+  
   // Add MCP logging middleware for all MCP routes
   const { mcpLoggingMiddleware, chatInterpreterLoggingMiddleware, errorLoggingMiddleware: mcpErrorMiddleware } = await import('./mcp/logs.middleware');
   app.use('/api/mcp', mcpLoggingMiddleware);
