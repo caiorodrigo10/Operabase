@@ -142,52 +142,7 @@ app.use((req, res, next) => {
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
   
-  // Apply storage schema fix on startup using existing Supabase connection
-  try {
-    console.log('🔧 Applying Supabase Storage schema fix...');
-    
-    // Use the same connection method as other parts of the system
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: { autoRefreshToken: false, persistSession: false }
-      });
-      
-      // Apply storage columns individually
-      const queries = [
-        "ALTER TABLE message_attachments ADD COLUMN IF NOT EXISTS storage_bucket VARCHAR(100) DEFAULT 'conversation-attachments'",
-        "ALTER TABLE message_attachments ADD COLUMN IF NOT EXISTS storage_path VARCHAR(500)",
-        "ALTER TABLE message_attachments ADD COLUMN IF NOT EXISTS public_url TEXT", 
-        "ALTER TABLE message_attachments ADD COLUMN IF NOT EXISTS signed_url TEXT",
-        "ALTER TABLE message_attachments ADD COLUMN IF NOT EXISTS signed_url_expires TIMESTAMP",
-        "CREATE INDEX IF NOT EXISTS idx_message_attachments_storage_path ON message_attachments(storage_path)"
-      ];
-      
-      for (const query of queries) {
-        try {
-          const { error } = await supabase.rpc('exec_sql', { query });
-          if (error && !error.message.includes('already exists')) {
-            console.log(`⚠️ Query issue: ${query.slice(0, 50)}... - ${error.message}`);
-          }
-        } catch (err) {
-          // Try alternative method using raw SQL
-          const { error } = await supabase.from('_sql').select('*').limit(0);
-          if (!error) {
-            console.log(`✅ Schema check passed for: ${query.slice(0, 50)}...`);
-          }
-        }
-      }
-      
-      console.log('✅ Supabase Storage schema application completed');
-    } else {
-      console.log('⚠️ Supabase credentials not available for schema fix');
-    }
-  } catch (error) {
-    console.error('⚠️ Storage schema fix failed:', error.message);
-  }
+  // Supabase Storage schema already exists - no need to apply
   
   // Add MCP logging middleware for all MCP routes
   const { mcpLoggingMiddleware, chatInterpreterLoggingMiddleware, errorLoggingMiddleware: mcpErrorMiddleware } = await import('./mcp/logs.middleware');
