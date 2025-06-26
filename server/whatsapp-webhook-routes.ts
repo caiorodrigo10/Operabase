@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { IStorage } from './storage';
 import { systemLogsService } from './services/system-logs.service';
+import { validateN8NApiKey, n8nRateLimiter } from './middleware/n8n-auth.middleware';
 
 interface WebhookConnectionUpdate {
   instanceName: string;
@@ -17,8 +18,12 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
   
   /**
    * Endpoint para receber webhooks do N8N sobre atualizações de conexão
+   * Protegido com autenticação N8N_API_KEY e rate limiting
    */
-  app.post('/api/whatsapp/webhook/connection-update', async (req: Request, res: Response) => {
+  app.post('/api/whatsapp/webhook/connection-update', 
+    n8nRateLimiter, 
+    validateN8NApiKey, 
+    async (req: Request, res: Response) => {
     try {
       console.log('🔗 Webhook recebido do N8N:', JSON.stringify(req.body, null, 2));
       
@@ -157,8 +162,12 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
 
   /**
    * Endpoint para testar webhook (desenvolvimento)
+   * Protegido com autenticação N8N_API_KEY e rate limiting
    */
-  app.post('/api/whatsapp/webhook/test', async (req: Request, res: Response) => {
+  app.post('/api/whatsapp/webhook/test', 
+    n8nRateLimiter, 
+    validateN8NApiKey, 
+    async (req: Request, res: Response) => {
     console.log('🧪 Teste de webhook recebido:', req.body);
     res.status(200).json({ 
       success: true, 
