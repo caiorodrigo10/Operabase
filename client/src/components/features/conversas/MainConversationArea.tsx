@@ -2,12 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Send, Paperclip, Mic, MessageCircle, FileText, Info, Play, Pause, X, Check } from "lucide-react";
+import { Send, Paperclip, Mic, MessageCircle, FileText, Info } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploadModal } from "./FileUploadModal";
-import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+
 // Simple date formatting function
 const formatDateLabel = (dateString: string) => {
   const date = new Date(dateString);
@@ -50,10 +50,10 @@ const shouldShowDateHeader = (currentItem: TimelineItem, previousItem?: Timeline
   
   if (!currentDate || !previousDate) return false;
   
-  const current = new Date(currentDate);
-  const previous = new Date(previousDate);
+  const current = new Date(currentDate).toDateString();
+  const previous = new Date(previousDate).toDateString();
   
-  return current.toDateString() !== previous.toDateString();
+  return current !== previous;
 };
 
 interface MainConversationAreaProps {
@@ -79,50 +79,12 @@ export function MainConversationArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Use specialized audio recorder hook
-  const {
-    recordingState,
-    recordingTime,
-    audioBlob,
-    audioUrl,
-    isSupported: isAudioSupported,
-    startRecording,
-    stopRecording,
-    clearRecording,
-    error: audioError
-  } = useAudioRecorder();
-
-  // Audio preview states
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  // Debug logs for interface state
-  console.log('🔍 Interface State Check:', {
-    recordingState,
-    recordingTime,
-    hasAudioBlob: !!audioBlob,
-    hasAudioUrl: !!audioUrl,
-    shouldShowRedBlock: recordingState === 'recording',
-    shouldShowBlueBlock: recordingState === 'stopped' && !!audioUrl,
-    isAudioSupported,
-    audioError
-  });
-
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
     if (messagesEndRef.current && timelineItems.length > 0) {
       messagesEndRef.current.scrollIntoView({ behavior: "instant" });
     }
   }, [timelineItems]);
-
-  // Cleanup audio resources on unmount
-  useEffect(() => {
-    return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
-    };
-  }, [audioUrl]);
 
   const handleSendMessage = () => {
     if (message.trim() && onSendMessage) {
@@ -164,88 +126,9 @@ export function MainConversationArea({
     setShowUploadModal(false);
   };
 
-  const handleMicrophoneClick = async () => {
-    console.log('🎤 Microphone clicked! Current state:', {
-      recordingState,
-      recordingTime,
-      audioBlob: !!audioBlob,
-      audioUrl: !!audioUrl,
-      isAudioSupported
-    });
-
-    if (recordingState === 'recording') {
-      console.log('🎤 Stopping recording...');
-      stopRecording();
-    } else {
-      console.log('🎤 Starting recording...');
-      try {
-        await startRecording();
-        console.log('🎤 Recording started successfully');
-      } catch (error) {
-        console.error('🎤 Error starting recording:', error);
-      }
-    }
-  };
-
-  const handleSendAudio = async () => {
-    if (!audioBlob || !selectedConversationId) {
-      console.error('🎤 Cannot send audio: missing blob or conversation ID');
-      return;
-    }
-    
-    try {
-      const formData = new FormData();
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const audioFile = new File([audioBlob], `voice-recording-${timestamp}.webm`, {
-        type: audioBlob.type || 'audio/webm'
-      });
-      
-      formData.append('file', audioFile);
-      formData.append('sendToWhatsApp', 'true');
-      formData.append('messageType', 'voice');
-      formData.append('caption', 'Mensagem de voz');
-
-      const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status}`);
-      }
-
-      clearRecording();
-
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-
-    } catch (error) {
-      console.error('🎤 Error uploading audio:', error);
-      alert('Erro ao enviar áudio. Tente novamente.');
-    }
-  };
-
-  const handleCancelAudio = () => {
-    clearRecording();
-    setIsPlaying(false);
-  };
-
-  const togglePlayback = () => {
-    if (!audioRef.current) return;
-    
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const handleMicrophoneClick = () => {
+    // Audio recording functionality removed - button does nothing
+    console.log('🎤 Audio recording disabled');
   };
 
   if (!patientInfo) {
@@ -305,74 +188,6 @@ export function MainConversationArea({
         )}
       </div>
 
-      {/* Recording Interface - RED BLOCK */}
-      {recordingState === 'recording' && (
-        <div className="flex-shrink-0 bg-red-50 border-t border-red-200 p-4">
-          {console.log('🔴 RED BLOCK IS RENDERING - Recording in progress')}
-          <div className="flex items-center justify-between bg-red-500 text-white p-3 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-              <span className="font-medium">Gravando...</span>
-              <span className="text-red-100">{formatTime(recordingTime)}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMicrophoneClick}
-              className="text-white hover:bg-red-600"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Audio Preview Interface - BLUE BLOCK */}
-      {recordingState === 'stopped' && audioUrl && (
-        <div className="flex-shrink-0 bg-blue-50 border-t border-blue-200 p-4">
-          {console.log('🔵 BLUE BLOCK IS RENDERING - Audio ready for preview')}
-          <div className="bg-blue-500 text-white p-3 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={togglePlayback}
-                  className="text-white hover:bg-blue-600 w-8 h-8 p-0"
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </Button>
-                <span className="text-sm">Áudio gravado ({formatTime(recordingTime)})</span>
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancelAudio}
-                  className="text-white hover:bg-blue-600"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSendAudio}
-                  className="text-white hover:bg-blue-600"
-                >
-                  <Check className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            <audio
-              ref={audioRef}
-              src={audioUrl}
-              onEnded={() => setIsPlaying(false)}
-              className="hidden"
-            />
-          </div>
-        </div>
-      )}
-
       {/* Input Area - Fixed at Bottom */}
       <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
         <div className="flex mb-3 space-x-2">
@@ -403,11 +218,23 @@ export function MainConversationArea({
             )}
           >
             <FileText className="w-4 h-4" />
-            <span>Nota</span>
+            <span>Nota Interna</span>
           </Button>
+
+          {showInfoButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onInfoClick}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            >
+              <Info className="w-4 h-4" />
+              <span>Informações do Paciente</span>
+            </Button>
+          )}
         </div>
 
-        <div className="flex items-end space-x-3 relative">
+        <div className="flex space-x-2 items-end">
           <Button
             variant="ghost"
             size="sm"
@@ -423,12 +250,12 @@ export function MainConversationArea({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isNoteMode ? "Digite uma nota interna..." : "Digite sua mensagem..."}
+              placeholder={isNoteMode ? "Digite sua nota interna..." : "Digite sua mensagem..."}
               className={cn(
-                "min-h-[40px] max-h-[100px] resize-none rounded-lg focus:ring-1 transition-all",
+                "resize-none pr-4 transition-all duration-200",
                 isNoteMode 
-                  ? "bg-amber-50 border-amber-300 focus:border-amber-500 focus:ring-amber-500 text-amber-900 placeholder:text-amber-600" 
-                  : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  ? "border-amber-300 focus:border-amber-500 focus:ring-amber-200" 
+                  : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
               )}
               rows={1}
             />
@@ -438,7 +265,7 @@ export function MainConversationArea({
             variant="ghost"
             size="sm"
             className="text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10"
-            title="Gravar áudio"
+            title="Gravar áudio (desabilitado)"
             onClick={handleMicrophoneClick}
           >
             <Mic className="w-4 h-4" />
