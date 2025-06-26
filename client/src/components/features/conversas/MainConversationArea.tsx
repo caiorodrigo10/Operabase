@@ -298,22 +298,6 @@ export function MainConversationArea({
             <span>Nota Interna</span>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAIActive(!isAIActive)}
-            className={cn(
-              "flex items-center space-x-2 transition-all",
-              isAIActive
-                ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200"
-            )}
-            title={isAIActive ? "IA ativada - clique para desativar" : "IA desativada - clique para ativar"}
-          >
-            <Bot className="w-4 h-4" />
-            <span>IA</span>
-          </Button>
-
           {showInfoButton && (
             <Button
               variant="outline"
@@ -328,6 +312,21 @@ export function MainConversationArea({
         </div>
 
         <div className="flex space-x-2 items-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsAIActive(!isAIActive)}
+            className={cn(
+              "flex-shrink-0 w-10 h-10 transition-all",
+              isAIActive
+                ? "bg-blue-500 text-white hover:bg-blue-600"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+            )}
+            title={isAIActive ? "IA ativada - clique para desativar" : "IA desativada - clique para ativar"}
+          >
+            <Bot className="w-4 h-4" />
+          </Button>
+
           <Button
             variant="ghost"
             size="sm"
