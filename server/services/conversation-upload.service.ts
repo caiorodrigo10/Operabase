@@ -579,10 +579,43 @@ export class ConversationUploadService {
   }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
     console.log('🎤 Enviando áudio via /sendWhatsAppAudio (Evolution API V2)...');
 
+    // CORREÇÃO CRÍTICA: Regenerar URL assinada no momento do envio
+    let finalAudioUrl = params.audioUrl;
+    
+    if (params.audioUrl.includes('supabase') && params.audioUrl.includes('token=')) {
+      console.log('🔄 Regenerando URL assinada do Supabase (correção de expiração)...');
+      try {
+        // Extrair path do storage da URL atual
+        const urlParts = params.audioUrl.split('/object/sign/');
+        if (urlParts.length === 2) {
+          const storagePath = urlParts[1].split('?')[0]; // Remove parâmetros de query
+          
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            process.env.SUPABASE_URL!, 
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+          
+          const { data: newSignedData, error: signedError } = await supabase.storage
+            .from('conversation-attachments')
+            .createSignedUrl(storagePath, 3600); // 1 hora de validade
+          
+          if (!signedError && newSignedData?.signedUrl) {
+            finalAudioUrl = newSignedData.signedUrl;
+            console.log('✅ URL assinada regenerada com sucesso');
+          } else {
+            console.warn('⚠️ Falha ao regenerar URL, usando original:', signedError?.message);
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro ao regenerar URL assinada, usando original:', error);
+      }
+    }
+
     // Payload conforme documentação Evolution API V2
     const payload = {
       number: params.number,
-      audio: params.audioUrl, // URL do áudio no Supabase Storage
+      audio: finalAudioUrl, // URL regenerada ou original
       delay: 1000
     };
 
@@ -590,6 +623,7 @@ export class ConversationUploadService {
       endpoint: `${params.evolutionUrl}/message/sendWhatsAppAudio/${params.instanceName}`,
       number: payload.number,
       audioUrl: payload.audio,
+      urlRegenerated: finalAudioUrl !== params.audioUrl,
       delay: payload.delay
     });
 
@@ -630,8 +664,16 @@ export class ConversationUploadService {
         console.error('❌ WhatsApp Audio Error:', {
           status: response.status,
           statusText: response.statusText,
-          body: errorText
+          body: errorText,
+          originalUrl: params.audioUrl,
+          finalUrl: finalAudioUrl,
+          urlWasRegenerated: finalAudioUrl !== params.audioUrl
         });
+        
+        // Se URL foi regenerada e ainda falhou, é erro definitivo
+        if (finalAudioUrl !== params.audioUrl) {
+          console.error('❌ ERRO DEFINITIVO: URL regenerada ainda falhou - problema não é de expiração');
+        }
         
         return {
           sent: false,
