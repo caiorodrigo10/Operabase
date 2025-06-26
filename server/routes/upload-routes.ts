@@ -128,14 +128,18 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           .eq('status', 'open');
         const activeInstance = instances && instances.length > 0 ? instances[0] : null;
         
-        if (conversation && activeInstance) {
+        console.log('🔍 Debug - Conversation:', conversation);
+        console.log('🔍 Debug - Active Instance:', activeInstance);
+        
+        if (conversation && conversation.contacts && activeInstance) {
           console.log('🎤 BYPASS: Enviando direto para /sendWhatsAppAudio');
+          console.log('📞 Telefone do contato:', conversation.contacts.phone);
           
           const evolutionUrl = process.env.EVOLUTION_API_URL!;
           const evolutionApiKey = process.env.EVOLUTION_API_KEY!;
           
           const whatsappPayload = {
-            number: conversation.contact.phone,
+            number: conversation.contacts.phone,
             media: storageResult.signed_url
           };
           
