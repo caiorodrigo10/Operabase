@@ -696,3 +696,69 @@ export const insertN8NChatMessageSchema = createInsertSchema(n8n_chat_messages).
 
 export type N8NChatMessage = typeof n8n_chat_messages.$inferSelect;
 export type InsertN8NChatMessage = z.infer<typeof insertN8NChatMessageSchema>;
+
+// ================================================================
+// LIVIA AI CONFIGURATION SYSTEM
+// ================================================================
+
+// Tabela para configurações da assistente Livia por clínica
+export const livia_configurations = pgTable("livia_configurations", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull().unique(),
+  
+  // Prompt geral da IA
+  general_prompt: text("general_prompt").notNull().default(`Você é Livia, assistente virtual especializada da nossa clínica médica. Seja sempre empática, profissional e prestativa.
+
+Suas principais responsabilidades:
+- Responder dúvidas sobre procedimentos e horários
+- Auxiliar no agendamento de consultas
+- Fornecer informações gerais sobre a clínica
+- Identificar situações de urgência
+
+Mantenha um tom acolhedor e use linguagem simples. Em caso de dúvidas médicas específicas, sempre oriente a procurar um profissional.`),
+  
+  // Número WhatsApp (referência à tabela existente)
+  whatsapp_number_id: integer("whatsapp_number_id"), // References whatsapp_numbers.id
+  
+  // Configurações de tempo "off"
+  off_duration: integer("off_duration").notNull().default(30),
+  off_unit: varchar("off_unit", { length: 10 }).notNull().default("minutos"), // 'minutos', 'horas', 'dias'
+  
+  // Arrays de IDs para relacionamentos
+  selected_professional_ids: integer("selected_professional_ids").array().default([]), // Array de IDs de profissionais
+  connected_knowledge_base_ids: integer("connected_knowledge_base_ids").array().default([]), // Array de IDs de bases de conhecimento
+  
+  // Controle e timestamps
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_livia_configurations_clinic").on(table.clinic_id),
+  index("idx_livia_configurations_whatsapp").on(table.whatsapp_number_id),
+  index("idx_livia_configurations_active").on(table.is_active),
+]);
+
+// Zod schemas para validação
+export const insertLiviaConfigurationSchema = createInsertSchema(livia_configurations).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  clinic_id: z.number().min(1, "Clinic ID é obrigatório"),
+  general_prompt: z.string().min(10, "Prompt deve ter pelo menos 10 caracteres"),
+  whatsapp_number_id: z.number().optional(),
+  off_duration: z.number().min(1, "Duração deve ser pelo menos 1").max(999, "Duração muito alta"),
+  off_unit: z.enum(["minutos", "horas", "dias"]),
+  selected_professional_ids: z.array(z.number()).optional(),
+  connected_knowledge_base_ids: z.array(z.number()).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export const updateLiviaConfigurationSchema = insertLiviaConfigurationSchema.partial().extend({
+  clinic_id: z.number().min(1, "Clinic ID é obrigatório"),
+});
+
+// Types para TypeScript
+export type LiviaConfiguration = typeof livia_configurations.$inferSelect;
+export type InsertLiviaConfiguration = z.infer<typeof insertLiviaConfigurationSchema>;
+export type UpdateLiviaConfiguration = z.infer<typeof updateLiviaConfigurationSchema>;
