@@ -563,6 +563,10 @@ export const message_attachments = pgTable("message_attachments", {
   file_url: text("file_url"), // URL do arquivo (local - mantido para compatibilidade)
   
   // Supabase Storage Integration (DISABLED - columns don't exist in real database)
+  // IMPORTANT: These columns are commented out because they don't exist in the actual database
+  // Adding them to the schema causes "column does not exist" errors during uploads
+  // If you need to add these columns, first create them in the database, then uncomment here
+  // See DATABASE-SCHEMA-GUIDE.md for complete documentation
   // storage_bucket: varchar("storage_bucket", { length: 100 }).default("conversation-attachments"),
   // storage_path: varchar("storage_path", { length: 500 }), // Caminho no Supabase Storage
   // public_url: text("public_url"), // URL pública (se aplicável)

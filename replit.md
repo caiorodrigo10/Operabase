@@ -156,6 +156,19 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - Image Upload System Fixed & Database Schema Alignment ✅
+- **Critical Fix**: Resolved image upload failure caused by schema/database mismatch
+- **Problem**: Drizzle ORM schema included Supabase Storage columns (storage_bucket, storage_path, etc.) that don't exist in real database
+- **Solution**: Disabled Supabase Storage columns in schema, keeping only existing columns (file_name, file_type, file_size, file_url)
+- **Key Learning**: Always verify actual database structure vs schema definitions before deployment
+- **Upload Flow**: Image uploads now work correctly using existing infrastructure:
+  - File uploaded to Supabase Storage with signed URLs
+  - Message created with file_upload ai_action
+  - Attachment record uses only existing database columns
+  - Evolution API integration for WhatsApp delivery
+- **Database Compatibility**: System adapted to work with current table structure without breaking changes
+- **Documentation**: Added clear notes about which columns exist vs planned future enhancements
+
 ### June 26, 2025 - Audio Recording Components Completely Removed ✅
 - Removed all audio recording functionality per user request for simplified interface
 - Deleted useAudioRecorder.ts hook completely
