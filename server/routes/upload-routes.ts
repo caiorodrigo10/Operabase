@@ -135,9 +135,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         
         const whatsappPayload = {
           number: phoneNumber,
-          media: storageResult.signed_url,
-          fileName: req.file.originalname || 'audio.webm',
-          caption: ''
+          audio: storageResult.signed_url
         };
           
           const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`, {
