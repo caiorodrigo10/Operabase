@@ -128,6 +128,29 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           throw new Error('No WhatsApp instance found for this clinic');
         }
 
+        // Validar se a instância está ativa na Evolution API
+        console.log('🔍 STEP 4.4: Validando instância na Evolution API...');
+        const instanceCheckUrl = `${evolutionUrl}/instance/fetchInstances`;
+        const instanceCheckResponse = await fetch(instanceCheckUrl, {
+          method: 'GET',
+          headers: {
+            'apikey': evolutionApiKey
+          }
+        });
+        
+        if (instanceCheckResponse.ok) {
+          const instances = await instanceCheckResponse.json();
+          console.log('✅ STEP 4.4: Instâncias disponíveis:', instances.length);
+          const activeInstance = instances.find((inst: any) => inst.instance.instanceName === instanceName);
+          if (activeInstance) {
+            console.log('✅ STEP 4.4: Instância ativa:', activeInstance.instance.status);
+          } else {
+            console.error('❌ STEP 4.4: Instância não encontrada na Evolution API');
+          }
+        } else {
+          console.error('❌ STEP 4.4: Falha ao verificar instâncias:', instanceCheckResponse.status);
+        }
+
         console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
           conversationId,
           phoneNumber,
@@ -150,41 +173,20 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
         
-        // Testar diferentes tipos de URL para Evolution API
+        // Create signed URL with 2 hour expiration (same as working uploads)
+        const { data: shortSignedData, error: shortSignedError } = await supabase.storage
+          .from('conversation-attachments')
+          .createSignedUrl(storagePath, 2 * 60 * 60); // 2 hours
         
-        // 1. Tentar URL pública primeiro (se possível)
-        const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/conversation-attachments/${storagePath}`;
-        
-        console.log('🔍 TESTE: Tentando URL pública:', publicUrl);
-        
-        // Verificar se arquivo é acessível publicamente
-        const publicTest = await fetch(publicUrl, { method: 'HEAD' });
-        console.log('🔍 TESTE: URL pública acessível:', publicTest.ok);
-        
-        let audioUrl;
-        
-        if (publicTest.ok) {
-          audioUrl = publicUrl;
-          console.log('✅ USANDO: URL pública');
-        } else {
-          // 2. Usar URL assinada com expiração curta (1 hora)
-          const { data: shortSignedData, error: shortSignedError } = await supabase.storage
-            .from('conversation-attachments')
-            .createSignedUrl(storagePath, 60 * 60); // 1 hora
-          
-          if (shortSignedError) {
-            console.error('❌ Erro ao gerar URL temporária:', shortSignedError);
-            throw new Error('Falha ao criar URL de acesso temporário');
-          }
-          
-          audioUrl = shortSignedData.signedUrl;
-          console.log('✅ USANDO: URL assinada');
+        if (shortSignedError) {
+          console.error('❌ Erro ao gerar URL temporária:', shortSignedError);
+          throw new Error('Falha ao criar URL de acesso temporário');
         }
         
         // Formato correto conforme documentação Evolution API
         const whatsappPayload = {
           number: phoneNumber,
-          audio: audioUrl
+          audio: shortSignedData.signedUrl
         };
           
           console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
