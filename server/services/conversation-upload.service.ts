@@ -563,7 +563,7 @@ export class ConversationUploadService {
     }
   }
 
-  // ETAPA 5: Método otimizado para áudios de voz com format optimization e enhanced error handling
+  // Método para enviar áudio usando endpoint específico /sendWhatsAppAudio da Evolution API V2
   private async sendWhatsAppAudio(params: {
     instanceName: string;
     number: string;
@@ -571,42 +571,30 @@ export class ConversationUploadService {
     evolutionUrl: string;
     evolutionApiKey: string;
   }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
-    console.log('🎤 ETAPA 5: Enhanced WhatsApp Audio Processing...');
+    console.log('🎤 Enviando áudio via /sendWhatsAppAudio (Evolution API V2)...');
 
-    // ETAPA 5: Format optimization - verificar e otimizar formato do áudio
-    const optimizedParams = await this.optimizeAudioFormat(params);
-    
+    // Payload conforme documentação Evolution API V2
     const payload = {
-      number: optimizedParams.number,
-      audio: optimizedParams.audioUrl,
-      delay: 1000,
-      // ETAPA 5: Configurações otimizadas para áudio
-      encoding: 'base64', // Preferred encoding for WhatsApp
-      ptt: true, // Push-to-talk explicitly enabled
-      options: {
-        quality: 'high',
-        compress: false // Manter qualidade original para mensagens de voz
-      }
+      number: params.number,
+      audio: params.audioUrl, // URL do áudio no Supabase Storage
+      delay: 1000
     };
 
-    console.log('🎤 ETAPA 5 Enhanced Audio Payload:', {
-      endpoint: `${optimizedParams.evolutionUrl}/message/sendWhatsAppAudio/${optimizedParams.instanceName}`,
+    console.log('🎤 Audio Payload (Evolution API V2):', {
+      endpoint: `${params.evolutionUrl}/message/sendWhatsAppAudio/${params.instanceName}`,
       number: payload.number,
-      audioSize: optimizedParams.audioUrl.length,
-      encoding: payload.encoding,
-      ptt: payload.ptt,
-      quality: payload.options.quality
+      audioUrl: payload.audio,
+      delay: payload.delay
     });
 
     try {
-      // ETAPA 5: Enhanced timeout and retry logic
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(`${optimizedParams.evolutionUrl}/message/sendWhatsAppAudio/${optimizedParams.instanceName}`, {
+      const response = await fetch(`${params.evolutionUrl}/message/sendWhatsAppAudio/${params.instanceName}`, {
         method: 'POST',
         headers: {
-          'apikey': optimizedParams.evolutionApiKey,
+          'apikey': params.evolutionApiKey,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
@@ -619,57 +607,40 @@ export class ConversationUploadService {
       if (response.ok) {
         const result = await response.json();
         
-        // ETAPA 5: Enhanced success logging
-        const audioDetails = {
+        console.log('✅ WhatsApp Audio Success:', {
           messageId: result.key?.id,
           status: result.status,
           audioMessage: !!result.message?.audioMessage,
-          duration: result.message?.audioMessage?.seconds,
-          ptt: result.message?.audioMessage?.ptt,
-          mimetype: result.message?.audioMessage?.mimetype,
-          fileLength: result.message?.audioMessage?.fileLength,
-          timestamp: new Date().toISOString()
-        };
-
-        console.log('✅ ETAPA 5 WhatsApp Audio Success:', audioDetails);
+          mimetype: result.message?.audioMessage?.mimetype
+        });
         
         return {
           sent: true,
           messageId: result.key?.id
         };
       } else {
-        // ETAPA 5: Enhanced error handling with categorization
         const errorText = await response.text();
-        const errorCategory = this.categorizeAudioError(response.status, errorText);
         
-        console.error('❌ ETAPA 5 WhatsApp Audio Error:', {
+        console.error('❌ WhatsApp Audio Error:', {
           status: response.status,
           statusText: response.statusText,
-          category: errorCategory,
-          body: errorText,
-          retryable: this.isRetryableError(response.status),
-          timestamp: new Date().toISOString()
+          body: errorText
         });
         
         return {
           sent: false,
-          error: `${errorCategory}: ${response.status} - ${errorText}`
+          error: `Audio send failed: ${response.status} - ${errorText}`
         };
       }
     } catch (error) {
-      // ETAPA 5: Enhanced error categorization
-      const errorType = this.categorizeNetworkError(error);
-      
-      console.error('❌ ETAPA 5 WhatsApp Audio Request Failed:', {
-        type: errorType,
+      console.error('❌ WhatsApp Audio Request Failed:', {
         message: error instanceof Error ? error.message : 'Unknown error',
-        retryable: errorType === 'TIMEOUT' || errorType === 'NETWORK',
         timestamp: new Date().toISOString()
       });
       
       return {
         sent: false,
-        error: `${errorType}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

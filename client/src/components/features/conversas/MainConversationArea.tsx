@@ -127,7 +127,7 @@ export function MainConversationArea({
       formData.append('sendToWhatsApp', 'true');
       
       // Para áudio gravado, adicionar messageType específico
-      if (files[0] && files[0].name.includes('audio-gravado')) {
+      if (files[0] && (files[0].name.includes('gravacao_') || files[0].type.includes('audio/webm'))) {
         formData.append('messageType', 'audio_voice');
         console.log('🎤 Marked as audio_voice for Evolution API routing');
       }
