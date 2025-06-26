@@ -180,27 +180,14 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           throw new Error('EVOLUTION_API_KEY não configurada');
         }
         
-        // Create temporary signed URL with shorter expiration for Evolution API
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL!, 
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-        
-        // Create signed URL with 2 hour expiration (same as working uploads)
-        const { data: shortSignedData, error: shortSignedError } = await supabase.storage
-          .from('conversation-attachments')
-          .createSignedUrl(storagePath, 2 * 60 * 60); // 2 hours
-        
-        if (shortSignedError) {
-          console.error('❌ Erro ao gerar URL temporária:', shortSignedError);
-          throw new Error('Falha ao criar URL de acesso temporário');
-        }
-        
-        // Formato correto conforme documentação Evolution API
+        // Usar mesmo formato que funciona no sistema de mídia existente
         const whatsappPayload = {
           number: phoneNumber,
-          audio: shortSignedData.signedUrl
+          mediaMessage: {
+            mediaType: 'audio',
+            media: storageResult.signed_url,
+            fileName: filename
+          }
         };
           
           console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
@@ -290,6 +277,47 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // Endpoint proxy para servir arquivos de áudio publicamente para Evolution API
+  app.get('/api/audio-proxy/:storagePath(*)', async (req: Request, res: Response) => {
+    try {
+      const storagePath = decodeURIComponent(req.params.storagePath);
+      console.log('🔗 Audio proxy request for:', storagePath);
+      
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      
+      // Download do arquivo do Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('conversation-attachments')
+        .download(storagePath);
+      
+      if (error) {
+        console.error('❌ Error downloading from Supabase:', error);
+        return res.status(404).json({ error: 'Audio file not found' });
+      }
+      
+      // Servir arquivo com headers corretos
+      res.setHeader('Content-Type', 'audio/webm');
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      
+      // Converter Blob para Buffer e enviar
+      const arrayBuffer = await data.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      console.log('✅ Audio proxy serving file:', storagePath, 'Size:', buffer.length);
+      res.send(buffer);
+      
+    } catch (error) {
+      console.error('❌ Audio proxy error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Inicializar serviços
   const supabaseStorage = new SupabaseStorageService();
   const evolutionAPI = new EvolutionAPIService();
