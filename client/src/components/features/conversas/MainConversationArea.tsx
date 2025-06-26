@@ -381,7 +381,7 @@ export function MainConversationArea({
         <AudioRecordingModal
           isOpen={showAudioRecorder}
           onClose={() => setShowAudioRecorder(false)}
-          onAudioReady={handleAudioReady}
+          onSend={handleAudioReady}
         />
       )}
 
