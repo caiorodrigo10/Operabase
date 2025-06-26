@@ -76,8 +76,8 @@ export function useWhatsAppNumbers() {
 // Get professionals for current clinic 
 export function useProfessionals() {
   return useQuery({
-    queryKey: ['/api/clinic/1/users/management'],
-    queryFn: () => apiRequest('/api/clinic/1/users/management'),
+    queryKey: ['/api/clinic/1/professionals'],
+    queryFn: () => apiRequest('/api/clinic/1/professionals'),
   });
 }
 
