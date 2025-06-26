@@ -267,66 +267,69 @@ export function MainConversationArea({
 
       {/* Input Area - Fixed at Bottom */}
       <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-        <div className="flex mb-3 space-x-2">
-          <Button
-            variant={!isNoteMode ? "default" : "outline"}
-            size="sm"
-            onClick={() => setIsNoteMode(false)}
-            className={cn(
-              "flex items-center space-x-2 transition-all",
-              !isNoteMode 
-                ? "bg-blue-500 text-white hover:bg-blue-600" 
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-            )}
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Mensagem</span>
-          </Button>
-          
-          <Button
-            variant={isNoteMode ? "default" : "outline"}
-            size="sm"
-            onClick={() => setIsNoteMode(true)}
-            className={cn(
-              "flex items-center space-x-2 transition-all",
-              isNoteMode 
-                ? "bg-amber-500 text-white hover:bg-amber-600" 
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-            )}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Nota Interna</span>
-          </Button>
-
-          {showInfoButton && (
+        <div className="flex mb-3 justify-between items-center">
+          <div className="flex space-x-2">
             <Button
-              variant="outline"
+              variant={!isNoteMode ? "default" : "outline"}
               size="sm"
-              onClick={onInfoClick}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              onClick={() => setIsNoteMode(false)}
+              className={cn(
+                "flex items-center space-x-2 transition-all",
+                !isNoteMode 
+                  ? "bg-blue-500 text-white hover:bg-blue-600" 
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              )}
             >
-              <Info className="w-4 h-4" />
-              <span>Informações do Paciente</span>
+              <MessageCircle className="w-4 h-4" />
+              <span>Mensagem</span>
             </Button>
-          )}
-        </div>
+            
+            <Button
+              variant={isNoteMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsNoteMode(true)}
+              className={cn(
+                "flex items-center space-x-2 transition-all",
+                isNoteMode 
+                  ? "bg-amber-500 text-white hover:bg-amber-600" 
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              )}
+            >
+              <FileText className="w-4 h-4" />
+              <span>Nota Interna</span>
+            </Button>
 
-        <div className="flex space-x-2 items-end">
+            {showInfoButton && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onInfoClick}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              >
+                <Info className="w-4 h-4" />
+                <span>Informações do Paciente</span>
+              </Button>
+            )}
+          </div>
+
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => setIsAIActive(!isAIActive)}
             className={cn(
-              "flex-shrink-0 w-10 h-10 transition-all",
+              "flex items-center space-x-2 transition-all",
               isAIActive
-                ? "bg-blue-500 text-white hover:bg-blue-600"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200"
             )}
             title={isAIActive ? "IA ativada - clique para desativar" : "IA desativada - clique para ativar"}
           >
             <Bot className="w-4 h-4" />
+            <span>IA</span>
           </Button>
+        </div>
 
+        <div className="flex space-x-2 items-end">
           <Button
             variant="ghost"
             size="sm"
