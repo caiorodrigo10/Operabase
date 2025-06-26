@@ -599,6 +599,85 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         });
       }
 
+      // 🎯 INTEGRAÇÃO N8N: Salvar na tabela n8n_chat_messages
+      console.log('🔗 Iniciando integração N8N para mensagem ID:', formattedMessage.id);
+      
+      setImmediate(async () => {
+        try {
+          console.log('📋 N8N Integration: Coletando dados para session_id...');
+          
+          // Buscar telefone do contato
+          const contactPhone = actualConversation.contacts?.phone;
+          if (!contactPhone) {
+            console.log('⚠️ N8N Integration: Telefone do contato não encontrado, pulando integração');
+            return;
+          }
+          
+          // Buscar número WhatsApp da clínica
+          const { data: clinicWhatsApp, error: whatsappError } = await supabase
+            .from('whatsapp_numbers')
+            .select('phone_number')
+            .eq('clinic_id', 1)
+            .eq('status', 'open')
+            .limit(1)
+            .single();
+          
+          if (whatsappError || !clinicWhatsApp) {
+            console.log('⚠️ N8N Integration: Número WhatsApp da clínica não encontrado:', whatsappError?.message);
+            return;
+          }
+          
+          // Formatar session_id: "CONTACT_NUMBER-RECEIVING_NUMBER"
+          const sessionId = `${contactPhone}-${clinicWhatsApp.phone_number}`;
+          console.log('🆔 N8N Integration: Session ID formatado:', sessionId);
+          
+          // Criar estrutura de mensagem conforme especificação
+          const n8nMessage = {
+            type: "human",
+            content: content,
+            additional_kwargs: {},
+            response_metadata: {}
+          };
+          
+          console.log('💾 N8N Integration: Salvando mensagem na tabela n8n_chat_messages...');
+          
+          // Inserir na tabela n8n_chat_messages usando Drizzle ORM
+          const { default: { drizzle } } = await import('drizzle-orm/postgres-js');
+          const { default: postgres } = await import('postgres');
+          const { n8n_chat_messages } = await import('../shared/schema');
+          
+          const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_POOLER_URL;
+          const sql = postgres(connectionString);
+          const db = drizzle(sql);
+          
+          const insertResult = await db
+            .insert(n8n_chat_messages)
+            .values({
+              session_id: sessionId,
+              message: n8nMessage
+            })
+            .returning();
+          
+          console.log('✅ N8N Integration: Mensagem salva com sucesso!', {
+            n8n_id: insertResult[0]?.id,
+            session_id: sessionId,
+            content_preview: content.substring(0, 50) + '...'
+          });
+          
+          // Fechar conexão
+          await sql.end();
+          
+        } catch (n8nError) {
+          console.error('❌ N8N Integration: Erro ao salvar mensagem:', {
+            error: n8nError.message,
+            stack: n8nError.stack,
+            message_id: formattedMessage.id
+          });
+          
+          // Não interrompe o fluxo principal - integração N8N é opcional
+        }
+      });
+
       // ETAPA 3: Invalidate cache after new message
       const clinicId = 1; // Define clinic ID for cache invalidation
       const requestedConversationId = req.params.id;

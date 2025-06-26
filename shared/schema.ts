@@ -676,15 +676,12 @@ export const n8n_chat_messages = pgTable("n8n_chat_messages", {
   id: serial("id").primaryKey(),
   session_id: varchar("session_id", { length: 255 }).notNull(), // formato: "CONTACT_NUMBER-RECEIVING_NUMBER"
   message: jsonb("message").notNull(), // estrutura: {type: "human", content: "text", additional_kwargs: {}, response_metadata: {}}
-  created_at: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_n8n_chat_messages_session").on(table.session_id),
-  index("idx_n8n_chat_messages_created").on(table.created_at),
 ]);
 
 export const insertN8NChatMessageSchema = createInsertSchema(n8n_chat_messages).omit({
   id: true,
-  created_at: true,
 }).extend({
   session_id: z.string().min(1),
   message: z.object({
