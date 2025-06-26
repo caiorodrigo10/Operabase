@@ -7,6 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploadModal } from "./FileUploadModal";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 // Simple date formatting function
 const formatDateLabel = (dateString: string) => {
   const date = new Date(dateString);
@@ -78,17 +79,22 @@ export function MainConversationArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Audio recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [showAudioPreview, setShowAudioPreview] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // Use specialized audio recorder hook
+  const {
+    recordingState,
+    recordingTime,
+    audioBlob,
+    audioUrl,
+    isSupported: isAudioSupported,
+    startRecording,
+    stopRecording,
+    clearRecording,
+    error: audioError
+  } = useAudioRecorder();
+
+  // Audio preview states
   const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
@@ -100,20 +106,11 @@ export function MainConversationArea({
   // Cleanup audio resources on unmount
   useEffect(() => {
     return () => {
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
     };
-  }, [mediaRecorder, audioUrl]);
+  }, [audioUrl]);
 
   const handleSendMessage = () => {
     if (message.trim() && onSendMessage) {
@@ -156,184 +153,11 @@ export function MainConversationArea({
   };
 
   const handleMicrophoneClick = async () => {
-    if (isRecording) {
+    if (recordingState === 'recording') {
       stopRecording();
     } else {
       await startRecording();
     }
-  };
-
-  const startRecording = async () => {
-    try {
-      console.log('🎤 Starting audio recording...');
-      
-      // First, clean any existing state
-      resetAudioState();
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 44100
-        } 
-      });
-      
-      streamRef.current = stream;
-      console.log('🎤 Got media stream, tracks:', stream.getTracks().length);
-      
-      // Test stream is active
-      const audioTracks = stream.getAudioTracks();
-      if (audioTracks.length === 0) {
-        throw new Error('No audio tracks found');
-      }
-      
-      console.log('🎤 Audio track state:', audioTracks[0].readyState);
-      
-      // Try different MIME types based on browser support
-      let mimeType = '';
-      const supportedTypes = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/mp4',
-        'audio/ogg;codecs=opus'
-      ];
-      
-      for (const type of supportedTypes) {
-        if (MediaRecorder.isTypeSupported(type)) {
-          mimeType = type;
-          break;
-        }
-      }
-      
-      console.log('🎤 Using MIME type:', mimeType || 'default');
-      
-      const recorderOptions = mimeType ? { mimeType } : {};
-      const recorder = new MediaRecorder(stream, recorderOptions);
-      const chunks: BlobPart[] = [];
-      
-      console.log('🎤 MediaRecorder created, state:', recorder.state);
-      
-      recorder.ondataavailable = (event) => {
-        console.log('🎤 Data available:', event.data.size, 'bytes');
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-      
-      recorder.onstop = () => {
-        console.log('🎤 Recording stopped, chunks:', chunks.length, 'recordingTime:', recordingTime);
-        const finalMimeType = mimeType || 'audio/webm';
-        const blob = new Blob(chunks, { type: finalMimeType });
-        
-        console.log('🎤 Created blob:', {
-          size: blob.size,
-          type: blob.type,
-          recordingTime,
-          chunksCount: chunks.length
-        });
-        
-        // More lenient validation - allow any blob with data
-        if (blob.size === 0) {
-          console.error('🎤 Empty audio blob detected');
-          alert('Erro: Não foi possível capturar áudio. Verifique o microfone e tente novamente.');
-          resetAudioState();
-          return;
-        }
-        
-        console.log('🎤 Audio recorded successfully:', blob.size, 'bytes');
-        
-        setAudioBlob(blob);
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-        setShowAudioPreview(true);
-        
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-      };
-      
-      recorder.onerror = (event) => {
-        console.error('🎤 MediaRecorder error:', event);
-        alert('Erro na gravação. Tente novamente.');
-        resetAudioState();
-      };
-
-      recorder.onstart = () => {
-        console.log('🎤 MediaRecorder started successfully');
-      };
-      
-      // Store recorder before starting
-      setMediaRecorder(recorder);
-      
-      // Wait for recorder to be ready and then start
-      await new Promise((resolve, reject) => {
-        recorder.onstart = () => {
-          console.log('🎤 MediaRecorder started successfully');
-          resolve(void 0);
-        };
-        
-        recorder.onerror = (event) => {
-          console.error('🎤 MediaRecorder startup error:', event);
-          reject(new Error('MediaRecorder failed to start'));
-        };
-        
-        console.log('🎤 Starting recorder...');
-        recorder.start(250); // Collect data every 250ms
-      });
-      
-      // Only set recording state after successful start
-      setIsRecording(true);
-      setRecordingTime(0);
-      
-      // Start timer
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-      
-    } catch (error) {
-      console.error('🎤 Error starting recording:', error);
-      resetAudioState();
-      
-      if (error.name === 'NotAllowedError') {
-        alert('Permissão de microfone negada. Por favor, permita o acesso ao microfone e tente novamente.');
-      } else if (error.name === 'NotFoundError') {
-        alert('Microfone não encontrado. Verifique se há um microfone conectado.');
-      } else if (error.message.includes('MediaRecorder')) {
-        alert('Erro no sistema de gravação. Tente usar um navegador diferente ou verifique se o microfone está funcionando.');
-      } else {
-        alert('Erro ao iniciar gravação. Verifique as permissões do microfone.');
-      }
-    }
-  };
-
-  const stopRecording = () => {
-    console.log('🎤 Attempting to stop recording...');
-    
-    if (mediaRecorder) {
-      console.log('🎤 MediaRecorder state:', mediaRecorder.state);
-      
-      if (mediaRecorder.state === 'recording') {
-        console.log('🎤 Stopping MediaRecorder...');
-        mediaRecorder.stop();
-      } else if (mediaRecorder.state === 'paused') {
-        console.log('🎤 Resuming and stopping MediaRecorder...');
-        mediaRecorder.resume();
-        mediaRecorder.stop();
-      } else {
-        console.log('🎤 MediaRecorder not in recording state:', mediaRecorder.state);
-      }
-    } else {
-      console.error('🎤 No MediaRecorder instance found');
-    }
-    
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
-    }
-    
-    setIsRecording(false);
   };
 
   const handleSendAudio = async () => {
@@ -343,43 +167,10 @@ export function MainConversationArea({
     }
     
     try {
-      console.log('🎤 Preparing to send audio:', {
-        blobSize: audioBlob.size,
-        blobType: audioBlob.type,
-        conversationId: selectedConversationId,
-        recordingTime
-      });
-
-      // Additional validation
-      if (audioBlob.size === 0) {
-        alert('Erro: Áudio vazio. Grave novamente.');
-        return;
-      }
-
-      if (recordingTime < 0.5) {
-        alert('Áudio muito curto. Grave por pelo menos meio segundo.');
-        return;
-      }
-
       const formData = new FormData();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      
-      // Determine file extension based on MIME type
-      let extension = 'webm';
-      if (audioBlob.type.includes('mp4')) {
-        extension = 'mp4';
-      } else if (audioBlob.type.includes('wav')) {
-        extension = 'wav';
-      }
-      
-      const audioFile = new File([audioBlob], `voice-recording-${timestamp}.${extension}`, {
+      const audioFile = new File([audioBlob], `voice-recording-${timestamp}.webm`, {
         type: audioBlob.type || 'audio/webm'
-      });
-      
-      console.log('🎤 Created file:', {
-        name: audioFile.name,
-        size: audioFile.size,
-        type: audioFile.type
       });
       
       formData.append('file', audioFile);
@@ -387,42 +178,16 @@ export function MainConversationArea({
       formData.append('messageType', 'voice');
       formData.append('caption', 'Mensagem de voz');
 
-      console.log('🎤 Sending upload request...');
       const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
         method: 'POST',
         body: formData
       });
 
-      console.log('🎤 Upload response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('🎤 Audio upload failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText
-        });
-        
-        if (response.status === 413) {
-          alert('Áudio muito grande. Tente gravar um áudio mais curto.');
-        } else if (response.status === 400) {
-          alert('Formato de áudio não suportado. Tente novamente.');
-        } else if (response.status === 401) {
-          alert('Sessão expirada. Faça login novamente.');
-        } else {
-          alert(`Erro ao enviar áudio (${response.status}). Tente novamente.`);
-        }
-        return;
+        throw new Error(`Upload failed: ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log('🎤 Audio upload successful:', result);
-
-      resetAudioState();
+      clearRecording();
 
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -430,34 +195,13 @@ export function MainConversationArea({
 
     } catch (error) {
       console.error('🎤 Error uploading audio:', error);
-      
-      if (error.name === 'NetworkError' || error.message.includes('fetch')) {
-        alert('Erro de conexão. Verifique sua internet e tente novamente.');
-      } else {
-        alert('Erro ao enviar áudio. Tente novamente.');
-      }
-    }
-  };
-
-  const resetAudioState = () => {
-    setAudioBlob(null);
-    setShowAudioPreview(false);
-    setRecordingTime(0);
-    setIsPlaying(false);
-    
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-      setAudioUrl(null);
-    }
-    
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
+      alert('Erro ao enviar áudio. Tente novamente.');
     }
   };
 
   const handleCancelAudio = () => {
-    resetAudioState();
+    clearRecording();
+    setIsPlaying(false);
   };
 
   const togglePlayback = () => {
