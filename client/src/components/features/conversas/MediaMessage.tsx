@@ -158,18 +158,7 @@ export function MediaMessage({
       audio.src = media_url;
       audioRef.current = audio;
       
-      // Test URL accessibility
-      fetch(media_url, { method: 'HEAD' })
-        .then(response => {
-          console.log('🎵 URL accessibility test:', { 
-            status: response.status, 
-            ok: response.ok,
-            contentType: response.headers.get('content-type')
-          });
-        })
-        .catch(error => {
-          console.error('🎵 URL accessibility error:', error);
-        });
+
       
       return () => {
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
