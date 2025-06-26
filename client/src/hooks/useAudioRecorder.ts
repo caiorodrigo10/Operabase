@@ -253,8 +253,14 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
 
   // Reset completo
   const reset = useCallback(() => {
-    cancelRecording();
-  }, [cancelRecording]);
+    console.log('🔄 Resetting audio recorder and cleaning up resources');
+    cleanup();
+    setState('idle');
+    setDuration(0);
+    setError(null);
+    setAudioFile(null);
+    finalDurationRef.current = 0;
+  }, [cleanup]);
 
   return {
     // Estados
