@@ -56,6 +56,7 @@ const evolutionTypeMapping: Record<string, 'image' | 'video' | 'document' | 'aud
   'audio/wav': 'audio',
   'audio/ogg': 'audio',
   'audio/m4a': 'audio',
+  'audio/mp4': 'audio',
   'audio/webm': 'audio',
   'application/pdf': 'document',
   'application/msword': 'document',

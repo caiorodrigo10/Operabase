@@ -156,6 +156,14 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - Audio MP4 Support Added to N8N Integration ✅
+- **Audio MP4 Files**: Added support for audio/mp4 MIME type in Evolution API mapping
+- **MIME Type Validation**: Updated evolutionTypeMapping to include 'audio/mp4': 'audio'
+- **WhatsApp Compatibility**: Audio MP4 files from WhatsApp now properly categorized and stored
+- **Supabase Storage**: MP4 audio files correctly uploaded to /audio/ folder with signed URLs
+- **Testing Validated**: Created comprehensive test confirming audio/mp4 acceptance and processing
+- **Database Integration**: Messages with MP4 audio properly saved as 'audio_voice' type for patient messages
+
 ### June 26, 2025 - N8N API Security Implementation Complete ✅
 - **Endpoint Protected**: `/api/n8n/upload` now secured with API KEY authentication
 - **Security Middleware**: Created `validateN8NApiKey` and `n8nRateLimiter` middleware for comprehensive protection
