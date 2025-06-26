@@ -98,10 +98,93 @@ export function MediaMessage({
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcription, setTranscription] = useState<string | null>(null);
   const [showTranscription, setShowTranscription] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio element when media_url changes
+  useEffect(() => {
+    if (media_url && (actualMediaType === 'audio' || actualMediaType === 'audio_file')) {
+      console.log('🎵 Initializing audio player:', { media_url, actualMediaType });
+      
+      // Create audio element
+      const audio = new Audio();
+      audio.preload = 'metadata';
+      // Remove CORS restriction for Supabase signed URLs
+      // audio.crossOrigin = 'anonymous';
+      
+      // Set up event listeners
+      const handleLoadedMetadata = () => {
+        console.log('🎵 Audio metadata loaded:', { duration: audio.duration });
+        setDuration(audio.duration);
+      };
+      
+      const handleTimeUpdate = () => {
+        setCurrentTime(audio.currentTime);
+        setProgress((audio.currentTime / audio.duration) * 100);
+      };
+      
+      const handleEnded = () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setProgress(0);
+      };
+
+      const handleError = (e: any) => {
+        console.error('🎵 Audio playback error:', {
+          error: e,
+          audioSrc: audio.src,
+          networkState: audio.networkState,
+          readyState: audio.readyState,
+          errorCode: audio.error?.code,
+          errorMessage: audio.error?.message,
+          actualMediaType,
+          media_url
+        });
+        setIsPlaying(false);
+      };
+
+      const handleCanPlay = () => {
+        console.log('🎵 Audio can play:', { duration: audio.duration, readyState: audio.readyState });
+      };
+      
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.addEventListener('timeupdate', handleTimeUpdate);
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleError);
+      audio.addEventListener('canplay', handleCanPlay);
+      
+      // Set source and load
+      audio.src = media_url;
+      audioRef.current = audio;
+      
+      // Test URL accessibility
+      fetch(media_url, { method: 'HEAD' })
+        .then(response => {
+          console.log('🎵 URL accessibility test:', { 
+            status: response.status, 
+            ok: response.ok,
+            contentType: response.headers.get('content-type')
+          });
+        })
+        .catch(error => {
+          console.error('🎵 URL accessibility error:', error);
+        });
+      
+      return () => {
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
+        audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('error', handleError);
+        audio.removeEventListener('canplay', handleCanPlay);
+        audio.pause();
+        audio.src = '';
+        audioRef.current = null;
+      };
+    }
+  }, [media_url, actualMediaType]);
 
   const handleTranscribe = async () => {
     setIsTranscribing(true);
@@ -113,46 +196,42 @@ export function MediaMessage({
     }, 2000);
   };
 
-  const stopPlayback = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setIsPlaying(false);
-  };
-
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      stopPlayback();
-    } else {
-      setIsPlaying(true);
-      const duration = media_duration || 45;
-      
-      intervalRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          const newTime = prev + 1;
-          if (newTime >= duration) {
-            stopPlayback();
-            return duration;
-          }
-          return newTime;
-        });
-        setProgress(prev => {
-          const newProgress = prev + (100 / duration);
-          if (newProgress >= 100) {
-            return 100;
-          }
-          return newProgress;
-        });
-      }, 1000);
+  const handlePlayPause = async () => {
+    if (!audioRef.current) return;
+    
+    try {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsPlaying(false);
     }
   };
 
-  // Cleanup interval on unmount
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+    const newTime = (percentage / 100) * audioRef.current.duration;
+    
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+    setProgress(percentage);
+  };
+
+  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
     };
   }, []);
@@ -248,21 +327,14 @@ export function MediaMessage({
                 Áudio
               </div>
               <div className="text-xs text-gray-500">
-                {formatDuration(currentTime)} / {formatDuration(media_duration)}
+                {formatDuration(currentTime)} / {formatDuration(duration || media_duration)}
               </div>
             </div>
           </div>
           <Progress 
             value={progress} 
             className="h-1 cursor-pointer" 
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const percentage = (x / rect.width) * 100;
-              const newTime = (percentage / 100) * (media_duration || 45);
-              setCurrentTime(newTime);
-              setProgress(percentage);
-            }}
+            onClick={handleSeek}
           />
           
           {/* Indicador para áudio de arquivo */}
