@@ -244,6 +244,13 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
               payload: whatsappPayload
             });
             await storage.updateMessage(message.id, { evolution_status: 'failed' });
+            
+            return res.json({
+              success: true,
+              data: { message, attachment, whatsapp: { sent: false, error: result } },
+              message: 'Áudio salvo, mas falha no envio WhatsApp',
+              warning: 'Evolution API retornou erro'
+            });
           }
 
       } catch (whatsappError) {
