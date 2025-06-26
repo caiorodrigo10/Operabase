@@ -1,197 +1,267 @@
-import React, { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Mic, Square, Play, Pause, RotateCcw, Send } from 'lucide-react';
+import { Mic, Square, Play, Pause, Send, X, AlertCircle } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { cn } from '@/lib/utils';
 
 interface AudioRecordingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAudioReady: (audioFile: File) => void;
+  onSend: (audioFile: File) => void;
+  isUploading?: boolean;
 }
 
-export function AudioRecordingModal({ isOpen, onClose, onAudioReady }: AudioRecordingModalProps) {
+export function AudioRecordingModal({ 
+  isOpen, 
+  onClose, 
+  onSend, 
+  isUploading = false 
+}: AudioRecordingModalProps) {
   const {
-    state,
+    isRecording,
+    audioBlob,
+    duration,
+    error,
+    isSupported,
     startRecording,
     stopRecording,
-    playRecording,
-    pauseRecording,
     resetRecording,
-    onAudioReady: setAudioReadyCallback
+    getAudioFile
   } = useAudioRecorder();
 
-  useEffect(() => {
-    setAudioReadyCallback(onAudioReady);
-  }, [onAudioReady, setAudioReadyCallback]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
-  const handleClose = () => {
+  // Create audio URL when blob is available
+  useEffect(() => {
+    if (audioBlob) {
+      const url = URL.createObjectURL(audioBlob);
+      setAudioUrl(url);
+      
+      const audio = new Audio(url);
+      audio.onended = () => setIsPlaying(false);
+      setAudioElement(audio);
+      
+      return () => {
+        URL.revokeObjectURL(url);
+        audio.remove();
+      };
+    } else {
+      setAudioUrl(null);
+      setAudioElement(null);
+    }
+  }, [audioBlob]);
+
+  // Clean up when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetRecording();
+      setIsPlaying(false);
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    }
+  }, [isOpen, resetRecording, audioUrl]);
+
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleStartRecording = async () => {
+    await startRecording();
+  };
+
+  const handleStopRecording = () => {
+    stopRecording();
+  };
+
+  const handlePlayPause = () => {
+    if (!audioElement) return;
+
+    if (isPlaying) {
+      audioElement.pause();
+      setIsPlaying(false);
+    } else {
+      audioElement.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleSend = () => {
+    const audioFile = getAudioFile();
+    if (audioFile) {
+      onSend(audioFile);
+    }
+  };
+
+  const handleCancel = () => {
     resetRecording();
     onClose();
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getVolumeBar = () => {
-    const bars = Array.from({ length: 5 }, (_, i) => {
-      const threshold = (i + 1) * 20;
-      const isActive = state.volume > threshold;
-      return (
-        <div
-          key={i}
-          className={cn(
-            "w-1 h-4 mx-0.5 rounded-full transition-colors duration-150",
-            isActive ? "bg-red-500" : "bg-gray-300"
-          )}
-        />
-      );
-    });
-    return <div className="flex items-center">{bars}</div>;
-  };
+  if (!isSupported) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Gravação não suportada
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Seu navegador não suporta gravação de áudio. Por favor, use o botão de anexo para enviar um arquivo de áudio.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={onClose}>
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Gravação de Áudio</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Mic className="h-5 w-5" />
+            Gravar áudio
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Status and Timer */}
-          <div className="text-center">
-            {state.isRecording && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-sm text-gray-600">Gravando...</span>
-                </div>
-                <div className="text-lg font-mono">
-                  {formatTime(state.currentTime)}
-                </div>
-                {getVolumeBar()}
-              </div>
-            )}
-
-            {state.audioUrl && !state.isRecording && (
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">
-                  Gravação concluída
-                </div>
-                <div className="text-lg font-mono">
-                  {formatTime(state.duration)}
-                </div>
-              </div>
-            )}
-
-            {!state.isRecording && !state.audioUrl && (
-              <div className="text-sm text-gray-600">
-                Pressione o botão para começar a gravar
-              </div>
-            )}
-          </div>
-
-          {/* Audio Playback */}
-          {state.audioUrl && (
-            <div className="space-y-2">
-              <Progress 
-                value={(state.currentTime / state.duration) * 100} 
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>{formatTime(state.currentTime)}</span>
-                <span>{formatTime(state.duration)}</span>
+        <div className="py-6">
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
+              <div className="flex items-center gap-2 text-red-800">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm">{error}</span>
               </div>
             </div>
           )}
 
-          {/* Control Buttons */}
-          <div className="flex justify-center space-x-4">
-            {!state.isRecording && !state.audioUrl && (
-              <Button
-                onClick={startRecording}
-                size="lg"
-                className="bg-red-500 hover:bg-red-600 text-white rounded-full w-16 h-16"
+          <div className="flex flex-col items-center space-y-6">
+            {/* Recording indicator */}
+            <div className="flex flex-col items-center space-y-2">
+              <div 
+                className={cn(
+                  "w-20 h-20 rounded-full border-4 flex items-center justify-center transition-all duration-300",
+                  isRecording 
+                    ? "border-red-500 bg-red-50 animate-pulse" 
+                    : audioBlob 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-gray-300 bg-gray-50"
+                )}
               >
-                <Mic className="w-6 h-6" />
-              </Button>
-            )}
-
-            {state.isRecording && (
-              <Button
-                onClick={stopRecording}
-                size="lg"
-                variant="destructive"
-                className="rounded-full w-16 h-16"
-              >
-                <Square className="w-6 h-6" />
-              </Button>
-            )}
-
-            {state.audioUrl && (
-              <>
-                <Button
-                  onClick={state.isPlaying ? pauseRecording : playRecording}
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full w-12 h-12"
-                >
-                  {state.isPlaying ? (
-                    <Pause className="w-5 h-5" />
-                  ) : (
-                    <Play className="w-5 h-5" />
-                  )}
-                </Button>
-
-                <Button
-                  onClick={resetRecording}
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full w-12 h-12"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          {state.audioUrl && (
-            <div className="flex justify-between">
-              <Button
-                onClick={handleClose}
-                variant="outline"
-              >
-                Cancelar
-              </Button>
+                <Mic 
+                  className={cn(
+                    "h-8 w-8 transition-colors",
+                    isRecording 
+                      ? "text-red-500" 
+                      : audioBlob 
+                      ? "text-green-500" 
+                      : "text-gray-400"
+                  )} 
+                />
+              </div>
               
-              <Button
-                onClick={() => {
-                  // The onAudioReady callback will be triggered automatically
-                  // when the audio is ready, which will close the modal
-                }}
-                className="bg-emerald-500 hover:bg-emerald-600"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Enviar Áudio
-              </Button>
+              <div className="text-center">
+                <div className="text-2xl font-mono font-bold">
+                  {formatDuration(duration)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {isRecording 
+                    ? "Gravando..." 
+                    : audioBlob 
+                    ? "Gravação concluída" 
+                    : "Pronto para gravar"
+                  }
+                </div>
+              </div>
             </div>
-          )}
 
-          {!state.audioUrl && !state.isRecording && (
-            <div className="flex justify-center">
-              <Button
-                onClick={handleClose}
-                variant="outline"
-              >
-                Cancelar
-              </Button>
+            {/* Controls */}
+            <div className="flex items-center space-x-4">
+              {!audioBlob ? (
+                // Recording controls
+                <>
+                  {!isRecording ? (
+                    <Button
+                      onClick={handleStartRecording}
+                      size="lg"
+                      className="rounded-full w-16 h-16 p-0"
+                    >
+                      <Mic className="h-6 w-6" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleStopRecording}
+                      variant="destructive"
+                      size="lg"
+                      className="rounded-full w-16 h-16 p-0"
+                    >
+                      <Square className="h-6 w-6" />
+                    </Button>
+                  )}
+                </>
+              ) : (
+                // Playback controls
+                <>
+                  <Button
+                    onClick={handlePlayPause}
+                    variant="outline"
+                    size="lg"
+                    className="rounded-full w-12 h-12 p-0"
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-5 w-5" />
+                    ) : (
+                      <Play className="h-5 w-5" />
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
+          </div>
+        </div>
+
+        {/* Footer buttons */}
+        <div className="flex justify-between">
+          <Button 
+            variant="outline" 
+            onClick={handleCancel}
+            disabled={isUploading}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Cancelar
+          </Button>
+
+          {audioBlob && (
+            <Button 
+              onClick={handleSend}
+              disabled={isUploading}
+              className="ml-2"
+            >
+              {isUploading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar
+                </>
+              )}
+            </Button>
           )}
         </div>
       </DialogContent>

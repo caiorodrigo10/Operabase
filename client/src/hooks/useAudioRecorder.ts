@@ -1,339 +1,193 @@
 import { useState, useRef, useCallback } from 'react';
 
-export interface AudioRecorderState {
+interface AudioRecorderState {
   isRecording: boolean;
-  isPlaying: boolean;
-  audioUrl: string | null;
+  audioBlob: Blob | null;
   duration: number;
-  currentTime: number;
-  volume: number;
+  error: string | null;
+  isSupported: boolean;
 }
 
-export interface UseAudioRecorderReturn {
-  state: AudioRecorderState;
+interface UseAudioRecorderReturn extends AudioRecorderState {
   startRecording: () => Promise<void>;
   stopRecording: () => void;
-  playRecording: () => void;
-  pauseRecording: () => void;
   resetRecording: () => void;
-  onAudioReady: (callback: (audioFile: File) => void) => void;
+  getAudioFile: () => File | null;
 }
 
-export const useAudioRecorder = (): UseAudioRecorderReturn => {
+export function useAudioRecorder(): UseAudioRecorderReturn {
   const [state, setState] = useState<AudioRecorderState>({
     isRecording: false,
-    isPlaying: false,
-    audioUrl: null,
+    audioBlob: null,
     duration: 0,
-    currentTime: 0,
-    volume: 0
+    error: null,
+    isSupported: typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
   });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-  const audioReadyCallbackRef = useRef<((audioFile: File) => void) | null>(null);
-  const volumeIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const recordingStartTimeRef = useRef<number>(0);
+  const chunksRef = useRef<Blob[]>([]);
+  const startTimeRef = useRef<number>(0);
+  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateDuration = useCallback(() => {
+    if (startTimeRef.current) {
+      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      setState(prev => ({ ...prev, duration: elapsed }));
+    }
+  }, []);
 
   const startRecording = useCallback(async () => {
+    if (!state.isSupported) {
+      setState(prev => ({ ...prev, error: 'Gravação de áudio não suportada neste navegador' }));
+      return;
+    }
+
     try {
-      console.log('🎤 Starting audio recording...');
+      setState(prev => ({ ...prev, error: null }));
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          sampleRate: 44100
         }
       });
-      
-      streamRef.current = stream;
-      audioChunksRef.current = [];
 
-      // Force OGG format for WhatsApp voice messages (required for native voice)
-      const oggMimeType = 'audio/ogg;codecs=opus';
-      let mimeType = oggMimeType;
-      let fileExtension = 'ogg';
-      
-      if (!MediaRecorder.isTypeSupported(oggMimeType)) {
-        // Try alternative OGG formats
-        const altOggFormats = [
-          'audio/ogg',
-          'audio/ogg; codecs=vorbis',
-          'audio/webm;codecs=opus' // Last resort for conversion
-        ];
-        
-        let formatFound = false;
-        for (const format of altOggFormats) {
-          if (MediaRecorder.isTypeSupported(format)) {
-            mimeType = format;
-            fileExtension = format.includes('webm') ? 'webm' : 'ogg';
-            formatFound = true;
-            console.log(`✅ Using format: ${format}`);
-            break;
+      streamRef.current = stream;
+      chunksRef.current = [];
+
+      // Try webm first, fallback to mp4
+      let mimeType = 'audio/webm;codecs=opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'audio/mp4';
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = ''; // Let browser choose
           }
         }
-        
-        if (!formatFound) {
-          throw new Error('Navegador não suporta gravação de áudio em formato compatível com WhatsApp');
-        }
-      } else {
-        console.log('✅ Using OGG/Opus format (WhatsApp native)');
       }
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      
-      mediaRecorderRef.current = mediaRecorder;
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: mimeType || undefined,
+        audioBitsPerSecond: 128000
+      });
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
+          chunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        console.log('🎤 Recording stopped, processing audio...');
-        
-        const audioBlob = new Blob(audioChunksRef.current, { 
-          type: mimeType 
+        const blob = new Blob(chunksRef.current, { 
+          type: mediaRecorder.mimeType || 'audio/webm' 
         });
         
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
-        // Create audio file with dynamic extension
-        const audioFile = new File(
-          [audioBlob], 
-          `gravacao_${Date.now()}.${fileExtension}`, 
-          { type: mimeType }
-        );
-
-        // Get the actual recording duration from the timer
-        const recordingDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
-        
-        setState(prev => ({
-          ...prev,
-          isRecording: false,
-          audioUrl,
-          volume: 0,
-          duration: recordingDuration,
-          currentTime: 0
+        setState(prev => ({ 
+          ...prev, 
+          audioBlob: blob, 
+          isRecording: false 
         }));
 
-        // Trigger callback with audio file
-        if (audioReadyCallbackRef.current) {
-          audioReadyCallbackRef.current(audioFile);
-        }
-
-        // Clean up stream
+        // Cleanup
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
           streamRef.current = null;
         }
       };
 
-      mediaRecorder.start(1000); // Collect data every 1 second
-      
-      // Start recording timer
-      recordingStartTimeRef.current = Date.now();
-      
-      setState(prev => ({
-        ...prev,
-        isRecording: true,
-        audioUrl: null,
-        duration: 0,
-        currentTime: 0
-      }));
-
-      // Start recording timer to track duration
-      recordingTimerRef.current = setInterval(() => {
-        const elapsed = (Date.now() - recordingStartTimeRef.current) / 1000;
-        setState(prev => ({
-          ...prev,
-          currentTime: elapsed
+      mediaRecorder.onerror = (event) => {
+        setState(prev => ({ 
+          ...prev, 
+          error: 'Erro durante a gravação', 
+          isRecording: false 
         }));
-      }, 100);
+      };
 
-      // Start volume monitoring
-      const audioContext = new AudioContext();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaStreamSource(stream);
-      source.connect(analyser);
-      
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      
-      volumeIntervalRef.current = setInterval(() => {
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        const volume = Math.min(100, Math.max(0, (average / 255) * 100));
-        
-        setState(prev => ({
-          ...prev,
-          volume
-        }));
-      }, 100);
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start(100); // Collect data every 100ms
+
+      startTimeRef.current = Date.now();
+      setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
+
+      // Start duration timer
+      durationIntervalRef.current = setInterval(updateDuration, 1000);
 
     } catch (error) {
-      console.error('❌ Error starting recording:', error);
-      setState(prev => ({
-        ...prev,
-        isRecording: false,
-        volume: 0
-      }));
+      let errorMessage = 'Erro ao acessar o microfone';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Permissão negada. Por favor, permita o acesso ao microfone.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'Microfone não encontrado.';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage = 'Gravação não suportada neste navegador.';
+        }
+      }
+
+      setState(prev => ({ ...prev, error: errorMessage }));
     }
-  }, []);
+  }, [state.isSupported, updateDuration]);
 
   const stopRecording = useCallback(() => {
-    console.log('🛑 Stopping audio recording...');
-    
     if (mediaRecorderRef.current && state.isRecording) {
       mediaRecorderRef.current.stop();
-    }
-    
-    // Stop all timers
-    if (volumeIntervalRef.current) {
-      clearInterval(volumeIntervalRef.current);
-      volumeIntervalRef.current = null;
-    }
-    
-    if (recordingTimerRef.current) {
-      clearInterval(recordingTimerRef.current);
-      recordingTimerRef.current = null;
+      
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+        durationIntervalRef.current = null;
+      }
     }
   }, [state.isRecording]);
 
-  const playRecording = useCallback(() => {
-    if (state.audioUrl && !state.isPlaying) {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(state.audioUrl);
-        
-        // Set loop to false to prevent infinite playback
-        audioRef.current.loop = false;
-        
-        audioRef.current.ontimeupdate = () => {
-          if (audioRef.current && !audioRef.current.ended) {
-            setState(prev => ({
-              ...prev,
-              currentTime: audioRef.current!.currentTime
-            }));
-          }
-        };
-        
-        audioRef.current.onloadedmetadata = () => {
-          if (audioRef.current && isFinite(audioRef.current.duration)) {
-            // Only update duration if it's a valid finite number
-            setState(prev => ({
-              ...prev,
-              duration: audioRef.current!.duration
-            }));
-          }
-        };
-        
-        audioRef.current.onended = () => {
-          setState(prev => ({
-            ...prev,
-            isPlaying: false,
-            currentTime: 0
-          }));
-        };
-
-        audioRef.current.onerror = (e) => {
-          console.error('Audio playback error:', e);
-          setState(prev => ({
-            ...prev,
-            isPlaying: false
-          }));
-        };
-      }
-      
-      audioRef.current.play().catch(error => {
-        console.error('Failed to play audio:', error);
-        setState(prev => ({
-          ...prev,
-          isPlaying: false
-        }));
-      });
-      
-      setState(prev => ({
-        ...prev,
-        isPlaying: true
-      }));
-    }
-  }, [state.audioUrl, state.isPlaying]);
-
-  const pauseRecording = useCallback(() => {
-    if (audioRef.current && state.isPlaying) {
-      audioRef.current.pause();
-      setState(prev => ({
-        ...prev,
-        isPlaying: false
-      }));
-    }
-  }, [state.isPlaying]);
-
   const resetRecording = useCallback(() => {
-    // Stop any ongoing recording
     if (mediaRecorderRef.current && state.isRecording) {
-      mediaRecorderRef.current.stop();
+      stopRecording();
     }
-    
-    // Stop any playing audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    
-    // Clear all intervals
-    if (volumeIntervalRef.current) {
-      clearInterval(volumeIntervalRef.current);
-      volumeIntervalRef.current = null;
-    }
-    
-    if (recordingTimerRef.current) {
-      clearInterval(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
-    
-    // Clean up stream
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    
-    // Clean up audio URL
-    if (state.audioUrl) {
-      URL.revokeObjectURL(state.audioUrl);
+
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
     }
-    
-    // Reset timers
-    recordingStartTimeRef.current = 0;
-    
-    // Reset state
+
     setState({
       isRecording: false,
-      isPlaying: false,
-      audioUrl: null,
+      audioBlob: null,
       duration: 0,
-      currentTime: 0,
-      volume: 0
+      error: null,
+      isSupported: typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
     });
-    
-    console.log('🔄 Audio recorder reset');
-  }, [state.isRecording, state.audioUrl]);
 
-  const onAudioReady = useCallback((callback: (audioFile: File) => void) => {
-    audioReadyCallbackRef.current = callback;
-  }, []);
+    mediaRecorderRef.current = null;
+    startTimeRef.current = 0;
+    chunksRef.current = [];
+  }, [state.isRecording, stopRecording]);
+
+  const getAudioFile = useCallback((): File | null => {
+    if (!state.audioBlob) return null;
+
+    const timestamp = Date.now();
+    const extension = state.audioBlob.type.includes('webm') ? 'webm' : 
+                     state.audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
+    
+    return new File([state.audioBlob], `gravacao_${timestamp}.${extension}`, {
+      type: state.audioBlob.type
+    });
+  }, [state.audioBlob]);
 
   return {
-    state,
+    ...state,
     startRecording,
     stopRecording,
-    playRecording,
-    pauseRecording,
     resetRecording,
-    onAudioReady
+    getAudioFile
   };
-};
+}
