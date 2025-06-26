@@ -21,7 +21,7 @@ import {
 export default function LiviaConfigurationPage() {
   const [isActive, setIsActive] = useState(true);
   const [generalPrompt, setGeneralPrompt] = useState('');
-  const [whatsappNumberId, setWhatsappNumberId] = useState<string>('');
+  const [whatsappNumberId, setWhatsappNumberId] = useState<string>('none');
   const [offDuration, setOffDuration] = useState<number>(30);
   const [offUnit, setOffUnit] = useState<'minutos' | 'horas'>('minutos');
   const [selectedProfessionalIds, setSelectedProfessionalIds] = useState<number[]>([]);
@@ -58,7 +58,7 @@ export default function LiviaConfigurationPage() {
     if (config) {
       setIsActive(config.is_active ?? true);
       setGeneralPrompt(config.general_prompt || '');
-      setWhatsappNumberId(config.whatsapp_number_id?.toString() || '');
+      setWhatsappNumberId(config.whatsapp_number_id?.toString() || 'none');
       setOffDuration(config.off_duration || 30);
       setOffUnit(config.off_unit || 'minutos');
       setSelectedProfessionalIds(config.selected_professional_ids || []);
@@ -69,7 +69,7 @@ export default function LiviaConfigurationPage() {
   const handleSave = async () => {
     const configData = {
       general_prompt: generalPrompt,
-      whatsapp_number_id: whatsappNumberId ? parseInt(whatsappNumberId) : null,
+      whatsapp_number_id: whatsappNumberId && whatsappNumberId !== 'none' ? parseInt(whatsappNumberId) : null,
       off_duration: offDuration,
       off_unit: offUnit,
       selected_professional_ids: selectedProfessionalIds,
@@ -223,7 +223,7 @@ export default function LiviaConfigurationPage() {
                   <SelectValue placeholder="Selecione um número conectado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum número selecionado</SelectItem>
+                  <SelectItem value="none">Nenhum número selecionado</SelectItem>
                   {whatsappNumbersList.map((number: any) => (
                     <SelectItem key={number.id} value={number.id.toString()}>
                       <div className="flex items-center gap-2">
