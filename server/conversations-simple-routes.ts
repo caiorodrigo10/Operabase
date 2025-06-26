@@ -97,11 +97,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           created_at: conv.created_at,
           updated_at: conv.updated_at,
           contact_name: conv.contacts?.name || `Contato ${conv.contact_id}`,
+          patient_name: conv.contacts?.name || `Contato ${conv.contact_id}`, // Frontend expects patient_name
           contact_phone: conv.contacts?.phone || '',
           contact_email: conv.contacts?.email || '',
           contact_status: conv.contacts?.status || 'active',
           last_message: lastMsg?.content || 'Nenhuma mensagem ainda',
           last_message_at: lastMessageTime,
+          timestamp: lastMessageTime, // Fallback field for compatibility
           total_messages: 0, // Será calculado se necessário
           unread_count: 0 // Será calculado dinamicamente quando necessário
         };
