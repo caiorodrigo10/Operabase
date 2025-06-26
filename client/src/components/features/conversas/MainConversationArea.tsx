@@ -103,34 +103,83 @@ export function MainConversationArea({
   };
 
   const handleFileUpload = async (files: File[], caption?: string) => {
-    if (!selectedConversationId) return;
+    if (!selectedConversationId) {
+      console.error('❌ No selectedConversationId for file upload');
+      return;
+    }
+
+    console.log('📤 Starting file upload:', {
+      files: files.map(f => ({ name: f.name, size: f.size, type: f.type })),
+      caption,
+      conversationId: selectedConversationId
+    });
 
     try {
       const formData = new FormData();
-      files.forEach(file => formData.append('file', file));
+      files.forEach(file => {
+        console.log('📎 Adding file to FormData:', file.name, file.type, file.size);
+        formData.append('file', file);
+      });
       if (caption) formData.append('caption', caption);
       formData.append('sendToWhatsApp', 'true');
+      
+      // Para áudio gravado, adicionar messageType específico
+      if (files[0] && files[0].name.includes('audio-gravado')) {
+        formData.append('messageType', 'audio_voice');
+        console.log('🎤 Marked as audio_voice for Evolution API routing');
+      }
 
-      const response = await fetch(`/api/conversations/${selectedConversationId}/upload`, {
+      const uploadUrl = `/api/conversations/${selectedConversationId}/upload`;
+      console.log('📡 Making request to:', uploadUrl);
+
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData
       });
 
+      console.log('📡 Upload response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorText = await response.text();
+        console.error('❌ Upload response error:', errorText);
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
       }
 
-      console.log('Files uploaded successfully');
+      const result = await response.json();
+      console.log('✅ Upload successful:', result);
     } catch (error) {
-      console.error('Error uploading files:', error);
+      console.error('❌ Upload error details:', error);
     }
     
     setShowUploadModal(false);
   };
 
   const handleAudioReady = async (audioFile: File) => {
+    console.log('🎤 Audio ready for upload:', {
+      name: audioFile.name,
+      size: audioFile.size,
+      type: audioFile.type,
+      selectedConversationId
+    });
+    
+    if (!selectedConversationId) {
+      console.error('❌ No conversation selected for audio upload');
+      return;
+    }
+    
     // Usar o sistema de upload existente com messageType específico para áudio gravado
-    await handleFileUpload([audioFile], 'Áudio gravado');
+    try {
+      console.log('📤 Starting audio upload...');
+      await handleFileUpload([audioFile], 'Áudio gravado');
+      console.log('✅ Audio upload completed');
+      setShowAudioRecorder(false);
+    } catch (error) {
+      console.error('❌ Audio upload failed:', error);
+    }
   };
 
   if (!patientInfo) {
