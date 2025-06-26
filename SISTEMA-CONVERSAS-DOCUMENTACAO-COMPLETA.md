@@ -1,18 +1,19 @@
 # Sistema de Conversas - Documentação Técnica Completa
 
-**Data de Atualização**: 25 de Junho de 2025  
-**Versão**: 4.0 - Sistema Completo com Upload de Arquivos e Diferenciação de Áudio
+**Data de Atualização**: 26 de Junho de 2025  
+**Versão**: 4.1 - Sistema Completo com Upload de Arquivos, Diferenciação de Áudio e Integração N8N
 
 ## 📋 Visão Geral
 
-O Sistema de Conversas é um módulo multi-tenant completo que gerencia comunicações entre profissionais de saúde e pacientes através de WhatsApp, utilizando a Evolution API V2. O sistema suporta conversas em tempo real, upload de arquivos com dupla integração (Supabase Storage + WhatsApp), diferenciação inteligente de tipos de áudio, status de entrega inteligente e isolamento completo entre clínicas.
+O Sistema de Conversas é um módulo multi-tenant completo que gerencia comunicações entre profissionais de saúde e pacientes através de WhatsApp, utilizando a Evolution API V2. O sistema suporta conversas em tempo real, upload de arquivos com dupla integração (Supabase Storage + WhatsApp), diferenciação inteligente de tipos de áudio, status de entrega inteligente, isolamento completo entre clínicas e integração automática com N8N para processamento de IA.
 
-### Principais Funcionalidades v4.0
+### Principais Funcionalidades v4.1
 - **Upload de Arquivos**: Sistema dual com Supabase Storage e envio automático para WhatsApp
 - **Diferenciação de Áudio**: Distinção visual entre áudios do WhatsApp vs arquivos enviados
 - **Evolution API V2**: Integração com estrutura de payload atualizada
 - **Supabase Storage**: Armazenamento organizado com URLs assinadas temporárias
 - **Sanitização Avançada**: Limpeza automática de nomes de arquivo com caracteres especiais
+- **Integração N8N**: Salvamento automático de mensagens internas para processamento por workflows de IA
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -780,6 +781,137 @@ const cacheConfig = {
 await redisCacheService.invalidateConversationDetail(conversationId);
 ```
 
+## 🤖 Integração N8N para IA
+
+### Visão Geral
+Sistema automático que salva todas as mensagens enviadas via chat interno na tabela `n8n_chat_messages` para processamento por workflows de IA via N8N.
+
+### 1. Schema da Tabela N8N
+```typescript
+// shared/schema.ts
+export const n8n_chat_messages = pgTable('n8n_chat_messages', {
+  id: serial('id').primaryKey(),
+  session_id: text('session_id').notNull(),
+  message: jsonb('message').notNull(), // Estrutura específica do N8N
+  created_at: timestamp('created_at').defaultNow(),
+});
+
+export type N8NChatMessage = {
+  session_id: string;
+  message: {
+    type: "human";
+    content: string;
+    additional_kwargs: {};
+    response_metadata: {};
+  };
+};
+```
+
+### 2. Implementação Backend
+```typescript
+// server/conversations-simple-routes.ts - Integração N8N
+app.post('/api/conversations-simple/:id/messages', async (req, res) => {
+  // ... salvar mensagem no sistema principal ...
+  
+  // INTEGRAÇÃO N8N (executada em background, não-bloqueante)
+  setImmediate(async () => {
+    try {
+      console.log('🔗 Iniciando integração N8N para mensagem ID:', formattedMessage.id);
+      
+      // 1. Coletar dados para session_id
+      const contactPhone = conversation.contact_phone || '(11) 99999-9999';
+      const clinicPhone = whatsappInstance?.phone_number || '551150391104';
+      const sessionId = `${contactPhone}-${clinicPhone}`;
+      
+      // 2. Formatar mensagem para N8N
+      const n8nMessage = {
+        type: "human" as const,
+        content: content,
+        additional_kwargs: {},
+        response_metadata: {}
+      };
+      
+      // 3. Salvar na tabela n8n_chat_messages
+      const { data: insertResult, error: insertError } = await supabase
+        .from('n8n_chat_messages')
+        .insert({
+          session_id: sessionId,
+          message: n8nMessage
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('❌ N8N Integration: Erro ao inserir no Supabase:', insertError);
+        throw new Error(`Supabase insert error: ${insertError.message}`);
+      }
+      
+      console.log('✅ N8N Integration: Mensagem salva com sucesso!', {
+        n8n_id: insertResult?.id,
+        session_id: sessionId,
+        content_preview: content.substring(0, 50) + '...'
+      });
+      
+    } catch (n8nError) {
+      // Log do erro mas não interrompe o fluxo principal
+      console.error('❌ N8N Integration: Erro ao salvar mensagem:', {
+        error: n8nError.message,
+        stack: n8nError.stack,
+        message_id: formattedMessage.id
+      });
+    }
+  });
+});
+```
+
+### 3. Formato do Session ID
+```typescript
+// Formato: CONTACT_NUMBER-RECEIVING_NUMBER
+// Exemplo: (11) 99123-4567-551150391104
+
+const formatSessionId = (contactPhone: string, clinicPhone: string): string => {
+  return `${contactPhone}-${clinicPhone}`;
+};
+```
+
+### 4. Estrutura da Mensagem JSONB
+```json
+{
+  "type": "human",
+  "content": "Texto da mensagem enviada pelo profissional",
+  "additional_kwargs": {},
+  "response_metadata": {}
+}
+```
+
+### 5. Logs de Monitoramento
+```bash
+# Logs para acompanhar integração N8N:
+🔗 Iniciando integração N8N para mensagem ID: 123
+📋 N8N Integration: Coletando dados para session_id...
+🆔 N8N Integration: Session ID formatado: (11) 99123-4567-551150391104
+💾 N8N Integration: Salvando mensagem na tabela n8n_chat_messages...
+✅ N8N Integration: Mensagem salva com sucesso! { n8n_id: 167, session_id: "...", content_preview: "..." }
+
+# Em caso de erro:
+❌ N8N Integration: Erro ao salvar mensagem: { error: "...", message_id: 123 }
+```
+
+### 6. Características da Integração
+- **Execução em Background**: Usa `setImmediate()` para não bloquear resposta da API
+- **Processamento Assíncrono**: Integração N8N não afeta performance do chat
+- **Error Resilient**: Falhas na integração N8N não interrompem o fluxo principal
+- **Logging Completo**: Logs detalhados para monitoramento e debugging
+- **Apenas Mensagens Internas**: Só salva mensagens enviadas via sistema interno TaskMed
+- **Formato Padrão N8N**: Estrutura JSONB compatível com workflows de IA
+
+### 7. Teste da Integração
+```javascript
+// Script de teste disponível em: test-n8n-integration.js
+// Envia mensagem via API e verifica se foi salva na tabela n8n_chat_messages
+// Resultado esperado: ✅ Mensagem encontrada com estrutura correta
+```
+
 ## 🚀 Performance e Otimização
 
 ### 1. Índices de Performance
@@ -795,6 +927,10 @@ CREATE INDEX idx_messages_conversation_timestamp
 -- Índices para attachments
 CREATE INDEX idx_attachments_message_type 
   ON message_attachments(message_id, media_type);
+
+-- Índice para integração N8N
+CREATE INDEX idx_n8n_messages_session_created 
+  ON n8n_chat_messages(session_id, created_at DESC);
 ```
 
 ### 2. Otimizações Implementadas
@@ -1099,4 +1235,4 @@ const { data: recentMessages } = await supabase
 
 ---
 
-**Última Atualização**: 24/06/2025 - Sistema em produção estável
+**Última Atualização**: 26/06/2025 - Sistema em produção estável com integração N8N para IA
