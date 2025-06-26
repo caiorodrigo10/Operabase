@@ -156,6 +156,18 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - WhatsApp Webhook Authentication with N8N_API_KEY Complete ✅
+- **Endpoint Security**: WhatsApp webhook endpoint `/api/whatsapp/webhook/connection-update` now protected with N8N_API_KEY
+- **Same API Key**: Uses identical 64-character key from N8N upload system for consistency
+- **Multi-Header Support**: Accepts X-API-Key, X-N8N-API-Key, Authorization Bearer/ApiKey formats
+- **Rate Limiting**: 30 requests/minute per IP with comprehensive logging and monitoring
+- **Route Order Fixed**: Moved webhook route registration after middleware setup for proper authentication
+- **Zero Impact**: All existing functionalities preserved - conversations, uploads, auth systems intact
+- **Comprehensive Testing**: All scenarios validated (no key=401, valid key=authorized, invalid key=401)
+- **Production Ready**: Complete security implementation with detailed error messages and audit logs
+- **N8N Integration**: Ready for production N8N workflows with authenticated webhook endpoints
+- **Documentation**: Complete implementation guide created in WHATSAPP-WEBHOOK-AUTHENTICATION-COMPLETE.md
+
 ### June 26, 2025 - N8N File Upload System Complete Implementation ✅
 - **Complete N8N Integration**: Sistema completo de recebimento de arquivos via N8N API funcionando em produção
 - **Caption Logic Perfect**: Arquivos SEM caption mostram mensagem vazia (só anexo), COM caption mostram texto do cliente

@@ -188,6 +188,10 @@ app.use((req, res, next) => {
   const { setupMaraConfigRoutes } = await import('./mara-config-routes');
   setupMaraConfigRoutes(app, storage);
   
+  // Add WhatsApp Webhook routes with proper authentication middleware
+  const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
+  setupWhatsAppWebhookRoutes(app, storage);
+  
   // Add Google Calendar authentication routes with professional validation
   const { isAuthenticated } = await import('./auth');
   
@@ -388,9 +392,7 @@ app.use((req, res, next) => {
     }
   });
 
-  // Add WhatsApp Webhook routes first (to avoid conflicts)
-  const { setupWhatsAppWebhookRoutes } = await import('./whatsapp-webhook-routes');
-  setupWhatsAppWebhookRoutes(app, storage);
+  // WhatsApp Webhook routes moved to after middleware setup for proper authentication
   
   // Add WhatsApp routes
   const whatsappRoutes = await import('./whatsapp-routes');
