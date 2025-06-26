@@ -394,6 +394,63 @@ export class TenantAwareStorageProxy implements IStorage {
     return this.storage.getConversationById(id);
   }
 
+  // Livia Configuration methods with tenant isolation
+  async getLiviaConfiguration(clinicId: number): Promise<any> {
+    const tenantClinicId = this.getClinicId();
+    
+    // Validate tenant access
+    if (clinicId !== tenantClinicId) {
+      throw new Error('Access denied: Cannot access Livia configuration for different clinic');
+    }
+    
+    return this.storage.getLiviaConfiguration(clinicId);
+  }
+
+  async createLiviaConfiguration(config: any): Promise<any> {
+    const tenantClinicId = this.getClinicId();
+    
+    // Force tenant isolation
+    const configWithTenant = {
+      ...config,
+      clinic_id: tenantClinicId
+    };
+    
+    return this.storage.createLiviaConfiguration(configWithTenant);
+  }
+
+  async updateLiviaConfiguration(clinicId: number, updates: any): Promise<any> {
+    const tenantClinicId = this.getClinicId();
+    
+    // Validate tenant access
+    if (clinicId !== tenantClinicId) {
+      throw new Error('Access denied: Cannot update Livia configuration for different clinic');
+    }
+    
+    return this.storage.updateLiviaConfiguration(clinicId, updates);
+  }
+
+  async deleteLiviaConfiguration(clinicId: number): Promise<boolean> {
+    const tenantClinicId = this.getClinicId();
+    
+    // Validate tenant access
+    if (clinicId !== tenantClinicId) {
+      throw new Error('Access denied: Cannot delete Livia configuration for different clinic');
+    }
+    
+    return this.storage.deleteLiviaConfiguration(clinicId);
+  }
+
+  async getLiviaConfigurationForN8N(clinicId: number): Promise<any> {
+    const tenantClinicId = this.getClinicId();
+    
+    // Validate tenant access
+    if (clinicId !== tenantClinicId) {
+      throw new Error('Access denied: Cannot access Livia configuration for different clinic');
+    }
+    
+    return this.storage.getLiviaConfigurationForN8N(clinicId);
+  }
+
   // Pass through any additional methods without modification
   [key: string]: any;
 }
