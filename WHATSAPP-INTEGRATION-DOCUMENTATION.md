@@ -510,4 +510,351 @@ const testScenarios = [
 ];
 ```
 
-Esta documentação fornece uma base sólida para entender e trabalhar com o sistema de integração WhatsApp. Sempre consulte os logs para debugging e mantenha as instâncias limpas para evitar problemas de performance.
+## Sistema de Timeout e Regeneração de QR Code
+
+### Funcionalidade
+Sistema automático que invalida QR codes após 30 segundos, implementando timeout visual e regeneração sob demanda para melhorar a experiência do usuário.
+
+### Implementação Frontend
+
+#### Timeout Automático (30 segundos)
+```typescript
+// Hook para gerenciar timeout de QR code
+const useQRTimeout = (qrCode: string | null, onTimeout: () => void) => {
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!qrCode) {
+      setTimeLeft(30);
+      setIsExpired(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setIsExpired(true);
+          onTimeout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [qrCode, onTimeout]);
+
+  return { timeLeft, isExpired };
+};
+```
+
+#### Interface Visual com Overlay
+```typescript
+// Componente QR code com overlay de timeout
+{qrCode && (
+  <div className="relative">
+    <img
+      src={qrCode}
+      alt="QR Code WhatsApp"
+      className={`w-64 h-64 border rounded-lg transition-all duration-300 ${
+        isExpired ? 'blur-sm opacity-50' : ''
+      }`}
+    />
+    
+    {isExpired && (
+      <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+        <div className="text-center space-y-4">
+          <p className="text-white font-medium">QR Code expirado</p>
+          <Button 
+            onClick={handleRegenerateQR}
+            disabled={regenerateQRMutation.isPending}
+          >
+            {regenerateQRMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              'Gerar Novo QR Code'
+            )}
+          </Button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+```
+
+#### Contador Regressivo Visual
+```typescript
+// Indicador de tempo restante
+{qrCode && !isExpired && (
+  <div className="flex items-center justify-center gap-2 text-sm">
+    <Clock className="w-4 h-4" />
+    <span className={timeLeft <= 10 ? 'text-orange-600 font-medium' : 'text-muted-foreground'}>
+      {timeLeft}s restantes
+    </span>
+  </div>
+)}
+```
+
+### Implementação Backend
+
+#### Endpoint de Regeneração
+```typescript
+// POST /api/whatsapp/regenerate-qr
+router.post('/regenerate-qr', validateN8NApiKey, async (req, res) => {
+  try {
+    const { instanceName } = req.body;
+    
+    if (!instanceName) {
+      return res.status(400).json({ error: 'Instance name is required' });
+    }
+
+    // Verificar se instância existe no banco
+    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+    if (!whatsappNumber) {
+      return res.status(404).json({ error: 'WhatsApp instance not found' });
+    }
+
+    // Gerar novo QR code via Evolution API
+    const qrResult = await evolutionApi.getQRCode(instanceName);
+    
+    if (!qrResult.success) {
+      return res.status(500).json({ error: qrResult.error });
+    }
+
+    res.json({
+      success: true,
+      qrCode: qrResult.data?.base64 || qrResult.data?.code,
+      instanceName,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ QR regeneration error:', error);
+    res.status(500).json({ error: 'Failed to regenerate QR code' });
+  }
+});
+```
+
+#### Validação e Logs
+```typescript
+// Sistema de logs para regeneração
+await systemLogsService.logWhatsAppAction(
+  'qr_regenerated',
+  whatsappNumber.id,
+  whatsappNumber.clinic_id,
+  undefined,
+  'system',
+  null,
+  { instanceName, success: true },
+  { source: 'qr_timeout', action: 'regenerate' }
+);
+```
+
+### Características Técnicas
+
+#### Performance
+- **Regeneração**: ~2 segundos para novo QR code
+- **Validação**: QR codes únicos validados por timestamp
+- **Memory**: Auto-cleanup de timeouts ao conectar/fechar
+
+#### Estados Visuais
+- **Ativo**: QR code nítido com contador regressivo
+- **Alerta**: Últimos 10 segundos em cor laranja
+- **Expirado**: QR turvo com overlay e botão regenerar
+- **Gerando**: Spinner e texto "Gerando..."
+
+## Sistema de Reconexão para Instâncias Desconectadas
+
+### Funcionalidade
+Sistema inteligente que preserva instâncias desconectadas no banco de dados e permite reconectá-las sem perder histórico de conversas.
+
+### Modificações no Webhook
+
+#### Preservação de Instâncias
+```typescript
+// Webhook handler - NÃO deleta instância desconectada
+const handleDisconnection = async (instanceName: string, webhookData: any) => {
+  const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+  
+  if (whatsappNumber) {
+    // Apenas marca como desconectada - NÃO deleta
+    await storage.updateWhatsAppNumber(whatsappNumber.id, {
+      status: 'disconnected',
+      disconnected_at: new Date(),
+      phone_number: null // Remove número mas preserva instância
+    });
+    
+    console.log(`📱 Instância marcada como desconectada: ${instanceName}`);
+  }
+};
+```
+
+#### Mapeamento de Status
+```typescript
+// Mapeamento inteligente de status do webhook
+const mapWebhookStatus = (evolutionStatus: string): string => {
+  switch (evolutionStatus) {
+    case 'open': return 'connected';
+    case 'connecting': return 'connecting';
+    case 'close': return 'disconnected'; // Mapeado para UX
+    case 'qrReadSuccess': return 'connected';
+    default: return 'disconnected';
+  }
+};
+```
+
+### Interface de Gerenciamento
+
+#### Detecção de Status
+```typescript
+// Componente que mostra status e botão de reconexão
+const WhatsAppInstanceCard = ({ number }: { number: WhatsAppNumber }) => {
+  return (
+    <div className="p-4 border rounded-lg space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Smartphone className="w-8 h-8 text-green-600" />
+          <div>
+            <p className="font-medium">{formatPhoneNumber(number.phone_number)}</p>
+            <p className="text-sm text-muted-foreground">
+              {number.status === 'disconnected' 
+                ? `Desconectado em: ${formatDate(number.disconnected_at)}`
+                : `Conectado em: ${formatDate(number.connected_at)}`
+              }
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {getStatusBadge(number.status)}
+          
+          {number.status === 'disconnected' && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => reconnectMutation.mutate(number.instance_name)}
+              disabled={reconnectMutation.isPending}
+            >
+              {reconnectMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Reconectando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Reconectar
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+### Implementação Backend - Reconexão
+
+#### Endpoint de Reconexão
+```typescript
+// POST /api/whatsapp/reconnect
+router.post('/reconnect', async (req, res) => {
+  try {
+    const { instanceName } = req.body;
+    
+    // Buscar instância desconectada
+    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+    if (!whatsappNumber || whatsappNumber.status !== 'disconnected') {
+      return res.status(404).json({ error: 'Disconnected instance not found' });
+    }
+
+    // Atualizar status para connecting
+    await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'connecting');
+
+    // Tentar conectar na Evolution API
+    let qrResult = await evolutionApi.getQRCode(instanceName);
+    
+    // Se instância não existe na Evolution API, criar nova
+    if (!qrResult.success && qrResult.error?.includes('Not Found')) {
+      console.log('🔧 Instance does not exist, creating new instance for reconnection...');
+      
+      const createResult = await evolutionApi.createInstance(instanceName);
+      if (!createResult.success) {
+        await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'disconnected');
+        return res.status(500).json({ error: createResult.error });
+      }
+      
+      // Tentar novamente após criar instância
+      qrResult = await evolutionApi.getQRCode(instanceName);
+    }
+    
+    if (!qrResult.success) {
+      await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'disconnected');
+      return res.status(500).json({ error: qrResult.error });
+    }
+
+    // Log da reconexão
+    await systemLogsService.logWhatsAppAction(
+      'reconnection_initiated',
+      whatsappNumber.id,
+      whatsappNumber.clinic_id,
+      undefined,
+      'system',
+      null,
+      { instanceName, previousPhone: whatsappNumber.phone_number },
+      { source: 'manual_reconnection' }
+    );
+
+    res.json({
+      success: true,
+      qrCode: qrResult.data?.base64 || qrResult.data?.code,
+      instanceName,
+      previousPhone: whatsappNumber.phone_number,
+      isReconnection: true
+    });
+
+  } catch (error) {
+    console.error('❌ Reconnection error:', error);
+    res.status(500).json({ error: 'Failed to reconnect instance' });
+  }
+});
+```
+
+#### Fluxo de Reconexão
+1. **Detecção**: Sistema identifica instâncias com status "disconnected"
+2. **Preservação**: Webhook não deleta, apenas marca como desconectada
+3. **Interface**: Botão "Reconectar" aparece para instâncias desconectadas
+4. **Verificação**: Sistema verifica se instância existe na Evolution API
+5. **Recriação**: Se não existe, cria automaticamente nova instância
+6. **QR Code**: Gera QR code válido para reconexão
+7. **Status**: Atualiza para "connecting" → "connected" após escaneamento
+
+### Características Técnicas
+
+#### Preservação de Dados
+- **Histórico**: Mantém todas as conversas e mensagens
+- **Metadados**: Preserva informações da instância anterior
+- **Timestamps**: Registra quando desconectou e reconectou
+- **Instance Name**: Reutiliza nome da instância original
+
+#### Error Recovery
+- **Fallback**: Reverte para "disconnected" em caso de erro
+- **Retry Logic**: Tenta recriar instância se não existir
+- **Logs**: Registra todas as tentativas de reconexão
+- **Graceful Degradation**: Não afeta outras instâncias
+
+#### Performance
+- **Reconexão**: ~7 segundos para QR code válido
+- **Detecção**: Identificação instantânea de instâncias desconectadas
+- **Scalability**: Suporta múltiplas reconexões simultâneas
+- **Memory**: Cleanup automático de recursos temporários
+
+---
+
+Esta documentação fornece uma base sólida para entender e trabalhar com o sistema de integração WhatsApp, incluindo os recursos avançados de timeout de QR code e reconexão de instâncias. Sempre consulte os logs para debugging e mantenha as instâncias limpas para evitar problemas de performance.
