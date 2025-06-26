@@ -64,23 +64,33 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Evita N+1 queries por conversa individual
       const conversationIds = (conversationsData || []).map(c => c.id);
       
-      // Batch load últimas mensagens com timezone GMT-3 (Brasília)
-      const { data: lastMessages } = await supabase
+      // Batch load últimas mensagens de cada conversa (mais recente primeiro)
+      const { data: allMessages } = await supabase
         .from('messages')
         .select('conversation_id, content, timestamp')
         .in('conversation_id', conversationIds)
         .order('timestamp', { ascending: false });
       
-      // Agrupa por conversation_id para pegar a última mensagem
+      // Agrupa por conversation_id para pegar APENAS a última mensagem real
       const lastMessageMap = {};
-      lastMessages?.forEach(msg => {
+      allMessages?.forEach(msg => {
         if (!lastMessageMap[msg.conversation_id]) {
-          // Converte timestamp para GMT-3 (Brasília)
-          const brasiliaTime = new Date(msg.timestamp);
+          // Usa timezone correto do Brasil (America/Sao_Paulo)
+          const messageDate = new Date(msg.timestamp);
+          const brasiliaTime = new Date(messageDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+          
           lastMessageMap[msg.conversation_id] = {
             ...msg,
-            timestamp: brasiliaTime.toISOString()
+            timestamp: brasiliaTime.toISOString(),
+            original_timestamp: msg.timestamp // Manter original para debug
           };
+          
+          // Debug: Log da última mensagem encontrada
+          console.log(`🕒 Last message for conversation ${msg.conversation_id}:`, {
+            content: msg.content.substring(0, 50) + '...',
+            original_timestamp: msg.timestamp,
+            brasilia_timestamp: brasiliaTime.toISOString()
+          });
         }
       });
 

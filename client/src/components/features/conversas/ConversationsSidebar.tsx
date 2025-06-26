@@ -6,18 +6,34 @@ import { Conversation, ConversationFilter } from "@/types/conversations";
 import { cn } from "@/lib/utils";
 import { Search, Bot, Calendar } from "lucide-react";
 
-// Função helper para formatação segura de horário
-const formatTimestamp = (timestamp: string | null | undefined): string => {
+// Função helper para formatação inteligente de timestamp
+const formatMessageTimestamp = (timestamp: string | null | undefined): string => {
   if (!timestamp) return '';
   
   try {
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return '';
+    const messageDate = new Date(timestamp);
+    if (isNaN(messageDate.getTime())) return '';
     
-    return date.toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false,
+    const today = new Date();
+    
+    // Normalizar datas para comparação (remover hora)
+    const messageDateOnly = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    // Mesmo dia: mostrar apenas hora (ex: "14:30")
+    if (messageDateOnly.getTime() === todayOnly.getTime()) {
+      return messageDate.toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'America/Sao_Paulo'
+      });
+    }
+    
+    // Dia diferente: mostrar dia e mês (ex: "25 Mar", "2 Jan")
+    return messageDate.toLocaleDateString('pt-BR', {
+      day: 'numeric',
+      month: 'short',
       timeZone: 'America/Sao_Paulo'
     });
   } catch (error) {
@@ -130,7 +146,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
               {conversation.patient_name}
             </h3>
             <span className="text-xs text-gray-400 flex-shrink-0 min-w-[50px]">
-              {formatTimestamp(conversation.last_message_at || conversation.timestamp)}
+              {formatMessageTimestamp(conversation.last_message_at || conversation.timestamp)}
             </span>
           </div>
 
