@@ -95,7 +95,7 @@ async function testN8NIntegration() {
     const { data: newMessages, error: newError } = await supabase
       .from('n8n_chat_messages')
       .select('*')
-      .ilike('message->content', `%${testMessage}%`)
+      .filter('message->>content', 'ilike', `%${testMessage}%`)
       .order('id', { ascending: false });
       
     if (newError) {
@@ -134,7 +134,7 @@ async function testN8NIntegration() {
       const { data: recentMessages } = await supabase
         .from('n8n_chat_messages')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(3);
         
       console.log('📋 Últimas 3 mensagens na tabela:');

@@ -641,31 +641,26 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           
           console.log('💾 N8N Integration: Salvando mensagem na tabela n8n_chat_messages...');
           
-          // Inserir na tabela n8n_chat_messages usando Drizzle ORM
-          const { default: { drizzle } } = await import('drizzle-orm/postgres-js');
-          const { default: postgres } = await import('postgres');
-          const { n8n_chat_messages } = await import('../shared/schema');
-          
-          const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_POOLER_URL;
-          const sql = postgres(connectionString);
-          const db = drizzle(sql);
-          
-          const insertResult = await db
-            .insert(n8n_chat_messages)
-            .values({
+          // Inserir na tabela n8n_chat_messages usando Supabase client
+          const { data: insertResult, error: insertError } = await supabase
+            .from('n8n_chat_messages')
+            .insert({
               session_id: sessionId,
               message: n8nMessage
             })
-            .returning();
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error('❌ N8N Integration: Erro ao inserir no Supabase:', insertError);
+            throw new Error(`Supabase insert error: ${insertError.message}`);
+          }
           
           console.log('✅ N8N Integration: Mensagem salva com sucesso!', {
-            n8n_id: insertResult[0]?.id,
+            n8n_id: insertResult?.id,
             session_id: sessionId,
             content_preview: content.substring(0, 50) + '...'
           });
-          
-          // Fechar conexão
-          await sql.end();
           
         } catch (n8nError) {
           console.error('❌ N8N Integration: Erro ao salvar mensagem:', {
