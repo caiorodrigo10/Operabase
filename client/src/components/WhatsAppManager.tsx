@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { WhatsAppNumber } from '@shared/schema';
-import { MessageCircle, Plus, QrCode, Smartphone, Trash2, Power, PowerOff, User } from 'lucide-react';
+import { MessageCircle, Plus, QrCode, Smartphone, Trash2, Power, PowerOff, User, RotateCcw } from 'lucide-react';
 
 interface WhatsAppManagerProps {
   clinicId: number;
@@ -355,6 +355,20 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                   
                   <div className="flex items-center gap-2">
                     {getStatusBadge(number.status)}
+                    
+                    {number.status === 'disconnected' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          // TODO: Implement reconnection logic
+                          console.log('🔄 Reconnecting instance:', number.instance_name);
+                        }}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                    )}
                     
                     {number.status === 'open' && (
                       <AlertDialog>

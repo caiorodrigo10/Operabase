@@ -1937,6 +1937,10 @@ export class PostgreSQLStorage implements IStorage {
         updateObj.last_seen = updateData.last_seen;
       }
       
+      if (updateData.disconnected_at !== undefined) {
+        updateObj.disconnected_at = updateData.disconnected_at;
+      }
+      
       // Always update the timestamp
       updateObj.updated_at = new Date();
       
@@ -1955,6 +1959,7 @@ export class PostgreSQLStorage implements IStorage {
           status = ${updateObj.status || sql`status`},
           phone_number = ${updateObj.phone_number || sql`phone_number`},
           connected_at = ${updateObj.connected_at || sql`connected_at`},
+          disconnected_at = ${updateObj.disconnected_at || sql`disconnected_at`},
           last_seen = ${updateObj.last_seen || sql`last_seen`},
           updated_at = NOW()
         WHERE instance_name = ${instanceName}

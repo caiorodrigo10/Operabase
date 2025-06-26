@@ -4,13 +4,21 @@
  */
 
 import { sql } from 'drizzle-orm';
-import { createConnection } from './server/db';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
 async function addDisconnectedAtColumn() {
   console.log('🔧 Adding disconnected_at column to whatsapp_numbers table...');
   
   try {
-    const db = await createConnection();
+    // Connect to Supabase directly
+    const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_POOLER_URL;
+    if (!connectionString) {
+      throw new Error('No database connection string found');
+    }
+    
+    const client = postgres(connectionString);
+    const db = drizzle(client);
     
     // Add disconnected_at column
     await db.execute(sql`

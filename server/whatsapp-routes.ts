@@ -154,6 +154,89 @@ router.get('/api/whatsapp/status/:instanceName', async (req, res) => {
 
 // Old webhook endpoint removed - now handled by whatsapp-webhook-routes.ts
 
+// Reconnect existing WhatsApp instance
+router.post('/api/whatsapp/reconnect', async (req, res) => {
+  try {
+    const { instanceName } = req.body;
+    
+    console.log('🔄 Reconnecting WhatsApp instance:', instanceName);
+    
+    if (!instanceName) {
+      console.log('❌ Instance name is required for reconnection');
+      return res.status(400).json({ error: 'Instance name is required' });
+    }
+
+    // Validate instance exists in database and is disconnected
+    const storage = await getStorage();
+    const whatsappNumber = await storage.getWhatsAppNumberByInstance(instanceName);
+    
+    if (!whatsappNumber) {
+      console.log('❌ Instance not found in database:', instanceName);
+      return res.status(404).json({ error: 'Instance not found' });
+    }
+
+    if (whatsappNumber.status === 'open') {
+      console.log('⚠️ Instance already connected:', instanceName);
+      return res.status(400).json({ error: 'Instance is already connected' });
+    }
+
+    console.log('✅ Found disconnected instance:', {
+      id: whatsappNumber.id,
+      instanceName: whatsappNumber.instance_name,
+      status: whatsappNumber.status,
+      phoneNumber: whatsappNumber.phone_number,
+      clinicId: whatsappNumber.clinic_id
+    });
+
+    // Update status to connecting before generating QR
+    await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'connecting');
+
+    // Call Evolution API to reconnect and generate new QR code
+    const qrResult = await evolutionApi.getQRCode(instanceName);
+    
+    if (!qrResult.success) {
+      console.log('❌ Evolution API failed to generate QR for reconnection:', qrResult.error);
+      // Revert status back to disconnected on failure
+      await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'disconnected');
+      return res.status(500).json({ error: qrResult.error });
+    }
+
+    console.log('✅ Reconnection QR code generated successfully for instance:', instanceName);
+
+    // Log the reconnection attempt
+    await systemLogsService.logWhatsAppAction(
+      'reconnection_initiated',
+      whatsappNumber.id,
+      whatsappNumber.clinic_id,
+      whatsappNumber.user_id,
+      'system',
+      null,
+      {
+        instance_name: instanceName,
+        previous_phone: whatsappNumber.phone_number,
+        status: 'connecting'
+      },
+      {
+        source: 'whatsapp',
+        action: 'reconnect',
+        instance_name: instanceName
+      }
+    );
+
+    res.json({ 
+      qrCode: qrResult.data?.base64 || qrResult.data?.qrCode || qrResult.data,
+      instanceName: instanceName,
+      numberId: whatsappNumber.id,
+      reconnection: true,
+      previousPhone: whatsappNumber.phone_number,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error reconnecting WhatsApp instance:', error);
+    res.status(500).json({ error: 'Failed to reconnect WhatsApp instance' });
+  }
+});
+
 // Regenerate QR code for existing instance
 router.post('/api/whatsapp/regenerate-qr', async (req, res) => {
   try {
