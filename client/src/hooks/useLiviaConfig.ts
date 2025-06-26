@@ -6,7 +6,9 @@ import type { LiviaConfiguration, InsertLiviaConfiguration, UpdateLiviaConfigura
 export function useLiviaConfiguration() {
   return useQuery({
     queryKey: ['/api/livia/config'],
-    queryFn: () => apiRequest('/api/livia/config'),
+    queryFn: () => apiRequest('/api/livia/config').then(res => res.json()),
+    staleTime: 0, // Force fresh data
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -69,7 +71,9 @@ export function useLiviaConfigurationForN8N() {
 export function useWhatsAppNumbers() {
   return useQuery({
     queryKey: ['/api/whatsapp/numbers'],
-    queryFn: () => apiRequest('/api/whatsapp/numbers'),
+    queryFn: () => apiRequest('/api/whatsapp/numbers').then(res => res.json()),
+    staleTime: 0, // Force fresh data
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -77,7 +81,9 @@ export function useWhatsAppNumbers() {
 export function useProfessionals() {
   return useQuery({
     queryKey: ['/api/clinic/1/professionals'],
-    queryFn: () => apiRequest('/api/clinic/1/professionals'),
+    queryFn: () => apiRequest('/api/clinic/1/professionals').then(res => res.json()),
+    staleTime: 0, // Force fresh data
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -85,6 +91,8 @@ export function useProfessionals() {
 export function useKnowledgeBases() {
   return useQuery({
     queryKey: ['/api/rag/knowledge-bases'],
-    queryFn: () => apiRequest('/api/rag/knowledge-bases'),
+    queryFn: () => apiRequest('/api/rag/knowledge-bases').then(res => res.json()),
+    staleTime: 0, // Force fresh data
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }
