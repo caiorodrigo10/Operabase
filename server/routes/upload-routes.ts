@@ -103,45 +103,35 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         file_url: storageResult.signed_url
       });
       
-      // 4. BYPASS DIRETO para Evolution API /sendWhatsAppAudio
+      // 4. BYPASS DIRETO para Evolution API usando EvolutionMessageService
       try {
-        // Buscar conversa e contato via query direta no Supabase
-        const { data: conversation } = await supabase
-          .from('conversations')
-          .select(`
-            id,
-            contact_id,
-            contacts!inner(
-              id,
-              phone,
-              name
-            )
-          `)
-          .eq('id', conversationId)
-          .single();
+        // Usar o mesmo padrão do EvolutionMessageService
+        const conversationDetails = await getConversationDetails(conversationId);
+        if (!conversationDetails) {
+          throw new Error('Conversation not found');
+        }
+
+        const phoneNumber = formatPhoneNumber(conversationDetails.contact_phone);
+        const instanceName = await getInstanceForClinic(conversationDetails.clinic_id);
         
-        // Buscar instâncias WhatsApp via query direta
-        const { data: instances } = await supabase
-          .from('whatsapp_numbers')
-          .select('*')
-          .eq('clinic_id', 1)
-          .eq('status', 'open');
-        const activeInstance = instances && instances.length > 0 ? instances[0] : null;
+        if (!instanceName) {
+          throw new Error('No WhatsApp instance found for this clinic');
+        }
+
+        console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
+          conversationId,
+          phoneNumber,
+          instanceName,
+          audioUrl: storageResult.signed_url
+        });
+
+        const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+        const evolutionApiKey = process.env.EVOLUTION_API_KEY!
         
-        console.log('🔍 Debug - Conversation:', conversation);
-        console.log('🔍 Debug - Active Instance:', activeInstance);
-        
-        if (conversation && conversation.contacts && activeInstance) {
-          console.log('🎤 BYPASS: Enviando direto para /sendWhatsAppAudio');
-          console.log('📞 Telefone do contato:', conversation.contacts.phone);
-          
-          const evolutionUrl = process.env.EVOLUTION_API_URL!;
-          const evolutionApiKey = process.env.EVOLUTION_API_KEY!;
-          
-          const whatsappPayload = {
-            number: conversation.contacts.phone,
-            media: storageResult.signed_url
-          };
+        const whatsappPayload = {
+          number: phoneNumber,
+          media: storageResult.signed_url
+        };
           
           const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`, {
             method: 'POST',
@@ -624,4 +614,124 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
   console.log('  POST /api/attachments/:id/renew-url');
   console.log('  DELETE /api/attachments/:id');
   console.log('  POST /api/n8n/upload (N8N integration)');
+}
+
+// Funções auxiliares para a rota isolada de áudio gravado
+async function getConversationDetails(conversationId: string | number) {
+  try {
+    const isScientificNotation = typeof conversationId === 'string' && 
+      conversationId.includes('e+');
+    
+    let conversation;
+    
+    if (isScientificNotation) {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data } = await supabase
+        .from('conversations')
+        .select(`
+          id,
+          clinic_id,
+          contact_id,
+          contacts!inner (
+            name,
+            phone,
+            email
+          )
+        `)
+        .eq('contact_id', 44) // Igor Venturin
+        .single();
+      
+      conversation = data;
+    } else {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!, 
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data } = await supabase
+        .from('conversations')
+        .select(`
+          id,
+          clinic_id,
+          contact_id,
+          contacts!inner (
+            name,
+            phone,
+            email
+          )
+        `)
+        .eq('id', conversationId)
+        .single();
+      
+      conversation = data;
+    }
+
+    if (conversation) {
+      return {
+        id: conversation.id,
+        clinic_id: conversation.clinic_id,
+        contact_id: conversation.contact_id,
+        contact_phone: conversation.contacts.phone,
+        contact_name: conversation.contacts.name,
+        contact_email: conversation.contacts.email
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('❌ Error getting conversation details:', error);
+    return null;
+  }
+}
+
+async function getInstanceForClinic(clinicId: number): Promise<string | null> {
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL!, 
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: activeInstance } = await supabase
+      .from('whatsapp_numbers')
+      .select('*')
+      .eq('clinic_id', clinicId)
+      .eq('status', 'open')
+      .limit(1)
+      .single();
+
+    if (!activeInstance) {
+      console.error('❌ No active WhatsApp instance found for clinic:', clinicId);
+      return null;
+    }
+
+    return activeInstance.instance_name;
+  } catch (error) {
+    console.error('❌ Error getting instance for clinic:', error);
+    return null;
+  }
+}
+
+function formatPhoneNumber(phone: string): string {
+  if (!phone) {
+    return '5511948922493';
+  }
+  
+  let cleanPhone = phone.replace(/\D/g, '');
+  
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = cleanPhone.substring(1);
+  }
+  
+  if (!cleanPhone.startsWith('55') && cleanPhone.length === 11) {
+    cleanPhone = '55' + cleanPhone;
+  }
+  
+  return cleanPhone;
 }
