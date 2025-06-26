@@ -128,6 +128,10 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           throw new Error('No WhatsApp instance found for this clinic');
         }
 
+        // Definir variáveis da Evolution API ANTES de usar
+        const evolutionUrl = process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+        const evolutionApiKey = process.env.EVOLUTION_API_KEY || '';
+
         // Validar se a instância está ativa na Evolution API
         console.log('🔍 STEP 4.4: Validando instância na Evolution API...');
         const instanceCheckUrl = `${evolutionUrl}/instance/fetchInstances`;
@@ -157,9 +161,6 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           instanceName,
           audioUrl: storageResult.signed_url
         });
-
-        const evolutionUrl = process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
-        const evolutionApiKey = process.env.EVOLUTION_API_KEY || '';
         
         if (!evolutionApiKey) {
           console.error('❌ EVOLUTION_API_KEY não configurada');
