@@ -345,7 +345,7 @@ export default function LiviaConfigurationPage() {
                       )}
                     </div>
                   </div>
-                ))
+                )) : null
               )}
             </div>
           </CardContent>
