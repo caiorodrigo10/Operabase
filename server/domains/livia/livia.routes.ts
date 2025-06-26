@@ -134,8 +134,20 @@ Mantenha um tom acolhedor e use linguagem simples. Em caso de dúvidas médicas 
       const context = tenantContext.getContext();
       const clinicId = context?.clinicId || (req.user as any)?.clinic_id || 1;
       
+      console.log('🔧 LIVIA UPDATE: Raw request body:', JSON.stringify(req.body, null, 2));
+      console.log('🔧 LIVIA UPDATE: Clinic ID:', clinicId);
+      
+      // Add clinic_id to the request body for validation
+      const bodyWithClinicId = {
+        ...req.body,
+        clinic_id: clinicId
+      };
+      
+      console.log('🔧 LIVIA UPDATE: Body with clinic_id:', JSON.stringify(bodyWithClinicId, null, 2));
+      
       // Validate request body
-      const validatedData = updateLiviaConfigurationSchema.parse(req.body);
+      const validatedData = updateLiviaConfigurationSchema.parse(bodyWithClinicId);
+      console.log('🔧 LIVIA UPDATE: Validated data:', JSON.stringify(validatedData, null, 2));
       
       const config = await storage.updateLiviaConfiguration(clinicId, validatedData);
       

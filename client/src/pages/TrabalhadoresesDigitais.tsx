@@ -119,7 +119,7 @@ export default function TrabalhadoresesDigitais() {
               <div
                 key={index}
                 className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-8 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer h-80 flex flex-col hover:scale-[1.02] hover:bg-white/90"
-                onClick={assistant.name === "Mara" ? undefined : () => handleCardClick(assistant.name, assistant.description)}
+
               >
                 {/* Gradient Background */}
                 <div className={`absolute inset-0 ${colors.bg} rounded-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-300`}></div>

@@ -80,7 +80,7 @@ export default function LiviaConfigurationPage() {
 
     try {
       if (config?.id) {
-        await updateMutation.mutateAsync({ id: config.id, ...configData });
+        await updateMutation.mutateAsync(configData);
       } else {
         await createMutation.mutateAsync(configData);
       }
