@@ -64,17 +64,32 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           {/* Media content */}
           {message.attachments && message.attachments.length > 0 && (
             <div className="mb-2">
-              {message.attachments.map((attachment, index) => (
-                <MediaMessage
-                  key={index}
-                  media_type={message.message_type || attachment.file_type}
-                  media_url={attachment.file_url || attachment.whatsapp_media_url || ''}
-                  media_filename={attachment.file_name}
-                  media_size={attachment.file_size}
-                  media_duration={attachment.duration}
-                  media_thumbnail={attachment.thumbnail_url}
-                />
-              ))}
+              {message.attachments.map((attachment, index) => {
+                // Debug logs para investigar o problema da imagem
+                console.log('🐛 MediaMessage Debug:', {
+                  messageType: message.message_type,
+                  attachmentFileType: attachment.file_type,
+                  attachmentMimeType: attachment.mime_type,
+                  fileUrl: attachment.file_url,
+                  whatsappMediaUrl: attachment.whatsapp_media_url,
+                  signedUrl: attachment.signed_url,
+                  publicUrl: attachment.public_url,
+                  fileName: attachment.file_name,
+                  fileSize: attachment.file_size
+                });
+                
+                return (
+                  <MediaMessage
+                    key={index}
+                    media_type={attachment.mime_type || message.message_type || attachment.file_type}
+                    media_url={attachment.signed_url || attachment.file_url || attachment.whatsapp_media_url || ''}
+                    media_filename={attachment.file_name}
+                    media_size={attachment.file_size}
+                    media_duration={attachment.duration}
+                    media_thumbnail={attachment.thumbnail_url}
+                  />
+                );
+              })}
             </div>
           )}
           

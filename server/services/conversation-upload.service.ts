@@ -390,11 +390,52 @@ export class ConversationUploadService {
     
     console.log('📤 Fazendo upload para bucket:', bucketName);
     
+    // Check if file already exists to prevent duplication
+    const { data: existingFiles } = await supabase.storage
+      .from(bucketName)
+      .list(`clinic-${params.clinicId}/conversation-${params.conversationId}/${category}`, {
+        search: params.filename
+      });
+    
+    console.log('🔍 Checking for existing files:', existingFiles?.length || 0);
+    
+    // If file with same name exists recently (within 1 minute), skip upload
+    if (existingFiles && existingFiles.length > 0) {
+      const recentFile = existingFiles.find(file => {
+        const fileTimestamp = parseInt(file.name.split('-')[0]);
+        const timeDiff = timestamp - fileTimestamp;
+        return timeDiff < 60000; // Less than 1 minute
+      });
+      
+      if (recentFile) {
+        console.log('⚠️ Recent duplicate file detected, using existing:', recentFile.name);
+        const existingPath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${recentFile.name}`;
+        
+        // Generate signed URL for existing file
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from(bucketName)
+          .createSignedUrl(existingPath, 86400);
+        
+        if (!signedError && signedData) {
+          return {
+            bucket: bucketName,
+            path: existingPath,
+            storage_path: existingPath,
+            signed_url: signedData.signedUrl,
+            signedUrl: signedData.signedUrl,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            publicUrl: null
+          };
+        }
+      }
+    }
+
     const { data, error } = await supabase.storage
       .from(bucketName)
       .upload(storagePath, params.file, {
         contentType: params.mimeType,
-        upsert: true
+        upsert: false // Prevent overwriting
       });
 
     if (error) {
@@ -418,9 +459,14 @@ export class ConversationUploadService {
     console.log('✅ URL assinada gerada com sucesso');
     
     return {
+      bucket: bucketName,
+      path: storagePath,
       storage_path: storagePath,
       signed_url: signedData.signedUrl,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      signedUrl: signedData.signedUrl, // Compatibility
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Compatibility
+      publicUrl: null // N8N uploads are private
     };
   }
 
@@ -1143,20 +1189,29 @@ export class ConversationUploadService {
 
       console.log('✅ N8N Message created:', message.id);
 
-      // 6. Criar attachment no banco
+      // 6. Criar attachment no banco com todos os campos necessários
       console.log('📎 Creating N8N attachment...');
+      console.log('📋 Storage result for attachment:', {
+        bucket: storageResult.bucket,
+        path: storageResult.path,
+        signedUrl: storageResult.signedUrl,
+        expiresAt: storageResult.expiresAt
+      });
+      
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
         clinic_id: clinicId,
-        file_name: filename, // Nome original na mensagem
+        file_name: filename, // Nome original para exibição
         file_type: mimeType, // MIME type original
         file_size: file.length,
-        file_url: storageResult.publicUrl || null, // Compatibilidade
-        storage_bucket: storageResult.bucket,
-        storage_path: storageResult.path,
-        public_url: storageResult.publicUrl,
-        signed_url: storageResult.signedUrl,
-        signed_url_expires: storageResult.expiresAt,
+        file_url: storageResult.signedUrl, // URL principal para acesso
+        // Campos Supabase Storage (se disponíveis no schema)
+        storage_bucket: storageResult.bucket || null,
+        storage_path: storageResult.path || null,
+        public_url: storageResult.publicUrl || null,
+        signed_url: storageResult.signedUrl || null,
+        signed_url_expires: storageResult.expiresAt || null,
+        // Campos WhatsApp (vindos do N8N)
         whatsapp_media_id: whatsappMediaId || null,
         whatsapp_media_url: whatsappMediaUrl || null
       });
@@ -1168,7 +1223,7 @@ export class ConversationUploadService {
         message,
         attachment,
         signedUrl: storageResult.signedUrl,
-        expiresAt: storageResult.expiresAt
+        expiresAt: storageResult.expiresAt.toISOString()
       };
 
     } catch (error) {
