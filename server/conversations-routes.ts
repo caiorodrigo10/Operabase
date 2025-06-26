@@ -42,7 +42,7 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
       // Buscar conversas simples usando SQL direto para evitar problemas de schema
       const conversationsResult = await storage.db.execute(`
         SELECT 
-          c.id, c.clinic_id, c.contact_id, c.status, c.created_at, c.updated_at,
+          c.id, c.clinic_id, c.contact_id, c.status, c.ai_active, c.created_at, c.updated_at,
           contacts.name as contact_name, 
           contacts.phone as contact_phone, 
           contacts.email as contact_email,
@@ -53,7 +53,7 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
         LEFT JOIN messages m ON c.id = m.conversation_id
         WHERE c.clinic_id = ${clinicId}
         ${status !== 'all' ? `AND c.status = '${status}'` : ''}
-        GROUP BY c.id, c.clinic_id, c.contact_id, c.status, c.created_at, c.updated_at,
+        GROUP BY c.id, c.clinic_id, c.contact_id, c.status, c.ai_active, c.created_at, c.updated_at,
                  contacts.name, contacts.phone, contacts.email
         ORDER BY c.created_at DESC
         LIMIT ${limit}

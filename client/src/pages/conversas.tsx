@@ -119,7 +119,7 @@ export default function ConversasPage() {
       updated_at: conv.updated_at,
       unread_count: conv.unread_count || 0,
       status: conv.status === 'active' ? 'active' : 'inactive',
-      ai_active: false,
+      ai_active: conv.ai_active ?? true, // Usar valor do banco, padrão true se indefinido
       has_pending_appointment: false
     }));
   };
