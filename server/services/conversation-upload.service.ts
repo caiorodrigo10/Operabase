@@ -1198,20 +1198,16 @@ export class ConversationUploadService {
         expiresAt: storageResult.expiresAt
       });
       
+      // Use only existing database columns (compatibility with current schema)
       const attachment = await this.storage.createAttachment({
         message_id: message.id,
         clinic_id: clinicId,
         file_name: filename, // Nome original para exibição
         file_type: mimeType, // MIME type original
         file_size: file.length,
-        file_url: storageResult.signedUrl, // URL principal para acesso
-        // Campos Supabase Storage (se disponíveis no schema)
-        storage_bucket: storageResult.bucket || null,
-        storage_path: storageResult.path || null,
-        public_url: storageResult.publicUrl || null,
-        signed_url: storageResult.signedUrl || null,
-        signed_url_expires: storageResult.expiresAt || null,
-        // Campos WhatsApp (vindos do N8N)
+        file_url: storageResult.signedUrl, // URL assinada para acesso direto
+        // Note: Supabase Storage columns (storage_bucket, storage_path, etc.) 
+        // are disabled in current schema per DATABASE-SCHEMA-GUIDE.md
         whatsapp_media_id: whatsappMediaId || null,
         whatsapp_media_url: whatsappMediaUrl || null
       });
