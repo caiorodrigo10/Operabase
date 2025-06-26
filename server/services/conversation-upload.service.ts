@@ -172,7 +172,8 @@ export class ConversationUploadService {
       
       // 5. Criar mensagem no banco (usar ID numérico da conversa) - deixar PostgreSQL criar timestamp automaticamente
       console.log('💾 Creating message in database...');
-      const messageContent = caption || `📎 ${filename}`; // Usar nome original na mensagem
+      // Se cliente enviar caption, usar caption. Se não enviar, deixar mensagem vazia (só arquivo)
+      const messageContent = caption && caption.trim() ? caption.trim() : '';
       
       // Usar messageType fornecido ou mapear MIME type automaticamente
       const finalMessageType = messageType || this.getMimeToMessageType(mimeType);
