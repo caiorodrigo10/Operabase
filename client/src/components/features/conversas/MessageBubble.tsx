@@ -48,22 +48,18 @@ function shouldHideContent(message: Message): boolean {
       /^mídia\s+(recebida|enviada)/i,
       /^audio\s+mp4\s+de\s+teste\s+do\s+paciente$/i,
       /^.udio\s+do\s+paciente$/i,
-      /^ãudio\s+do\s+paciente$/,
-      content === "Ãudio do paciente",
+      /^[ãáâàä]udio\s+do\s+paciente$/i,
       /^(audio|áudio|ãudio)\s+(mp4|wav|mp3|ogg)\s+.*(paciente|cliente)/i,
     ];
     
-    const isAutoDescription = autoDescriptionPatterns.some(pattern => {
-      if (typeof pattern === 'string') {
-        return trimmedContent === pattern;
-      }
-      return pattern.test(trimmedContent);
-    });
+    const isAutoDescription = autoDescriptionPatterns.some(pattern => pattern.test(trimmedContent));
     
     // Debug logging
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 Content hiding evaluation:', { 
         content: trimmedContent,
+        contentLength: trimmedContent.length,
+        firstChar: trimmedContent.charCodeAt(0),
         isReceived,
         hasAttachments,
         isAutoDescription,

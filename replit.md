@@ -163,6 +163,7 @@ SESSION_SECRET=your_session_secret
 - **Pattern Recognition**: Detects common auto-generated patterns (timestamps, file extensions, system messages)
 - **Clean Interface**: File attachments appear without clutter, showing only relevant user-written text
 - **Consistent Behavior**: Applied to all file types (audio, images, documents, videos)
+- **Character Encoding Fix**: Added specific pattern for "Ãudio do paciente" to handle character encoding variations
 
 ### June 26, 2025 - Audio Playback System Fixed & Real HTML5 Audio Implementation ✅
 - **Fixed Audio Playback**: Replaced mock timer-based audio simulation with real HTML5 audio elements
