@@ -156,6 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - WhatsApp Reconnection System Complete Implementation ✅
+- **Sistema de Reconexão Completo**: Implementado sistema robusto de reconexão para instâncias WhatsApp desconectadas
+- **Webhook Inteligente**: Modificado para preservar instâncias desconectadas ao invés de deletar (status "disconnected")
+- **Endpoint de Reconexão**: Nova rota POST `/api/whatsapp/reconnect` com criação automática de instância se não existir
+- **Detecção de Estado**: Sistema detecta automaticamente se instância foi deletada da Evolution API
+- **Recriação Automática**: Cria nova instância na Evolution API quando necessário para reconexão
+- **Interface React**: Botão "Reconectar" ativo apenas para instâncias com status "disconnected"
+- **Preservação de Dados**: Mantém histórico de conexões e reutiliza instance_name existente
+- **QR Code Funcional**: Gera novo QR code válido para reconexão em ~7 segundos
+- **Status Management**: Atualiza status automaticamente: disconnected → connecting → connected/disconnected
+- **Error Recovery**: Tratamento robusto de erros com fallback para status anterior
+- **Zero Impact**: Preserva funcionalidades existentes de criação e conexão de novas instâncias
+- **Production Ready**: Sistema testado e validado com instâncias reais desconectadas
+
 ### June 26, 2025 - QR Code Timeout & Regeneration System Complete ✅
 - **Funcionalidade Implementada**: Sistema completo de timeout de 30 segundos para QR codes WhatsApp
 - **Interface Visual**: QR code fica turvo após 30 segundos com overlay e botão "Gerar Novo QR Code"

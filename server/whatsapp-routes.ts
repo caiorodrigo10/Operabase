@@ -197,7 +197,10 @@ router.post('/api/whatsapp/reconnect', async (req, res) => {
     // If instance doesn't exist, create it first
     let qrResult = await evolutionApi.getQRCode(instanceName);
     
-    if (!qrResult.success && (qrResult.error?.includes('does not exist') || qrResult.error?.includes('Not Found'))) {
+    const errorMessage = qrResult.error || '';
+    const isInstanceNotFound = errorMessage.includes('does not exist') || errorMessage.includes('Not Found');
+    
+    if (!qrResult.success && isInstanceNotFound) {
       console.log('🔧 Instance does not exist, creating new instance for reconnection...');
       console.log('🔍 Original error:', qrResult.error);
       
