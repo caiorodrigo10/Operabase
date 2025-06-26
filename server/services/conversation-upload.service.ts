@@ -1165,7 +1165,8 @@ export class ConversationUploadService {
       
       // 5. Criar mensagem no banco com sender_type='patient' e message_type específico para WhatsApp
       console.log('💾 Creating N8N message in database...');
-      const messageContent = caption || `📎 ${filename}`;
+      // Se cliente enviar caption, usar caption. Se não enviar, deixar mensagem vazia (só arquivo)
+      const messageContent = caption && caption.trim() ? caption.trim() : '';
       
       // Usar método específico para WhatsApp (audio_voice ao invés de audio_file)
       const messageType = this.getWhatsAppMessageType(mimeType);
