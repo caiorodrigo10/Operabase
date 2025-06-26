@@ -13,6 +13,26 @@ export function createLiviaRoutes(storage: IStorage): Router {
     res.json({ message: 'Livia routes working', timestamp: new Date().toISOString() });
   });
 
+  // Test configuration endpoint (no auth for testing)
+  router.get('/livia/test-config', async (req, res) => {
+    try {
+      // Mock clinic ID for testing
+      const clinicId = 1;
+      const config = await storage.getLiviaConfiguration(clinicId);
+      res.json({ 
+        success: true,
+        config,
+        message: 'Configuration retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Test config error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get configuration'
+      });
+    }
+  });
+
   // GET /api/livia/config - Get current Livia configuration for the clinic
   router.get('/livia/config', isAuthenticated, async (req, res) => {
     try {
