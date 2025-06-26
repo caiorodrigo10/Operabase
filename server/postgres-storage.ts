@@ -2109,16 +2109,36 @@ export class PostgreSQLStorage implements IStorage {
 
   async createAttachment(attachment: any): Promise<any> {
     try {
+      // Only use columns that actually exist in the database
+      const attachmentData: any = {
+        message_id: attachment.message_id,
+        clinic_id: attachment.clinic_id,
+        file_name: attachment.file_name,
+        file_type: attachment.file_type,
+        file_size: attachment.file_size,
+        file_url: attachment.file_url || attachment.public_url
+      };
+
+      // Add Supabase Storage fields only if they are provided
+      if (attachment.storage_bucket) {
+        attachmentData.storage_bucket = attachment.storage_bucket;
+      }
+      if (attachment.storage_path) {
+        attachmentData.storage_path = attachment.storage_path;
+      }
+      if (attachment.signed_url) {
+        attachmentData.signed_url = attachment.signed_url;
+      }
+      if (attachment.signed_url_expires) {
+        attachmentData.signed_url_expires = attachment.signed_url_expires;
+      }
+      if (attachment.public_url) {
+        attachmentData.public_url = attachment.public_url;
+      }
+
       const [result] = await db
         .insert(message_attachments)
-        .values({
-          message_id: attachment.message_id,
-          clinic_id: attachment.clinic_id,
-          file_name: attachment.file_name,
-          file_type: attachment.file_type,
-          file_size: attachment.file_size,
-          file_url: attachment.file_url || attachment.public_url
-        })
+        .values(attachmentData)
         .returning();
       
       return result;
