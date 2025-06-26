@@ -11,6 +11,7 @@ import { createSettingsRoutes } from '../../domains/settings/settings.routes';
 import { createAiTemplatesRoutes } from '../../domains/ai-templates/ai-templates.routes';
 import { createAppointmentTagsRoutes } from '../../domains/appointment-tags/appointment-tags.routes';
 import { createUserProfileRoutes } from '../../domains/user-profile/user-profile.routes';
+import { createLiviaRoutes } from '../../domains/livia/livia.routes';
 // Observability routes are now integrated directly in index.ts
 import { createLoadTestingRoutes } from './load-testing/load-testing.routes';
 
@@ -73,6 +74,10 @@ export function createApiRouter(storage: any): Router {
   // User Profile domain routes
   const userProfileRoutes = createUserProfileRoutes(storage);
   apiRouter.use('/', userProfileRoutes);
+
+  // Livia AI Configuration domain routes
+  const liviaRoutes = createLiviaRoutes(storage);
+  apiRouter.use('/', liviaRoutes);
 
   // Observability routes are handled directly in index.ts
 
