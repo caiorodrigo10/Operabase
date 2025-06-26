@@ -153,7 +153,15 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         filename: uploadParams.filename,
         mimeType: uploadParams.mimeType,
         fileSize: uploadParams.file.length,
-        sendToWhatsApp: uploadParams.sendToWhatsApp
+        sendToWhatsApp: uploadParams.sendToWhatsApp,
+        messageType: uploadParams.messageType
+      });
+      
+      console.log('🔍 CRITICAL DEBUG - messageType detection:', {
+        receivedMessageType: messageType,
+        finalMessageType: uploadParams.messageType,
+        filename: uploadParams.filename,
+        shouldBeVoice: uploadParams.filename?.includes('gravacao_')
       });
 
       // Executar upload
