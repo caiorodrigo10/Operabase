@@ -168,7 +168,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           console.error('❌ STEP 4.4: Falha ao verificar instâncias:', instanceCheckResponse.status);
         }
 
-        console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
+        console.log('🎤 CORREÇÃO: Usando /sendMedia como sistema de mídia:', {
           conversationId,
           phoneNumber,
           instanceName,
@@ -180,19 +180,22 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           throw new Error('EVOLUTION_API_KEY não configurada');
         }
         
-        // Formato específico para /sendWhatsAppAudio conforme documentação Evolution API V2
+        // Usar mesmo formato que funciona no sistema de mídia - /sendMedia
         const whatsappPayload = {
           number: phoneNumber,
-          audio: storageResult.signed_url
+          mediatype: 'audio',
+          media: storageResult.signed_url,
+          fileName: req.file.originalname,
+          mimetype: req.file.mimetype
         };
           
-          console.log('🎤 BYPASS: Enviando áudio via /sendWhatsAppAudio:', {
-            url: `${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`,
+          console.log('🎤 Enviando áudio via /sendMedia (mesmo endpoint que funciona):', {
+            url: `${evolutionUrl}/message/sendMedia/${instanceName}`,
             payload: whatsappPayload,
             headers: { 'Content-Type': 'application/json', 'apikey': '***' }
           });
           
-          const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${instanceName}`, {
+          const response = await fetch(`${evolutionUrl}/message/sendMedia/${instanceName}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
