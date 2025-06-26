@@ -345,11 +345,15 @@ export function MainConversationArea({
       </div>
 
       {/* Upload Modal */}
-      {showUploadModal && (
+      {showUploadModal && selectedConversationId && (
         <FileUploadModal
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
-          onUpload={handleFileUpload}
+          conversationId={selectedConversationId.toString()}
+          onUploadSuccess={() => {
+            console.log('✅ Upload completed successfully');
+            setShowUploadModal(false);
+          }}
         />
       )}
 
