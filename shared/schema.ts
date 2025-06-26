@@ -493,6 +493,7 @@ export const conversations = pgTable("conversations", {
   status: varchar("status", { length: 50 }).notNull().default("active"), // active, archived, closed
   title: varchar("title", { length: 255 }), // Título customizado da conversa
   priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, urgent
+  ai_active: boolean("ai_active").default(true), // Controle se IA está ativa para esta conversa
   
   // Contadores para performance
   total_messages: integer("total_messages").default(0),
@@ -599,6 +600,7 @@ export const insertConversationSchema = createInsertSchema(conversations).omit({
 }).extend({
   status: z.enum(['active', 'archived', 'closed']).default('active'),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+  ai_active: z.boolean().default(true),
   clinic_id: z.number().min(1),
   contact_id: z.number().min(1),
 });
