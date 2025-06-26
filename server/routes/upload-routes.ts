@@ -126,7 +126,12 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         });
 
         const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
-        const evolutionApiKey = process.env.EVOLUTION_API_KEY!
+        const evolutionApiKey = process.env.EVOLUTION_API_KEY || '';
+        
+        if (!evolutionApiKey) {
+          console.error('❌ EVOLUTION_API_KEY não configurada');
+          throw new Error('EVOLUTION_API_KEY não configurada');
+        }
         
         const whatsappPayload = {
           number: phoneNumber,
@@ -146,7 +151,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           console.log('🎤 Evolution API Response:', response.status);
           
           if (response.ok && result.key) {
-            await storage.updateMessage(message.id, { status: 'sent' });
+            await storage.updateMessage(message.id, { evolution_status: 'sent' });
             console.log('✅ SUCESSO: Áudio enviado via /sendWhatsAppAudio');
             
             return res.json({
@@ -154,27 +159,25 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
               data: { message, attachment, whatsapp: { sent: true, messageId: result.key.id } },
               message: 'Mensagem de voz enviada com sucesso!'
             });
+          } else {
+            console.log('❌ Evolution API falhou:', response.status, result);
+            await storage.updateMessage(message.id, { evolution_status: 'failed' });
           }
-        }
-        
-        // Fallback se WhatsApp falhar
-        await storage.updateMessage(message.id, { status: 'failed' });
-        return res.json({
-          success: true,
-          data: { message, attachment, whatsapp: { sent: false } },
-          message: 'Áudio salvo, mas falha no envio WhatsApp'
-        });
-        
+
       } catch (whatsappError) {
         console.error('❌ WhatsApp error:', whatsappError);
-        await storage.updateMessage(message.id, { status: 'failed' });
-        
-        return res.json({
-          success: true,
-          data: { message, attachment, whatsapp: { sent: false } },
-          message: 'Áudio salvo, mas falha no envio WhatsApp'
-        });
+        try {
+          await storage.updateMessage(message.id, { evolution_status: 'failed' });
+        } catch (updateError) {
+          console.error('❌ Error updating message status:', updateError);
+        }
       }
+      
+      return res.json({
+        success: true,
+        data: { message, attachment, whatsapp: { sent: false } },
+        message: 'Áudio salvo, mas falha no envio WhatsApp'
+      });
       
     } catch (error) {
       console.error('❌ Voice upload error:', error);
