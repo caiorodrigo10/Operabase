@@ -237,6 +237,87 @@ interface MessageBubbleProps {
 // - 'note': Internal notes (right-aligned, amber with badge)
 ```
 
+#### AI Toggle System
+**Purpose**: Enable/disable AI functionality per conversation with real-time state synchronization
+
+```typescript
+// AI Toggle Integration in MainConversationArea
+interface MainConversationAreaProps {
+  timelineItems: TimelineItem[];
+  patientInfo?: PatientInfo;
+  onSendMessage?: (message: string, isNote?: boolean) => void;
+  showInfoButton?: boolean;
+  onInfoClick?: () => void;
+  selectedConversationId?: string | number; // Required for AI toggle
+}
+
+// State Management
+const [isAIActive, setIsAIActive] = useState(false);
+const { data: conversationData } = useConversationDetail(selectedConversationId?.toString() || '');
+
+// Auto-sync with database
+useEffect(() => {
+  if (conversationData?.conversation?.ai_active !== undefined) {
+    setIsAIActive(conversationData.conversation.ai_active);
+  }
+}, [conversationData?.conversation?.ai_active]);
+
+// Optimistic updates with error recovery
+const toggleAIMutation = useMutation({
+  mutationFn: async (newAIState: boolean) => {
+    const response = await apiRequest(`/api/conversations/${selectedConversationId}/ai-toggle`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ai_active: newAIState }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return response;
+  },
+  onSuccess: () => {
+    // Invalidate cache for real-time updates
+    queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple', selectedConversationId?.toString()] });
+  },
+  onError: (error) => {
+    // Revert optimistic update on error
+    setIsAIActive(!isAIActive);
+  }
+});
+```
+
+**Key Features:**
+- **Real-time Sync**: Button state reflects actual database value using `useConversationDetail` hook
+- **Optimistic Updates**: Instant UI feedback while API request processes
+- **Error Recovery**: Automatic state reversion if API call fails
+- **Visual Feedback**: Blue button when AI active, gray when inactive, disabled during API calls
+- **Cache Invalidation**: Ensures UI stays synchronized across components
+
+**UI Implementation:**
+```jsx
+<Button
+  variant="outline"
+  size="sm"
+  onClick={handleToggleAI}
+  disabled={toggleAIMutation.isPending}
+  className={cn(
+    "flex items-center space-x-2 transition-all",
+    isAIActive
+      ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500"
+      : "text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200",
+    toggleAIMutation.isPending && "opacity-50 cursor-not-allowed"
+  )}
+  title={isAIActive ? "IA ativada - clique para desativar" : "IA desativada - clique para ativar"}
+>
+  <Bot className="w-4 h-4" />
+  <span>IA</span>
+</Button>
+```
+
+**Backend Integration:**
+- **Endpoint**: `PATCH /api/conversations/:id/ai-toggle`
+- **Payload**: `{ ai_active: boolean }`
+- **Authentication**: Requires user session with clinic validation
+- **Database**: Updates `conversations.ai_active` column with immediate persistence
+
 ### Shared Components
 
 The feature leverages shadcn/ui components:
@@ -817,6 +898,76 @@ interface MainConversationAreaProps {
 - Reply/Note toggle system
 - Voice recording interface
 - File attachment support
+- AI toggle functionality
+
+### AI Toggle API
+
+**Endpoint**: `PATCH /api/conversations/:id/ai-toggle`
+
+**Purpose**: Enable or disable AI functionality for a specific conversation
+
+**Request**:
+```typescript
+// Headers
+Content-Type: application/json
+Authentication: Session-based (clinic isolation)
+
+// Body
+{
+  "ai_active": boolean  // true to enable AI, false to disable
+}
+```
+
+**Response**:
+```typescript
+// Success (200)
+{
+  "success": true,
+  "ai_active": boolean,
+  "conversation_id": string
+}
+
+// Error (400/404/500)
+{
+  "error": string
+}
+```
+
+**Frontend Usage**:
+```typescript
+// Using TanStack Query mutation
+const toggleAIMutation = useMutation({
+  mutationFn: async (newAIState: boolean) => {
+    return await apiRequest(`/api/conversations/${conversationId}/ai-toggle`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ai_active: newAIState }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  },
+  onSuccess: () => {
+    // Invalidate relevant caches
+    queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple', conversationId] });
+  }
+});
+
+// Toggle AI state
+const handleToggleAI = () => {
+  const newState = !isAIActive;
+  setIsAIActive(newState); // Optimistic update
+  toggleAIMutation.mutate(newState);
+};
+```
+
+**Database Impact**:
+- Updates `conversations.ai_active` column
+- Applies clinic-level isolation for security
+- Real-time state persistence with immediate effect
+
+**Error Handling**:
+- Validates conversation ownership by clinic
+- Returns 404 if conversation not found
+- Implements optimistic UI updates with automatic reversion on failure
 
 ### MessageBubble
 
@@ -894,6 +1045,44 @@ className={cn(
   "base-classes",
   isNoteMode ? "note-styles" : "normal-styles"
 )}
+```
+
+#### AI Toggle Button Not Syncing
+**Symptom**: AI button shows wrong state (gray when should be blue)
+**Solution**: Verify conversation data loading and selectedConversationId prop
+
+```typescript
+// Debug conversation data
+console.log('Conversation data:', conversationData?.conversation?.ai_active);
+console.log('Selected ID:', selectedConversationId);
+
+// Ensure proper data flow
+const { data: conversationData } = useConversationDetail(selectedConversationId?.toString() || '');
+
+// Check useEffect dependency
+useEffect(() => {
+  if (conversationData?.conversation?.ai_active !== undefined) {
+    setIsAIActive(conversationData.conversation.ai_active);
+  }
+}, [conversationData?.conversation?.ai_active]);
+```
+
+#### AI Toggle API Failing
+**Symptom**: Button click doesn't save state to database
+**Solution**: Check authentication, conversation ID format, and error handling
+
+```typescript
+// Debug API request
+const toggleAIMutation = useMutation({
+  mutationFn: async (newAIState: boolean) => {
+    console.log('Toggle request:', { conversationId: selectedConversationId, newState: newAIState });
+    // ... API call
+  },
+  onError: (error) => {
+    console.error('Toggle failed:', error);
+    // Check for 401 (auth), 404 (not found), 400 (validation)
+  }
+});
 ```
 
 ### Development Tips

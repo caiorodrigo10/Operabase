@@ -156,6 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - AI Toggle System Complete Implementation ✅
+- **Sistema de Toggle IA**: Implementado sistema completo para ativar/desativar IA por conversa individual
+- **Sincronização em Tempo Real**: Botão da IA sincroniza automaticamente com estado real do banco de dados
+- **Interface Intuitiva**: Botão azul quando IA ativa, cinza quando inativa, com feedback visual durante carregamento
+- **Endpoint Backend**: Nova rota PATCH `/api/conversations/:id/ai-toggle` para alternar estado da IA
+- **Atualização Otimista**: Interface responde instantaneamente com reversão automática em caso de erro
+- **Hook Personalizado**: Utiliza `useConversationDetail` para buscar dados atuais da conversa
+- **Cache Invalidation**: Sistema invalida cache automaticamente para manter dados sincronizados
+- **Isolamento por Clínica**: Segurança multi-tenant com validação de propriedade da conversa
+- **Documentação Completa**: Adicionada seção detalhada na documentação de conversas
+- **Estado Padrão**: Todas as conversas existentes têm IA ativa por padrão (ai_active = true)
+- **Tratamento de Erros**: Sistema robusto com logs detalhados e recovery automático
+- **Production Ready**: Sistema testado e validado com dados reais do Supabase
+
 ### June 26, 2025 - WhatsApp Reconnection System Complete Implementation ✅
 - **Sistema de Reconexão Completo**: Implementado sistema robusto de reconexão para instâncias WhatsApp desconectadas
 - **Webhook Inteligente**: Modificado para preservar instâncias desconectadas ao invés de deletar (status "disconnected")
