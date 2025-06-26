@@ -156,6 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - QR Code Timeout & Regeneration System Complete ✅
+- **Funcionalidade Implementada**: Sistema completo de timeout de 30 segundos para QR codes WhatsApp
+- **Interface Visual**: QR code fica turvo após 30 segundos com overlay e botão "Gerar Novo QR Code"
+- **Contador Regressivo**: Display visual do tempo restante com alerta quando ≤10 segundos
+- **Backend Endpoint**: Nova rota POST `/api/whatsapp/regenerate-qr` com validação de instância
+- **Integration Evolution API**: Regeneração usando endpoint `/instance/connect/{instance}`
+- **Estados de Loading**: Feedback visual durante regeneração com spinner e texto "Gerando..."
+- **Auto-Cleanup**: Sistema limpa timeouts automaticamente ao conectar ou fechar modal
+- **Logs Detalhados**: Sistema completo de logs para debugging e monitoramento
+- **Zero Impact**: Funcionalidades existentes preservadas - conexão e webhook mantidos intactos
+- **Performance**: Regeneração em ~2 segundos, QR codes únicos validados por timestamp
+- **Validação Completa**: Testes confirmam funcionalidade end-to-end com diferentes QR codes
+- **UX Otimizada**: Interface intuitiva com instruções claras e feedback em tempo real
+
 ### June 26, 2025 - WhatsApp Webhook Authentication with N8N_API_KEY Complete ✅
 - **Endpoint Security**: WhatsApp webhook endpoint `/api/whatsapp/webhook/connection-update` now protected with N8N_API_KEY
 - **Same API Key**: Uses identical 64-character key from N8N upload system for consistency
