@@ -4,7 +4,7 @@ import { IStorage } from '../storage';
 import { ConversationUploadService } from '../services/conversation-upload.service';
 import { SupabaseStorageService } from '../services/supabase-storage.service';
 import { EvolutionAPIService } from '../services/evolution-api.service';
-import { validateN8NRequest, parseN8NUpload } from '../n8n-auth';
+import { validateN8NRequest, parseN8NUpload, sanitizeN8NHeaders } from '../n8n-auth';
 import { validateN8NApiKey, n8nRateLimiter } from '../middleware/n8n-auth.middleware';
 
 // Configurar multer para upload em memória
@@ -599,17 +599,31 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
   app.post('/api/n8n/upload', 
     n8nRateLimiter,
     validateN8NApiKey,
+    sanitizeN8NHeaders,
     validateN8NRequest,
     parseN8NUpload,
     upload.single('file'),
     async (req: any, res: Response) => {
-      console.log('📥 N8N Upload request received');
-      console.log('🔍 Request Details:', {
-        method: req.method,
-        url: req.url,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
+      // Implementar timeout de 30 segundos para evitar crashes
+      const timeout = setTimeout(() => {
+        if (!res.headersSent) {
+          console.error('❌ N8N Upload timeout - processing took too long');
+          res.status(408).json({
+            success: false,
+            error: 'Request timeout',
+            message: 'File processing took too long, please try again with a smaller file'
+          });
+        }
+      }, 30000);
+
+      try {
+        console.log('📥 N8N Upload request received');
+        console.log('🔍 Request Details:', {
+          method: req.method,
+          url: req.url,
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
+        });
       console.log('🔍 All Headers:', req.headers);
       console.log('🔍 Content-Type:', req.headers['content-type']);
       console.log('🔍 File Info Headers:', {
@@ -789,6 +803,8 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           error: errorMessage,
           message: 'Failed to process N8N file upload'
         });
+      } finally {
+        clearTimeout(timeout);
       }
     }
   );
