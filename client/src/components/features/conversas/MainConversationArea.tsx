@@ -8,6 +8,9 @@ import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploadModal } from "./FileUploadModal";
 import { AudioRecordingModal } from "./AudioRecordingModal";
+import { useConversationDetail } from "@/hooks/useConversations";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 // Simple date formatting function
 const formatDateLabel = (dateString: string) => {
@@ -82,6 +85,46 @@ export function MainConversationArea({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  // Buscar dados da conversa atual para sincronizar estado da IA
+  const { data: conversationData } = useConversationDetail(selectedConversationId?.toString() || '');
+
+  // Sincronizar estado da IA com os dados do banco
+  useEffect(() => {
+    if (conversationData?.conversation?.ai_active !== undefined) {
+      setIsAIActive(conversationData.conversation.ai_active);
+    }
+  }, [conversationData?.conversation?.ai_active]);
+
+  // Mutation para alternar estado da IA
+  const toggleAIMutation = useMutation({
+    mutationFn: async (newAIState: boolean) => {
+      const response = await apiRequest(`/api/conversations/${selectedConversationId}/ai-toggle`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ai_active: newAIState }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return response;
+    },
+    onSuccess: () => {
+      // Invalidar cache para atualizar dados
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations-simple', selectedConversationId?.toString()] });
+    },
+    onError: (error) => {
+      console.error('Erro ao alternar IA:', error);
+      // Reverter estado local em caso de erro
+      setIsAIActive(!isAIActive);
+    }
+  });
+
+  // Função para alternar IA
+  const handleToggleAI = () => {
+    const newState = !isAIActive;
+    setIsAIActive(newState); // Atualização otimista
+    toggleAIMutation.mutate(newState);
+  };
 
   // Posiciona instantaneamente nas mensagens mais recentes
   useEffect(() => {
@@ -315,12 +358,14 @@ export function MainConversationArea({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsAIActive(!isAIActive)}
+            onClick={handleToggleAI}
+            disabled={toggleAIMutation.isPending}
             className={cn(
               "flex items-center space-x-2 transition-all",
               isAIActive
                 ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200",
+              toggleAIMutation.isPending && "opacity-50 cursor-not-allowed"
             )}
             title={isAIActive ? "IA ativada - clique para desativar" : "IA desativada - clique para ativar"}
           >
