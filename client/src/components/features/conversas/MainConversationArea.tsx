@@ -7,6 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploadModal } from "./FileUploadModal";
+import { AudioRecordingModal } from "./AudioRecordingModal";
 
 // Simple date formatting function
 const formatDateLabel = (dateString: string) => {
@@ -76,6 +77,7 @@ export function MainConversationArea({
   const [message, setMessage] = useState("");
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -321,8 +323,8 @@ export function MainConversationArea({
             variant="ghost"
             size="sm"
             className="text-gray-500 hover:text-gray-700 flex-shrink-0 w-10 h-10"
-            title="Microfone (em breve)"
-            disabled
+            title="Gravar áudio"
+            onClick={() => setShowAudioRecorder(true)}
           >
             <Mic className="w-4 h-4" />
           </Button>
@@ -353,6 +355,15 @@ export function MainConversationArea({
             console.log('✅ Upload completed successfully');
             setShowUploadModal(false);
           }}
+        />
+      )}
+
+      {/* Audio Recording Modal */}
+      {showAudioRecorder && (
+        <AudioRecordingModal
+          isOpen={showAudioRecorder}
+          onClose={() => setShowAudioRecorder(false)}
+          onAudioReady={handleAudioReady}
         />
       )}
 
