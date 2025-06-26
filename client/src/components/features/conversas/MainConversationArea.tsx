@@ -167,6 +167,9 @@ export function MainConversationArea({
     try {
       console.log('🎤 Starting audio recording...');
       
+      // First, clean any existing state
+      resetAudioState();
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
@@ -177,23 +180,39 @@ export function MainConversationArea({
       });
       
       streamRef.current = stream;
+      console.log('🎤 Got media stream, tracks:', stream.getTracks().length);
+      
+      // Test stream is active
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        throw new Error('No audio tracks found');
+      }
+      
+      console.log('🎤 Audio track state:', audioTracks[0].readyState);
       
       // Try different MIME types based on browser support
-      let mimeType = 'audio/webm;codecs=opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/webm';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = 'audio/mp4';
-          if (!MediaRecorder.isTypeSupported(mimeType)) {
-            mimeType = ''; // Use default
-          }
+      let mimeType = '';
+      const supportedTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus'
+      ];
+      
+      for (const type of supportedTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
         }
       }
       
       console.log('🎤 Using MIME type:', mimeType || 'default');
       
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      const recorderOptions = mimeType ? { mimeType } : {};
+      const recorder = new MediaRecorder(stream, recorderOptions);
       const chunks: BlobPart[] = [];
+      
+      console.log('🎤 MediaRecorder created, state:', recorder.state);
       
       recorder.ondataavailable = (event) => {
         console.log('🎤 Data available:', event.data.size, 'bytes');
@@ -203,7 +222,7 @@ export function MainConversationArea({
       };
       
       recorder.onstop = () => {
-        console.log('🎤 Recording stopped, chunks:', chunks.length);
+        console.log('🎤 Recording stopped, chunks:', chunks.length, 'recordingTime:', recordingTime);
         const finalMimeType = mimeType || 'audio/webm';
         const blob = new Blob(chunks, { type: finalMimeType });
         
@@ -214,18 +233,10 @@ export function MainConversationArea({
           chunksCount: chunks.length
         });
         
-        // Only validate if recording was actually attempted for a reasonable time
-        if (recordingTime < 1 && blob.size === 0) {
-          console.error('🎤 Recording stopped too quickly, likely initialization issue');
-          alert('Erro: Gravação não iniciou corretamente. Tente novamente.');
-          resetAudioState();
-          return;
-        }
-        
-        // For very short recordings, still allow if there's data
+        // More lenient validation - allow any blob with data
         if (blob.size === 0) {
           console.error('🎤 Empty audio blob detected');
-          alert('Erro: Áudio vazio. Tente gravar por mais tempo.');
+          alert('Erro: Não foi possível capturar áudio. Verifique o microfone e tente novamente.');
           resetAudioState();
           return;
         }
@@ -253,9 +264,26 @@ export function MainConversationArea({
         console.log('🎤 MediaRecorder started successfully');
       };
       
+      // Store recorder before starting
       setMediaRecorder(recorder);
       
-      // Set states immediately
+      // Wait for recorder to be ready and then start
+      await new Promise((resolve, reject) => {
+        recorder.onstart = () => {
+          console.log('🎤 MediaRecorder started successfully');
+          resolve(void 0);
+        };
+        
+        recorder.onerror = (event) => {
+          console.error('🎤 MediaRecorder startup error:', event);
+          reject(new Error('MediaRecorder failed to start'));
+        };
+        
+        console.log('🎤 Starting recorder...');
+        recorder.start(250); // Collect data every 250ms
+      });
+      
+      // Only set recording state after successful start
       setIsRecording(true);
       setRecordingTime(0);
       
@@ -264,16 +292,16 @@ export function MainConversationArea({
         setRecordingTime(prev => prev + 1);
       }, 1000);
       
-      // Start recording
-      console.log('🎤 Starting recorder...');
-      recorder.start(100); // Collect data every 100ms for better responsiveness
-      
     } catch (error) {
       console.error('🎤 Error starting recording:', error);
+      resetAudioState();
+      
       if (error.name === 'NotAllowedError') {
         alert('Permissão de microfone negada. Por favor, permita o acesso ao microfone e tente novamente.');
       } else if (error.name === 'NotFoundError') {
         alert('Microfone não encontrado. Verifique se há um microfone conectado.');
+      } else if (error.message.includes('MediaRecorder')) {
+        alert('Erro no sistema de gravação. Tente usar um navegador diferente ou verifique se o microfone está funcionando.');
       } else {
         alert('Erro ao iniciar gravação. Verifique as permissões do microfone.');
       }
