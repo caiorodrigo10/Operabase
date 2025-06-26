@@ -82,6 +82,9 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
     queryKey: [`/api/clinic/${clinicId}/professionals`],
   });
 
+  // Ensure professionals is always an array
+  const professionalsArray = Array.isArray(professionals) ? professionals : [];
+
   // Mutation to update professional assignment
   const updateProfessionalMutation = useMutation({
     mutationFn: ({ numberId, userId }: { numberId: number; userId: number | null }) =>
@@ -430,7 +433,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Nenhum profissional</SelectItem>
-                      {professionals && professionals.map((professional: any) => (
+                      {professionalsArray.map((professional: any) => (
                         professional.id ? (
                           <SelectItem key={professional.id} value={professional.id.toString()}>
                             {professional.name || professional.email || 'Profissional'}

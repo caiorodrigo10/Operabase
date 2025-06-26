@@ -109,7 +109,9 @@ router.get('/api/whatsapp/qr/:instanceName', async (req, res) => {
       await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'connecting');
     }
 
-    res.json({ qrCode: qrResult.qrCode });
+    // Extract QR code from different possible response structures
+    const qrCode = qrResult.data?.base64 || qrResult.data?.qrCode || qrResult.data;
+    res.json({ qrCode });
   } catch (error) {
     console.error('Error getting QR code:', error);
     res.status(500).json({ error: 'Failed to get QR code' });
@@ -122,7 +124,7 @@ router.get('/api/whatsapp/status/:instanceName', async (req, res) => {
     const instanceName = req.params.instanceName;
     
     // Check status with Evolution API
-    const statusResult = await evolutionApi.getConnectionStatus(instanceName);
+    const statusResult = await evolutionApi.checkConnection(instanceName);
     
     if (!statusResult.success) {
       return res.status(404).json({ error: statusResult.error });
@@ -194,7 +196,7 @@ router.post('/api/whatsapp/regenerate-qr', async (req, res) => {
     await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'connecting');
 
     res.json({ 
-      qrCode: qrResult.qrCode || qrResult.data?.qrCode || qrResult.data?.base64,
+      qrCode: qrResult.data?.base64 || qrResult.data?.qrCode || qrResult.data,
       instanceName: instanceName,
       regenerated: true,
       timestamp: new Date().toISOString()
