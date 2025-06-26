@@ -166,6 +166,7 @@ SESSION_SECRET=your_session_secret
 - **Double Timezone Fix**: Resolved frontend double conversion issue causing wrong dates to display
 - **Fallback Correction**: Replaced problematic conv.updated_at fallback with conv.created_at for conversations without messages
 - **Query Improvements**: Enhanced Supabase query with null checks and dual ordering (timestamp DESC, id DESC)
+- **Frontend Fallback Removed**: Eliminated unnecessary `|| conversation.timestamp` fallback in ConversationsSidebar
 - **User Validated**: Conversation sidebar now displays accurate timestamps matching actual last message times
 - **Format Examples**: Today's messages show "11:01", other days show "24 de jun", "23 de jun"
 - **Caio Rodrigo Fixed**: Now correctly shows "11:01" for today's message instead of incorrect "24 jun"

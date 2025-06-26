@@ -144,7 +144,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
               {conversation.patient_name}
             </h3>
             <span className="text-xs text-gray-400 flex-shrink-0 min-w-[50px]">
-              {formatMessageTimestamp(conversation.last_message_at || conversation.timestamp)}
+              {formatMessageTimestamp(conversation.last_message_at)}
             </span>
           </div>
 
