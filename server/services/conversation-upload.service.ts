@@ -192,7 +192,7 @@ export class ConversationUploadService {
         file_name: filename, // Nome original para exibição
         file_type: mimeType,
         file_size: file.length,
-        file_url: storageResult.signed_url
+        file_url: storageResult.signed_url || storageResult.public_url
       });
 
       let whatsappResult = { sent: false, messageId: undefined, error: undefined };
