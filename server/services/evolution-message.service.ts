@@ -17,7 +17,7 @@ export class EvolutionMessageService {
   private storage: IStorage;
 
   constructor(storage: IStorage) {
-    this.baseUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+    this.baseUrl = process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
     this.apiKey = process.env.EVOLUTION_API_KEY || '';
     this.storage = storage;
     

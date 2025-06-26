@@ -508,7 +508,7 @@ export class ConversationUploadService {
         return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
       };
 
-      const evolutionUrl = process.env.EVOLUTION_API_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+      const evolutionUrl = process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
       const evolutionApiKey = process.env.EVOLUTION_API_KEY;
       
       console.log('🔧 Evolution API Configuration Check:');

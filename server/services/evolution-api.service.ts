@@ -28,7 +28,7 @@ export class EvolutionAPIService {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.EVOLUTION_API_URL || '';
+    this.baseUrl = process.env.EVOLUTION_URL || '';
     this.apiKey = process.env.EVOLUTION_API_KEY || '';
     
     if (!this.baseUrl || !this.apiKey) {
