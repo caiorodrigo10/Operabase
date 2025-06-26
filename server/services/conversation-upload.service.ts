@@ -217,7 +217,7 @@ export class ConversationUploadService {
             mediaUrl: storageResult.signed_url,
             fileName: this.shouldIncludeFileName(mimeType) ? filename : undefined,
             caption: mimeType.startsWith('audio/') ? undefined : caption,
-            messageType: this.getMimeToMessageType(mimeType) // ETAPA 4: Passar tipo de mensagem
+            messageType: finalMessageType // Usar o messageType final que foi salvo no banco
           });
 
           // Atualizar status da mensagem usando evolution_status
