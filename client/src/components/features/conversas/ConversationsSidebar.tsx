@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,14 +19,23 @@ export function ConversationsSidebar({
 }: ConversationsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredConversations = conversations.filter(conversation => {
-    // Apply search only
-    if (searchQuery && !conversation.patient_name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
+  // Reordenação dinâmica baseada em last_message_at
+  const sortedAndFilteredConversations = useMemo(() => {
+    const filtered = conversations.filter(conversation => {
+      // Apply search only
+      if (searchQuery && !conversation.patient_name.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
 
-    return true;
-  });
+    // Ordenar por timestamp da última mensagem (mais recente primeiro)
+    return filtered.sort((a, b) => {
+      const timeA = new Date(a.last_message_at || a.timestamp).getTime();
+      const timeB = new Date(b.last_message_at || b.timestamp).getTime();
+      return timeB - timeA; // Ordem decrescente (mais recente primeiro)
+    });
+  }, [conversations, searchQuery]);
 
   return (
     <div className="w-full h-full flex flex-col bg-white border-r border-gray-200">
@@ -50,12 +59,12 @@ export function ConversationsSidebar({
 
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredConversations.length === 0 ? (
+        {sortedAndFilteredConversations.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
             <p>Nenhuma conversa encontrada</p>
           </div>
         ) : (
-          filteredConversations.map((conversation) => (
+          sortedAndFilteredConversations.map((conversation) => (
             <ConversationItem
               key={conversation.id}
               conversation={conversation}

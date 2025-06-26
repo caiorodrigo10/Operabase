@@ -4,6 +4,7 @@ export interface Conversation {
   patient_avatar?: string;
   last_message: string;
   timestamp: string;
+  last_message_at: string;
   unread_count: number;
   status: 'active' | 'inactive';
   ai_active?: boolean;
