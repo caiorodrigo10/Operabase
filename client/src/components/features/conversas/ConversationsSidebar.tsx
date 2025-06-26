@@ -35,7 +35,7 @@ const formatMessageTimestamp = (timestamp: string | null | undefined): string =>
       day: 'numeric',
       month: 'short',
       timeZone: 'America/Sao_Paulo'
-    });
+    }).replace('.', ''); // Remove o ponto do mês abreviado
   } catch (error) {
     console.error('Error formatting timestamp:', error);
     return '';

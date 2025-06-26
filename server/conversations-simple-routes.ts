@@ -84,13 +84,6 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             timestamp: brasiliaTime.toISOString(),
             original_timestamp: msg.timestamp // Manter original para debug
           };
-          
-          // Debug: Log da última mensagem encontrada
-          console.log(`🕒 Last message for conversation ${msg.conversation_id}:`, {
-            content: msg.content.substring(0, 50) + '...',
-            original_timestamp: msg.timestamp,
-            brasilia_timestamp: brasiliaTime.toISOString()
-          });
         }
       });
 

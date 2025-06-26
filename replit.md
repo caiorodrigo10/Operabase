@@ -156,6 +156,16 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - Smart Timestamp System Implementation ✅
+- **Real Last Message Detection**: Backend now uses actual timestamp from latest message instead of conversation.updated_at
+- **Intelligent Date Formatting**: Messages from today show time format (14:30), other days show date format (25 Jun, 2 Jan)
+- **Brazilian Timezone**: All timestamps correctly converted to GMT-3 (America/Sao_Paulo) timezone
+- **Backend Optimization**: Query enhanced to fetch real last message per conversation with proper timestamp handling
+- **Frontend Smart Logic**: Automatic detection of same-day vs different-day messages for appropriate formatting
+- **Cache System**: Redis cache invalidation working correctly with fresh data on timestamp updates
+- **User Validated**: Conversation sidebar now displays accurate timestamps matching actual last message times
+- **Format Examples**: Today's messages show "15:22", yesterday shows "25 Jun", older shows "23 Jun"
+
 ### June 26, 2025 - Clean File Message Display Implementation ✅
 - **Hide Auto-Generated Names**: Messages with files no longer show system-generated filenames automatically
 - **Smart Content Filtering**: Implemented intelligent detection of auto-generated vs meaningful text content
