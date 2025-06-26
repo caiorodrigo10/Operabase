@@ -7,13 +7,18 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 async function addAIActiveColumn() {
-  const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_POOLER_URL;
+  // Usar a mesma URL que o sistema usa, com encoding correto
+  let connectionString = process.env.SUPABASE_POOLER_URL;
   
   if (!connectionString) {
-    console.error('❌ DATABASE_URL ou SUPABASE_POOLER_URL não encontrada');
+    console.error('❌ SUPABASE_POOLER_URL não encontrada');
     process.exit(1);
   }
 
+  // Fix URL encoding for special characters (like #)
+  connectionString = connectionString.replace('#', '%23');
+  
+  console.log('🔗 Conectando ao Supabase...');
   const client = postgres(connectionString);
   const db = drizzle(client);
 
