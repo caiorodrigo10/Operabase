@@ -194,7 +194,24 @@ router.post('/api/whatsapp/reconnect', async (req, res) => {
     await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'connecting');
 
     // Call Evolution API to reconnect and generate new QR code
-    const qrResult = await evolutionApi.getQRCode(instanceName);
+    // If instance doesn't exist, create it first
+    let qrResult = await evolutionApi.getQRCode(instanceName);
+    
+    if (!qrResult.success && (qrResult.error?.includes('does not exist') || qrResult.error?.includes('Not Found'))) {
+      console.log('🔧 Instance does not exist, creating new instance for reconnection...');
+      console.log('🔍 Original error:', qrResult.error);
+      
+      // Create new instance in Evolution API
+      const createResult = await evolutionApi.createInstance(instanceName);
+      if (!createResult.success) {
+        console.log('❌ Failed to create instance for reconnection:', createResult.error);
+        await storage.updateWhatsAppNumberStatus(whatsappNumber.id, 'disconnected');
+        return res.status(500).json({ error: createResult.error });
+      }
+      
+      // Now try to get QR code again
+      qrResult = await evolutionApi.getQRCode(instanceName);
+    }
     
     if (!qrResult.success) {
       console.log('❌ Evolution API failed to generate QR for reconnection:', qrResult.error);
