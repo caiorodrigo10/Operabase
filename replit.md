@@ -172,6 +172,17 @@ SESSION_SECRET=your_session_secret
 - **Caio Rodrigo Fixed**: Now correctly shows "11:01" for today's message instead of incorrect "24 jun"
 - **Problem Solved**: Eliminated dependency on conversations.updated_at field for timestamp display
 
+### June 26, 2025 - N8N Header Sanitization & Error Recovery Implementation ✅
+- **Critical Fix**: Implemented comprehensive header sanitization middleware to prevent N8N upload crashes
+- **Header Cleaning**: Added `sanitizeN8NHeaders` middleware that removes problematic characters from x-caption, x-filename, and media headers
+- **Character Filtering**: Removes control characters (ASCII 0-31, 127), line breaks, and problematic quotes that cause HTTP parsing errors
+- **Length Limiting**: Truncates headers longer than 1000 characters to prevent buffer overflow attacks
+- **Timeout Protection**: Added 30-second timeout handling to prevent server crashes on large file uploads
+- **Error Boundaries**: Comprehensive try-catch-finally blocks with proper cleanup and graceful degradation
+- **Testing Validated**: Successfully processes headers with quotes, special characters, and large content without server crashes
+- **Production Ready**: N8N workflows can now handle problematic WhatsApp media with automatic sanitization
+- **Problem Solved**: Eliminated "Invalid character in header content" and "Bad gateway 502" errors from N8N integration
+
 ### June 26, 2025 - Clean File Message Display Implementation ✅
 - **Hide Auto-Generated Names**: Messages with files no longer show system-generated filenames automatically
 - **Smart Content Filtering**: Implemented intelligent detection of auto-generated vs meaningful text content
