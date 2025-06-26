@@ -1,100 +1,44 @@
 import { useState, useRef, useCallback } from 'react';
 
-// Estados do gravador de áudio
-export type AudioRecorderState = 
-  | 'idle'           // Pronto para gravar
-  | 'requesting'     // Solicitando permissão
-  | 'recording'      // Gravando
-  | 'stopped'        // Gravação parada
-  | 'processing'     // Processando áudio
-  | 'ready'          // Arquivo pronto
-  | 'error';         // Erro ocorrido
-
-// Tipos de erro
-export type AudioRecorderError = 
-  | 'permission_denied'
-  | 'not_supported'
-  | 'recording_failed'
-  | 'processing_failed'
-  | 'too_short'
-  | 'too_long';
-
-// Configurações do MediaRecorder
-const RECORDER_CONFIG = {
-  // Prioridade de codecs (baseado na API Evolution que retorna audio/mp4)
-  mimeTypes: [
-    'audio/mp4',
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/wav'
-  ],
-  audioBitsPerSecond: 128000,
-};
-
-// Limites de duração
-const MIN_DURATION_MS = 1000;  // 1 segundo mínimo
-const MAX_DURATION_MS = 300000; // 5 minutos máximo
-
-interface UseAudioRecorderReturn {
-  // Estados
-  state: AudioRecorderState;
-  duration: number;
-  error: AudioRecorderError | null;
-  audioFile: File | null;
-  
-  // Métodos
-  startRecording: () => Promise<void>;
-  stopRecording: () => Promise<void>;
-  cancelRecording: () => void;
-  reset: () => void;
-  
-  // Utilitários
-  isSupported: boolean;
-  supportedMimeType: string | null;
+export interface AudioRecorderState {
+  isRecording: boolean;
+  isPaused: boolean;
+  recordingTime: number;
+  audioBlob: Blob | null;
+  audioUrl: string | null;
+  error: string | null;
 }
 
-export const useAudioRecorder = (): UseAudioRecorderReturn => {
-  // Estados
-  const [state, setState] = useState<AudioRecorderState>('idle');
-  const [duration, setDuration] = useState(0);
-  const [error, setError] = useState<AudioRecorderError | null>(null);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  
-  // Refs
+export interface AudioRecorderActions {
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+  pauseRecording: () => void;
+  resumeRecording: () => void;
+  resetRecording: () => void;
+}
+
+export function useAudioRecorder(): AudioRecorderState & AudioRecorderActions {
+  const [state, setState] = useState<AudioRecorderState>({
+    isRecording: false,
+    isPaused: false,
+    recordingTime: 0,
+    audioBlob: null,
+    audioUrl: null,
+    error: null
+  });
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const finalDurationRef = useRef<number>(0);
 
-  // Detectar suporte e codec disponível
-  const getSupportedMimeType = useCallback((): string | null => {
-    if (!MediaRecorder.isTypeSupported) return null;
-    
-    for (const mimeType of RECORDER_CONFIG.mimeTypes) {
-      if (MediaRecorder.isTypeSupported(mimeType)) {
-        return mimeType;
-      }
-    }
-    return null;
-  }, []);
-
-  const supportedMimeType = getSupportedMimeType();
-  const isSupported = !!supportedMimeType && !!navigator.mediaDevices?.getUserMedia;
-
-  // Timer para duração
   const startTimer = useCallback(() => {
-    startTimeRef.current = Date.now();
     timerRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTimeRef.current;
-      setDuration(elapsed);
-      
-      // Auto-stop se atingir limite máximo
-      if (elapsed >= MAX_DURATION_MS) {
-        stopRecording();
-      }
-    }, 100);
+      setState(prev => ({
+        ...prev,
+        recordingTime: prev.recordingTime + 1
+      }));
+    }, 1000);
   }, []);
 
   const stopTimer = useCallback(() => {
@@ -104,230 +48,122 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
     }
   }, []);
 
-  // Limpar recursos
-  const cleanup = useCallback(() => {
-    console.log('🧹 Cleanup called - releasing all resources');
-    stopTimer();
-    
-    if (streamRef.current) {
-      console.log('🔇 Stopping all media tracks in cleanup');
-      streamRef.current.getTracks().forEach(track => {
-        console.log('🔇 Stopping track in cleanup:', track.kind, track.label, 'readyState:', track.readyState);
-        track.stop();
-      });
-      streamRef.current = null;
-      console.log('✅ Stream cleared in cleanup');
-    }
-    
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current = null;
-      console.log('✅ MediaRecorder cleared in cleanup');
-    }
-    
-    chunksRef.current = [];
-    console.log('✅ Audio chunks cleared in cleanup');
-  }, [stopTimer]);
-
-  // Processar áudio gravado
-  const processAudioBlob = useCallback(async (blob: Blob, recordingDuration: number): Promise<File> => {
-    setState('processing');
-    
+  const startRecording = useCallback(async () => {
     try {
-      // Validar duração mínima usando a duração capturada no momento da parada
-      console.log('🎤 Processing audio - Duration:', recordingDuration, 'ms');
-      if (recordingDuration < MIN_DURATION_MS) {
-        console.error('❌ Audio too short:', recordingDuration, 'ms < required', MIN_DURATION_MS, 'ms');
-        throw new Error('too_short');
-      }
+      setState(prev => ({ ...prev, error: null }));
       
-      // Criar nome do arquivo baseado na data
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const extension = supportedMimeType?.includes('mp4') ? 'mp4' : 'webm';
-      const fileName = `audio-gravado-${timestamp}.${extension}`;
-      
-      console.log('✅ Creating audio file:', fileName, 'Duration:', recordingDuration, 'ms');
-      
-      // Criar File object com tipo MIME correto
-      const audioFile = new File([blob], fileName, {
-        type: supportedMimeType || 'audio/webm',
-        lastModified: Date.now()
-      });
-      
-      return audioFile;
-    } catch (error) {
-      const errorType = error instanceof Error ? error.message as AudioRecorderError : 'processing_failed';
-      setError(errorType);
-      setState('error');
-      throw error;
-    }
-  }, [supportedMimeType]);
-
-  // Iniciar gravação
-  const startRecording = useCallback(async (): Promise<void> => {
-    if (!isSupported) {
-      setError('not_supported');
-      setState('error');
-      return;
-    }
-
-    try {
-      setState('requesting');
-      setError(null);
-      setDuration(0);
-      
-      // Solicitar permissão de microfone
-      console.log('🎤 Requesting microphone access...');
+      // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-      
-      console.log('🎤 Microphone stream obtained:', {
-        tracks: stream.getTracks().map(track => ({
-          kind: track.kind,
-          label: track.label,
-          readyState: track.readyState,
-          enabled: track.enabled
-        }))
+          autoGainControl: true,
+          sampleRate: 48000
+        } 
       });
       
       streamRef.current = stream;
-      chunksRef.current = [];
-      
-      // Configurar MediaRecorder
+      audioChunksRef.current = [];
+
+      // Create MediaRecorder with optimal settings for WhatsApp
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: supportedMimeType!,
-        audioBitsPerSecond: RECORDER_CONFIG.audioBitsPerSecond
+        mimeType: 'audio/webm;codecs=opus' // Optimal for WhatsApp
       });
       
       mediaRecorderRef.current = mediaRecorder;
-      
-      // Event listeners
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
+          audioChunksRef.current.push(event.data);
         }
       };
-      
-      mediaRecorder.onstop = async () => {
-        console.log('🎤 MediaRecorder stopped, processing audio...');
-        console.log('📊 Audio chunks collected:', chunksRef.current.length);
-        console.log('⏱️ Final duration captured:', finalDurationRef.current, 'ms');
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { 
+          type: 'audio/webm;codecs=opus' 
+        });
+        const audioUrl = URL.createObjectURL(audioBlob);
         
-        try {
-          const audioBlob = new Blob(chunksRef.current, { 
-            type: supportedMimeType! 
-          });
-          
-          console.log('🎵 Audio blob created:', {
-            size: audioBlob.size,
-            type: audioBlob.type,
-            duration: finalDurationRef.current
-          });
-          
-          // Usar a duração capturada no momento da parada
-          const file = await processAudioBlob(audioBlob, finalDurationRef.current);
-          console.log('✅ Audio file ready:', file.name, file.size, 'bytes');
-          setAudioFile(file);
-          setState('ready');
-        } catch (error) {
-          console.error('❌ Error in onstop handler:', error);
-          // Error já tratado no processAudioBlob
-        }
+        setState(prev => ({
+          ...prev,
+          audioBlob,
+          audioUrl,
+          isRecording: false,
+          isPaused: false
+        }));
       };
+
+      mediaRecorder.start(1000); // Collect data every second
       
-      mediaRecorder.onerror = () => {
-        setError('recording_failed');
-        setState('error');
-        cleanup();
-      };
+      setState(prev => ({
+        ...prev,
+        isRecording: true,
+        isPaused: false,
+        recordingTime: 0
+      }));
       
-      // Iniciar gravação
-      console.log('🎤 Starting MediaRecorder with supported MIME type:', supportedMimeType);
-      mediaRecorder.start(100); // Coleta dados a cada 100ms
-      setState('recording');
       startTimer();
-      console.log('⏱️ Recording timer started');
       
     } catch (error) {
-      setError('permission_denied');
-      setState('error');
-      cleanup();
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Erro ao acessar microfone'
+      }));
     }
-  }, [isSupported, supportedMimeType, startTimer, processAudioBlob, cleanup]);
+  }, [startTimer]);
 
-  // Parar gravação
-  const stopRecording = useCallback(async (): Promise<void> => {
-    if (mediaRecorderRef.current && state === 'recording') {
-      // Capturar duração atual ANTES de parar o timer
-      const currentDuration = Date.now() - startTimeRef.current;
-      finalDurationRef.current = currentDuration;
-      
-      console.log('🎤 Stopping recording - Final duration:', currentDuration, 'ms');
-      
-      // Parar o MediaRecorder primeiro
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
-      setState('stopped');
-      stopTimer();
-      
-      // IMPORTANTE: Liberar o microfone imediatamente após parar a gravação
-      console.log('🔒 Releasing microphone stream...');
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => {
-          console.log('🔇 Stopping track:', track.kind, track.label);
-          track.stop();
-        });
-      }
     }
-  }, [state, stopTimer]);
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    stopTimer();
+  }, [stopTimer]);
 
-  // Cancelar gravação
-  const cancelRecording = useCallback(() => {
-    cleanup();
-    setState('idle');
-    setDuration(0);
-    setError(null);
-    setAudioFile(null);
-  }, [cleanup]);
+  const pauseRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setState(prev => ({ ...prev, isPaused: true }));
+      stopTimer();
+    }
+  }, [stopTimer]);
 
-  // Reset completo
-  const reset = useCallback(() => {
-    console.log('🔄 Resetting audio recorder and cleaning up resources');
-    cleanup();
-    setState('idle');
-    setDuration(0);
-    setError(null);
-    setAudioFile(null);
-    finalDurationRef.current = 0;
-  }, [cleanup]);
+  const resumeRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setState(prev => ({ ...prev, isPaused: false }));
+      startTimer();
+    }
+  }, [startTimer]);
+
+  const resetRecording = useCallback(() => {
+    stopRecording();
+    
+    if (state.audioUrl) {
+      URL.revokeObjectURL(state.audioUrl);
+    }
+    
+    setState({
+      isRecording: false,
+      isPaused: false,
+      recordingTime: 0,
+      audioBlob: null,
+      audioUrl: null,
+      error: null
+    });
+  }, [stopRecording, state.audioUrl]);
 
   return {
-    // Estados
-    state,
-    duration,
-    error,
-    audioFile,
-    
-    // Métodos
+    ...state,
     startRecording,
     stopRecording,
-    cancelRecording,
-    reset,
-    
-    // Utilitários
-    isSupported,
-    supportedMimeType
+    pauseRecording,
+    resumeRecording,
+    resetRecording
   };
-};
-
-// Hook para formatação de tempo
-export const useFormatDuration = (durationMs: number): string => {
-  const seconds = Math.floor(durationMs / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
+}

@@ -1,271 +1,155 @@
-import { useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mic, Square, Send, X, AlertCircle, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAudioRecorder, useFormatDuration, type AudioRecorderError } from "@/hooks/useAudioRecorder";
+import { Mic, Square, Play, Pause, Trash2, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { formatTime } from '@/lib/utils';
 
 interface AudioRecorderProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAudioReady: (audioFile: File) => void;
+  onSendAudio: (audioBlob: Blob, duration: number) => void;
+  onCancel: () => void;
+  isUploading?: boolean;
 }
 
-// Mensagens de erro user-friendly
-const ERROR_MESSAGES: Record<AudioRecorderError, string> = {
-  permission_denied: "Permissão para acessar o microfone foi negada. Verifique as configurações do navegador.",
-  not_supported: "Gravação de áudio não é suportada neste navegador.",
-  recording_failed: "Falha na gravação. Tente novamente.",
-  processing_failed: "Erro ao processar o áudio gravado.",
-  too_short: "Gravação muito curta. Mínimo de 1 segundo.",
-  too_long: "Gravação muito longa. Máximo de 5 minutos."
-};
-
-export function AudioRecorder({ isOpen, onClose, onAudioReady }: AudioRecorderProps) {
+export function AudioRecorder({ onSendAudio, onCancel, isUploading = false }: AudioRecorderProps) {
   const {
-    state,
-    duration,
+    isRecording,
+    isPaused,
+    recordingTime,
+    audioBlob,
+    audioUrl,
     error,
-    audioFile,
     startRecording,
     stopRecording,
-    cancelRecording,
-    reset,
-    isSupported
+    pauseRecording,
+    resumeRecording,
+    resetRecording
   } = useAudioRecorder();
 
-  const formattedDuration = useFormatDuration(duration);
-
-  // Reset quando modal fecha
-  useEffect(() => {
-    if (!isOpen) {
-      reset();
+  const handleStartRecording = async () => {
+    try {
+      await startRecording();
+    } catch (err) {
+      console.error('Failed to start recording:', err);
     }
-  }, [isOpen, reset]);
+  };
 
-  // Auto-fechar quando áudio estiver pronto e for enviado
   const handleSendAudio = () => {
-    if (audioFile) {
-      console.log('🎤 AudioRecorder: Sending audio file to MainConversationArea', {
-        fileName: audioFile.name,
-        fileSize: audioFile.size,
-        fileType: audioFile.type,
-        duration: duration
-      });
-      
-      onAudioReady(audioFile);
-      
-      console.log('🎤 AudioRecorder: Audio sent, cleaning up resources');
-      // Limpar recursos IMEDIATAMENTE após envio
-      reset();
-      onClose();
+    if (audioBlob && recordingTime > 0) {
+      onSendAudio(audioBlob, recordingTime);
+      resetRecording();
     }
   };
 
-  const handleClose = () => {
-    if (state === 'recording') {
-      cancelRecording();
-    }
-    onClose();
+  const handleCancel = () => {
+    resetRecording();
+    onCancel();
   };
 
-  // Se não suportado, mostrar erro
-  if (!isSupported) {
+  if (error) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Mic className="w-5 h-5" />
-              Gravação de Áudio
-            </DialogTitle>
-          </DialogHeader>
-          
-          <Alert variant="destructive">
-            <AlertCircle className="w-4 h-4" />
-            <AlertDescription>
-              Gravação de áudio não é suportada neste navegador.
-              Tente usar uma versão mais recente do Chrome, Firefox ou Edge.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={handleClose}>
-              Fechar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="text-red-600 text-sm">{error}</div>
+        <Button size="sm" variant="outline" onClick={handleCancel}>
+          Fechar
+        </Button>
+      </div>
     );
   }
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mic className="w-5 h-5" />
-            Gravação de Áudio
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Status da Gravação */}
-          <div className="text-center space-y-4">
-            {/* Indicador Visual */}
-            <div className="flex justify-center">
-              <div className={cn(
-                "w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300",
-                state === 'recording' 
-                  ? "bg-red-100 text-red-600 animate-pulse" 
-                  : state === 'requesting'
-                  ? "bg-yellow-100 text-yellow-600"
-                  : state === 'processing'
-                  ? "bg-blue-100 text-blue-600"
-                  : state === 'ready'
-                  ? "bg-green-100 text-green-600"
-                  : "bg-gray-100 text-gray-600"
-              )}>
-                {state === 'recording' && <Mic className="w-8 h-8" />}
-                {state === 'requesting' && <Clock className="w-8 h-8" />}
-                {state === 'processing' && <Clock className="w-8 h-8 animate-spin" />}
-                {state === 'ready' && <Send className="w-8 h-8" />}
-                {(state === 'idle' || state === 'stopped') && <Mic className="w-8 h-8" />}
-              </div>
-            </div>
-
-            {/* Status Text */}
-            <div className="space-y-1">
-              <p className="font-medium">
-                {state === 'idle' && 'Pronto para gravar'}
-                {state === 'requesting' && 'Solicitando permissão...'}
-                {state === 'recording' && 'Gravando...'}
-                {state === 'stopped' && 'Gravação finalizada'}
-                {state === 'processing' && 'Processando áudio...'}
-                {state === 'ready' && 'Áudio pronto para envio'}
-                {state === 'error' && 'Erro na gravação'}
-              </p>
-              
-              {/* Timer durante gravação */}
-              {(state === 'recording' || state === 'stopped' || state === 'ready') && duration > 0 && (
-                <p className="text-2xl font-mono text-blue-600">
-                  {formattedDuration}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Preview do Áudio Gravado */}
-          {state === 'ready' && audioFile && (
-            <div className="space-y-3">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-2">Áudio gravado com sucesso!</p>
-                <audio 
-                  controls 
-                  className="mx-auto"
-                  src={URL.createObjectURL(audioFile)}
-                  onLoadedMetadata={(e) => {
-                    const audio = e.target as HTMLAudioElement;
-                    console.log('🎵 Audio preview loaded:', {
-                      duration: audio.duration,
-                      size: audioFile.size,
-                      type: audioFile.type
-                    });
-                  }}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {audioFile.name} ({Math.round(audioFile.size / 1024)}KB)
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Erro */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="w-4 h-4" />
-              <AlertDescription>
-                {ERROR_MESSAGES[error]}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Controles */}
-          <div className="flex justify-center gap-3">
-            {/* Estado Idle - Mostrar botão Gravar */}
-            {state === 'idle' && (
-              <>
-                <Button variant="outline" onClick={handleClose}>
-                  <X className="w-4 h-4 mr-2" />
-                  Cancelar
-                </Button>
-                <Button onClick={startRecording} className="bg-red-600 hover:bg-red-700">
-                  <Mic className="w-4 h-4 mr-2" />
-                  Gravar
-                </Button>
-              </>
-            )}
-
-            {/* Estado Recording - Mostrar botão Parar */}
-            {state === 'recording' && (
-              <>
-                <Button variant="outline" onClick={cancelRecording}>
-                  <X className="w-4 h-4 mr-2" />
-                  Cancelar
-                </Button>
-                <Button onClick={stopRecording} variant="destructive">
-                  <Square className="w-4 h-4 mr-2" />
-                  Parar
-                </Button>
-              </>
-            )}
-
-            {/* Estado Ready - Mostrar opções */}
-            {state === 'ready' && (
-              <>
-                <Button variant="outline" onClick={cancelRecording}>
-                  <X className="w-4 h-4 mr-2" />
-                  Descartar
-                </Button>
-                <Button onClick={handleSendAudio} className="bg-green-600 hover:bg-green-700">
-                  <Send className="w-4 h-4 mr-2" />
-                  Enviar
-                </Button>
-              </>
-            )}
-
-            {/* Estados de loading */}
-            {(state === 'requesting' || state === 'processing') && (
-              <Button variant="outline" onClick={cancelRecording}>
-                <X className="w-4 h-4 mr-2" />
-                Cancelar
-              </Button>
-            )}
-
-            {/* Estado de erro */}
-            {state === 'error' && (
-              <>
-                <Button variant="outline" onClick={handleClose}>
-                  Fechar
-                </Button>
-                <Button onClick={() => { reset(); }} variant="default">
-                  Tentar Novamente
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* Dicas */}
-          {state === 'idle' && (
-            <div className="text-sm text-gray-500 space-y-1">
-              <p>• Duração mínima: 1 segundo</p>
-              <p>• Duração máxima: 5 minutos</p>
-              <p>• O áudio será enviado automaticamente para o WhatsApp</p>
-            </div>
-          )}
+  // Recording state
+  if (isRecording || isPaused) {
+    return (
+      <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-yellow-500'}`} />
+          <span className="text-sm font-medium">
+            {isRecording ? 'Gravando...' : 'Pausado'}
+          </span>
+          <span className="text-sm text-gray-600">
+            {formatTime(recordingTime)}
+          </span>
         </div>
-      </DialogContent>
-    </Dialog>
+        
+        <div className="flex items-center gap-1 ml-auto">
+          {isRecording ? (
+            <Button size="sm" variant="outline" onClick={pauseRecording}>
+              <Pause className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" onClick={resumeRecording}>
+              <Play className="w-4 h-4" />
+            </Button>
+          )}
+          
+          <Button size="sm" variant="outline" onClick={stopRecording}>
+            <Square className="w-4 h-4" />
+          </Button>
+          
+          <Button size="sm" variant="outline" onClick={handleCancel}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Preview state (recorded audio ready to send)
+  if (audioBlob && audioUrl) {
+    return (
+      <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <span className="text-sm font-medium">Áudio gravado</span>
+          <span className="text-sm text-gray-600">
+            {formatTime(recordingTime)}
+          </span>
+        </div>
+        
+        <audio 
+          src={audioUrl} 
+          controls 
+          className="h-8 flex-1 max-w-xs"
+          style={{ maxHeight: '32px' }}
+        />
+        
+        <div className="flex items-center gap-1 ml-auto">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={resetRecording}
+            disabled={isUploading}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          
+          <Button 
+            size="sm" 
+            onClick={handleSendAudio}
+            disabled={isUploading}
+          >
+            <Send className="w-4 h-4" />
+            {isUploading ? 'Enviando...' : 'Enviar'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Initial state - record button
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleStartRecording}
+        className="flex items-center gap-2"
+      >
+        <Mic className="w-4 h-4" />
+        Gravar áudio
+      </Button>
+      
+      <Button size="sm" variant="ghost" onClick={onCancel}>
+        Cancelar
+      </Button>
+    </div>
   );
 }
