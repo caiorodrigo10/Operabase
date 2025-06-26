@@ -279,7 +279,7 @@ export function MainConversationArea({
       </div>
 
       {/* Recording Interface - RED BLOCK */}
-      {isRecording && (
+      {recordingState === 'recording' && (
         <div className="flex-shrink-0 bg-red-50 border-t border-red-200 p-4">
           <div className="flex items-center justify-between bg-red-500 text-white p-3 rounded-lg">
             <div className="flex items-center space-x-3">
@@ -300,7 +300,7 @@ export function MainConversationArea({
       )}
 
       {/* Audio Preview Interface - BLUE BLOCK */}
-      {showAudioPreview && audioUrl && (
+      {recordingState === 'stopped' && audioUrl && (
         <div className="flex-shrink-0 bg-blue-50 border-t border-blue-200 p-4">
           <div className="bg-blue-500 text-white p-3 rounded-lg">
             <div className="flex items-center justify-between mb-3">
