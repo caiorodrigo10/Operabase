@@ -66,6 +66,7 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const finalDurationRef = useRef<number>(0);
 
   // Detectar suporte e codec disponível
   const getSupportedMimeType = useCallback((): string | null => {
@@ -120,12 +121,14 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
   }, [stopTimer]);
 
   // Processar áudio gravado
-  const processAudioBlob = useCallback(async (blob: Blob): Promise<File> => {
+  const processAudioBlob = useCallback(async (blob: Blob, recordingDuration: number): Promise<File> => {
     setState('processing');
     
     try {
-      // Validar duração mínima
-      if (duration < MIN_DURATION_MS) {
+      // Validar duração mínima usando a duração capturada no momento da parada
+      console.log('🎤 Processing audio - Duration:', recordingDuration, 'ms');
+      if (recordingDuration < MIN_DURATION_MS) {
+        console.error('❌ Audio too short:', recordingDuration, 'ms < required', MIN_DURATION_MS, 'ms');
         throw new Error('too_short');
       }
       
@@ -133,6 +136,8 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const extension = supportedMimeType?.includes('mp4') ? 'mp4' : 'webm';
       const fileName = `audio-gravado-${timestamp}.${extension}`;
+      
+      console.log('✅ Creating audio file:', fileName, 'Duration:', recordingDuration, 'ms');
       
       // Criar File object com tipo MIME correto
       const audioFile = new File([blob], fileName, {
@@ -147,7 +152,7 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       setState('error');
       throw error;
     }
-  }, [duration, supportedMimeType]);
+  }, [supportedMimeType]);
 
   // Iniciar gravação
   const startRecording = useCallback(async (): Promise<void> => {
@@ -195,7 +200,8 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
             type: supportedMimeType! 
           });
           
-          const file = await processAudioBlob(audioBlob);
+          // Usar a duração capturada no momento da parada
+          const file = await processAudioBlob(audioBlob, finalDurationRef.current);
           setAudioFile(file);
           setState('ready');
         } catch (error) {
@@ -224,6 +230,12 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
   // Parar gravação
   const stopRecording = useCallback(async (): Promise<void> => {
     if (mediaRecorderRef.current && state === 'recording') {
+      // Capturar duração atual ANTES de parar o timer
+      const currentDuration = Date.now() - startTimeRef.current;
+      finalDurationRef.current = currentDuration;
+      
+      console.log('🎤 Stopping recording - Final duration:', currentDuration, 'ms');
+      
       mediaRecorderRef.current.stop();
       setState('stopped');
       stopTimer();
