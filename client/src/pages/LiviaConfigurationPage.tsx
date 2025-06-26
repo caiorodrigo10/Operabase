@@ -187,7 +187,7 @@ export default function LiviaConfigurationPage() {
                     <SelectValue placeholder="Selecione um número do WhatsApp" />
                   </SelectTrigger>
                   <SelectContent>
-                    {whatsappNumbers?.map((number) => (
+                    {Array.isArray(whatsappNumbers) && whatsappNumbers.map((number) => (
                       <SelectItem key={number.id} value={number.id.toString()}>
                         <div className="flex items-center gap-2">
                           <span>{number.phone}</span>
@@ -278,7 +278,7 @@ export default function LiviaConfigurationPage() {
                   <Skeleton className="h-12 w-full" />
                 </div>
               ) : (
-                professionals?.map((professional) => (
+                Array.isArray(professionals) && professionals.map((professional) => (
                   <div
                     key={professional.id}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -323,7 +323,7 @@ export default function LiviaConfigurationPage() {
                   <Skeleton className="h-12 w-full" />
                 </div>
               ) : (
-                knowledgeBases?.map((kb) => (
+                (knowledgeBases && Array.isArray(knowledgeBases)) ? knowledgeBases.map((kb) => (
                   <div
                     key={kb.id}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
