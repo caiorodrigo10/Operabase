@@ -2278,6 +2278,86 @@ export class PostgreSQLStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  // LIVIA CONFIGURATIONS METHODS
+  async getLiviaConfiguration(clinicId: number): Promise<LiviaConfiguration | undefined> {
+    try {
+      console.log('📋 Getting Livia configuration for clinic:', clinicId);
+      
+      const result = await db.select().from(livia_configurations)
+        .where(eq(livia_configurations.clinic_id, clinicId))
+        .limit(1);
+      
+      if (result.length === 0) {
+        console.log('⚠️ No Livia configuration found for clinic:', clinicId);
+        return undefined;
+      }
+      
+      console.log('✅ Found Livia configuration:', result[0]);
+      return result[0];
+    } catch (error) {
+      console.error('Error getting Livia configuration:', error);
+      throw error;
+    }
+  }
+
+  async createLiviaConfiguration(config: InsertLiviaConfiguration): Promise<LiviaConfiguration> {
+    try {
+      console.log('📝 Creating Livia configuration:', config);
+      
+      const result = await db.insert(livia_configurations)
+        .values(config)
+        .returning();
+      
+      console.log('✅ Livia configuration created:', result[0]);
+      return result[0];
+    } catch (error) {
+      console.error('Error creating Livia configuration:', error);
+      throw error;
+    }
+  }
+
+  async updateLiviaConfiguration(clinicId: number, updates: Partial<UpdateLiviaConfiguration>): Promise<LiviaConfiguration | undefined> {
+    try {
+      console.log('📝 Updating Livia configuration for clinic:', clinicId, 'with:', updates);
+      
+      const result = await db.update(livia_configurations)
+        .set({
+          ...updates,
+          updated_at: new Date()
+        })
+        .where(eq(livia_configurations.clinic_id, clinicId))
+        .returning();
+      
+      if (result.length === 0) {
+        console.log('⚠️ No Livia configuration found to update for clinic:', clinicId);
+        return undefined;
+      }
+      
+      console.log('✅ Livia configuration updated:', result[0]);
+      return result[0];
+    } catch (error) {
+      console.error('Error updating Livia configuration:', error);
+      throw error;
+    }
+  }
+
+  async deleteLiviaConfiguration(clinicId: number): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting Livia configuration for clinic:', clinicId);
+      
+      const result = await db.delete(livia_configurations)
+        .where(eq(livia_configurations.clinic_id, clinicId))
+        .returning();
+      
+      const deleted = result.length > 0;
+      console.log(deleted ? '✅ Livia configuration deleted' : '⚠️ No configuration found to delete');
+      return deleted;
+    } catch (error) {
+      console.error('Error deleting Livia configuration:', error);
+      throw error;
+    }
+  }
+
   async getLiviaConfigurationForN8N(clinicId: number): Promise<{
     clinic_id: number;
     general_prompt: string;
@@ -2307,7 +2387,7 @@ export class PostgreSQLStorage implements IStorage {
           specialty: users.specialty
         })
         .from(users)
-        .where(sql`${users.id} = ANY(${config.professional_ids})`);
+        .where(sql`${users.id} = ANY(${config.selected_professional_ids})`);
         
         professionals.push(...professionalsData.map(p => ({
           id: p.id,
@@ -2328,7 +2408,7 @@ export class PostgreSQLStorage implements IStorage {
           description: rag_knowledge_bases.description
         })
         .from(rag_knowledge_bases)
-        .where(sql`${rag_knowledge_bases.id} = ANY(${config.knowledge_base_ids})`);
+        .where(sql`${rag_knowledge_bases.id} = ANY(${config.connected_knowledge_base_ids})`);
         
         knowledgeBases.push(...kbData.map(kb => ({
           id: kb.id,
