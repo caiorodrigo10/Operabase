@@ -148,6 +148,31 @@ export function AudioRecorder({ isOpen, onClose, onAudioReady }: AudioRecorderPr
             </div>
           </div>
 
+          {/* Preview do Áudio Gravado */}
+          {state === 'ready' && audioFile && (
+            <div className="space-y-3">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-2">Áudio gravado com sucesso!</p>
+                <audio 
+                  controls 
+                  className="mx-auto"
+                  src={URL.createObjectURL(audioFile)}
+                  onLoadedMetadata={(e) => {
+                    const audio = e.target as HTMLAudioElement;
+                    console.log('🎵 Audio preview loaded:', {
+                      duration: audio.duration,
+                      size: audioFile.size,
+                      type: audioFile.type
+                    });
+                  }}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {audioFile.name} ({Math.round(audioFile.size / 1024)}KB)
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Erro */}
           {error && (
             <Alert variant="destructive">
