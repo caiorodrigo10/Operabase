@@ -65,6 +65,8 @@ export function ConversationsSidebar({
   onConversationSelect
 }: ConversationsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  
+  console.log('🔍 ConversationsSidebar received conversations:', conversations.slice(0, 2));
 
   // Reordenação dinâmica baseada em last_message_at
   const sortedAndFilteredConversations = useMemo(() => {
@@ -157,7 +159,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
               {conversation.patient_name}
             </h3>
             <span className="text-xs text-gray-400 flex-shrink-0 min-w-[50px]">
-              {JSON.stringify(conversation.last_message_at) || 'DEBUG: null'}
+              {conversation.last_message_at ? formatMessageTimestamp(conversation.last_message_at) : 'No time'}
             </span>
           </div>
 
