@@ -58,7 +58,7 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
             console.log('✅ WhatsApp conectado com sucesso!');
             break;
           case 'close':
-            status = 'close';
+            status = 'disconnected';
             console.log('❌ WhatsApp desconectado');
             break;
           case 'connecting':
@@ -79,6 +79,7 @@ export function setupWhatsAppWebhookRoutes(app: any, storage: IStorage) {
           status,
           phone_number: webhookData.phoneNumber || null,
           connected_at: isConnected ? new Date() : null,
+          disconnected_at: status === 'disconnected' ? new Date() : null,
           last_seen: new Date(),
           updated_at: new Date()
         };

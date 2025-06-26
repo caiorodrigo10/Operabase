@@ -24,6 +24,7 @@ export const whatsapp_numbers = pgTable("whatsapp_numbers", {
   instance_name: text("instance_name").notNull(), // Nome única da instância na Evolution API
   status: text("status").notNull().default("disconnected"), // connected, disconnected, connecting, error
   connected_at: timestamp("connected_at"),
+  disconnected_at: timestamp("disconnected_at"),
   last_seen: timestamp("last_seen"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
