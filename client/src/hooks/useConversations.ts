@@ -30,16 +30,18 @@ interface ConversationDetailResponse {
 }
 
 export function useConversations(status: string = 'active', limit: number = 50) {
+  const timestamp = Date.now();
   return useQuery({
-    queryKey: ['/api/conversations-simple', status, limit],
+    queryKey: ['/api/conversations-simple', status, limit, timestamp],
     queryFn: async () => {
-      const response = await fetch(`/api/conversations-simple?status=${status}&limit=${limit}`);
+      const response = await fetch(`/api/conversations-simple?status=${status}&limit=${limit}&t=${timestamp}`);
       if (!response.ok) {
         throw new Error('Erro ao buscar conversas');
       }
       return response.json() as Promise<ConversationsResponse>;
     },
-    staleTime: 5000, // Reduzido para 5 segundos para updates mais rápidos
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

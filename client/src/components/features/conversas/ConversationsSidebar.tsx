@@ -8,11 +8,17 @@ import { Search, Bot, Calendar } from "lucide-react";
 
 // Função helper para formatação inteligente de timestamp
 const formatMessageTimestamp = (timestamp: string | null | undefined): string => {
-  if (!timestamp) return '';
+  if (!timestamp) {
+    console.log('❌ No timestamp provided:', timestamp);
+    return '';
+  }
   
   try {
     const messageDate = new Date(timestamp);
-    if (isNaN(messageDate.getTime())) return '';
+    if (isNaN(messageDate.getTime())) {
+      console.log('❌ Invalid timestamp:', timestamp);
+      return '';
+    }
     
     const today = new Date();
     
@@ -20,20 +26,27 @@ const formatMessageTimestamp = (timestamp: string | null | undefined): string =>
     const messageDateOnly = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
     const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
+    const isToday = messageDateOnly.getTime() === todayOnly.getTime();
+    
     // Mesmo dia: mostrar apenas hora (ex: "14:30")
-    if (messageDateOnly.getTime() === todayOnly.getTime()) {
-      return messageDate.toLocaleTimeString('pt-BR', { 
+    if (isToday) {
+      const timeFormat = messageDate.toLocaleTimeString('pt-BR', { 
         hour: '2-digit', 
         minute: '2-digit',
         hour12: false
       });
+      console.log('✅ Today timestamp:', timestamp, '→', timeFormat);
+      return timeFormat;
     }
     
     // Dia diferente: mostrar dia e mês (ex: "25 jun", "2 jan")
-    return messageDate.toLocaleDateString('pt-BR', {
+    const dateFormat = messageDate.toLocaleDateString('pt-BR', {
       day: 'numeric',
       month: 'short'
     }).replace('.', ''); // Remove o ponto do mês abreviado
+    
+    console.log('📅 Other day timestamp:', timestamp, '→', dateFormat);
+    return dateFormat;
   } catch (error) {
     console.error('Error formatting timestamp:', error);
     return '';
@@ -144,7 +157,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
               {conversation.patient_name}
             </h3>
             <span className="text-xs text-gray-400 flex-shrink-0 min-w-[50px]">
-              {formatMessageTimestamp(conversation.last_message_at)}
+              {JSON.stringify(conversation.last_message_at) || 'DEBUG: null'}
             </span>
           </div>
 
