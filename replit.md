@@ -156,6 +156,17 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 26, 2025 - N8N API Security Implementation Complete ✅
+- **Endpoint Protected**: `/api/n8n/upload` now secured with API KEY authentication
+- **Security Middleware**: Created `validateN8NApiKey` and `n8nRateLimiter` middleware for comprehensive protection
+- **API Key Generated**: 64-character cryptographically secure key stored in environment variables
+- **Multi-Header Support**: Accepts API key via X-API-Key, X-N8N-API-Key, or Authorization headers
+- **Rate Limiting**: 30 requests per minute per IP to prevent abuse and DDoS attacks
+- **Error Handling**: Comprehensive 401/429 responses with detailed messages for debugging
+- **Testing Validated**: All security scenarios tested (no key, valid key, invalid key)
+- **Production Ready**: N8N workflows can now securely upload files with proper authentication
+- **Documentation**: Complete security documentation created with usage examples and configuration
+
 ### June 26, 2025 - Audio Recording System Complete with WhatsApp Integration ✅
 - **Funcionalidade Completa**: Sistema de gravação de áudio totalmente funcional enviando para WhatsApp
 - **Rota Isolada**: Implementada rota dedicada `/api/conversations/:id/upload-voice` que bypassa complexidade do sistema geral
