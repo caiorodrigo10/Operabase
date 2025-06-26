@@ -161,7 +161,7 @@ export default function TrabalhadoresesDigitais() {
                       </Button>
                     </Link>
                   ) : assistant.name === "Lívia" ? (
-                    <Link href="/livia-config" className="inline-block">
+                    <Link href="/livia-configuration" className="inline-block">
                       <Button className="px-8 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white border-0">
                         Configurar {assistant.name}
                       </Button>

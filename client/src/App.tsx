@@ -20,7 +20,6 @@ import { Contatos } from "./pages/contatos";
 import ConversasPage from "./pages/conversas";
 import Conversas2Page from "./pages/conversas2";
 import { Configuracoes } from "./pages/configuracoes";
-import { LiviaConfig } from "./pages/livia-config";
 import LiviaConfigurationPage from "./pages/LiviaConfigurationPage";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
 // import { Prontuario } from "./pages/prontuario";
@@ -160,7 +159,6 @@ function Router() {
         <Route path="/anamneses/:id/editar" component={EditarAnamnesePage} />
         {/* <Route path="/prontuario/:id?" component={Prontuario} /> */}
         <Route path="/configuracoes" component={Configuracoes} />
-        <Route path="/livia-config" component={LiviaConfig} />
         <Route path="/livia-configuration" component={LiviaConfigurationPage} />
         <Route path="/perfil" component={Perfil} />
         <Route path="/chatdeteste" component={ChatDeTeste} />
