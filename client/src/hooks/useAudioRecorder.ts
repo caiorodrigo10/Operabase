@@ -53,16 +53,35 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       streamRef.current = stream;
       audioChunksRef.current = [];
 
-      // Try OGG first (WhatsApp native), fallback to WebM if not supported
-      let mimeType = 'audio/ogg;codecs=opus';
+      // Force OGG format for WhatsApp voice messages (required for native voice)
+      const oggMimeType = 'audio/ogg;codecs=opus';
+      let mimeType = oggMimeType;
       let fileExtension = 'ogg';
       
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/webm;codecs=opus';
-        fileExtension = 'webm';
-        console.log('⚠️ OGG not supported, using WebM');
+      if (!MediaRecorder.isTypeSupported(oggMimeType)) {
+        // Try alternative OGG formats
+        const altOggFormats = [
+          'audio/ogg',
+          'audio/ogg; codecs=vorbis',
+          'audio/webm;codecs=opus' // Last resort for conversion
+        ];
+        
+        let formatFound = false;
+        for (const format of altOggFormats) {
+          if (MediaRecorder.isTypeSupported(format)) {
+            mimeType = format;
+            fileExtension = format.includes('webm') ? 'webm' : 'ogg';
+            formatFound = true;
+            console.log(`✅ Using format: ${format}`);
+            break;
+          }
+        }
+        
+        if (!formatFound) {
+          throw new Error('Navegador não suporta gravação de áudio em formato compatível com WhatsApp');
+        }
       } else {
-        console.log('✅ Using OGG format (WhatsApp native)');
+        console.log('✅ Using OGG/Opus format (WhatsApp native)');
       }
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
