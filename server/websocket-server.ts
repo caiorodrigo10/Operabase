@@ -238,4 +238,77 @@ export class WebSocketServer {
       roomsList: rooms.filter(room => room.startsWith('clinic:') || room.startsWith('conversation:'))
     };
   }
+
+  /**
+   * ETAPA 5: Hybrid Cache Invalidation Integration
+   * Invalidates both Redis and Memory cache when messages are updated via WebSocket
+   */
+  private async invalidateHybridCache(conversationId: number, clinicId: number) {
+    try {
+      // Memory cache pattern-based invalidation (faster, always works)
+      memoryCacheService.deletePattern(`conversation:${conversationId}:`);
+      memoryCacheService.deletePattern(`conversations:clinic:${clinicId}`);
+
+      // Redis cache invalidation (when available)
+      try {
+        await redisCacheService.invalidateConversationDetail(conversationId);
+        await redisCacheService.invalidateConversationCache(clinicId);
+      } catch (redisError) {
+        console.log('⚠️ ETAPA 5: Redis unavailable, using Memory Cache only');
+      }
+
+      console.log(`🔄 ETAPA 5: Hybrid cache invalidated for conversation: ${conversationId}, clinic: ${clinicId}`);
+    } catch (error) {
+      console.error('❌ ETAPA 5: Error invalidating hybrid cache:', error);
+    }
+  }
+
+  /**
+   * ETAPA 5: WebSocket Broadcasting for Real-time Updates
+   * Broadcasts message events to connected clients and invalidates cache
+   */
+  public async broadcastMessageUpdate(conversationId: number, clinicId: number, eventType: 'new' | 'updated' | 'deleted', messageData: any) {
+    try {
+      const conversationRoom = `conversation:${conversationId}`;
+      const clinicRoom = `clinic:${clinicId}`;
+
+      // Broadcast to conversation room
+      this.io.to(conversationRoom).emit(`message:${eventType}`, {
+        conversationId,
+        message: messageData,
+        timestamp: new Date().toISOString()
+      });
+
+      // Broadcast conversation list update to clinic
+      this.io.to(clinicRoom).emit('conversation:list:updated', {
+        conversationId,
+        clinicId,
+        eventType,
+        timestamp: new Date().toISOString()
+      });
+
+      // Invalidate cache after broadcast
+      await this.invalidateHybridCache(conversationId, clinicId);
+
+      console.log(`📡 ETAPA 5: Broadcasted ${eventType} message update for conversation: ${conversationId}`);
+    } catch (error) {
+      console.error('❌ ETAPA 5: Error broadcasting message update:', error);
+    }
+  }
+
+  /**
+   * ETAPA 5: Get Enhanced WebSocket Connection Statistics
+   */
+  public getConnectionStats() {
+    const socketCount = this.io.engine.clientsCount;
+    const rooms = this.io.sockets.adapter.rooms;
+    
+    return {
+      connectedClients: socketCount,
+      totalRooms: rooms.size,
+      clinicRooms: Array.from(rooms.keys()).filter(room => room.startsWith('clinic:')).length,
+      conversationRooms: Array.from(rooms.keys()).filter(room => room.startsWith('conversation:')).length,
+      timestamp: new Date().toISOString()
+    };
+  }
 }

@@ -1,193 +1,214 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+/**
+ * ETAPA 5: WebSocket Real-Time Hook
+ * Manages WebSocket connection with auto-reconnection and cache invalidation
+ */
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 
-interface WebSocketMessage {
-  conversation_id: number;
-  message: {
-    id: number;
-    content: string;
-    sender_type: string;
-    sender_name: string;
-    created_at: string;
-    attachments?: any[];
-  };
-  timestamp: string;
-}
-
-interface ConversationUpdate {
-  conversation_id: number;
-  last_message?: string;
-  updated_at?: string;
-  unread_count?: number;
-}
-
-interface UserTyping {
-  userId: string;
-  userName: string;
-  isTyping: boolean;
-  timestamp: string;
-}
-
 interface WebSocketState {
   connected: boolean;
-  reconnecting: boolean;
+  connecting: boolean;
   error: string | null;
+  connectionCount: number;
 }
 
-export function useWebSocket() {
-  const socketRef = useRef<Socket | null>(null);
-  const queryClient = useQueryClient();
+interface MessageEvent {
+  conversationId: string;
+  message: any;
+  timestamp: string;
+}
+
+interface ConversationListEvent {
+  conversationId: string;
+  clinicId: number;
+  eventType: 'new' | 'updated' | 'deleted';
+  timestamp: string;
+}
+
+export const useWebSocket = (userId?: string, clinicId?: number) => {
   const [state, setState] = useState<WebSocketState>({
     connected: false,
-    reconnecting: false,
-    error: null
+    connecting: false,
+    error: null,
+    connectionCount: 0
   });
+  
+  const socketRef = useRef<Socket | null>(null);
+  const queryClient = useQueryClient();
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 5;
 
+  // Connection function with auth token
   const connect = useCallback(() => {
-    if (socketRef.current?.connected) return;
+    if (!userId || !clinicId) {
+      console.log('⚠️ ETAPA 5: Missing userId or clinicId, skipping WebSocket connection');
+      return;
+    }
 
-    // Simular token de autenticação - em produção usar token JWT real
-    const mockToken = btoa(JSON.stringify({
-      userId: '3cd96e6d-81f2-4c8a-a54d-3abac77b37a4',
-      email: 'cr@caiorodrigo.com.br',
-      name: 'Caio Rodrigo',
-      clinicId: 1
-    }));
-
-    const socket = io(window.location.origin, {
-      auth: {
-        token: mockToken
-      },
-      transports: ['websocket', 'polling'],
-      timeout: 20000,
-      forceNew: true
-    });
-
-    socketRef.current = socket;
-
-    // Connection events
-    socket.on('connect', () => {
-      console.log('🔗 WebSocket connected');
-      setState(prev => ({ ...prev, connected: true, reconnecting: false, error: null }));
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log('❌ WebSocket disconnected:', reason);
-      setState(prev => ({ ...prev, connected: false, error: `Disconnected: ${reason}` }));
-    });
-
-    socket.on('connect_error', (error) => {
-      console.warn('⚠️ WebSocket connection failed, using fallback polling');
-      setState(prev => ({ ...prev, connected: false, error: null })); // Não mostrar erro para fallback
-    });
-
-    socket.on('reconnect', () => {
-      console.log('🔄 WebSocket reconnected');
-      setState(prev => ({ ...prev, connected: true, reconnecting: false, error: null }));
-    });
-
-    socket.on('reconnect_attempt', () => {
-      console.log('🔄 WebSocket reconnecting...');
-      setState(prev => ({ ...prev, reconnecting: true }));
-    });
-
-    // Message events
-    socket.on('message:new', (data: WebSocketMessage) => {
-      console.log('📨 New message received:', data);
-      
-      // Invalidate conversation detail to fetch new message
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations-simple', data.conversation_id] 
+    setState(prev => ({ ...prev, connecting: true, error: null }));
+    
+    try {
+      const socket = io('/', {
+        auth: {
+          token: JSON.stringify({
+            userId,
+            email: 'cr@caiorodrigo.com.br', // Fixed for demo
+            clinicId,
+            name: 'Caio Rodrigo'
+          })
+        },
+        transports: ['websocket', 'polling'],
+        timeout: 20000,
+        forceNew: true
       });
-      
-      // Invalidate conversations list to update last message
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations-simple'] 
+
+      socketRef.current = socket;
+
+      // Connection events
+      socket.on('connect', () => {
+        console.log('✅ ETAPA 5: WebSocket connected');
+        setState(prev => ({ 
+          ...prev, 
+          connected: true, 
+          connecting: false, 
+          error: null,
+          connectionCount: prev.connectionCount + 1
+        }));
+        reconnectAttempts.current = 0;
       });
-    });
 
-    // Conversation events
-    socket.on('conversation:updated', (data: ConversationUpdate) => {
-      console.log('🔄 Conversation updated:', data);
-      
-      // Invalidate specific conversation and list
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations-simple', data.conversation_id] 
+      socket.on('disconnect', (reason) => {
+        console.log('❌ ETAPA 5: WebSocket disconnected:', reason);
+        setState(prev => ({ 
+          ...prev, 
+          connected: false, 
+          connecting: false
+        }));
+        
+        // Auto-reconnect with exponential backoff
+        if (reason === 'io server disconnect') {
+          // Server initiated disconnect, don't reconnect
+          return;
+        }
+        
+        if (reconnectAttempts.current < maxReconnectAttempts) {
+          const delay = Math.pow(2, reconnectAttempts.current) * 1000; // 1s, 2s, 4s, 8s, 16s
+          console.log(`🔄 ETAPA 5: Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1})`);
+          
+          setTimeout(() => {
+            reconnectAttempts.current++;
+            connect();
+          }, delay);
+        } else {
+          setState(prev => ({ 
+            ...prev, 
+            error: 'Max reconnection attempts reached. Using fallback polling.'
+          }));
+        }
       });
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations-simple'] 
+
+      socket.on('connect_error', (error) => {
+        console.error('❌ ETAPA 5: WebSocket connection error:', error);
+        setState(prev => ({ 
+          ...prev, 
+          connected: false, 
+          connecting: false, 
+          error: error.message || 'Connection failed'
+        }));
       });
-    });
 
-    socket.on('conversation:list_updated', (data: ConversationUpdate) => {
-      console.log('📋 Conversation list updated:', data);
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations-simple'] 
+      // ETAPA 5: Message events with cache invalidation
+      socket.on('message:new', (data: MessageEvent) => {
+        console.log('📨 ETAPA 5: New message received via WebSocket:', data.conversationId);
+        
+        // Invalidate conversation detail cache
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple', data.conversationId]
+        });
+        
+        // Invalidate conversation list cache
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple']
+        });
       });
-    });
 
-    // User activity events
-    socket.on('user:typing', (data: UserTyping) => {
-      console.log('⌨️ User typing:', data);
-      // Implementar indicador visual de digitação
-    });
+      socket.on('message:updated', (data: MessageEvent) => {
+        console.log('📝 ETAPA 5: Message updated via WebSocket:', data.conversationId);
+        
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple', data.conversationId]
+        });
+      });
 
-    socket.on('user:joined', (data: any) => {
-      console.log('👋 User joined conversation:', data);
-    });
+      socket.on('conversation:list:updated', (data: ConversationListEvent) => {
+        console.log('📋 ETAPA 5: Conversation list updated via WebSocket');
+        
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple']
+        });
+      });
 
-    socket.on('user:status', (data: any) => {
-      console.log('🟢 User status changed:', data);
-    });
+      // Join clinic room for notifications
+      socket.emit('clinic:join', clinicId);
 
-  }, [queryClient]);
+    } catch (error) {
+      console.error('❌ ETAPA 5: Error creating WebSocket connection:', error);
+      setState(prev => ({ 
+        ...prev, 
+        connected: false, 
+        connecting: false, 
+        error: 'Failed to create connection'
+      }));
+    }
+  }, [userId, clinicId, queryClient]);
 
+  // Join conversation room
+  const joinConversation = useCallback((conversationId: string) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('conversation:join', conversationId);
+      console.log(`💬 ETAPA 5: Joined conversation room: ${conversationId}`);
+    }
+  }, []);
+
+  // Leave conversation room
+  const leaveConversation = useCallback((conversationId: string) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('conversation:leave', conversationId);
+      console.log(`👋 ETAPA 5: Left conversation room: ${conversationId}`);
+    }
+  }, []);
+
+  // Manual disconnect
   const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
-      setState({ connected: false, reconnecting: false, error: null });
+      setState(prev => ({ 
+        ...prev, 
+        connected: false, 
+        connecting: false 
+      }));
     }
   }, []);
 
-  // Auto-connect on mount
+  // Initialize connection on mount
   useEffect(() => {
     connect();
-    return () => disconnect();
+    
+    return () => {
+      disconnect();
+    };
   }, [connect, disconnect]);
 
-  // WebSocket methods
-  const joinConversation = useCallback((conversationId: number) => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('conversation:join', conversationId);
-      console.log(`💬 Joined conversation: ${conversationId}`);
-    }
-  }, []);
-
-  const leaveConversation = useCallback((conversationId: number) => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('conversation:leave', conversationId);
-      console.log(`👋 Left conversation: ${conversationId}`);
-    }
-  }, []);
-
-  const sendTyping = useCallback((conversationId: number, isTyping: boolean) => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('conversation:typing', { conversationId, isTyping });
-    }
-  }, []);
-
-  const markMessageRead = useCallback((conversationId: number, messageId: number) => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('message:read', { conversationId, messageId });
-    }
-  }, []);
-
-  const setUserStatus = useCallback((status: 'online' | 'away' | 'offline') => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('user:status', status);
-    }
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.removeAllListeners();
+        socketRef.current.disconnect();
+      }
+    };
   }, []);
 
   return {
@@ -196,8 +217,6 @@ export function useWebSocket() {
     disconnect,
     joinConversation,
     leaveConversation,
-    sendTyping,
-    markMessageRead,
-    setUserStatus
+    socket: socketRef.current
   };
-}
+};

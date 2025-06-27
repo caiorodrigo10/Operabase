@@ -33,30 +33,39 @@ export default function ConversasPage() {
   const sendMessage = useSendMessage();
   const markAsRead = useMarkAsRead();
   
-  // ETAPA 2: WebSocket integration for real-time communication
-  const webSocket = useWebSocket();
+  // ETAPA 5: WebSocket integration for real-time communication with user context
+  const webSocket = useWebSocket('3cd96e6d-81f2-4c8a-a54d-3abac77b37a4', 1);
   
   // ETAPA 3: Optimistic mutations for instant UX
   const optimisticMarkAsRead = useOptimisticMarkAsRead();
 
-  // Polling em tempo real para conversa ativa
+  // ETAPA 5: WebSocket integration with conversation join/leave + fallback polling
   useEffect(() => {
     if (!selectedConversationId) return;
 
-    // Polling rápido para conversa ativa (a cada 2 segundos)
-    pollingIntervalRef.current = setInterval(() => {
-      queryClient.invalidateQueries({
-        queryKey: ['/api/conversations-simple', selectedConversationId]
-      });
-    }, 2000);
+    // Join WebSocket conversation room
+    webSocket.joinConversation(String(selectedConversationId));
+
+    // Fallback polling only if WebSocket is not connected
+    if (!webSocket.connected) {
+      pollingIntervalRef.current = setInterval(() => {
+        queryClient.invalidateQueries({
+          queryKey: ['/api/conversations-simple', selectedConversationId]
+        });
+      }, 2000);
+    }
 
     return () => {
+      // Leave WebSocket room
+      webSocket.leaveConversation(String(selectedConversationId));
+      
+      // Clear polling
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
     };
-  }, [selectedConversationId, queryClient]);
+  }, [selectedConversationId, queryClient, webSocket]);
 
   // Polling para lista de conversas (menos frequente)
   useEffect(() => {
@@ -406,11 +415,26 @@ export default function ConversasPage() {
   return (
     <div className="h-full flex bg-gray-50">
       <div className="w-80 flex-shrink-0">
-        <ConversationsSidebar
-          conversations={conversations}
-          selectedConversationId={selectedConversationId}
-          onConversationSelect={handleConversationSelect}
-        />
+        <div className="h-full flex flex-col">
+          {/* ETAPA 5: WebSocket Status Indicator */}
+          <div className="p-4 border-b border-gray-200 bg-white">
+            <WebSocketStatus
+              connected={webSocket.connected}
+              connecting={webSocket.connecting}
+              error={webSocket.error}
+              connectionCount={webSocket.connectionCount}
+              className="w-full"
+            />
+          </div>
+          
+          <div className="flex-1">
+            <ConversationsSidebar
+              conversations={conversations}
+              selectedConversationId={selectedConversationId}
+              onConversationSelect={handleConversationSelect}
+            />
+          </div>
+        </div>
       </div>
       
       <div className="flex-1">
