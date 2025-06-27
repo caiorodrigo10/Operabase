@@ -156,6 +156,16 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - N8N RAG Integration VIEW Created ✅
+- **VIEW v_n8n_clinic_chunks Criada**: VIEW no Supabase para integração N8N com sistema RAG por clínica
+- **Filtro por WhatsApp**: N8N pode filtrar chunks RAG usando número WhatsApp da mensagem recebida
+- **Estrutura Completa**: phone_number, instance_name, clinic_id, chunk_id, content, document_id, documento_titulo
+- **Isolamento por Clínica**: VIEW garante que cada clínica acesse apenas seus próprios dados RAG
+- **JOIN Inteligente**: Conecta whatsapp_numbers + rag_documents + rag_chunks automaticamente
+- **Filtros Automáticos**: Apenas instâncias WhatsApp 'open' e documentos RAG 'completed'
+- **Uso no N8N**: `SELECT chunk_id, content FROM v_n8n_clinic_chunks WHERE phone_number = '{{ $json.from }}'`
+- **Sistema Pronto**: VIEW funcionando e validada, aguardando dados RAG para teste completo
+
 ### June 27, 2025 - Sistema de Pausa Automática da IA: IMPLEMENTAÇÃO FINAL COMPLETA ✅
 - **Sistema 100% Funcional**: Implementação completa do sistema de pausa automática da IA com todas as correções
 - **Persistência Manual Garantida**: IA desativada manualmente (`ai_pause_reason="manual"`) nunca é reativada automaticamente
