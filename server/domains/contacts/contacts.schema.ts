@@ -18,7 +18,7 @@ export const contacts = pgTable("contacts", {
   current_medications: text("current_medications").array(),
   allergies: text("allergies").array(),
   profile_picture: text("profile_picture"), // URL da foto do perfil
-  status: text("status").notNull(), // novo, em_conversa, agendado, realizado, pos_atendimento
+  status: text("status").notNull(), // lead, ativo, inativo
   priority: text("priority").default("normal"), // baixa, normal, alta, urgente
   source: text("source").default("whatsapp"), // whatsapp, site, indicacao, outros
   notes: text("notes"),

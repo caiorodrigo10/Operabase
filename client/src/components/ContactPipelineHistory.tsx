@@ -60,11 +60,15 @@ const activityColors = {
 };
 
 const stageLabels = {
-  novo: "Novo Contato",
-  em_conversa: "Em Conversa", 
-  agendado: "Consulta Agendada",
-  pos_atendimento: "Pós Atendimento",
-  perdido: "Perdido"
+  lead: "Lead",
+  ativo: "Ativo",
+  inativo: "Inativo",
+  // Legacy status labels for backward compatibility
+  novo: "Lead",
+  em_conversa: "Ativo", 
+  agendado: "Ativo",
+  pos_atendimento: "Inativo",
+  perdido: "Inativo"
 };
 
 interface ContactPipelineHistoryProps {
