@@ -584,15 +584,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
   // Simple send message with Evolution API integration
   app.post('/api/conversations-simple/:id/messages', async (req: Request, res: Response) => {
+    console.log('🔍 FLOW DEBUG - POST /api/conversations-simple/:id/messages STARTED');
+    console.log('🔍 FLOW DEBUG - Request params:', req.params);
+    console.log('🔍 FLOW DEBUG - Request body:', req.body);
+    
     try {
       const conversationId = req.params.id; // Keep as string to handle large IDs
       const { content } = req.body;
 
+      console.log('🔍 FLOW DEBUG - Extracted data:', { conversationId, content });
+
       if (!content || !conversationId) {
+        console.log('❌ FLOW DEBUG - Missing required data');
         return res.status(400).json({ error: 'Conteúdo e ID da conversa são obrigatórios' });
       }
 
-      console.log('📤 Sending message to conversation:', conversationId);
+      console.log('📤 FLOW DEBUG - Sending message to conversation:', conversationId);
+      console.log('📤 FLOW DEBUG - Message content:', content);
 
       // Primeiro salvar no banco de dados
       console.log('💾 Saving message to database first for instant UI update');
@@ -741,6 +749,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         const newMessage = insertResult;
         
         console.log('✅ Message inserted successfully:', newMessage.id);
+        console.log('🔍 FLOW DEBUG - Message creation completed, preparing formatted message...');
 
         formattedMessage = {
           id: newMessage.id,
@@ -755,39 +764,104 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           attachments: []
         };
 
+        console.log('🔍 FLOW DEBUG - Formatted message prepared:', {
+          messageId: formattedMessage.id,
+          conversationId: formattedMessage.conversation_id,
+          senderType: formattedMessage.sender_type,
+          evolutionStatus: formattedMessage.evolution_status
+        });
+
+        console.log('🔍 FLOW DEBUG - About to start AI Pause system...');
+
         // 🤖 SISTEMA DE PAUSA AUTOMÁTICA DA IA
         console.log('🤖 AI PAUSE DEBUG - Iniciando processo de pausa automática...');
         
+        // ✅ CORRIGIDO: deviceType='manual' para triggerar pausa
         const aiPauseContext: AiPauseContext = {
           conversationId: actualConversationId,
-          senderType: 'professional',
-          deviceType: 'system', // ✅ CORRIGIDO: sistema usa 'system'
           clinicId: 1,
-          userId: 4 // Caio Rodrigo
+          senderId: '4', // Caio Rodrigo
+          senderType: 'professional',
+          deviceType: 'manual', // ✅ CORRIGIDO: manual para triggerar pausa
+          messageContent: content,
+          timestamp: new Date()
         };
         
         console.log('🤖 AI PAUSE DEBUG - Contexto da pausa:', aiPauseContext);
         
         try {
-          const pauseApplied = await AiPauseService.applyAutomaticPause(aiPauseContext);
+          // Usar instance correta e processMessage
+          const aiPauseService = AiPauseService.getInstance();
           
-          console.log('🤖 AI PAUSE DEBUG - Resultado da pausa automática:', {
-            pauseApplied,
-            conversationId: actualConversationId,
-            trigger: 'professional + system message'
-          });
+          // Buscar configuração da Lívia
+          const { data: liviaConfig } = await supabase
+            .from('livia_configurations')
+            .select('*')
+            .eq('clinic_id', 1)
+            .single();
           
-          if (pauseApplied) {
-            console.log('✅ AI PAUSE: Pausa automática aplicada com sucesso!');
+          console.log('🤖 AI PAUSE DEBUG - Configuração Lívia:', liviaConfig);
+          
+          if (!liviaConfig) {
+            console.log('⚠️ AI PAUSE: Configuração da Lívia não encontrada, usando padrões');
+            // Configuração padrão
+            const defaultConfig = {
+              off_duration: 30,
+              off_unit: 'minutes'
+            };
             
-            // Invalidar cache após aplicar pausa
-            await redisCacheService.invalidateConversationDetail(conversationId);
-            console.log('🧹 AI PAUSE: Cache invalidado após aplicar pausa automática');
+            const pauseResult = await aiPauseService.processMessage(aiPauseContext, defaultConfig as any);
+            console.log('🤖 AI PAUSE DEBUG - Resultado da análise (config padrão):', pauseResult);
+            
+            if (pauseResult.shouldPause) {
+              // Aplicar pausa no banco de dados
+              const { error: updateError } = await supabase
+                .from('conversations')
+                .update({
+                  ai_paused_until: pauseResult.pausedUntil?.toISOString(),
+                  ai_paused_by_user_id: pauseResult.pausedByUserId,
+                  ai_pause_reason: pauseResult.pauseReason
+                })
+                .eq('id', actualConversationId);
+              
+              if (updateError) {
+                console.error('❌ AI PAUSE: Erro ao aplicar pausa no banco:', updateError);
+              } else {
+                console.log('✅ AI PAUSE: Pausa automática aplicada com sucesso!');
+                
+                // Invalidar cache após aplicar pausa
+                await redisCacheService.invalidateConversationDetail(conversationId);
+                console.log('🧹 AI PAUSE: Cache invalidado após aplicar pausa automática');
+              }
+            }
           } else {
-            console.log('ℹ️ AI PAUSE: Pausa automática não foi necessária (condições não atendidas)');
+            const pauseResult = await aiPauseService.processMessage(aiPauseContext, liviaConfig);
+            console.log('🤖 AI PAUSE DEBUG - Resultado da análise:', pauseResult);
+            
+            if (pauseResult.shouldPause) {
+              // Aplicar pausa no banco de dados
+              const { error: updateError } = await supabase
+                .from('conversations')
+                .update({
+                  ai_paused_until: pauseResult.pausedUntil?.toISOString(),
+                  ai_paused_by_user_id: pauseResult.pausedByUserId,
+                  ai_pause_reason: pauseResult.pauseReason
+                })
+                .eq('id', actualConversationId);
+              
+              if (updateError) {
+                console.error('❌ AI PAUSE: Erro ao aplicar pausa no banco:', updateError);
+              } else {
+                console.log('✅ AI PAUSE: Pausa automática aplicada com sucesso!');
+                
+                // Invalidar cache após aplicar pausa
+                await redisCacheService.invalidateConversationDetail(conversationId);
+                console.log('🧹 AI PAUSE: Cache invalidado após aplicar pausa automática');
+              }
+            }
           }
           
-        } catch (pauseError) {
+        } catch (pauseError: any) {
           console.error('❌ AI PAUSE DEBUG - Erro no sistema de pausa automática:', {
             error: pauseError.message,
             conversationId: actualConversationId,
