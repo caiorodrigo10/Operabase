@@ -48,14 +48,16 @@ import type { Contact, InsertContact } from "../../../server/domains/contacts/co
 
 // Status labels for contacts (no longer displaying as badges)
 const statusLabels = {
-  novo: "Novo",
-  em_conversa: "Em conversa",
-  agendado: "Agendado",
-  realizado: "Realizado",
-  pos_atendimento: "Pós-atendimento",
+  lead: "Lead",
   ativo: "Ativo",
   inativo: "Inativo",
-  arquivado: "Arquivado",
+  // Legacy status labels for backward compatibility
+  novo: "Lead",
+  em_conversa: "Ativo",
+  agendado: "Ativo",
+  realizado: "Ativo",
+  pos_atendimento: "Inativo",
+  arquivado: "Inativo",
 };
 
 export function Contatos() {
@@ -135,7 +137,7 @@ export function Contatos() {
       phone: "",
       email: "",
       profession: "",
-      status: "novo",
+      status: "lead",
       gender: "",
       reminder_preference: "whatsapp",
       cpf: "",

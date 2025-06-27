@@ -162,7 +162,7 @@ export function ContatosOptimized() {
       phone: data.phone || "",
       email: data.email || null,
       profession: data.profession || null,
-      status: "novo" as const,
+      status: "lead" as const,
       notes: data.notes || null
     };
     
@@ -204,10 +204,9 @@ export function ContatosOptimized() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="novo">Novo</SelectItem>
-                  <SelectItem value="em_conversa">Em conversa</SelectItem>
-                  <SelectItem value="agendado">Agendado</SelectItem>
-                  <SelectItem value="pos_atendimento">Pós-atendimento</SelectItem>
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
                 </SelectContent>
               </Select>
               <Input
