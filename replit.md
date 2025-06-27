@@ -156,15 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 27, 2025 - Conversation Timestamp Bug Fix Complete ✅
+### June 27, 2025 - Sistema de Timestamp Documentado e Bug Resolvido Completamente ✅
+- **Documentação Técnica Completa**: Adicionada seção detalhada sobre sistema de timestamp na documentação de conversas
+- **Arquitetura Documentada**: Explicado funcionamento técnico, query SQL otimizada, agrupamento por conversa e formatação inteligente
+- **Processo de Debug Documentado**: Histórico completo da resolução do bug incluindo sintomas, debugging steps e root cause
 - **Critical Fix Resolved**: Fixed timezone conversion error that was causing incorrect timestamp display in conversation sidebar
 - **Root Cause Identified**: Backend was incorrectly converting timestamps twice, changing dates (e.g., '2025-06-27T00:59:16.363' became '2025-06-26T21:59:16.000Z')
 - **Solution Implemented**: Removed redundant timezone conversion, preserving original GMT-3 (Brazil) timestamps
 - **Real-Time Updates**: System now correctly updates timestamps when new messages are sent
-- **Testing Validated**: Confirmed with multiple test messages showing proper datetime format ('2025-06-27T01:13:57.272')
+- **Testing Validated**: Confirmed with multiple test messages showing proper datetime format ('2025-06-27T01:15:10.434')
 - **Performance Maintained**: Fix preserves all existing functionality while correcting timestamp accuracy
 - **Production Ready**: Timestamp display now accurate for all conversations and updates in real-time
 - **User Experience**: Sidebar correctly shows when each conversation was last active with proper Brazilian timezone
+- **Edge Cases Covered**: Documentado tratamento de conversas sem mensagens, IDs científicos e timezone edge cases
+- **Performance Metrics**: Documentado batch loading, índices de banco e otimizações para sub-500ms response time
 
 ### June 27, 2025 - First Message Timestamp Display System Complete ✅
 - **Funcionalidade Implementada**: Sistema completo de exibição do timestamp da primeira mensagem em cada conversa
