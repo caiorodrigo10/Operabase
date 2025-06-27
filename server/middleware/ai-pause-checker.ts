@@ -15,11 +15,13 @@ export async function checkAndReactivateExpiredAiPause() {
     console.log('🔄 Verificando conversas com pausa de IA expirada...');
     
     // Buscar conversas onde IA está pausada mas o tempo já expirou
+    // CORREÇÃO: Só reativar pausas automáticas (reason='manual_message'), não manuais (reason='manual')
     const { data: expiredPauses, error } = await supabase
       .from('conversations')
-      .select('id, ai_paused_until, ai_active')
+      .select('id, ai_paused_until, ai_active, ai_pause_reason')
       .eq('ai_active', false) // AI está desativada
       .not('ai_paused_until', 'is', null) // Tem pausa configurada
+      .eq('ai_pause_reason', 'manual_message') // APENAS pausas automáticas
       .lt('ai_paused_until', new Date().toISOString()); // Pausa já expirou
     
     if (error) {

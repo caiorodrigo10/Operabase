@@ -793,6 +793,19 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           // Usar instance correta e processMessage
           const aiPauseService = AiPauseService.getInstance();
           
+          // CORREÇÃO: Buscar estado atual da conversa antes de processar pausa
+          const { data: currentConversation } = await supabase
+            .from('conversations')
+            .select('ai_active, ai_pause_reason')
+            .eq('id', actualConversationId)
+            .single();
+          
+          console.log('🤖 AI PAUSE DEBUG - Estado atual da conversa:', {
+            conversationId: actualConversationId,
+            ai_active: currentConversation?.ai_active,
+            ai_pause_reason: currentConversation?.ai_pause_reason
+          });
+          
           // Buscar configuração da Lívia
           const { data: liviaConfig } = await supabase
             .from('livia_configurations')
@@ -810,7 +823,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               off_unit: 'minutes'
             };
             
-            const pauseResult = await aiPauseService.processMessage(aiPauseContext, defaultConfig as any);
+            const pauseResult = await aiPauseService.processMessage(
+              aiPauseContext, 
+              defaultConfig as any,
+              currentConversation?.ai_active,
+              currentConversation?.ai_pause_reason
+            );
             console.log('🤖 AI PAUSE DEBUG - Resultado da análise (config padrão):', pauseResult);
             
             if (pauseResult.shouldPause) {
@@ -836,7 +854,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               }
             }
           } else {
-            const pauseResult = await aiPauseService.processMessage(aiPauseContext, liviaConfig);
+            const pauseResult = await aiPauseService.processMessage(
+              aiPauseContext, 
+              liviaConfig,
+              currentConversation?.ai_active,
+              currentConversation?.ai_pause_reason
+            );
             console.log('🤖 AI PAUSE DEBUG - Resultado da análise:', pauseResult);
             
             if (pauseResult.shouldPause) {

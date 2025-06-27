@@ -35,14 +35,29 @@ export class AiPauseService {
   /**
    * ETAPA 3: Detecta se uma mensagem deve pausar a IA
    * Critério: sender_type = 'professional' AND device_type = 'manual'
+   * CORREÇÃO: Só aplica pausa automática se IA estiver ativa (não desativada manualmente)
    */
-  public shouldPauseAi(context: AiPauseContext): boolean {
+  public shouldPauseAi(context: AiPauseContext, currentAiActive?: boolean, currentPauseReason?: string): boolean {
     console.log('🔍 ETAPA 3: Analisando se deve pausar IA...', {
       conversationId: context.conversationId,
       senderType: context.senderType,
       deviceType: context.deviceType,
-      senderId: context.senderId
+      senderId: context.senderId,
+      currentAiActive,
+      currentPauseReason
     });
+
+    // PROTEÇÃO: Se IA foi desativada manualmente, não aplicar pausa automática
+    if (currentAiActive === false && currentPauseReason === 'manual') {
+      console.log('🚫 ETAPA 3: IA desativada manualmente - não aplicar pausa automática');
+      return false;
+    }
+
+    // PROTEÇÃO: Só aplicar pausa se IA estiver atualmente ativa
+    if (currentAiActive === false) {
+      console.log('🚫 ETAPA 3: IA já está inativa - não aplicar pausa automática');
+      return false;
+    }
 
     // Regra principal: profissional enviando mensagem (manual OU system)
     const isProfessionalMessage = 
@@ -108,14 +123,20 @@ export class AiPauseService {
 
   /**
    * ETAPA 3: Processa mensagem e retorna resultado da análise de pausa
+   * CORREÇÃO: Recebe estado atual da IA para evitar sobrescrever desativação manual
    */
   public async processMessage(
     context: AiPauseContext,
-    liviaConfig: LiviaConfiguration
+    liviaConfig: LiviaConfiguration,
+    currentAiActive?: boolean,
+    currentPauseReason?: string
   ): Promise<AiPauseResult> {
-    console.log('🚀 ETAPA 3: Processando mensagem para sistema de pausa da IA');
+    console.log('🚀 ETAPA 3: Processando mensagem para sistema de pausa da IA', {
+      currentAiActive,
+      currentPauseReason
+    });
 
-    const shouldPause = this.shouldPauseAi(context);
+    const shouldPause = this.shouldPauseAi(context, currentAiActive, currentPauseReason);
 
     if (!shouldPause) {
       return {
