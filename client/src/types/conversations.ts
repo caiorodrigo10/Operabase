@@ -47,6 +47,21 @@ export interface Message {
   attachments?: MessageAttachment[];
 }
 
+export interface PaginationInfo {
+  currentPage: number;
+  limit: number;
+  totalMessages: number;
+  hasMore: boolean;
+  isPaginated: boolean;
+}
+
+export interface ConversationDetail {
+  conversation: any;
+  messages: Message[];
+  actions: any[];
+  pagination?: PaginationInfo;
+}
+
 export interface SystemEvent {
   id: number;
   conversation_id: number;

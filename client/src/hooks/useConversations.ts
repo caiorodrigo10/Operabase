@@ -1,6 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Conversation, Message, InsertConversation, InsertMessage } from '../../../shared/schema';
+import { ConversationDetail, PaginationInfo } from '../types/conversations';
 
 // Types para as respostas da API
 interface ConversationsResponse {
@@ -27,6 +28,7 @@ interface ConversationDetailResponse {
     metadata: any;
     created_at: string;
   }[];
+  pagination?: PaginationInfo;
 }
 
 export function useConversations(status: string = 'active', limit: number = 50) {
@@ -46,6 +48,7 @@ export function useConversations(status: string = 'active', limit: number = 50) 
   });
 }
 
+// Hook padrão (para compatibilidade)
 export function useConversationDetail(conversationId: number | string | null) {
   return useQuery({
     queryKey: ['/api/conversations-simple', conversationId],
@@ -60,6 +63,32 @@ export function useConversationDetail(conversationId: number | string | null) {
     enabled: !!conversationId,
     staleTime: 3000, // Reduzido para 3 segundos para updates imediatos para reduzir requests
     gcTime: 5 * 60 * 1000, // 5 minutos de cache em garbage collection
+  });
+}
+
+// Hook ETAPA 3: Paginação Progressiva com Infinite Query
+export function useInfiniteConversationDetail(conversationId: number | string | null, limit: number = 25) {
+  return useInfiniteQuery({
+    queryKey: ['/api/conversations-simple', conversationId, 'infinite'],
+    queryFn: async ({ pageParam = 1 }) => {
+      if (!conversationId) throw new Error('ID da conversa é obrigatório');
+      
+      const response = await fetch(`/api/conversations-simple/${conversationId}?page=${pageParam}&limit=${limit}`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar detalhes da conversa');
+      }
+      return response.json() as Promise<ConversationDetailResponse>;
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination?.hasMore) {
+        return lastPage.pagination.currentPage + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!conversationId,
+    staleTime: 2 * 60 * 1000, // 2 minutos de cache para infinite query
+    gcTime: 5 * 60 * 1000,
   });
 }
 

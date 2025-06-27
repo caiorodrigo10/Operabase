@@ -8,7 +8,8 @@ import { EventMarker } from "./EventMarker";
 import { ActionNotification } from "./ActionNotification";
 import { FileUploadModal } from "./FileUploadModal";
 import { AudioRecordingModal } from "./AudioRecordingModal";
-import { useConversationDetail } from "@/hooks/useConversations";
+import { LoadMoreButton } from "./LoadMoreButton";
+import { useConversationDetail, useInfiniteConversationDetail } from "@/hooks/useConversations";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
