@@ -94,25 +94,37 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Agrupa por conversation_id para pegar APENAS a última mensagem real
       const lastMessageMap = {};
       allMessages?.forEach(msg => {
+        // Debug TODOS os timestamps do Caio para identificar o problema
+        if (msg.conversation_id === "5511965860124551150391104") {
+          console.log('🔍 DEBUG - Caio msg processada:', {
+            id: msg.id,
+            timestamp_original: msg.timestamp,
+            timestamp_type: typeof msg.timestamp,
+            content: msg.content?.substring(0, 10)
+          });
+        }
+        
         if (!lastMessageMap[msg.conversation_id] && msg.timestamp) {
           // Debug temporário para Caio
           if (msg.conversation_id === "5511965860124551150391104") {
-            console.log('🔍 DEBUG - Última mensagem do Caio selecionada:', {
+            console.log('🔍 DEBUG - PRIMEIRA mensagem selecionada para Caio:', {
               id: msg.id,
               content: msg.content?.substring(0, 30),
               timestamp: msg.timestamp
             });
           }
           
-          // Usa timezone correto do Brasil (America/Sao_Paulo)
-          const messageDate = new Date(msg.timestamp);
-          const brasiliaTime = new Date(messageDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
-          
+          // O timestamp já está correto em GMT-3 (Brasil), não precisa converter
           lastMessageMap[msg.conversation_id] = {
             ...msg,
-            timestamp: brasiliaTime.toISOString(),
+            timestamp: msg.timestamp, // Manter timestamp original
             original_timestamp: msg.timestamp // Manter original para debug
           };
+          
+          // Debug DEPOIS da atribuição
+          if (msg.conversation_id === "5511965860124551150391104") {
+            console.log('🔍 DEBUG - DEPOIS da atribuição - lastMessageMap.timestamp:', lastMessageMap[msg.conversation_id].timestamp);
+          }
         }
       });
       
@@ -120,13 +132,10 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const firstMessageMap = {};
       firstMessages?.forEach(msg => {
         if (!firstMessageMap[msg.conversation_id] && msg.timestamp) {
-          // Usa timezone correto do Brasil (America/Sao_Paulo)
-          const messageDate = new Date(msg.timestamp);
-          const brasiliaTime = new Date(messageDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
-          
+          // O timestamp já está correto em GMT-3 (Brasil), não precisa converter
           firstMessageMap[msg.conversation_id] = {
             ...msg,
-            timestamp: brasiliaTime.toISOString(),
+            timestamp: msg.timestamp, // Manter timestamp original
             original_timestamp: msg.timestamp // Manter original para debug
           };
         }
