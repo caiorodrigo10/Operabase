@@ -111,7 +111,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         )}
         
         <div
-          className="px-4 py-3 rounded-2xl relative text-white rounded-tr-md bg-[#0f766e]"
+          className={cn(
+            "px-4 py-3 rounded-2xl relative rounded-tr-md",
+            isReceived 
+              ? "bg-gray-100 text-gray-900" 
+              : "bg-[#0f766e] text-white"
+          )}
         >
           {/* Media content */}
           {message.attachments && message.attachments.length > 0 && (
