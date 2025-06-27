@@ -68,7 +68,7 @@ export function Dashboard() {
             title="Sessões Agendadas"
             value={metrics.agendamentosHoje}
             icon={Calendar}
-            iconColor="bg-slate-100 text-slate-600"
+            iconColor="bg-emerald-100 text-emerald-700"
             trend={{ value: "+5% vs ontem", isPositive: true }}
           />
         </div>
@@ -77,7 +77,7 @@ export function Dashboard() {
             title="Triagens Ativas"
             value={metrics.atendimentosAtivos}
             icon={UserCheck}
-            iconColor="bg-slate-100 text-slate-600"
+            iconColor="bg-cyan-100 text-cyan-700"
             subtitle="Em andamento"
           />
         </div>
