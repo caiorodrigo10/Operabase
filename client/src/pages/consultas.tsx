@@ -1346,7 +1346,7 @@ export function Consultas() {
                   <Button
                     variant={viewMode === "list" ? "default" : "outline"}
                     onClick={() => setViewMode("list")}
-                    className="flex items-center justify-center w-10 h-10 p-0"
+                    className={`flex items-center justify-center w-10 h-10 p-0 ${viewMode === "list" ? "bg-[#0f766e]" : ""}`}
                   >
                     <List className="w-4 h-4" />
                   </Button>

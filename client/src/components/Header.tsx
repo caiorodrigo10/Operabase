@@ -4,9 +4,7 @@ import {
   LogOut, 
   User, 
   Search, 
-  Bell, 
   MessageCircle, 
-  RotateCcw, 
   Settings,
   Stethoscope,
   Building,
@@ -64,22 +62,10 @@ const iconButtons = [
     isSearch: true
   },
   { 
-    icon: Bell, 
-    tooltip: "Notificações", 
-    href: "#",
-    active: false 
-  },
-  { 
     icon: MessageCircle, 
     tooltip: "Conversas", 
     href: "/conversas",
     active: true 
-  },
-  { 
-    icon: RotateCcw, 
-    tooltip: "Central de Retornos", 
-    href: "#",
-    active: false 
   },
   { 
     icon: Settings, 
@@ -97,12 +83,6 @@ const adminIconButtons = [
     href: "#",
     active: false,
     isSearch: true
-  },
-  { 
-    icon: Bell, 
-    tooltip: "Alertas do Sistema", 
-    href: "#",
-    active: false 
   },
   { 
     icon: Settings, 
