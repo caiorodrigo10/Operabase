@@ -825,75 +825,7 @@ export function ContatoDetalhes() {
                 )}
               </div>
             </div>
-      {/* Sticky Tabs Overlay */}
-      {isTabsSticky && (
-        <div className="fixed top-16 left-0 right-0 z-30 bg-white border-b border-slate-200 shadow-sm transition-all duration-200">
-          <div className="container mx-auto px-6">
-            <div className="flex space-x-8 overflow-x-auto">
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'visao-geral'
-                    ? 'border-[#0f766e] text-[#0f766e]'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('visao-geral')}
-              >
-                Visão Geral
-              </button>
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'anamneses'
-                    ? 'border-[#0f766e] text-[#0f766e]'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('anamneses')}
-              >
-                Anamneses
-              </button>
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'mara-ai'
-                    ? 'border-[#0f766e] text-[#0f766e]'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('mara-ai')}
-              >
-                Mara AI
-              </button>
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'evolucoes'
-                    ? 'border-[#0f766e] text-[#0f766e]'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('evolucoes')}
-              >
-                Evoluções
-              </button>
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'documentos'
-                    ? 'border-[#0f766e] text-[#0f766e]'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('documentos')}
-              >
-                Documentos
-              </button>
-              <button
-                className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'arquivos'
-                    ? 'border-[#0f766e] text-[#0f766e]'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-                onClick={() => handleTabChange('arquivos')}
-              >
-                Arquivos
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
       {/* Editor de Evolução */}
       {showEvolucaoEditor && (
         <EvolucaoEditor

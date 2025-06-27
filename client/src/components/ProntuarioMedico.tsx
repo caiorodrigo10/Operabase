@@ -103,7 +103,7 @@ export default function ProntuarioMedico({ contactId, appointments }: Prontuario
           <h2 className="text-xl font-semibold">Evoluções do Paciente</h2>
           <p className="text-sm text-gray-600">Histórico de evoluções médicas do paciente</p>
         </div>
-        <Button onClick={() => setShowEditor(true)} className="flex items-center gap-2 bg-medical-blue hover:bg-blue-700">
+        <Button onClick={() => setShowEditor(true)} className="flex items-center gap-2 bg-[#0f766e] hover:bg-teal-700 text-white">
           <Plus className="w-4 h-4" />
           Nova Evolução
         </Button>
