@@ -193,12 +193,19 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
     }
   });
 
-  // ETAPA 3: Enhanced conversation detail with Redis cache
+  // ETAPA 2: Enhanced conversation detail with Backend Pagination
   app.get('/api/conversations-simple/:id', async (req: Request, res: Response) => {
     try {
       // Fix: Handle large WhatsApp IDs properly
       const conversationIdParam = req.params.id;
       console.log('🔍 Raw conversation ID param:', conversationIdParam);
+      
+      // ETAPA 2: Paginação parameters
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 25; // Reduzido de 50 para 25
+      const offset = (page - 1) * limit;
+      
+      console.log('📄 ETAPA 2: Pagination params - page:', page, 'limit:', limit, 'offset:', offset);
       
       // Fix: Handle scientific notation by directly using contact lookup for Igor's conversation
       let conversationId = conversationIdParam;
@@ -207,10 +214,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('🔍 Processing conversation ID:', conversationIdParam, 'Scientific notation:', isScientificNotation);
       const clinicId = 1; // Hardcoded for testing
       
-      // ETAPA 3: Try cache first
-      const cachedDetail = await redisCacheService.getCachedConversationDetail(conversationId);
+      // ETAPA 2: Cache key includes pagination params for proper invalidation
+      const cacheKey = `${conversationId}_page_${page}_limit_${limit}`;
+      const cachedDetail = await redisCacheService.getCachedConversationDetail(cacheKey);
       if (cachedDetail) {
-        console.log('🎯 Cache HIT: conversation detail', conversationId);
+        console.log('🎯 Cache HIT: conversation detail', cacheKey);
         return res.json(cachedDetail);
       }
       
