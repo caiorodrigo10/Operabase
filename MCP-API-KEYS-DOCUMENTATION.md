@@ -219,7 +219,7 @@ Content-Type: application/json
 
 ```json
 {
-  "name": "TaskMed - Agendamento Automático",
+  "name": "Operabase - Agendamento Automático",
   "nodes": [
     {
       "name": "HTTP Request",
@@ -251,8 +251,8 @@ Content-Type: application/json
 ### Variáveis de Ambiente N8N
 
 ```bash
-TASKMED_API_URL=https://your-domain.replit.app
-TASKMED_API_KEY=tk_clinic_1_45ce00c0e7236e4d25e86936822c432c
+OPERABASE_API_URL=https://your-domain.replit.app
+OPERABASE_API_KEY=tk_clinic_1_45ce00c0e7236e4d25e86936822c432c
 ```
 
 ## Tratamento de Erros

@@ -63,10 +63,10 @@ mkdir -p $BACKUP_DIR
 pg_dump -h localhost -U taskmed_prod -d $DB_NAME | gzip > $BACKUP_DIR/taskmed_$DATE.sql.gz
 
 # Keep only last 30 days
-find $BACKUP_DIR -name "taskmed_*.sql.gz" -mtime +30 -delete
+find $BACKUP_DIR -name "operabase_*.sql.gz" -mtime +30 -delete
 
 # Upload to cloud storage (optional)
-aws s3 cp $BACKUP_DIR/taskmed_$DATE.sql.gz s3://taskmed-backups/
+aws s3 cp $BACKUP_DIR/operabase_$DATE.sql.gz s3://operabase-backups/
 ```
 
 ### Environment Configuration
@@ -78,12 +78,12 @@ NODE_ENV=production
 PORT=5000
 
 # Database
-DATABASE_URL=postgresql://taskmed_prod:secure_password@localhost:5432/taskmed_production
+DATABASE_URL=postgresql://operabase_prod:secure_password@localhost:5432/operabase_production
 PGHOST=localhost
 PGPORT=5432
-PGUSER=taskmed_prod
+PGUSER=operabase_prod
 PGPASSWORD=secure_production_password
-PGDATABASE=taskmed_production
+PGDATABASE=operabase_production
 
 # Security
 SESSION_SECRET=ultra-secure-session-secret-for-production-use
@@ -649,8 +649,8 @@ echo "0 12 * * * /usr/bin/certbot renew --quiet" | sudo crontab -
 #!/bin/bash
 # backup-system.sh
 
-BACKUP_DIR="/var/backups/taskmed"
-S3_BUCKET="taskmed-backups"
+BACKUP_DIR="/var/backups/operabase"
+S3_BUCKET="operabase-backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 # Database backup
@@ -673,7 +673,7 @@ find $BACKUP_DIR -name "*.gz" -mtime +30 -delete
 # recovery.sh
 
 BACKUP_FILE=$1
-DATABASE_NAME="taskmed_production"
+DATABASE_NAME="operabase_production"
 
 if [ -z "$BACKUP_FILE" ]; then
     echo "Usage: ./recovery.sh <backup_file>"
@@ -692,4 +692,4 @@ docker-compose up -d
 echo "Recovery completed"
 ```
 
-This deployment guide provides comprehensive instructions for securely deploying and maintaining the Taskmed healthcare management platform in production environments.
+This deployment guide provides comprehensive instructions for securely deploying and maintaining the Operabase healthcare management platform in production environments.
