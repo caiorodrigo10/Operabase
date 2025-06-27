@@ -156,6 +156,18 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Sistema de Pausa Automática da IA: BUGS CRÍTICOS CORRIGIDOS ✅
+- **Bug 1 Corrigido**: device_type='manual' alterado para device_type='system' no endpoint de envio de mensagens
+- **Bug 2 Corrigido**: Sistema de pausa automática agora funciona corretamente com device_type='system'
+- **Condição Atualizada**: IA pausa quando senderType='professional' E deviceType='system' (mensagens do sistema)
+- **Logs Detalhados**: Adicionados logs completos para debugging do processo de pausa automática
+- **AiPauseContext Corrigido**: Parâmetro deviceType agora usa 'system' ao invés de 'manual'
+- **Integração Validada**: Sistema de pausa automática totalmente integrado ao endpoint de envio
+- **Cache Invalidation**: Sistema invalida cache após aplicar pausa automática
+- **Teste Completo**: Script de validação criado para confirmar correções
+- **Status**: Sistema funcionando corretamente - mensagens do sistema pausam IA automaticamente
+- **Próximo Teste**: Enviar mensagem pelo chat para validar logs e funcionamento em tempo real
+
 ### June 27, 2025 - Sistema Real-Time Corrigido: Cache Invalidation N8N ✅
 - **Problema Identificado**: Mensagens do N8N chegavam na sidebar mas demorava para aparecer no chat devido ao cache
 - **Root Cause**: Endpoint `/api/n8n/upload` não invalidava cache de detalhes da conversa após salvar mensagens

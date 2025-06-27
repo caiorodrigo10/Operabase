@@ -698,6 +698,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           return brasiliaTime.toISOString();
         };
 
+        // 🔍 AI PAUSE DEBUG - Logs detalhados do processo
+        console.log('🔍 AI PAUSE DEBUG - Preparando mensagem:', {
+          conversation_id: insertConversationId,
+          sender_type: 'professional',
+          device_type: 'system', // ✅ CORRIGIDO: system ao invés de manual
+          content_preview: content.substring(0, 50) + '...'
+        });
+
         const { data: insertResult, error: insertError } = await supabase
           .from('messages')
           .insert({
@@ -705,7 +713,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             sender_type: 'professional',
             content: content,
             timestamp: getBrasiliaTimestamp(),
-            device_type: 'manual',
+            device_type: 'system', // ✅ CORRIGIDO: mensagens do sistema como 'system'
             evolution_status: 'pending'
           })
           .select()
@@ -753,13 +761,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         try {
           const aiPauseService = AiPauseService.getInstance();
           
-          // Criar contexto para análise de pausa
+          // ✅ CORRIGIDO: Criar contexto para análise de pausa com device_type correto
           const pauseContext: AiPauseContext = {
             conversationId: actualConversationId,
             clinicId: actualConversation.clinic_id,
             senderId: '3', // Assumindo user ID do Caio Rodrigo (pode ser obtido da sessão)
             senderType: 'professional',
-            deviceType: 'manual',
+            deviceType: 'system', // ✅ CORRIGIDO: agora usa 'system' para mensagens do sistema
             messageContent: content,
             timestamp: new Date()
           };
@@ -772,11 +780,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             .single();
 
           if (liviaConfig) {
-            // Analisar se deve pausar IA
+            // ✅ LOGS DETALHADOS: Analisar se deve pausar IA
+            console.log('🔍 AI PAUSE DEBUG - Processando mensagem:', {
+              pauseContext,
+              liviaConfig: {
+                pause_duration_minutes: liviaConfig.pause_duration_minutes,
+                ai_active: liviaConfig.ai_active,
+                off_duration: liviaConfig.off_duration,
+                off_unit: liviaConfig.off_unit
+              }
+            });
+            
             const pauseResult = await aiPauseService.processMessage(pauseContext, liviaConfig);
             
+            console.log('🔍 AI PAUSE DEBUG - Resultado da análise:', pauseResult);
+            
             if (pauseResult.shouldPause) {
-              console.log('✅ ETAPA 4: Pausando IA por mensagem manual de profissional');
+              console.log('✅ ETAPA 4: Pausando IA por mensagem system de profissional');
               
               // Atualizar conversa com informações de pausa
               const { error: updateError } = await supabase
@@ -794,14 +814,21 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
               } else {
                 console.log('✅ ETAPA 4: IA pausada até:', pauseResult.pausedUntil?.toISOString());
                 console.log('📊 ETAPA 4: Duração da pausa:', liviaConfig.off_duration, liviaConfig.off_unit);
+                console.log('🔍 AI PAUSE DEBUG - Update na conversa bem-sucedido');
               }
               
               // Invalidar cache para incluir dados de pausa atualizados
               await redisCacheService.invalidateConversationDetail(actualConversationId);
               await redisCacheService.invalidateConversationCache(actualConversation.clinic_id);
+              console.log('🧹 AI PAUSE DEBUG - Cache invalidado após pausa');
               
             } else {
-              console.log('⏭️ ETAPA 4: Mensagem não requer pausa da IA');
+              console.log('⏭️ ETAPA 4: Mensagem não requer pausa da IA (condições não atendidas)');
+              console.log('🔍 AI PAUSE DEBUG - Condições verificadas:', {
+                is_professional: pauseContext.senderType === 'professional',
+                is_system: pauseContext.deviceType === 'system',
+                combined_condition: pauseContext.senderType === 'professional' && pauseContext.deviceType === 'system'
+              });
             }
             
           } else {
