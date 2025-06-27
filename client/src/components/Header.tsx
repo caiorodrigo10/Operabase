@@ -171,7 +171,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
               <img 
                 src="https://lkwrevhxugaxfpwiktdy.supabase.co/storage/v1/object/sign/docsgerais/operabaselogo.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82ZGMzM2E3My1kMjMyLTQwNTgtOWZkYi02ODBjZmZkMWY2MmEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2NzZ2VyYWlzL29wZXJhYmFzZWxvZ28uc3ZnIiwiaWF0IjoxNzUwOTkxMzg4LCJleHAiOjE3ODI1MjczODh9.idPoup3H2OxyHM6fY6Vxbt5iMAMdHY7nNiu8rpGfTPk" 
                 alt="Operabase Logo" 
-                className="h-8 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
               {isAdminView && (
                 <span className="text-xs text-orange-600 font-medium ml-2">
