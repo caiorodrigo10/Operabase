@@ -13,12 +13,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
     try {
       const clinicId = 1; // Hardcoded for testing
       
-      // ETAPA 3: Try cache first
-      const cachedConversations = await redisCacheService.getCachedConversations(clinicId);
-      if (cachedConversations) {
-        console.log('🎯 Cache HIT: conversations list');
-        return res.json({ conversations: cachedConversations });
-      }
+      // ETAPA 3: Try cache first (DISABLED for debugging first_message_at)
+      // const cachedConversations = await redisCacheService.getCachedConversations(clinicId);
+      // if (cachedConversations) {
+      //   console.log('🎯 Cache HIT: conversations list');
+      //   return res.json({ conversations: cachedConversations });
+      // }
       
       console.log('💽 Cache MISS: fetching conversations from database');
       
@@ -63,6 +63,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // ETAPA 1: Batch query para última mensagem e contagens
       // Evita N+1 queries por conversa individual
       const conversationIds = (conversationsData || []).map(c => c.id);
+      console.log('🔍 Looking for messages in conversations:', conversationIds.length, 'conversations');
       
       // Batch load últimas mensagens de cada conversa (melhorada para garantir precisão)
       const { data: allMessages } = await supabase
@@ -73,14 +74,18 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .order('timestamp', { ascending: false })
         .order('id', { ascending: false });
       
+      console.log('📨 Found last messages:', allMessages?.length || 0);
+      
       // Batch load primeiras mensagens de cada conversa (mais antigas)
-      const { data: firstMessages } = await supabase
+      const { data: firstMessages, error: firstMsgError } = await supabase
         .from('messages')
         .select('conversation_id, content, timestamp, id')
         .in('conversation_id', conversationIds)
         .not('timestamp', 'is', null)
         .order('timestamp', { ascending: true })
         .order('id', { ascending: true });
+      
+      console.log('📨 Found first messages result:', firstMessages?.length || 0, 'error:', firstMsgError?.message || 'none');
       
       // Agrupa por conversation_id para pegar APENAS a última mensagem real
       const lastMessageMap = {};
@@ -100,6 +105,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       // Agrupa por conversation_id para pegar APENAS a primeira mensagem real (mais antiga)
       const firstMessageMap = {};
+      console.log('🔍 Found first messages:', firstMessages?.length || 0);
       firstMessages?.forEach(msg => {
         if (!firstMessageMap[msg.conversation_id] && msg.timestamp) {
           // Usa timezone correto do Brasil (America/Sao_Paulo)
@@ -113,6 +119,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           };
         }
       });
+      console.log('📊 First message map populated:', Object.keys(firstMessageMap).length, 'conversations');
 
       // Format for frontend com dados otimizados - fix large ID handling
       const formattedConversations = (conversationsData || []).map(conv => {
