@@ -156,6 +156,14 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Sistema de Pausa Automática da IA: SINCRONIZAÇÃO FRONTEND-BACKEND CORRIGIDA ✅
+- **Problema Resolvido**: Frontend demorava para detectar reativação automática da IA, botão permanecia inativo por mais tempo
+- **Cache Invalidation Automática**: Middleware agora invalida cache quando reativa IA automaticamente
+- **WebSocket Real-Time**: Sistema emite evento 'ai_reactivated' para notificação instantânea no frontend
+- **Polling Adaptativo**: Reduzido para 2s quando IA pausada vs 5s quando ativa para detecção rápida
+- **Sincronização Melhorada**: Frontend agora detecta mudanças de estado da IA muito mais rapidamente
+- **Zero Impact**: Todas funcionalidades preservadas, apenas melhoria da responsividade visual
+
 ### June 27, 2025 - Sistema de Pausa Automática da IA: MANUAL OVERRIDE IMPLEMENTADO ✅
 - **Override Manual COMPLETO**: Usuários podem agora ativar IA manualmente mesmo durante pausa automática
 - **Endpoint Funcional**: PATCH /api/conversations/:id/ai-toggle funcionando perfeitamente

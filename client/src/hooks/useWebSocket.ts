@@ -149,6 +149,21 @@ export const useWebSocket = (userId?: string, clinicId?: number) => {
         });
       });
 
+      // ETAPA 5: AI reactivation event for real-time UI sync
+      socket.on('ai_reactivated', (data: { conversation_id: string; ai_active: boolean; timestamp: string }) => {
+        console.log('🤖 ETAPA 5: AI reactivated via WebSocket:', data.conversation_id);
+        
+        // Invalidate conversation detail cache to refresh AI button state
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple', data.conversation_id]
+        });
+        
+        // Also invalidate conversation list cache
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple']
+        });
+      });
+
       // Join clinic room for notifications
       socket.emit('clinic:join', clinicId);
 

@@ -50,6 +50,27 @@ export async function checkAndReactivateExpiredAiPause() {
         console.error(`❌ Erro ao reativar IA para conversa ${conversation.id}:`, updateError);
       } else {
         console.log(`✅ IA reativada para conversa ${conversation.id} (pausa expirou)`);
+
+        // Invalidar cache para forçar atualização no frontend
+        const memoryCacheService = require('../cache/memory-cache.service');
+        const cachePattern = `conversation:${conversation.id}:`;
+        const deletedKeys = memoryCacheService.deletePattern(cachePattern);
+        console.log('🧹 Cache invalidated after auto-reactivation, deleted keys:', deletedKeys);
+
+        // Broadcast WebSocket para notificar frontend em tempo real
+        try {
+          const io = require('../websocket/websocket-server').getSocketServer();
+          if (io) {
+            io.to(`clinic_1`).emit('ai_reactivated', {
+              conversation_id: conversation.id,
+              ai_active: true,
+              timestamp: new Date().toISOString()
+            });
+            console.log('📡 WebSocket notification sent for AI reactivation:', conversation.id);
+          }
+        } catch (wsError) {
+          console.log('⚠️ WebSocket notification failed (fallback to polling):', wsError.message);
+        }
       }
     }
     

@@ -48,9 +48,9 @@ export function useConversations(status: string = 'active', limit: number = 50) 
   });
 }
 
-// Hook padrão (para compatibilidade)
+// Hook padrão com polling adaptativo baseado no estado da IA
 export function useConversationDetail(conversationId: number | string | null) {
-  return useQuery({
+  const queryResult = useQuery({
     queryKey: ['/api/conversations-simple', conversationId],
     queryFn: async () => {
       if (!conversationId) return null;
@@ -61,9 +61,22 @@ export function useConversationDetail(conversationId: number | string | null) {
       return response.json() as Promise<ConversationDetailResponse>;
     },
     enabled: !!conversationId,
-    staleTime: 3000, // Reduzido para 3 segundos para updates imediatos para reduzir requests
+    staleTime: 3000, // Reduzido para 3 segundos para updates imediatos
     gcTime: 5 * 60 * 1000, // 5 minutos de cache em garbage collection
+    refetchInterval: (data, query) => {
+      // Polling adaptativo baseado no estado da IA
+      if (!data?.conversation) return false;
+      
+      const conversation = data.conversation;
+      const isAiPaused = conversation.ai_active === false;
+      
+      // Se IA pausada: polling mais frequente para detectar reativação
+      // Se IA ativa: polling normal
+      return isAiPaused ? 2000 : 5000; // 2s vs 5s
+    },
   });
+
+  return queryResult;
 }
 
 // Hook ETAPA 3: Paginação Progressiva com Infinite Query
