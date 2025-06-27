@@ -182,7 +182,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                       isActive
-                        ? "text-teal-700 bg-[#f0fdfa]"
+                        ? "text-teal-700 bg-[#f3f4f6]"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     )}
                   >
