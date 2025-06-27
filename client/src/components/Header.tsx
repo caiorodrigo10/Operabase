@@ -202,7 +202,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                       isActive
-                        ? "bg-blue-100 text-blue-700"
+                        ? "bg-teal-100 text-teal-700"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     )}
                   >
@@ -240,8 +240,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                           setIsAppsDropdownOpen(false);
                         }}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
-                          <Filter className="h-5 w-5 text-blue-600" />
+                        <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center mb-2">
+                          <Filter className="h-5 w-5 text-teal-600" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Funis</span>
                       </Link>
@@ -388,7 +388,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full bg-blue-600 hover:bg-blue-700">
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full bg-teal-600 hover:bg-teal-700">
                     <span className="text-white text-sm font-medium">
                       {user?.name ? getInitials(user.name) : 'U'}
                     </span>
@@ -471,7 +471,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
                       isActive
-                        ? "bg-blue-100 text-blue-700"
+                        ? "bg-teal-100 text-teal-700"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     )}
                   >
@@ -490,8 +490,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     href="/funis"
                     className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center mb-1">
-                      <Filter className="h-4 w-4 text-blue-600" />
+                    <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center mb-1">
+                      <Filter className="h-4 w-4 text-teal-600" />
                     </div>
                     <span className="text-xs font-medium text-slate-900">Funis</span>
                   </Link>
