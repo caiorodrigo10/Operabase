@@ -115,12 +115,13 @@ export default function ConversasPage() {
       patient_name: conv.contact_name || 'Contato sem nome',
       patient_avatar: undefined,
       last_message: conv.last_message || 'Toque para ver a conversa',
-      timestamp: conv.updated_at,
+      timestamp: conv.last_message_at || conv.timestamp, // CORRIGIDO: usar timestamp da última mensagem
       updated_at: conv.updated_at,
-      first_message_at: conv.first_message_at, // ADICIONADO: campo da primeira mensagem
+      first_message_at: conv.first_message_at,
+      last_message_at: conv.last_message_at, // ADICIONADO: timestamp da última mensagem
       unread_count: conv.unread_count || 0,
       status: conv.status === 'active' ? 'active' : 'inactive',
-      ai_active: conv.ai_active ?? true, // Usar valor do banco, padrão true se indefinido
+      ai_active: conv.ai_active ?? true,
       has_pending_appointment: false
     }));
   };
