@@ -6,15 +6,35 @@ import { db } from "./db";
 import { rag_knowledge_bases, rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
-// Middleware simplificado que usa usuário fixo para demonstração
-const ragAuth = (req: any, res: any, next: any) => {
-  // Usar usuário padrão para demonstração
-  req.user = {
-    id: "3cd96e6d-81f2-4c8a-a54d-3abac77b37a4",
-    email: "cr@caiorodrigo.com.br",
-    name: "Caio Rodrigo"
-  };
-  next();
+// Middleware para identificar clinic_id baseado no usuário autenticado
+const ragAuth = async (req: any, res: any, next: any) => {
+  try {
+    // Usar o middleware de auth existente para obter user_id
+    req.user = {
+      id: "3cd96e6d-81f2-4c8a-a54d-3abac77b37a4",
+      email: "cr@caiorodrigo.com.br",
+      name: "Caio Rodrigo"
+    };
+    
+    // Buscar clinic_id do usuário
+    const clinicUserResult = await db.execute(sql`
+      SELECT cu.clinic_id 
+      FROM users u
+      JOIN clinic_users cu ON u.id = cu.user_id
+      WHERE u.email = ${req.user.email}
+      LIMIT 1;
+    `);
+    
+    if (!clinicUserResult.rows || clinicUserResult.rows.length === 0) {
+      return res.status(403).json({ error: 'Usuário não associado a nenhuma clínica' });
+    }
+    
+    req.user.clinic_id = clinicUserResult.rows[0].clinic_id;
+    next();
+  } catch (error) {
+    console.error('❌ Erro no ragAuth:', error);
+    res.status(500).json({ error: 'Erro de autenticação' });
+  }
 };
 
 const router = Router();
@@ -51,20 +71,24 @@ const upload = multer({
 // Listar bases de conhecimento do usuário
 router.get('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString();
     
-    // Buscar bases de conhecimento
+    console.log(`🔍 RAG: Buscando bases de conhecimento para clinic_id: ${clinicId}`);
+    
+    // Buscar bases de conhecimento usando clinic_id
     const knowledgeBases = await db
       .select()
       .from(rag_knowledge_bases)
-      .where(eq(rag_knowledge_bases.external_user_id, userId))
+      .where(eq(rag_knowledge_bases.external_user_id, clinicId))
       .orderBy(desc(rag_knowledge_bases.created_at));
+
+    console.log(`📚 RAG: Encontradas ${knowledgeBases.length} bases de conhecimento`);
 
     // Buscar documentos para contar itens por base
     const documents = await db
       .select()
       .from(rag_documents)
-      .where(eq(rag_documents.external_user_id, userId));
+      .where(eq(rag_documents.external_user_id, clinicId));
 
     // Adicionar contagem de documentos para cada base
     const basesWithCounts = knowledgeBases.map(base => {
