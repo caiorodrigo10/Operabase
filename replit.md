@@ -156,6 +156,19 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Sistema de Pausa Automática da IA: ETAPA 2 Implementada ✅
+- **Lógica Integrada Completa**: Sistema combina ai_active (controle manual) + ai_paused_until (pausa automática)
+- **Condição IA Responde**: Apenas quando ai_active = true E ai_paused_until é null/expirado
+- **Schema TypeScript Atualizado**: Campos ai_paused_until, ai_paused_by_user_id, ai_pause_reason adicionados
+- **AiPauseService Implementado**: Lógica completa de detecção e aplicação de pausa automática
+- **Integração Backend**: Conectado ao endpoint de envio de mensagens com configuração da Lívia
+- **Configuração Dinâmica**: Usa tempo configurado na Lívia (60 minutos/horas conforme definido)
+- **Detecção Inteligente**: Pausa quando sender_type='professional' E device_type='manual'
+- **Comandos SQL Preparados**: Migração manual documentada em AI-PAUSE-MIGRATION-COMMANDS.md
+- **Teste Abrangente**: Script completo para validar todos os cenários criado
+- **Status**: Backend 100% implementado, aguardando migração de banco para ativação completa
+- **Próximo Passo**: Executar comandos SQL no Supabase para criar colunas de pausa automática
+
 ### June 27, 2025 - MessageBubble Posicionamento CORRIGIDO Definitivamente ✅
 - **Bug Crítico Resolvido**: Correção completa do posicionamento de mensagens usando campo `sender_type`
 - **Problema Identificado**: MessageBubble usava lógica obsoleta `message.type === 'received'` causando posicionamento incorreto
