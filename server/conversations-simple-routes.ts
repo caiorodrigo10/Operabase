@@ -72,15 +72,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .order('timestamp', { ascending: false })
         .order('id', { ascending: false });
       
-      // Log temporário para debug
-      const caioMessages = allMessages?.filter(m => m.conversation_id === "5511965860124551150391104");
-      if (caioMessages?.length > 0) {
-        console.log('🔍 DEBUG - Mensagens do Caio (últimas 3):', caioMessages.slice(0, 3).map(m => ({
-          id: m.id,
-          content: m.content?.substring(0, 50),
-          timestamp: m.timestamp
-        })));
-      }
+
       
       // Batch load primeiras mensagens de cada conversa (mais antigas)
       const { data: firstMessages } = await supabase
@@ -94,37 +86,12 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // Agrupa por conversation_id para pegar APENAS a última mensagem real
       const lastMessageMap = {};
       allMessages?.forEach(msg => {
-        // Debug TODOS os timestamps do Caio para identificar o problema
-        if (msg.conversation_id === "5511965860124551150391104") {
-          console.log('🔍 DEBUG - Caio msg processada:', {
-            id: msg.id,
-            timestamp_original: msg.timestamp,
-            timestamp_type: typeof msg.timestamp,
-            content: msg.content?.substring(0, 10)
-          });
-        }
-        
         if (!lastMessageMap[msg.conversation_id] && msg.timestamp) {
-          // Debug temporário para Caio
-          if (msg.conversation_id === "5511965860124551150391104") {
-            console.log('🔍 DEBUG - PRIMEIRA mensagem selecionada para Caio:', {
-              id: msg.id,
-              content: msg.content?.substring(0, 30),
-              timestamp: msg.timestamp
-            });
-          }
-          
-          // O timestamp já está correto em GMT-3 (Brasil), não precisa converter
+          // O timestamp já está correto em GMT-3 (Brasil), mantém formato original
           lastMessageMap[msg.conversation_id] = {
             ...msg,
-            timestamp: msg.timestamp, // Manter timestamp original
-            original_timestamp: msg.timestamp // Manter original para debug
+            timestamp: msg.timestamp
           };
-          
-          // Debug DEPOIS da atribuição
-          if (msg.conversation_id === "5511965860124551150391104") {
-            console.log('🔍 DEBUG - DEPOIS da atribuição - lastMessageMap.timestamp:', lastMessageMap[msg.conversation_id].timestamp);
-          }
         }
       });
       

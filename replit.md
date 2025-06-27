@@ -156,6 +156,16 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Conversation Timestamp Bug Fix Complete ✅
+- **Critical Fix Resolved**: Fixed timezone conversion error that was causing incorrect timestamp display in conversation sidebar
+- **Root Cause Identified**: Backend was incorrectly converting timestamps twice, changing dates (e.g., '2025-06-27T00:59:16.363' became '2025-06-26T21:59:16.000Z')
+- **Solution Implemented**: Removed redundant timezone conversion, preserving original GMT-3 (Brazil) timestamps
+- **Real-Time Updates**: System now correctly updates timestamps when new messages are sent
+- **Testing Validated**: Confirmed with multiple test messages showing proper datetime format ('2025-06-27T01:13:57.272')
+- **Performance Maintained**: Fix preserves all existing functionality while correcting timestamp accuracy
+- **Production Ready**: Timestamp display now accurate for all conversations and updates in real-time
+- **User Experience**: Sidebar correctly shows when each conversation was last active with proper Brazilian timezone
+
 ### June 27, 2025 - First Message Timestamp Display System Complete ✅
 - **Funcionalidade Implementada**: Sistema completo de exibição do timestamp da primeira mensagem em cada conversa
 - **Interface TypeScript**: Adicionado campo `first_message_at` ao tipo `Conversation` para suporte completo
