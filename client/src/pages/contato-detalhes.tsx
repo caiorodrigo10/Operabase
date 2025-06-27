@@ -231,7 +231,7 @@ export function ContatoDetalhes() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      agendada: { color: 'bg-blue-100 text-blue-800', label: 'Agendada' },
+      agendada: { color: 'bg-teal-100 text-teal-800', label: 'Agendada' },
       confirmada: { color: 'bg-green-100 text-green-800', label: 'Confirmada' },
       realizada: { color: 'bg-purple-100 text-purple-800', label: 'Realizada' },
       faltou: { color: 'bg-red-100 text-red-800', label: 'Faltou' },
@@ -294,7 +294,7 @@ export function ContatoDetalhes() {
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'visao-geral'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[#0f766e] text-[#0f766e]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('visao-geral')}
@@ -304,7 +304,7 @@ export function ContatoDetalhes() {
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'anamneses'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[#0f766e] text-[#0f766e]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('anamneses')}
@@ -314,7 +314,7 @@ export function ContatoDetalhes() {
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'mara-ai'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[#0f766e] text-[#0f766e]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('mara-ai')}
@@ -324,7 +324,7 @@ export function ContatoDetalhes() {
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'evolucoes'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[#0f766e] text-[#0f766e]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('evolucoes')}
@@ -334,7 +334,7 @@ export function ContatoDetalhes() {
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'documentos'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[#0f766e] text-[#0f766e]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('documentos')}
@@ -344,7 +344,7 @@ export function ContatoDetalhes() {
             <button
               className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === 'arquivos'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[#0f766e] text-[#0f766e]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
               onClick={() => handleTabChange('arquivos')}

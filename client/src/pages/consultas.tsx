@@ -95,8 +95,8 @@ type PatientForm = z.infer<typeof patientSchema>;
 const statusConfig = {
   agendada: { 
     label: "Agendado", 
-    color: "bg-blue-100 text-blue-800 border-blue-200",
-    badgeColor: "bg-blue-500",
+    color: "bg-teal-100 text-teal-800 border-teal-200",
+    badgeColor: "bg-teal-500",
     order: 0
   },
   confirmada: { 
@@ -157,8 +157,8 @@ const statusLabels: Record<string, { label: string; color: string }> = {
     Object.entries(statusConfig).map(([key, value]) => [key, { label: value.label, color: value.color }])
   ),
   // Legacy status labels
-  scheduled: { label: "Agendado", color: "bg-blue-100 text-blue-800" },
-  agendado: { label: "Agendado", color: "bg-blue-100 text-blue-800" }, // Portuguese variant
+  scheduled: { label: "Agendado", color: "bg-teal-100 text-teal-800" },
+  agendado: { label: "Agendado", color: "bg-teal-100 text-teal-800" }, // Portuguese variant
   confirmed: { label: "Confirmado", color: "bg-green-100 text-green-800" },
   completed: { label: "Realizado", color: "bg-purple-100 text-purple-800" },
   cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800" },
@@ -1115,7 +1115,7 @@ export function Consultas() {
     // Convert config colors to event colors - white background with colored borders
     const colorMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
       'bg-yellow-100 text-yellow-800 border-yellow-200': { bg: 'bg-white', text: 'text-yellow-700', border: 'border-yellow-400', dot: 'bg-yellow-500' },
-      'bg-blue-100 text-blue-800 border-blue-200': { bg: 'bg-white', text: 'text-blue-700', border: 'border-blue-400', dot: 'bg-blue-500' },
+      'bg-teal-100 text-teal-800 border-teal-200': { bg: 'bg-white', text: 'text-teal-700', border: 'border-teal-400', dot: 'bg-teal-500' },
       'bg-green-100 text-green-800 border-green-200': { bg: 'bg-white', text: 'text-green-700', border: 'border-green-400', dot: 'bg-green-500' },
       'bg-purple-100 text-purple-800 border-purple-200': { bg: 'bg-white', text: 'text-purple-700', border: 'border-purple-400', dot: 'bg-purple-500' },
       'bg-orange-100 text-orange-800 border-orange-200': { bg: 'bg-white', text: 'text-orange-700', border: 'border-orange-400', dot: 'bg-orange-500' },
@@ -1280,7 +1280,7 @@ export function Consultas() {
           <p className="text-slate-600">Gerencie e visualize todas as sessões agendadas</p>
         </div>
         <Button 
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-[#0f766e] hover:bg-[#0f766e]/90"
           onClick={() => setIsCreateDialogOpen(true)}
         >
           <Plus className="w-4 h-4" />
@@ -1361,7 +1361,7 @@ export function Consultas() {
                   <Button
                     variant={viewMode === "calendar" ? "default" : "outline"}
                     onClick={() => setViewMode("calendar")}
-                    className="flex items-center justify-center w-10 h-10 p-0"
+                    className={`flex items-center justify-center w-10 h-10 p-0 ${viewMode === "calendar" ? "bg-[#0f766e] hover:bg-[#0f766e]/90" : ""}`}
                   >
                     <Calendar className="w-4 h-4" />
                   </Button>
@@ -1400,7 +1400,7 @@ export function Consultas() {
                           w-9 h-9 rounded-full flex items-center justify-center text-xs font-medium
                           transition-all duration-200 hover:scale-105
                           ${isSelected 
-                            ? 'bg-blue-500 text-white border-2 border-blue-600 shadow-md' 
+                            ? 'bg-[#0f766e] text-white border-2 border-[#0f766e] shadow-md' 
                             : 'bg-slate-200 text-slate-600 border-2 border-transparent hover:bg-slate-300'
                           }
                         `}
@@ -1424,7 +1424,7 @@ export function Consultas() {
                     setCalendarView("day");
                     setCurrentDate(new Date());
                   }}
-                  className="text-xs"
+                  className={`text-xs ${calendarView === "day" ? "bg-[#0f766e] hover:bg-[#0f766e]/90" : ""}`}
                 >
                   Dia
                 </Button>
@@ -1432,7 +1432,7 @@ export function Consultas() {
                   variant={calendarView === "week" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setCalendarView("week")}
-                  className="text-xs"
+                  className={`text-xs ${calendarView === "week" ? "bg-[#0f766e] hover:bg-[#0f766e]/90" : ""}`}
                 >
                   Semana
                 </Button>
@@ -1440,7 +1440,7 @@ export function Consultas() {
                   variant={calendarView === "month" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setCalendarView("month")}
-                  className="text-xs"
+                  className={`text-xs ${calendarView === "month" ? "bg-[#0f766e] hover:bg-[#0f766e]/90" : ""}`}
                 >
                   Mês
                 </Button>
@@ -1680,7 +1680,7 @@ export function Consultas() {
                     return (
                       <div
                         key={day.toISOString()}
-                        className={`${backgroundClass} p-2 min-h-24 ${!isCurrentMonth ? 'text-slate-400' : ''} ${isToday ? 'bg-blue-50' : ''}`}
+                        className={`${backgroundClass} p-2 min-h-24 ${!isCurrentMonth ? 'text-slate-400' : ''} ${isToday ? 'bg-teal-50' : ''}`}
                       >
                         <div className="text-sm font-medium mb-1">
                           {format(day, 'd')}
@@ -1734,7 +1734,7 @@ export function Consultas() {
                       {calendarDays.slice(0, 7).map((day) => (
                         <div key={day.toISOString()} className="bg-slate-50 p-2 text-center">
                           <div className="text-sm font-medium">{format(day, 'EEE', { locale: ptBR })}</div>
-                          <div className={`text-lg ${isSameDay(day, today) ? 'text-blue-600 font-bold' : ''}`}>
+                          <div className={`text-lg ${isSameDay(day, today) ? 'text-[#0f766e] font-bold' : ''}`}>
                             {format(day, 'd')}
                           </div>
                         </div>
@@ -1779,7 +1779,7 @@ export function Consultas() {
                                   return (
                                     <div
                                       key={`${minute}`}
-                                      className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
+                                      className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-teal-50' : ''}`}
                                       style={{ 
                                         top: `${(minute / 60) * PIXELS_PER_HOUR}px`, 
                                         height: `${PIXELS_PER_QUARTER}px` 
@@ -1798,7 +1798,7 @@ export function Consultas() {
                                       {/* Time indicator on hover */}
                                       {isSlotAvailable && (
                                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                                          <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
+                                          <div className="bg-teal-100 border border-teal-300 rounded px-2 py-1 text-xs font-medium text-teal-800">
                                             {timeLabel}
                                           </div>
                                         </div>
