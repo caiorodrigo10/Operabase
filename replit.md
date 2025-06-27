@@ -2,7 +2,7 @@
 
 ## Overview
 
-TaskMed is a comprehensive healthcare management platform built with modern full-stack architecture. The system provides multi-tenant clinic management with advanced features including appointment scheduling, patient management, medical records, Google Calendar integration, WhatsApp communication via Evolution API V2, and an AI-powered assistant named Mara with RAG (Retrieval-Augmented Generation) capabilities.
+Operabase is a comprehensive healthcare management platform built with modern full-stack architecture. The system provides multi-tenant clinic management with advanced features including appointment scheduling, patient management, medical records, Google Calendar integration, WhatsApp communication via Evolution API V2, and an AI-powered assistant named Mara with RAG (Retrieval-Augmented Generation) capabilities.
 
 The platform features a sophisticated conversation system with dual-channel file upload capabilities (Supabase Storage + WhatsApp), intelligent audio differentiation, real-time messaging with WebSocket fallback, and Redis-powered caching for sub-50ms response times. The system supports 500+ concurrent users with comprehensive multi-tenant data isolation.
 

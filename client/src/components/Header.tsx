@@ -168,19 +168,14 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
           <div className="flex items-center space-x-4">
             {/* Logo */}
             <Link href={isAdminView ? "/admin" : "/"} className="flex items-center space-x-2">
-              <div className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                isAdminView ? "bg-orange-600" : "bg-blue-600"
-              )}>
-                {isAdminView ? (
-                  <Settings className="w-4 h-4 text-white" />
-                ) : (
-                  <Stethoscope className="w-4 h-4 text-white" />
-                )}
-              </div>
+              <img 
+                src="/operabase-logo.png" 
+                alt="Operabase Logo" 
+                className="w-8 h-8 rounded-lg object-contain"
+              />
               <div className="hidden sm:block">
                 <span className="text-lg font-semibold text-slate-800">
-                  Taskmed
+                  Operabase
                 </span>
                 {isAdminView && (
                   <span className="text-xs text-orange-600 font-medium block -mt-1">
