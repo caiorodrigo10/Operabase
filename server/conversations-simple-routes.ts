@@ -1209,8 +1209,9 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       // Invalidar cache após override manual
       if (ai_active === true) {
-        await memoryCacheService.invalidateConversationDetail(conversationId);
-        console.log('🧹 Cache invalidated after manual AI override');
+        const cachePattern = `conversation:${conversationId}:`;
+        const deletedKeys = memoryCacheService.deletePattern(cachePattern);
+        console.log('🧹 Cache invalidated after manual AI override, deleted keys:', deletedKeys);
       }
       
       res.json({ 

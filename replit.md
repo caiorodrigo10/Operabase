@@ -156,17 +156,24 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 27, 2025 - Sistema de Pausa Automática da IA: IMPLEMENTAÇÃO COMPLETA ✅
-- **Sistema 100% Funcional**: Ciclo completo de pausa/reativação automática implementado e testado
+### June 27, 2025 - Sistema de Pausa Automática da IA: MANUAL OVERRIDE IMPLEMENTADO ✅
+- **Override Manual COMPLETO**: Usuários podem agora ativar IA manualmente mesmo durante pausa automática
+- **Endpoint Funcional**: PATCH /api/conversations/:id/ai-toggle funcionando perfeitamente
+- **Limpeza Automática**: Override manual limpa automaticamente ai_paused_until, ai_pause_reason, ai_paused_by_user_id
+- **Cache Invalidation**: Sistema invalida cache corretamente após override para atualização em tempo real
+- **Visual Feedback**: Botão IA fica cinza quando ai_active=false, normal quando ai_active=true
+- **Priority Override**: Manual AI activation tem prioridade sobre timer automático
+- **Sistema 100% Funcional**: Ciclo completo de pausa/reativação automática + override manual implementado e testado
 - **Integração ai_active**: Campo ai_active agora corretamente definido como false durante pausa (crucial para N8N)
 - **Verificador Automático**: Middleware executa a cada 30 segundos para reativar IA quando pausa expira  
-- **Validação Completa**: Teste automatizado confirma 4/4 critérios funcionando perfeitamente
+- **Validação Completa**: Teste automatizado confirma todos os critérios funcionando perfeitamente
 - **Logs Funcionais**: Sistema registra pausa aplicada com sucesso e reativação automática
 - **Cache Integration**: Sistema invalida cache automaticamente após aplicar/remover pausa
 - **Production Ready**: Sistema rodando em produção com verificador ativo desde inicialização
 - **Teste Aprovado**: 100% dos testes passaram - mensagens sistema pausam IA por 60 minutos automaticamente
 - **N8N Compatible**: Campo ai_active sincronizado - N8N para de responder durante pausa
 - **Auto-Recovery**: Sistema reativa IA automaticamente sem intervenção manual necessária
+- **User Control**: Profissionais podem reativar IA imediatamente clicando no botão, cancelando pausa automática
 
 ### June 27, 2025 - Sistema Real-Time Corrigido: Cache Invalidation N8N ✅
 - **Problema Identificado**: Mensagens do N8N chegavam na sidebar mas demorava para aparecer no chat devido ao cache
