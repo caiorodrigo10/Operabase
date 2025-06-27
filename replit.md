@@ -176,6 +176,7 @@ SESSION_SECRET=your_session_secret
 - **Sticky Tabs**: Sistema de abas fixas também atualizado para nova identidade visual
 - **Header Menu Cleanup**: Removidos "Central de Retorno" e "Notificações" do menu superior para interface mais limpa
 - **MessageBubble Avatar**: AvatarFallback atualizado para usar cor da marca #0f766e
+- **Icon Standardization**: Todos os ícones do menu de aplicativos padronizados com cinza claro (bg-slate-100, text-slate-500) em desktop e mobile
 
 ### June 26, 2025 - Livia AI Configuration System Complete Implementation ✅
 - **Sistema de Configuração Completo**: Implementado sistema abrangente de configuração da assistente virtual Lívia

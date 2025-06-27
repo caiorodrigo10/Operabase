@@ -220,8 +220,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                           setIsAppsDropdownOpen(false);
                         }}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center mb-2">
-                          <Filter className="h-5 w-5 text-teal-600" />
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
+                          <Filter className="h-5 w-5 text-slate-500" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Funis</span>
                       </Link>
@@ -233,8 +233,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                           setIsAppsDropdownOpen(false);
                         }}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-2">
-                          <Bot className="h-5 w-5 text-green-600" />
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
+                          <Bot className="h-5 w-5 text-slate-500" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Trabalhadores Digitais</span>
                       </Link>
@@ -250,8 +250,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                           });
                         }}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-2">
-                          <Megaphone className="h-5 w-5 text-purple-600" />
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
+                          <Megaphone className="h-5 w-5 text-slate-500" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Campanhas Automáticas</span>
                       </div>
@@ -267,8 +267,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                           });
                         }}
                       >
-                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-2">
-                          <BarChart3 className="h-5 w-5 text-orange-600" />
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
+                          <BarChart3 className="h-5 w-5 text-slate-500" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Relatórios</span>
                       </div>
@@ -470,8 +470,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     href="/funis"
                     className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center mb-1">
-                      <Filter className="h-4 w-4 text-teal-600" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-1">
+                      <Filter className="h-4 w-4 text-slate-500" />
                     </div>
                     <span className="text-xs font-medium text-slate-900">Funis</span>
                   </Link>
@@ -486,8 +486,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                       });
                     }}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mb-1">
-                      <Bot className="h-4 w-4 text-green-600" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-1">
+                      <Bot className="h-4 w-4 text-slate-500" />
                     </div>
                     <span className="text-xs font-medium text-slate-900">Digitais</span>
                   </div>
@@ -502,8 +502,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                       });
                     }}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mb-1">
-                      <Megaphone className="h-4 w-4 text-purple-600" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-1">
+                      <Megaphone className="h-4 w-4 text-slate-500" />
                     </div>
                     <span className="text-xs font-medium text-slate-900">Campanhas</span>
                   </div>
@@ -518,8 +518,8 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                       });
                     }}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center mb-1">
-                      <BarChart3 className="h-4 w-4 text-orange-600" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-1">
+                      <BarChart3 className="h-4 w-4 text-slate-500" />
                     </div>
                     <span className="text-xs font-medium text-slate-900">Relatórios</span>
                   </div>
