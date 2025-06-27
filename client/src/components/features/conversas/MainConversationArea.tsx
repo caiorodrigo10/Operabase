@@ -307,7 +307,6 @@ export function MainConversationArea({
           </>
         )}
       </div>
-
       {/* Input Area - Fixed at Bottom */}
       <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
         <div className="flex mb-3 justify-between items-center">
@@ -316,12 +315,7 @@ export function MainConversationArea({
               variant={!isNoteMode ? "default" : "outline"}
               size="sm"
               onClick={() => setIsNoteMode(false)}
-              className={cn(
-                "flex items-center space-x-2 transition-all",
-                !isNoteMode 
-                  ? "bg-blue-500 text-white hover:bg-blue-600" 
-                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-              )}
+              className="justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-9 rounded-md px-3 flex items-center space-x-2 transition-all text-white hover:bg-blue-600 bg-[#0f766e]"
             >
               <MessageCircle className="w-4 h-4" />
               <span>Mensagem</span>
@@ -426,7 +420,6 @@ export function MainConversationArea({
           </Button>
         </div>
       </div>
-
       {/* Upload Modal */}
       {showUploadModal && selectedConversationId && (
         <FileUploadModal
@@ -439,7 +432,6 @@ export function MainConversationArea({
           }}
         />
       )}
-
       {/* Audio Recording Modal */}
       {showAudioRecorder && (
         <AudioRecordingModal
@@ -448,7 +440,6 @@ export function MainConversationArea({
           onSend={handleAudioReady}
         />
       )}
-
     </div>
   );
 }
