@@ -95,6 +95,15 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const lastMessageMap = {};
       allMessages?.forEach(msg => {
         if (!lastMessageMap[msg.conversation_id] && msg.timestamp) {
+          // Debug temporário para Caio
+          if (msg.conversation_id === "5511965860124551150391104") {
+            console.log('🔍 DEBUG - Última mensagem do Caio selecionada:', {
+              id: msg.id,
+              content: msg.content?.substring(0, 30),
+              timestamp: msg.timestamp
+            });
+          }
+          
           // Usa timezone correto do Brasil (America/Sao_Paulo)
           const messageDate = new Date(msg.timestamp);
           const brasiliaTime = new Date(messageDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
@@ -127,6 +136,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const formattedConversations = (conversationsData || []).map(conv => {
         const lastMsg = lastMessageMap[conv.id];
         const firstMsg = firstMessageMap[conv.id];
+        
+        // Debug temporário para Caio
+        if (conv.id === "5511965860124551150391104") {
+          console.log('🔍 DEBUG - lastMsg encontrada para Caio:', lastMsg ? {
+            id: lastMsg.id,
+            content: lastMsg.content?.substring(0, 30),
+            timestamp: lastMsg.timestamp,
+            original_timestamp: lastMsg.original_timestamp
+          } : 'NÃO ENCONTRADA');
+        }
+        
         const lastMessageTime = lastMsg?.timestamp || conv.created_at; // Use created_at only for conversations without messages
         const firstMessageTime = firstMsg?.timestamp || conv.created_at; // Use created_at for conversations without messages
         
