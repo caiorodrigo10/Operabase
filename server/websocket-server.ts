@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { IStorage } from './storage';
 import { redisCacheService } from './services/redis-cache.service';
+import { memoryCacheService } from './cache/memory-cache.service';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -180,9 +181,8 @@ export class WebSocketServer {
         unread_count: 1 // Será calculado dinamicamente
       });
 
-      // ETAPA 3: Invalidate cache after WebSocket emission
-      await redisCacheService.invalidateConversationDetail(conversationId);
-      await redisCacheService.invalidateConversationCache(clinicId);
+      // ETAPA 5: Hybrid cache invalidation after WebSocket emission
+      await this.invalidateHybridCache(conversationId, clinicId);
       
       console.log(`📨 New message emitted to conversation: ${conversationId}`);
     } catch (error) {
