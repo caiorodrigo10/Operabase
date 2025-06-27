@@ -156,21 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 27, 2025 - N8N RAG Integration Otimizada: VIEW v_n8n_clinic_livia Final ✅
-- **Migração RAG Concluída**: Sistema migrado de email-based para clinic_id-based para melhor isolamento multi-tenant
-- **4 Knowledge Bases Migradas**: RAG Caio, Doencas, Estudos, Base de Odonto de external_user_id="cr@caiorodrigo.com.br" para external_user_id="1"
-- **3 Documentos Migrados**: Base Caio, Teste Busca Semântica, Amorafone agora usando clinic_id=1
-- **VIEW Otimizada**: VIEW simplificada com apenas campos essenciais para N8N
-- **Estrutura Final**: phone_number, clinic_id, chunk_id, prompt_personalizado, profissional_nome, profissional_email, profissionais_vinculados, bases_conhecimento_vinculadas, livia_ativa
-- **Campos Removidos**: chunk_content, document_id, documento_titulo, documento_tipo, tempo_ausencia, unidade_tempo (não utilizados)
-- **Campos Adicionados**: profissional_nome, profissional_email (dados do profissional vinculado)
-- **JOIN com Users**: Conecta automaticamente com tabela users para obter nome/email do profissional
-- **Isolamento por Clínica**: VIEW garante que cada clínica acesse apenas seus próprios dados RAG e configurações
-- **JOIN Inteligente**: Conecta whatsapp_numbers + rag_documents + rag_chunks + livia_configurations + users automaticamente
-- **Filtros Automáticos**: Apenas instâncias WhatsApp 'open' e documentos RAG 'completed'
-- **Uso no N8N**: `SELECT chunk_id, prompt_personalizado, profissional_nome FROM v_n8n_clinic_livia WHERE phone_number = '{{ $json.from }}'`
-- **4 Registros Ativos**: VIEW retornando dados otimizados com profissional "Caio Rodrigo" (cr@caiorodrigo.com.br)
-- **Sistema 100% Funcional**: VIEW otimizada, testada e pronta para integração N8N
+### June 27, 2025 - N8N RAG VIEWs Otimizadas: Sistema Dual Implementado ✅
+- **Problema RAG Resolvido**: Endpoint RAG corrigido para usar clinic_id=1 em vez de email, bases de conhecimento carregando corretamente
+- **Sistema Dual de VIEWs**: Criadas 2 VIEWs otimizadas para N8N com Drizzle ORM
+- **v_n8n_clinic_config**: 1 linha por clínica com configurações consolidadas
+  - Campos: clinic_id, phone_number, prompt_personalizado, dados_profissionais (JSON), livia_ativa, primary_knowledge_base_id
+  - Profissionais estruturados em JSON com id, nome, email e flag principal
+  - Uso: `SELECT * FROM v_n8n_clinic_config WHERE phone_number = '{{ $json.from }}'`
+- **v_n8n_clinic_chunks**: Chunks para busca vetorial semântica
+  - Campos: chunk_id, chunk_content, clinic_id, knowledge_base_id, document_status
+  - Filtros N8N: clinic_id=1, knowledge_base_id=5, document_status='completed'
+  - Chunks disponíveis: 2 chunks da base "Doencas" prontos para busca semântica
+- **Configuração Validada**: Clínica 1, Phone 551150391104, Base 5, Profissional "Caio Rodrigo"
+- **RAG Endpoint Funcional**: 4 bases carregadas (Base de Odonto, Estudos, Doencas, RAG Caio)
+- **Sistema 100% Operacional**: N8N pode buscar configurações e fazer busca vetorial isolada por clínica
 
 ### June 27, 2025 - Sistema de Pausa Automática da IA: IMPLEMENTAÇÃO FINAL COMPLETA ✅
 - **Sistema 100% Funcional**: Implementação completa do sistema de pausa automática da IA com todas as correções
