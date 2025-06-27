@@ -72,6 +72,16 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .order('timestamp', { ascending: false })
         .order('id', { ascending: false });
       
+      // Log temporário para debug
+      const caioMessages = allMessages?.filter(m => m.conversation_id === "5511965860124551150391104");
+      if (caioMessages?.length > 0) {
+        console.log('🔍 DEBUG - Mensagens do Caio (últimas 3):', caioMessages.slice(0, 3).map(m => ({
+          id: m.id,
+          content: m.content?.substring(0, 50),
+          timestamp: m.timestamp
+        })));
+      }
+      
       // Batch load primeiras mensagens de cada conversa (mais antigas)
       const { data: firstMessages } = await supabase
         .from('messages')
