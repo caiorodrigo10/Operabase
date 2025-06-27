@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { db } from "./db";
-import { rag_knowledge_bases, rag_documents, rag_chunks, rag_embeddings, rag_queries } from "../shared/schema";
+import { rag_knowledge_bases, rag_documents, rag_chunks, rag_embeddings, rag_queries, users, clinic_users } from "../shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
 // Middleware para identificar clinic_id baseado no usuário autenticado
@@ -16,20 +16,25 @@ const ragAuth = async (req: any, res: any, next: any) => {
       name: "Caio Rodrigo"
     };
     
-    // Buscar clinic_id do usuário
-    const clinicUserResult = await db.execute(sql`
-      SELECT cu.clinic_id 
-      FROM users u
-      JOIN clinic_users cu ON u.id = cu.user_id
-      WHERE u.email = ${req.user.email}
-      LIMIT 1;
-    `);
+    console.log('🔍 RAG Auth: Iniciando autenticação para:', req.user.email);
     
-    if (!clinicUserResult.rows || clinicUserResult.rows.length === 0) {
+    // Buscar clinic_id do usuário usando Drizzle ORM
+    const userWithClinic = await db
+      .select({ clinic_id: clinic_users.clinic_id })
+      .from(users)
+      .innerJoin(clinic_users, eq(users.id, clinic_users.user_id))
+      .where(eq(users.email, req.user.email))
+      .limit(1);
+    
+    console.log('🔍 RAG Auth: Resultado busca clinic:', userWithClinic);
+    
+    if (!userWithClinic || userWithClinic.length === 0) {
+      console.log('❌ RAG Auth: Usuário não associado a nenhuma clínica');
       return res.status(403).json({ error: 'Usuário não associado a nenhuma clínica' });
     }
     
-    req.user.clinic_id = clinicUserResult.rows[0].clinic_id;
+    req.user.clinic_id = userWithClinic[0].clinic_id;
+    console.log('✅ RAG Auth: Clinic ID definido:', req.user.clinic_id);
     next();
   } catch (error) {
     console.error('❌ Erro no ragAuth:', error);
@@ -83,12 +88,15 @@ router.get('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
       .orderBy(desc(rag_knowledge_bases.created_at));
 
     console.log(`📚 RAG: Encontradas ${knowledgeBases.length} bases de conhecimento`);
+    console.log(`📚 RAG: Bases encontradas:`, knowledgeBases.map(kb => ({ id: kb.id, name: kb.name, external_user_id: kb.external_user_id })));
 
     // Buscar documentos para contar itens por base
     const documents = await db
       .select()
       .from(rag_documents)
       .where(eq(rag_documents.external_user_id, clinicId));
+
+    console.log(`📄 RAG: Encontrados ${documents.length} documentos para clinic_id: ${clinicId}`);
 
     // Adicionar contagem de documentos para cada base
     const basesWithCounts = knowledgeBases.map(base => {
@@ -98,15 +106,19 @@ router.get('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
         (doc.metadata as any).knowledge_base === base.name
       );
       
-      return {
+      const result = {
         ...base,
         documentCount: docsInBase.length,
         lastUpdated: docsInBase.length > 0 
           ? new Date(Math.max(...docsInBase.map(d => d.updated_at ? new Date(d.updated_at).getTime() : 0))).toISOString()
           : base.updated_at?.toISOString() || new Date().toISOString()
       };
+      
+      console.log(`📚 RAG: Base "${base.name}" processada: ${docsInBase.length} documentos`);
+      return result;
     });
 
+    console.log(`✅ RAG: Retornando ${basesWithCounts.length} bases com contadores`);
     res.json(basesWithCounts);
   } catch (error) {
     console.error('Error fetching knowledge bases:', error);
