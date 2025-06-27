@@ -495,6 +495,11 @@ export const conversations = pgTable("conversations", {
   priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, urgent
   ai_active: boolean("ai_active").default(true), // Controle se IA está ativa para esta conversa
   
+  // Sistema de Pausa Automática da IA (ETAPA 2)
+  ai_paused_until: timestamp("ai_paused_until"), // Até quando a IA deve ficar pausada
+  ai_paused_by_user_id: integer("ai_paused_by_user_id"), // ID do usuário que enviou mensagem manual
+  ai_pause_reason: varchar("ai_pause_reason", { length: 100 }), // Motivo da pausa: 'manual_message', 'user_request'
+  
   // Contadores para performance
   total_messages: integer("total_messages").default(0),
   unread_count: integer("unread_count").default(0),
