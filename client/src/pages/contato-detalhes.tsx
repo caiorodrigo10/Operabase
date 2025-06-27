@@ -664,7 +664,7 @@ export function ContatoDetalhes() {
                         <CardContent className="p-6">
                           <h2 className="text-lg font-semibold text-slate-900 mb-4">Mensagens</h2>
                           <div className="text-center py-12">
-                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#ccfbf1]">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#f0fdfa]">
                               <MessageCircle className="w-8 h-8 text-[#0f766e]" />
                             </div>
                             <p className="text-slate-500 mb-2">
@@ -825,7 +825,6 @@ export function ContatoDetalhes() {
                 )}
               </div>
             </div>
-
       {/* Editor de Evolução */}
       {showEvolucaoEditor && (
         <EvolucaoEditor
