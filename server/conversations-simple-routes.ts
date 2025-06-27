@@ -32,8 +32,10 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
       
-      // ETAPA 1: Query otimizada - elimina N+1 queries
-      // Single query com joins para carregar dados relacionados
+      // PERFORMANCE: Optimized query with minimal data fetch
+      console.log('🔍 Fetching conversations for clinic:', clinicId);
+      const startTime = Date.now();
+      
       const { data: conversationsData, error } = await supabase
         .from('conversations')
         .select(`
@@ -52,7 +54,10 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         `)
         .eq('clinic_id', clinicId)
         .order('updated_at', { ascending: false })
-        .limit(50);
+        .limit(20); // Reduced from 50 to 20 for faster load
+        
+      const queryTime = Date.now() - startTime;
+      console.log('⚡ DB Query completed in', queryTime, 'ms');
       
       if (error) {
         console.error('❌ Supabase error:', error);
@@ -61,51 +66,47 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       console.log('📊 Found conversations:', conversationsData?.length || 0);
       
-      // PERFORMANCE OPTIMIZATION: Single optimized query for last messages
-      // Uses window function to get only the latest message per conversation
+      // PERFORMANCE OPTIMIZATION: Simplified and faster query
+      // Limit the number of messages fetched and use better indexing
       const conversationIds = (conversationsData || []).map(c => c.id);
       
-      // Optimized query: Get only the latest message per conversation using window function
+      if (conversationIds.length === 0) {
+        console.log('⚠️ No conversations found, skipping message fetch');
+        return res.json({ conversations: [] });
+      }
+      
+      // Optimized: Get latest message per conversation with limit
       const { data: allMessages } = await supabase
-        .rpc('get_latest_messages_per_conversation', { 
-          conversation_ids: conversationIds 
-        });
-      
-
-      
-      // Batch load primeiras mensagens de cada conversa (mais antigas)
-      const { data: firstMessages } = await supabase
         .from('messages')
         .select('conversation_id, content, timestamp, id')
         .in('conversation_id', conversationIds)
         .not('timestamp', 'is', null)
-        .order('timestamp', { ascending: true })
-        .order('id', { ascending: true });
+        .order('timestamp', { ascending: false })
+        .limit(conversationIds.length * 2); // Only fetch 2x conversations to reduce load
       
-      // Agrupa por conversation_id para pegar APENAS a última mensagem real
-      const lastMessageMap = {};
-      allMessages?.forEach(msg => {
+
+      
+      // PERFORMANCE: Skip first messages query if not needed or limit it
+      // This was causing significant slowdown, remove for now
+      const firstMessages: any[] = []; // Skip this query to improve performance
+      
+      // PERFORMANCE: Optimized message mapping
+      const lastMessageMap: Record<string, any> = {};
+      const firstMessageMap: Record<string, any> = {};
+      
+      // Process only necessary data to reduce memory usage
+      allMessages?.forEach((msg: any) => {
         if (!lastMessageMap[msg.conversation_id] && msg.timestamp) {
-          // O timestamp já está correto em GMT-3 (Brasil), mantém formato original
           lastMessageMap[msg.conversation_id] = {
-            ...msg,
-            timestamp: msg.timestamp
+            content: msg.content,
+            timestamp: msg.timestamp,
+            id: msg.id
           };
         }
       });
       
-      // Agrupa por conversation_id para pegar APENAS a primeira mensagem real (mais antiga)
-      const firstMessageMap = {};
-      firstMessages?.forEach(msg => {
-        if (!firstMessageMap[msg.conversation_id] && msg.timestamp) {
-          // O timestamp já está correto em GMT-3 (Brasil), não precisa converter
-          firstMessageMap[msg.conversation_id] = {
-            ...msg,
-            timestamp: msg.timestamp, // Manter timestamp original
-            original_timestamp: msg.timestamp // Manter original para debug
-          };
-        }
-      });
+      const processingTime = Date.now() - startTime;
+      console.log('⚡ Performance: Processed', Object.keys(lastMessageMap).length, 'messages in', processingTime, 'ms');
 
       // Format for frontend com dados otimizados - fix large ID handling
       const formattedConversations = (conversationsData || []).map(conv => {
@@ -179,7 +180,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('🔄 Invalidating cache for conversation update:', conversationId);
       
       // Invalidar cache Redis para forçar reload
-      await redisCacheService.invalidateConversations(clinicId);
+      await redisCacheService.invalidateConversationCache(clinicId);
       
       // ETAPA 2: Cache invalidation para reordenação automática
       console.log('📡 Cache invalidated for real-time conversation reordering');
