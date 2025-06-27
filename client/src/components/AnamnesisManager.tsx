@@ -144,7 +144,7 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
         <h2 className="text-xl font-semibold text-slate-900">Anamneses</h2>
         <Button 
           onClick={handleCreateAnamnesis}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-[#0f766e] hover:bg-teal-700 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
           Preencher anamnese
@@ -155,8 +155,8 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
         <Card className="border border-slate-200">
           <CardContent className="py-16">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-blue-500" />
+              <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-[#0f766e]" />
               </div>
               <h3 className="text-lg font-medium text-slate-900 mb-2">
                 O paciente não tem anamneses preenchidas.
@@ -166,7 +166,7 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
               </p>
               <Button 
                 onClick={handleCreateAnamnesis}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-[#0f766e] hover:bg-teal-700 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Preencher anamnese
@@ -183,7 +183,7 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
                   <div className="flex items-center space-x-4">
                     <div>
                       <h3 
-                        className="font-medium text-slate-900 hover:text-blue-600 cursor-pointer transition-colors"
+                        className="font-medium text-slate-900 hover:text-[#0f766e] cursor-pointer transition-colors"
                         onClick={() => setLocation(`/contatos/${contactId}/anamnese/${anamnesis.id}/editar`)}
                       >
                         <span className="text-xs text-slate-400 uppercase tracking-wide">Formulário:</span>
