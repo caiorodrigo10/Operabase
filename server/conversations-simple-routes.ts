@@ -292,39 +292,108 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const actualConversationId = conversation.id;
       console.log('✅ Found conversation:', actualConversationId);
 
-      // ETAPA 1: Paginação para mensagens (carrega apenas últimas 50)
+      // ETAPA 2: Sistema de Paginação Avançado com Feature Flag e Fallback
       // Elimina problema de performance com conversas muito longas
-      // Fix: Usar sempre o ID real da conversa encontrada no banco com busca robusta
       const queryConversationId = actualConversationId;
       
-      // Para IDs científicos, usar busca mais robusta que considera precisão numérica
-      let messages, msgError;
+      // ETAPA 2: Feature Flag para ativar/desativar paginação
+      const USE_PAGINATION = process.env.ENABLE_PAGINATION !== 'false'; // Default true
+      console.log('🔧 ETAPA 2: Feature Flag - ENABLE_PAGINATION env:', process.env.ENABLE_PAGINATION, 'USE_PAGINATION result:', USE_PAGINATION);
       
-      if (isScientificNotation) {
-        // Busca todas as mensagens e filtra por proximidade numérica
-        const { data: allMessages, error: allMsgError } = await supabase
-          .from('messages')
-          .select('*')
-          .order('timestamp', { ascending: false })
-          .limit(200); // Busca mais para filtrar
+      let messages, msgError, totalMessages = 0, hasMore = false;
+      
+      if (USE_PAGINATION) {
+        console.log('📄 ETAPA 2: Using pagination system');
         
-        const targetIdNum = parseFloat(queryConversationId.toString());
-        messages = allMessages?.filter(msg => {
-          const msgIdNum = parseFloat(msg.conversation_id.toString());
-          return Math.abs(msgIdNum - targetIdNum) < 1;
-        }).slice(0, 50); // Limita a 50 após filtrar
+        // ETAPA 2: First, get total count for hasMore calculation
+        if (isScientificNotation) {
+          // Para IDs científicos, precisamos filtrar manualmente
+          const { data: allMessagesCount } = await supabase
+            .from('messages')
+            .select('id, conversation_id');
+          
+          const targetIdNum = parseFloat(queryConversationId.toString());
+          const filteredCount = allMessagesCount?.filter(msg => {
+            const msgIdNum = parseFloat(msg.conversation_id.toString());
+            return Math.abs(msgIdNum - targetIdNum) < 1;
+          });
+          
+          totalMessages = filteredCount?.length || 0;
+        } else {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', queryConversationId);
+          
+          totalMessages = count || 0;
+        }
         
-        msgError = allMsgError;
+        hasMore = totalMessages > (page * limit);
+        
+        console.log('📄 ETAPA 2: Total messages:', totalMessages, 'Current page:', page, 'Has more:', hasMore);
+        
+        // ETAPA 2: Now fetch paginated messages
+        if (isScientificNotation) {
+          // Busca todas as mensagens e filtra por proximidade numérica com paginação
+          const { data: allMessages, error: allMsgError } = await supabase
+            .from('messages')
+            .select('*')
+            .order('timestamp', { ascending: false });
+          
+          const targetIdNum = parseFloat(queryConversationId.toString());
+          const filteredMessages = allMessages?.filter(msg => {
+            const msgIdNum = parseFloat(msg.conversation_id.toString());
+            return Math.abs(msgIdNum - targetIdNum) < 1;
+          });
+          
+          messages = filteredMessages?.slice(offset, offset + limit) || [];
+          msgError = allMsgError;
+        } else {
+          const { data: directMessages, error: directError } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', queryConversationId)
+            .order('timestamp', { ascending: false })
+            .range(offset, offset + limit - 1);
+          
+          messages = directMessages;
+          msgError = directError;
+        }
+        
+        console.log('📄 ETAPA 2: Pagination results - loaded:', messages?.length || 0, 'offset:', offset, 'limit:', limit);
       } else {
-        const { data: directMessages, error: directError } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('conversation_id', queryConversationId)
-          .order('timestamp', { ascending: false })
-          .limit(50);
+        console.log('📄 ETAPA 2: Using legacy system (fallback)');
         
-        messages = directMessages;
-        msgError = directError;
+        // ETAPA 2: Legacy system - comportamento da ETAPA 1 preservado
+        if (isScientificNotation) {
+          // Busca todas as mensagens e filtra por proximidade numérica
+          const { data: allMessages, error: allMsgError } = await supabase
+            .from('messages')
+            .select('*')
+            .order('timestamp', { ascending: false })
+            .limit(200); // Busca mais para filtrar
+          
+          const targetIdNum = parseFloat(queryConversationId.toString());
+          messages = allMessages?.filter(msg => {
+            const msgIdNum = parseFloat(msg.conversation_id.toString());
+            return Math.abs(msgIdNum - targetIdNum) < 1;
+          }).slice(0, 50); // Limita a 50 após filtrar
+          
+          msgError = allMsgError;
+        } else {
+          const { data: directMessages, error: directError } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', queryConversationId)
+            .order('timestamp', { ascending: false })
+            .limit(50);
+          
+          messages = directMessages;
+          msgError = directError;
+        }
+        
+        totalMessages = messages?.length || 0;
+        hasMore = false; // Legacy system doesn't support hasMore
       }
 
       if (msgError) {
@@ -449,15 +518,29 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         };
       });
 
+      // ETAPA 2: Response com informações de paginação
       const responseData = {
         conversation: conversation,
         messages: finalFormattedMessages,
-        actions: actionNotifications
+        actions: actionNotifications,
+        // ETAPA 2: Pagination metadata
+        pagination: {
+          currentPage: page,
+          limit: limit,
+          totalMessages: totalMessages,
+          hasMore: hasMore,
+          isPaginated: USE_PAGINATION
+        }
       };
 
-      // ETAPA 3: Cache the result for next requests
-      await redisCacheService.cacheConversationDetail(actualConversationId, responseData);
-      console.log('💾 Cached conversation detail for:', actualConversationId);
+      // ETAPA 2: Cache com key de paginação apropriada
+      if (USE_PAGINATION) {
+        await redisCacheService.cacheConversationDetail(cacheKey, responseData);
+        console.log('💾 Cached paginated conversation detail for:', cacheKey);
+      } else {
+        await redisCacheService.cacheConversationDetail(actualConversationId, responseData);
+        console.log('💾 Cached legacy conversation detail for:', actualConversationId);
+      }
 
       res.json(responseData);
 
