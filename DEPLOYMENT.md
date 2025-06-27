@@ -22,17 +22,17 @@
 **PostgreSQL Production Setup:**
 ```sql
 -- Create production database
-CREATE DATABASE taskmed_production;
+CREATE DATABASE operabase_production;
 
 -- Create dedicated user
-CREATE USER taskmed_prod WITH PASSWORD 'secure_production_password';
+CREATE USER operabase_prod WITH PASSWORD 'secure_production_password';
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE taskmed_production TO taskmed_prod;
-GRANT ALL ON SCHEMA public TO taskmed_prod;
+GRANT ALL PRIVILEGES ON DATABASE operabase_production TO operabase_prod;
+GRANT ALL ON SCHEMA public TO operabase_prod;
 
 -- Configure connection limits
-ALTER USER taskmed_prod CONNECTION LIMIT 20;
+ALTER USER operabase_prod CONNECTION LIMIT 20;
 ```
 
 **Database Optimization:**
@@ -55,12 +55,12 @@ SELECT pg_reload_conf();
 # Daily backup script
 BACKUP_DIR="/var/backups/taskmed"
 DATE=$(date +%Y%m%d_%H%M%S)
-DB_NAME="taskmed_production"
+DB_NAME="operabase_production"
 
 mkdir -p $BACKUP_DIR
 
 # Create compressed backup
-pg_dump -h localhost -U taskmed_prod -d $DB_NAME | gzip > $BACKUP_DIR/taskmed_$DATE.sql.gz
+pg_dump -h localhost -U operabase_prod -d $DB_NAME | gzip > $BACKUP_DIR/taskmed_$DATE.sql.gz
 
 # Keep only last 30 days
 find $BACKUP_DIR -name "operabase_*.sql.gz" -mtime +30 -delete
@@ -164,7 +164,7 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://taskmed_prod:${DB_PASSWORD}@db:5432/taskmed_production
+      - DATABASE_URL=postgresql://operabase_prod:${DB_PASSWORD}@db:5432/operabase_production
       - SESSION_SECRET=${SESSION_SECRET}
     depends_on:
       - db
@@ -179,15 +179,15 @@ services:
   db:
     image: postgres:14-alpine
     environment:
-      - POSTGRES_DB=taskmed_production
-      - POSTGRES_USER=taskmed_prod
+      - POSTGRES_DB=operabase_production
+      - POSTGRES_USER=operabase_prod
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backups:/backups
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taskmed_prod"]
+      test: ["CMD-SHELL", "pg_isready -U operabase_prod"]
       interval: 30s
       timeout: 10s
       retries: 3
