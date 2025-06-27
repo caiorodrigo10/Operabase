@@ -156,19 +156,21 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 27, 2025 - N8N RAG Integration Completa: VIEW v_n8n_clinic_livia ✅
+### June 27, 2025 - N8N RAG Integration Otimizada: VIEW v_n8n_clinic_livia Final ✅
 - **Migração RAG Concluída**: Sistema migrado de email-based para clinic_id-based para melhor isolamento multi-tenant
 - **4 Knowledge Bases Migradas**: RAG Caio, Doencas, Estudos, Base de Odonto de external_user_id="cr@caiorodrigo.com.br" para external_user_id="1"
 - **3 Documentos Migrados**: Base Caio, Teste Busca Semântica, Amorafone agora usando clinic_id=1
-- **VIEW v_n8n_clinic_livia Criada**: VIEW abrangente no Supabase incluindo chunks RAG + configurações da Lívia
-- **Estrutura Completa**: phone_number, clinic_id, chunk_id, documento_titulo, prompt_personalizado, tempo_ausencia, profissionais_vinculados
+- **VIEW Otimizada**: VIEW simplificada com apenas campos essenciais para N8N
+- **Estrutura Final**: phone_number, clinic_id, chunk_id, prompt_personalizado, profissional_nome, profissional_email, profissionais_vinculados, bases_conhecimento_vinculadas, livia_ativa
+- **Campos Removidos**: chunk_content, document_id, documento_titulo, documento_tipo, tempo_ausencia, unidade_tempo (não utilizados)
+- **Campos Adicionados**: profissional_nome, profissional_email (dados do profissional vinculado)
+- **JOIN com Users**: Conecta automaticamente com tabela users para obter nome/email do profissional
 - **Isolamento por Clínica**: VIEW garante que cada clínica acesse apenas seus próprios dados RAG e configurações
-- **JOIN Inteligente**: Conecta whatsapp_numbers + rag_documents + rag_chunks + livia_configurations automaticamente
+- **JOIN Inteligente**: Conecta whatsapp_numbers + rag_documents + rag_chunks + livia_configurations + users automaticamente
 - **Filtros Automáticos**: Apenas instâncias WhatsApp 'open' e documentos RAG 'completed'
-- **Configurações Lívia**: Incluído general_prompt, off_duration, selected_professional_ids, connected_knowledge_base_ids
-- **Uso no N8N**: `SELECT chunk_id, prompt_personalizado FROM v_n8n_clinic_livia WHERE phone_number = '{{ $json.from }}'`
-- **4 Registros Ativos**: VIEW retornando dados corretos com configurações da Lívia (tempo: 1 minuto, profissional: 4)
-- **Sistema 100% Funcional**: Migração completa, VIEW criada e testada com dados reais da clínica ID 1
+- **Uso no N8N**: `SELECT chunk_id, prompt_personalizado, profissional_nome FROM v_n8n_clinic_livia WHERE phone_number = '{{ $json.from }}'`
+- **4 Registros Ativos**: VIEW retornando dados otimizados com profissional "Caio Rodrigo" (cr@caiorodrigo.com.br)
+- **Sistema 100% Funcional**: VIEW otimizada, testada e pronta para integração N8N
 
 ### June 27, 2025 - Sistema de Pausa Automática da IA: IMPLEMENTAÇÃO FINAL COMPLETA ✅
 - **Sistema 100% Funcional**: Implementação completa do sistema de pausa automática da IA com todas as correções

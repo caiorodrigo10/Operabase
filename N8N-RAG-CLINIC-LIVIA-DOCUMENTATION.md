@@ -23,20 +23,20 @@ SELECT
   wn.instance_name,
   wn.clinic_id,
   
-  -- Dados RAG (chunks de conhecimento)
+  -- Dados RAG (apenas chunk essencial)
   rc.id as chunk_id,
-  rc.content as chunk_content,
-  rd.id as document_id,
-  rd.title as documento_titulo,
-  rd.content_type as documento_tipo,
   
   -- Configurações da Lívia por clínica
   lc.general_prompt as prompt_personalizado,
-  lc.off_duration as tempo_ausencia,
-  lc.off_unit as unidade_tempo,
   lc.selected_professional_ids as profissionais_vinculados,
   lc.connected_knowledge_base_ids as bases_conhecimento_vinculadas,
   lc.is_active as livia_ativa,
+  
+  -- Dados do profissional vinculado
+  u.name as profissional_nome,
+  u.email as profissional_email,
+  
+  -- Timestamps
   lc.created_at as livia_configurada_em,
   lc.updated_at as livia_atualizada_em
   
@@ -44,10 +44,11 @@ FROM whatsapp_numbers wn
 LEFT JOIN livia_configurations lc ON lc.clinic_id = wn.clinic_id
 LEFT JOIN rag_documents rd ON rd.external_user_id = wn.clinic_id::text
 LEFT JOIN rag_chunks rc ON rc.document_id = rd.id
+LEFT JOIN users u ON u.id = lc.selected_professional_ids[1]
 
 WHERE 
   wn.status = 'open' 
-  AND rd.processing_status = 'completed'
+  AND (rd.processing_status = 'completed' OR rd.processing_status IS NULL)
 
 ORDER BY wn.clinic_id, rc.id;
 ```
@@ -70,9 +71,9 @@ ORDER BY wn.clinic_id, rc.id;
 ```sql
 SELECT 
   chunk_id,
-  chunk_content,
-  documento_titulo,
-  prompt_personalizado
+  prompt_personalizado,
+  profissional_nome,
+  profissional_email
 FROM v_n8n_clinic_livia 
 WHERE phone_number = '{{ $json.from }}'
 AND chunk_id IS NOT NULL
@@ -83,8 +84,8 @@ LIMIT 5;
 ```sql
 SELECT DISTINCT
   prompt_personalizado,
-  tempo_ausencia,
-  unidade_tempo,
+  profissional_nome,
+  profissional_email,
   profissionais_vinculados,
   bases_conhecimento_vinculadas,
   livia_ativa
@@ -92,18 +93,19 @@ FROM v_n8n_clinic_livia
 WHERE phone_number = '{{ $json.from }}';
 ```
 
-### Busca Semântica com Configurações
+### Busca por Chunks RAG com Profissional
 ```sql
 SELECT 
-  chunk_content,
-  documento_titulo,
+  chunk_id,
   prompt_personalizado,
+  profissional_nome,
+  profissional_email,
   livia_ativa
 FROM v_n8n_clinic_livia 
 WHERE phone_number = '{{ $json.from }}'
-AND chunk_content ILIKE '%{{ $json.query }}%'
-ORDER BY documento_titulo
-LIMIT 3;
+AND chunk_id IS NOT NULL
+ORDER BY chunk_id
+LIMIT 10;
 ```
 
 ## Dados de Teste Disponíveis
@@ -123,9 +125,9 @@ LIMIT 3;
 ```json
 {
   "chunk_id": 1,
-  "chunk_content": "O Supabase Vector emerge como uma solução inovadora...",
-  "documento_titulo": "Teste Busca Semântica",
-  "prompt_personalizado": "Você é Livia, assistente virtual especializada..."
+  "prompt_personalizado": "Você é Livia, assistente virtual especializada...",
+  "profissional_nome": "Caio Rodrigo",
+  "profissional_email": "cr@caiorodrigo.com.br"
 }
 ```
 
