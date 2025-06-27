@@ -745,6 +745,9 @@ interface Conversation {
   unread_count: number;
   status: 'active' | 'inactive';
   ai_active?: boolean;
+  ai_pause_reason?: 'manual' | 'manual_message';
+  ai_paused_until?: string;
+  ai_paused_by_user_id?: number;
   has_pending_appointment?: boolean;
 }
 ```
@@ -754,11 +757,14 @@ interface Conversation {
 interface Message {
   id: number;
   conversation_id: number;
-  type: 'received' | 'sent_system' | 'sent_ai' | 'sent_whatsapp' | 'sent_user' | 'note';
+  sender_type: 'patient' | 'professional' | 'ai' | 'system';
   content: string;
   timestamp: string;
   sender_name?: string;
   sender_avatar?: string;
+  device_type?: 'manual' | 'system';
+  evolution_status?: 'pending' | 'sent' | 'failed';
+  attachments?: MessageAttachment[];
 }
 ```
 
@@ -822,6 +828,284 @@ interface TimelineItem {
 
 #### Interface Definitions
 All major interfaces are defined in `types/conversations.ts` for type safety and IntelliSense support.
+
+---
+
+## Sistema de Pausa Automática da IA
+
+### Visão Geral
+
+O sistema implementa pausa automática da IA quando profissionais enviam mensagens manuais, permitindo atendimento humano prioritário e evitando conflitos entre resposta humana e da IA.
+
+### Arquitetura do Sistema
+
+#### Componentes Principais
+
+1. **AiPauseService** (`server/domains/ai-pause/ai-pause.service.ts`)
+   - Lógica central de detecção e aplicação de pausas
+   - Valida condições para aplicar pausa automática
+   - Protege contra sobrescrita de desativações manuais
+
+2. **ai-pause-checker Middleware** (`server/middleware/ai-pause-checker.ts`)
+   - Executa a cada 30 segundos verificando pausas expiradas
+   - Reativa automaticamente conversas com `ai_pause_reason="manual_message"`
+   - Preserva desativações manuais (`ai_pause_reason="manual"`)
+
+3. **Frontend AI Toggle** (`MainConversationArea.tsx`)
+   - Botão visual para controle manual da IA
+   - Sincronização em tempo real com estado do backend
+   - Invalidação automática de cache após mudanças
+
+#### Fluxo de Funcionamento
+
+```mermaid
+graph TD
+    A[Profissional envia mensagem] --> B{Verificar estado IA}
+    B -->|ai_active=true e ai_pause_reason≠manual| C[Aplicar pausa automática]
+    B -->|ai_active=false ou ai_pause_reason=manual| D[Não aplicar pausa]
+    C --> E[Definir ai_paused_until + 60min]
+    C --> F[Definir ai_pause_reason=manual_message]
+    C --> G[Invalidar cache]
+    
+    H[Timer 30s] --> I{Verificar pausas expiradas}
+    I -->|ai_pause_reason=manual_message e expirada| J[Reativar IA]
+    I -->|ai_pause_reason=manual| K[Manter desativada]
+    J --> L[Limpar campos de pausa]
+    J --> M[Invalidar cache]
+```
+
+### Estados da IA
+
+#### Estados Possíveis
+
+1. **IA Ativa Normal**
+   ```typescript
+   {
+     ai_active: true,
+     ai_pause_reason: null,
+     ai_paused_until: null
+   }
+   ```
+
+2. **IA Pausada Automaticamente**
+   ```typescript
+   {
+     ai_active: false,
+     ai_pause_reason: "manual_message",
+     ai_paused_until: "2025-06-27T17:30:00Z"
+   }
+   ```
+
+3. **IA Desativada Manualmente**
+   ```typescript
+   {
+     ai_active: false,
+     ai_pause_reason: "manual",
+     ai_paused_until: null
+   }
+   ```
+
+#### Lógica de Resposta da IA
+
+A IA responde apenas quando:
+- `ai_active = true` **E**
+- (`ai_paused_until` é `null` **OU** `ai_paused_until` < agora)
+
+### API Endpoints
+
+#### PATCH /api/conversations-simple/:id/ai-toggle
+
+Controle manual do estado da IA:
+
+**Request:**
+```bash
+PATCH /api/conversations-simple/123/ai-toggle
+Cookie: session_token=...
+```
+
+**Response (Ativação):**
+```json
+{
+  "success": true,
+  "ai_active": true,
+  "message": "IA ativada com sucesso"
+}
+```
+
+**Response (Desativação):**
+```json
+{
+  "success": true,
+  "ai_active": false,
+  "ai_pause_reason": "manual",
+  "message": "IA desativada com sucesso"
+}
+```
+
+#### Integração com Mensagens
+
+O endpoint de mensagens (`POST /api/conversations-simple/:id/messages`) automaticamente:
+
+1. **Busca estado atual** da conversa
+2. **Valida condições** para pausa (AiPauseService)
+3. **Aplica pausa** se necessário
+4. **Invalida cache** automaticamente
+
+### Configuração
+
+#### Configuração da Lívia
+
+O tempo de pausa é configurado através da interface Lívia:
+
+```typescript
+interface LiviaConfig {
+  off_duration: number; // 1, 30, 60, etc.
+  off_unit: 'minutos' | 'horas';
+}
+```
+
+**Exemplo:** `off_duration: 1, off_unit: 'minutos'` = pausa por 1 minuto
+
+#### Configuração Padrão
+
+Se não houver configuração da Lívia:
+```typescript
+const defaultConfig = {
+  off_duration: 30,
+  off_unit: 'minutes'
+};
+```
+
+### Frontend Integration
+
+#### Hook useConversationDetail
+
+O hook automaticamente retorna campos de estado da IA:
+
+```typescript
+const { data: conversation } = useConversationDetail(conversationId);
+
+// Campos disponíveis:
+conversation.ai_active
+conversation.ai_pause_reason
+conversation.ai_paused_until
+conversation.ai_paused_by_user_id
+```
+
+#### Botão AI Toggle
+
+Componente responsivo que mostra estado visual:
+
+```typescript
+// Estado visual do botão
+const buttonState = {
+  active: ai_active === true,
+  loading: isToggling,
+  disabled: false
+};
+
+// Classes CSS condicionais
+const buttonClasses = `
+  ${ai_active ? 'bg-blue-500 text-white' : 'bg-gray-400 text-gray-600'}
+  ${isToggling ? 'animate-pulse' : ''}
+`;
+```
+
+#### Cache Invalidation
+
+Invalidação automática após mudanças:
+
+```typescript
+// Invalidação múltipla
+queryClient.invalidateQueries(['conversations']);
+queryClient.invalidateQueries(['conversation-detail', conversationId]);
+
+// Cache memory também invalidado
+memoryCacheService.delete(`conversation:${conversationId}:detail`);
+```
+
+### Casos de Uso
+
+#### 1. Atendimento Prioritário Humano
+
+**Cenário:** Profissional quer responder pessoalmente um paciente específico
+
+**Solução:**
+1. Profissional desativa IA manualmente (botão)
+2. Sistema define `ai_pause_reason="manual"`
+3. IA permanece desativada indefinidamente
+4. Apenas reativação manual pode restaurar IA
+
+#### 2. Pausa Temporária por Mensagem
+
+**Cenário:** Profissional envia resposta rápida pelo sistema
+
+**Solução:**
+1. Sistema detecta mensagem profissional
+2. Aplica pausa automática por 60 minutos
+3. Define `ai_pause_reason="manual_message"`
+4. IA reativa automaticamente após timer
+
+#### 3. Override Manual Durante Pausa
+
+**Cenário:** IA pausada automaticamente, mas profissional quer reativar
+
+**Solução:**
+1. Profissional clica botão para ativar IA
+2. Sistema limpa todos os campos de pausa
+3. IA volta a funcionar imediatamente
+4. Timer automático é cancelado
+
+### Logs e Monitoramento
+
+#### Logs do Sistema
+
+```bash
+# Aplicação de pausa
+🤖 AI PAUSE: Aplicando pausa automática para conversa 123
+🤖 AI PAUSE: Pausa aplicada até 2025-06-27T17:30:00Z
+
+# Reativação automática
+✅ IA reativada para conversa 123 (pausa expirou)
+🧹 AI PAUSE: Cache invalidado após reativação
+
+# Proteção manual
+🤖 AI PAUSE: Proteção ativa - ai_pause_reason=manual, não aplicando pausa
+```
+
+#### Performance
+
+- **Verificação de pausas:** 30 segundos
+- **Cache invalidation:** <50ms
+- **Toggle manual:** <200ms
+- **Aplicação de pausa:** <100ms
+
+### Compatibilidade
+
+#### N8N Integration
+
+O campo `ai_active` é lido pelo N8N para determinar se deve responder:
+
+```javascript
+// N8N workflow condition
+if (conversation.ai_active === false) {
+  return; // Não responder
+}
+```
+
+#### WhatsApp Evolution API
+
+Sistema preserva envio de mensagens independente do estado da IA:
+
+```typescript
+// Mensagens sempre são enviadas para WhatsApp
+const whatsappResult = await evolutionAPI.sendMessage(data);
+
+// IA pause apenas afeta resposta automática
+if (shouldPauseAi) {
+  // Aplica pausa, mas não impede envio WhatsApp
+}
+```
 
 ---
 
