@@ -40,7 +40,7 @@ export function useConversations(status: string = 'active', limit: number = 50) 
       }
       return response.json() as Promise<ConversationsResponse>;
     },
-    staleTime: 1000, // 1 second for fresh data
+    staleTime: 0, // Force fresh data for first_message_at field
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });

@@ -156,6 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - First Message Timestamp Display System Complete ✅
+- **Funcionalidade Implementada**: Sistema completo de exibição do timestamp da primeira mensagem em cada conversa
+- **Interface TypeScript**: Adicionado campo `first_message_at` ao tipo `Conversation` para suporte completo
+- **Backend Enhancement**: Implementada consulta SQL otimizada para buscar primeira mensagem de cada conversa
+- **Query Performance**: Busca batch de primeiras mensagens com ORDER BY timestamp ASC para máxima eficiência
+- **Frontend Data Flow**: Corrigida transformação `convertToFrontendConversations` que estava removendo campo `first_message_at`
+- **Cache Strategy**: Configurado React Query com `staleTime: 0` para dados sempre atualizados
+- **Timezone Handling**: Timestamps convertidos para GMT-3 (Brasil) mantendo consistência regional
+- **Date Formatting**: Sistema inteligente mostra "24 de jun", "26 de jun" etc. para datas diferentes
+- **Debug Resolution**: Identificado e corrigido problema de cache que impedia chegada dos dados no frontend
+- **Production Ready**: Sistema validado com dados reais do Supabase funcionando corretamente
+- **Zero Impact**: Funcionalidades existentes preservadas, apenas adicionada nova informação temporal
+- **User Experience**: Sidebar agora mostra quando cada conversa foi iniciada ao invés da última mensagem
+
 ### June 27, 2025 - Platform Rebranding to Operabase Complete ✅
 - **Nome da Plataforma**: Alterado de "TaskMed" para "Operabase" em toda documentação
 - **Logo SVG Implementado**: Logo oficial hospedado no Supabase Storage integrado ao header

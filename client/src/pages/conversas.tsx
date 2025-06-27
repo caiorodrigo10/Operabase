@@ -117,6 +117,7 @@ export default function ConversasPage() {
       last_message: conv.last_message || 'Toque para ver a conversa',
       timestamp: conv.updated_at,
       updated_at: conv.updated_at,
+      first_message_at: conv.first_message_at, // ADICIONADO: campo da primeira mensagem
       unread_count: conv.unread_count || 0,
       status: conv.status === 'active' ? 'active' : 'inactive',
       ai_active: conv.ai_active ?? true, // Usar valor do banco, padrão true se indefinido
