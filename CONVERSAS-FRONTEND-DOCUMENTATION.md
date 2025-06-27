@@ -222,20 +222,41 @@ interface MainConversationAreaProps {
 ```
 
 #### MessageBubble.tsx
-**Purpose**: Individual message rendering with type-specific styling
+**Purpose**: Individual message rendering with type-specific styling based on sender_type
 
 ```typescript
 interface MessageBubbleProps {
   message: Message;
 }
 
-// Message types supported:
-// - 'received': Patient messages (left-aligned, gray)
-// - 'sent_user': Doctor messages (right-aligned, green)
-// - 'sent_ai': AI responses (right-aligned, with bot icon)
-// - 'sent_system': System messages (right-aligned, with gear icon)
-// - 'note': Internal notes (right-aligned, amber with badge)
+// Updated Message Positioning Logic (June 27, 2025):
+// Uses sender_type field from database for accurate positioning:
+export function MessageBubble({ message }: MessageBubbleProps) {
+  // Use sender_type to determine message positioning
+  const isReceived = message.sender_type === 'patient';
+  const isNote = message.type === 'note';
+  const isSent = !isReceived && !isNote;
+  
+  // Alignment logic:
+  // - sender_type: 'patient' → Left-aligned, gray background
+  // - sender_type: 'professional' → Right-aligned, green background
+  // - sender_type: 'ai' → Right-aligned, green background with AI icon
+  // - sender_type: 'system' → Right-aligned, green background with system icon
+}
+
+// Message type mapping:
+// - sender_type: 'patient' → Patient messages (left-aligned, gray)
+// - sender_type: 'professional' → Doctor messages (right-aligned, green)  
+// - sender_type: 'ai' → AI responses (right-aligned, with bot icon)
+// - sender_type: 'system' → System messages (right-aligned, with gear icon)
+// - type: 'note' → Internal notes (right-aligned, amber with badge)
 ```
+
+**Critical Fix Applied (June 27, 2025):**
+- **Problem**: Messages were incorrectly positioned using deprecated `message.type === 'received'` logic
+- **Solution**: Updated to use `message.sender_type === 'patient'` from database
+- **Result**: Patient messages now correctly appear left/gray, professional messages right/green
+- **Backend Support**: Field already provided by conversations-simple-routes.ts
 
 #### AI Toggle System
 **Purpose**: Enable/disable AI functionality per conversation with real-time state synchronization
@@ -388,13 +409,28 @@ useEffect(() => {
 
 ### Message Types & Visual Differentiation
 
-| Type | Alignment | Background | Icon/Avatar | Purpose |
+**Updated Structure (June 27, 2025) - Using sender_type field:**
+
+| sender_type | Alignment | Background | Icon/Avatar | Purpose |
+|-------------|-----------|------------|-------------|---------|
+| `patient` | Left | Gray | Patient avatar | Patient messages from WhatsApp |
+| `professional` | Right | Green | Doctor avatar | Doctor/staff replies |
+| `ai` | Right | Green | Bot icon | AI assistant responses |
+| `system` | Right | Green | Gear icon | System-generated messages |
+
+**Special Message Types:**
+| type | Alignment | Background | Icon/Avatar | Purpose |
 |------|-----------|------------|-------------|---------|
-| `received` | Left | Gray | Patient avatar | Patient messages |
-| `sent_user` | Right | Green | Doctor avatar | Doctor replies |
-| `sent_ai` | Right | Green | Bot icon | AI responses |
-| `sent_system` | Right | Green | Gear icon | System messages |
-| `note` | Right | Amber | Note icon + badge | Internal notes |
+| `note` | Right | Amber | Note icon + badge | Internal notes (regardless of sender_type) |
+
+**Key Implementation Changes:**
+```typescript
+// OLD (Deprecated):
+const isReceived = message.type === 'received';
+
+// NEW (Current):
+const isReceived = message.sender_type === 'patient';
+```
 
 ### Timeline Rendering
 

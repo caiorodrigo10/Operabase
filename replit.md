@@ -156,6 +156,18 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - MessageBubble Posicionamento CORRIGIDO Definitivamente ✅
+- **Bug Crítico Resolvido**: Correção completa do posicionamento de mensagens usando campo `sender_type`
+- **Problema Identificado**: MessageBubble usava lógica obsoleta `message.type === 'received'` causando posicionamento incorreto
+- **Solução Implementada**: Atualizado para `message.sender_type === 'patient'` baseado no campo real do banco de dados
+- **Interface TypeScript**: Adicionado campo `sender_type: 'patient' | 'professional' | 'ai' | 'system'` à interface Message
+- **Backend Validado**: Campo `sender_type` já sendo enviado corretamente pelo conversations-simple-routes.ts linha 524
+- **Resultado Confirmado**: Mensagens do paciente (sender_type: 'patient') aparecem esquerda/cinza, profissional direita/verde
+- **Cache Invalidado**: Sistema forçado a buscar dados frescos para garantir funcionamento correto
+- **Documentação Atualizada**: CONVERSAS-FRONTEND-DOCUMENTATION.md atualizada com nova estrutura sender_type
+- **Zero Impact**: Todas funcionalidades preservadas, apenas correção do posicionamento visual
+- **Production Ready**: Sistema testado e validado funcionando corretamente após correção
+
 ### June 27, 2025 - ETAPA 5 WebSocket Real-Time: Sistema Completo Implementado ✅
 - **Sistema WebSocket Funcional**: Implementado servidor WebSocket completo com autenticação e rooms por clínica
 - **Hook Frontend Integrado**: useWebSocket.ts com auto-reconexão, join/leave automático e invalidação de cache
