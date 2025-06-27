@@ -218,10 +218,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const cacheKey = `conversation:${conversationId}:detail:page:${page}:limit:${limit}`;
       
       // ETAPA 4: Direct cache check with proper TTL (5 minutes instead of 2)
+      console.log('🔍 ETAPA 4: Attempting cache GET for key:', cacheKey);
       const cachedDetail = await redisCacheService.get(cacheKey, 'conversation_details');
+      
       if (cachedDetail !== null) {
         console.log('🎯 ETAPA 4: Cache HIT [conversation_detail] key:', cacheKey, 'Performance: OPTIMIZED');
         return res.json(cachedDetail);
+      } else {
+        console.log('❌ ETAPA 4: Cache returned null for key:', cacheKey);
       }
       
       console.log('💽 ETAPA 4: Cache MISS [conversation_detail] key:', cacheKey, 'Performance: NEEDS OPTIMIZATION');
@@ -535,13 +539,18 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         }
       };
 
-      // ETAPA 2: Cache com key de paginação apropriada
+      // ETAPA 4: Advanced Cache Implementation with consistent get/set methods
       if (USE_PAGINATION) {
-        await redisCacheService.cacheConversationDetail(cacheKey, responseData);
-        console.log('💾 Cached paginated conversation detail for:', cacheKey);
+        const cacheSuccess = await redisCacheService.set(cacheKey, responseData, 300, 'conversation_details');
+        console.log('💾 ETAPA 4: Cache SET result:', cacheSuccess, 'key:', cacheKey, 'TTL: 300s');
+        
+        // ETAPA 4: Test immediate read to verify cache is working
+        const testRead = await redisCacheService.get(cacheKey, 'conversation_details');
+        console.log('🧪 ETAPA 4: Immediate cache test read:', testRead ? 'SUCCESS' : 'FAILED');
       } else {
-        await redisCacheService.cacheConversationDetail(actualConversationId, responseData);
-        console.log('💾 Cached legacy conversation detail for:', actualConversationId);
+        const legacyKey = `conversation:${actualConversationId}:detail`;
+        const cacheSuccess = await redisCacheService.set(legacyKey, responseData, 300, 'conversation_details');
+        console.log('💾 ETAPA 4: Cache SET result:', cacheSuccess, 'legacy key:', legacyKey, 'TTL: 300s');
       }
 
       res.json(responseData);
