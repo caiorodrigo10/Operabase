@@ -179,7 +179,12 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   <Link
                     key={item.key}
                     href={item.href}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors text-teal-700 bg-[#f0fdfa]"
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                      isActive
+                        ? "text-teal-700 bg-[#f0fdfa]"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    )}
                   >
                     {Icon && <Icon className="h-4 w-4" />}
                     {item.name}
