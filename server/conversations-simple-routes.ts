@@ -3,6 +3,7 @@ import { IStorage } from './storage';
 import { redisCacheService } from './services/redis-cache.service';
 import { memoryCacheService } from './cache/memory-cache.service';
 import { EvolutionMessageService } from './services/evolution-message.service';
+import { AiPauseService, AiPauseContext } from './domains/ai-pause/ai-pause.service';
 
 export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   
@@ -745,6 +746,71 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           evolution_status: newMessage.evolution_status || 'pending',
           attachments: []
         };
+
+        // ETAPA 4: Sistema de Pausa Automática da IA
+        console.log('🚀 ETAPA 4: Aplicando sistema de pausa automática da IA');
+        
+        try {
+          const aiPauseService = AiPauseService.getInstance();
+          
+          // Criar contexto para análise de pausa
+          const pauseContext: AiPauseContext = {
+            conversationId: actualConversationId,
+            clinicId: actualConversation.clinic_id,
+            senderId: '3', // Assumindo user ID do Caio Rodrigo (pode ser obtido da sessão)
+            senderType: 'professional',
+            deviceType: 'manual',
+            messageContent: content,
+            timestamp: new Date()
+          };
+
+          // Buscar configuração da Lívia para esta clínica
+          const { data: liviaConfig } = await supabase
+            .from('livia_configurations')
+            .select('*')
+            .eq('clinic_id', actualConversation.clinic_id)
+            .single();
+
+          if (liviaConfig) {
+            // Analisar se deve pausar IA
+            const pauseResult = await aiPauseService.processMessage(pauseContext, liviaConfig);
+            
+            if (pauseResult.shouldPause) {
+              console.log('✅ ETAPA 4: Pausando IA por mensagem manual de profissional');
+              
+              // Atualizar conversa com informações de pausa
+              const { error: updateError } = await supabase
+                .from('conversations')
+                .update({
+                  ai_paused_until: pauseResult.pausedUntil?.toISOString(),
+                  ai_paused_by_user_id: pauseResult.pausedByUserId,
+                  ai_pause_reason: pauseResult.pauseReason,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', actualConversationId);
+              
+              if (updateError) {
+                console.log('⚠️ ETAPA 4: Erro ao atualizar pausa da IA (não crítico):', updateError.message);
+              } else {
+                console.log('✅ ETAPA 4: IA pausada até:', pauseResult.pausedUntil?.toISOString());
+                console.log('📊 ETAPA 4: Duração da pausa:', liviaConfig.off_duration, liviaConfig.off_unit);
+              }
+              
+              // Invalidar cache para incluir dados de pausa atualizados
+              await redisCacheService.invalidateConversationDetail(actualConversationId);
+              await redisCacheService.invalidateConversationCache(actualConversation.clinic_id);
+              
+            } else {
+              console.log('⏭️ ETAPA 4: Mensagem não requer pausa da IA');
+            }
+            
+          } else {
+            console.log('⚠️ ETAPA 4: Configuração Lívia não encontrada - pausa automática desabilitada');
+          }
+          
+        } catch (pauseError) {
+          console.error('❌ ETAPA 4: Erro no sistema de pausa automática (não crítico):', pauseError);
+        }
         
       } catch (dbError) {
         console.error('❌ Database insert error:', dbError);

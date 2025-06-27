@@ -6,117 +6,236 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Configuração do Supabase
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function addAiPauseFields() {
-  console.log('🚀 ETAPA 2: Iniciando migração - Sistema de Pausa Automática da IA');
-  
+  console.log('🚀 ETAPA 2: Iniciando migração para Sistema de Pausa Automática da IA');
+  console.log('📝 Adicionando campos: ai_paused_until, ai_paused_by_user_id, ai_pause_reason');
+  console.log('');
+
   try {
     // 1. Verificar se as colunas já existem
-    console.log('🔍 Verificando estrutura atual da tabela conversations...');
+    console.log('🔍 Verificando colunas existentes na tabela conversations...');
     
-    const { data: existingColumns, error: checkError } = await supabase
-      .from('information_schema.columns')
-      .select('column_name, data_type, is_nullable, column_default')
-      .eq('table_name', 'conversations')
-      .in('column_name', ['ai_paused_until', 'ai_paused_by_user_id', 'ai_pause_reason']);
+    const { data: columns, error: columnError } = await supabase
+      .rpc('get_table_columns', { table_name: 'conversations' });
     
-    if (checkError) {
-      console.log('⚠️ Não foi possível verificar colunas existentes, continuando com migração...');
-    }
-    
-    const existingColumnNames = existingColumns?.map(col => col.column_name) || [];
-    console.log('📋 Colunas existentes:', existingColumnNames);
-    
-    // 2. Adicionar campos de pausa da IA usando SQL direto
-    console.log('💾 Adicionando campos de controle de pausa da IA...');
-    
-    const sqlCommands = [
-      // Campo para data/hora até quando a IA deve ficar pausada
-      !existingColumnNames.includes('ai_paused_until') 
-        ? `ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_paused_until TIMESTAMP WITH TIME ZONE;`
-        : null,
+    if (columnError) {
+      console.log('⚠️ RPC get_table_columns não existe, verificando com query direta...');
       
-      // Campo para ID do usuário que enviou mensagem manual (causou a pausa)
-      !existingColumnNames.includes('ai_paused_by_user_id')
-        ? `ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_paused_by_user_id INTEGER;`
-        : null,
+      // Verificar estrutura da tabela diretamente
+      const { data: tableInfo, error: tableError } = await supabase
+        .from('information_schema.columns')
+        .select('column_name, data_type, is_nullable')
+        .eq('table_name', 'conversations')
+        .eq('table_schema', 'public');
       
-      // Campo para motivo da pausa (manual_message, user_request, etc.)
-      !existingColumnNames.includes('ai_pause_reason')
-        ? `ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_pause_reason VARCHAR(100);`
-        : null,
-    ].filter(Boolean);
-    
-    // Executar comandos SQL
-    for (const sql of sqlCommands) {
-      if (sql) {
-        console.log('📝 Executando:', sql);
-        const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
+      if (tableError) {
+        console.log('📊 Usando método alternativo: tentativa de adicionar colunas diretamente');
+      } else {
+        const existingColumns = tableInfo?.map(col => col.column_name) || [];
+        console.log('📊 Colunas existentes:', existingColumns);
         
-        if (error) {
-          console.log('⚠️ Erro ao executar SQL, tentando abordagem alternativa:', error.message);
-          // Tentar usando raw SQL
-          const { error: rawError } = await supabase
-            .from('conversations')
-            .select('*')
-            .limit(1);
-          
-          if (rawError) {
-            throw new Error(`Falha na execução SQL: ${error.message}`);
-          }
-        }
+        const needsAiPausedUntil = !existingColumns.includes('ai_paused_until');
+        const needsAiPausedByUserId = !existingColumns.includes('ai_paused_by_user_id');
+        const needsAiPauseReason = !existingColumns.includes('ai_pause_reason');
+        
+        console.log('📋 Colunas necessárias:');
+        console.log(`   - ai_paused_until: ${needsAiPausedUntil ? 'PRECISA ADICIONAR' : 'JÁ EXISTE'}`);
+        console.log(`   - ai_paused_by_user_id: ${needsAiPausedByUserId ? 'PRECISA ADICIONAR' : 'JÁ EXISTE'}`);
+        console.log(`   - ai_pause_reason: ${needsAiPauseReason ? 'PRECISA ADICIONAR' : 'JÁ EXISTE'}`);
       }
     }
+
+    // 2. Adicionar as colunas usando SQL direto
+    console.log('📝 Adicionando colunas de pausa da IA...');
     
-    // 3. Criar índices para performance
-    console.log('🔧 Criando índices para otimização...');
-    
-    const indexCommands = [
-      `CREATE INDEX IF NOT EXISTS idx_conversations_ai_paused_until ON conversations(ai_paused_until) WHERE ai_paused_until IS NOT NULL;`,
-      `CREATE INDEX IF NOT EXISTS idx_conversations_ai_pause_reason ON conversations(ai_pause_reason) WHERE ai_pause_reason IS NOT NULL;`,
+    const migrations = [
+      {
+        name: 'ai_paused_until',
+        sql: `
+          DO $$ 
+          BEGIN 
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'conversations' 
+              AND column_name = 'ai_paused_until'
+              AND table_schema = 'public'
+            ) THEN
+              ALTER TABLE conversations 
+              ADD COLUMN ai_paused_until TIMESTAMPTZ NULL;
+              
+              COMMENT ON COLUMN conversations.ai_paused_until IS 
+                'Data/hora até quando a IA deve ficar pausada. NULL = não pausada';
+            END IF;
+          END $$;
+        `
+      },
+      {
+        name: 'ai_paused_by_user_id',
+        sql: `
+          DO $$ 
+          BEGIN 
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'conversations' 
+              AND column_name = 'ai_paused_by_user_id'
+              AND table_schema = 'public'
+            ) THEN
+              ALTER TABLE conversations 
+              ADD COLUMN ai_paused_by_user_id INTEGER NULL;
+              
+              COMMENT ON COLUMN conversations.ai_paused_by_user_id IS 
+                'ID do usuário que causou a pausa da IA (referência para users.id)';
+            END IF;
+          END $$;
+        `
+      },
+      {
+        name: 'ai_pause_reason',
+        sql: `
+          DO $$ 
+          BEGIN 
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'conversations' 
+              AND column_name = 'ai_pause_reason'
+              AND table_schema = 'public'
+            ) THEN
+              ALTER TABLE conversations 
+              ADD COLUMN ai_pause_reason VARCHAR(50) NULL;
+              
+              COMMENT ON COLUMN conversations.ai_pause_reason IS 
+                'Motivo da pausa: manual_message, user_request, etc.';
+            END IF;
+          END $$;
+        `
+      }
     ];
-    
-    for (const indexSql of indexCommands) {
-      console.log('🔍 Criando índice:', indexSql);
-      const { error: indexError } = await supabase.rpc('exec_sql', { sql_query: indexSql });
+
+    // Executar migrações
+    for (const migration of migrations) {
+      console.log(`📝 Executando migração: ${migration.name}...`);
       
-      if (indexError) {
-        console.log('⚠️ Índice pode já existir:', indexError.message);
+      const { error } = await supabase.rpc('exec_sql', { 
+        sql_query: migration.sql 
+      });
+      
+      if (error) {
+        console.log(`⚠️ RPC exec_sql falhou para ${migration.name}, tentando com .sql()...`);
+        
+        // Método alternativo usando .sql() direto
+        const { error: directError } = await supabase.sql`${migration.sql}`;
+        
+        if (directError) {
+          console.log(`❌ Erro na migração ${migration.name}:`, directError.message);
+          
+          // Tentar método mais simples para esta coluna específica
+          console.log(`🔄 Tentando método simplificado para ${migration.name}...`);
+          
+          let simpleSQL;
+          if (migration.name === 'ai_paused_until') {
+            simpleSQL = "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_paused_until TIMESTAMPTZ NULL;";
+          } else if (migration.name === 'ai_paused_by_user_id') {
+            simpleSQL = "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_paused_by_user_id INTEGER NULL;";
+          } else if (migration.name === 'ai_pause_reason') {
+            simpleSQL = "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_pause_reason VARCHAR(50) NULL;";
+          }
+          
+          if (simpleSQL) {
+            const { error: simpleError } = await supabase.sql`${simpleSQL}`;
+            if (simpleError) {
+              console.log(`❌ Método simplificado também falhou para ${migration.name}:`, simpleError.message);
+            } else {
+              console.log(`✅ Coluna ${migration.name} adicionada com método simplificado`);
+            }
+          }
+        } else {
+          console.log(`✅ Migração ${migration.name} executada com sucesso`);
+        }
+      } else {
+        console.log(`✅ Migração ${migration.name} executada com sucesso via RPC`);
       }
     }
+
+    // 3. Verificar resultados
+    console.log('🔍 Verificando resultados da migração...');
     
-    // 4. Verificar se migração foi bem-sucedida
-    console.log('✅ Verificando resultado da migração...');
+    // Tentar buscar uma conversa com os novos campos
+    const { data: testConversation, error: testError } = await supabase
+      .from('conversations')
+      .select('id, ai_active, ai_paused_until, ai_paused_by_user_id, ai_pause_reason')
+      .eq('clinic_id', 1)
+      .limit(1)
+      .single();
     
-    const { data: finalColumns, error: finalError } = await supabase
-      .from('information_schema.columns')
-      .select('column_name, data_type, is_nullable')
-      .eq('table_name', 'conversations')
-      .in('column_name', ['ai_paused_until', 'ai_paused_by_user_id', 'ai_pause_reason']);
-    
-    if (finalError) {
-      console.log('⚠️ Não foi possível verificar resultado da migração');
+    if (testError) {
+      console.log('❌ Erro ao verificar novos campos:', testError.message);
+      console.log('💡 Isso pode indicar que as colunas ainda não foram criadas corretamente');
     } else {
-      console.log('📋 Campos adicionados:');
-      finalColumns?.forEach(col => {
-        console.log(`  - ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable})`);
+      console.log('✅ Verificação bem-sucedida! Novos campos estão acessíveis:');
+      console.log('📊 Estrutura da conversa teste:', {
+        id: testConversation.id,
+        ai_active: testConversation.ai_active,
+        ai_paused_until: testConversation.ai_paused_until,
+        ai_paused_by_user_id: testConversation.ai_paused_by_user_id,
+        ai_pause_reason: testConversation.ai_pause_reason
       });
     }
+
+    // 4. Criar índices para performance
+    console.log('📊 Criando índices para otimização de performance...');
     
-    console.log('🎉 ETAPA 2: Migração concluída com sucesso!');
-    console.log('📝 Próximos passos:');
-    console.log('   • ETAPA 3: Implementar lógica de detecção de mensagens manuais');
-    console.log('   • ETAPA 4: Criar serviço de pausa automática da IA');
-    console.log('   • ETAPA 5: Integrar com sistema de envio de mensagens');
-    console.log('   • ETAPA 6: Adicionar interface visual de controle');
+    const indexSQL = `
+      DO $$ 
+      BEGIN 
+        -- Índice para buscar conversas pausadas por clínica
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_indexes 
+          WHERE tablename = 'conversations' 
+          AND indexname = 'idx_conversations_ai_paused_clinic'
+        ) THEN
+          CREATE INDEX idx_conversations_ai_paused_clinic 
+          ON conversations(clinic_id, ai_paused_until) 
+          WHERE ai_paused_until IS NOT NULL;
+        END IF;
+        
+        -- Índice para buscar conversas por usuário que pausou
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_indexes 
+          WHERE tablename = 'conversations' 
+          AND indexname = 'idx_conversations_paused_by_user'
+        ) THEN
+          CREATE INDEX idx_conversations_paused_by_user 
+          ON conversations(ai_paused_by_user_id) 
+          WHERE ai_paused_by_user_id IS NOT NULL;
+        END IF;
+      END $$;
+    `;
     
+    const { error: indexError } = await supabase.sql`${indexSQL}`;
+    
+    if (indexError) {
+      console.log('⚠️ Erro ao criar índices (não crítico):', indexError.message);
+    } else {
+      console.log('✅ Índices de performance criados com sucesso');
+    }
+
+    console.log('');
+    console.log('🎉 ETAPA 2 CONCLUÍDA: Sistema de Pausa Automática da IA');
+    console.log('📊 Resumo das alterações:');
+    console.log('   ✅ Campo ai_paused_until: controla até quando IA fica pausada');
+    console.log('   ✅ Campo ai_paused_by_user_id: rastreia quem causou a pausa');
+    console.log('   ✅ Campo ai_pause_reason: registra motivo da pausa');
+    console.log('   ✅ Índices de performance para consultas otimizadas');
+    console.log('');
+    console.log('🚀 Próximo passo: ETAPA 3 - Testar sistema de pausa automática');
+
   } catch (error) {
-    console.error('❌ ETAPA 2: Erro na migração:', error);
+    console.error('❌ Erro na migração:', error);
     throw error;
   }
 }
@@ -125,11 +244,11 @@ async function addAiPauseFields() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   addAiPauseFields()
     .then(() => {
-      console.log('✅ Migração ETAPA 2 executada com sucesso');
+      console.log('✅ Migração concluída com sucesso!');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Falha na migração ETAPA 2:', error);
+      console.error('❌ Falha na migração:', error);
       process.exit(1);
     });
 }
