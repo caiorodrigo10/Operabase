@@ -67,6 +67,7 @@ export function ConversationsSidebar({
   const [searchQuery, setSearchQuery] = useState('');
   
   console.log('🔍 ConversationsSidebar received conversations:', conversations.slice(0, 2));
+  console.log('🔍 First conversation first_message_at:', conversations[0]?.first_message_at);
 
   // Reordenação dinâmica baseada em last_message_at
   const sortedAndFilteredConversations = useMemo(() => {
