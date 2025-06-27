@@ -99,7 +99,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           </AvatarFallback>
         </Avatar>
       )}
-      
       <div className="flex flex-col max-w-xs lg:max-w-md">
         {/* Note label for note messages */}
         {isNote && (
@@ -112,14 +111,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         )}
         
         <div
-          className={cn(
-            "px-4 py-3 rounded-2xl relative",
-            isReceived 
-              ? "bg-gray-100 text-gray-900 rounded-tl-md" 
-              : isNote
-                ? "bg-amber-50 text-amber-900 border border-amber-200 rounded-tr-md"
-                : "bg-emerald-500 text-white rounded-tr-md"
-          )}
+          className="px-4 py-3 rounded-2xl relative text-white rounded-tr-md bg-[#0f766e]"
         >
           {/* Media content */}
           {message.attachments && message.attachments.length > 0 && (
@@ -176,7 +168,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           {/* Status 'pending' e 'sent' sem ícone - considerados como enviados com sucesso */}
         </div>
       </div>
-      
       {/* Avatar/Icon for sent messages and notes (right side) */}
       {(isSent || isNote) && (
         <div className="ml-2 mt-1 flex-shrink-0">
