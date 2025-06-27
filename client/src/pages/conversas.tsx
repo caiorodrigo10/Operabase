@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ConversationsSidebar } from "@/components/features/conversas/ConversationsSidebar";
 import { MainConversationArea } from "@/components/features/conversas/MainConversationArea";
 import { PatientInfoPanel } from "@/components/features/conversas/PatientInfoPanel";
-import { WebSocketStatus } from "@/components/WebSocketStatus";
+
 import { CacheStatus } from "@/components/CacheStatus";
 import { useConversations, useConversationDetail, useSendMessage, useMarkAsRead } from '@/hooks/useConversations';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -415,26 +415,11 @@ export default function ConversasPage() {
   return (
     <div className="h-full flex bg-gray-50">
       <div className="w-80 flex-shrink-0">
-        <div className="h-full flex flex-col">
-          {/* ETAPA 5: WebSocket Status Indicator */}
-          <div className="p-4 border-b border-gray-200 bg-white">
-            <WebSocketStatus
-              connected={webSocket.connected}
-              connecting={webSocket.connecting}
-              error={webSocket.error}
-              connectionCount={webSocket.connectionCount}
-              className="w-full"
-            />
-          </div>
-          
-          <div className="flex-1">
-            <ConversationsSidebar
-              conversations={conversations}
-              selectedConversationId={selectedConversationId}
-              onConversationSelect={handleConversationSelect}
-            />
-          </div>
-        </div>
+        <ConversationsSidebar
+          conversations={conversations}
+          selectedConversationId={selectedConversationId}
+          onConversationSelect={handleConversationSelect}
+        />
       </div>
       
       <div className="flex-1">
