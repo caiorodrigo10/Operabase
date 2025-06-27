@@ -755,7 +755,46 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           attachments: []
         };
 
-        // Sistema de pausa automática removido - agora está no endpoint correto /api/conversations/:id/messages
+        // 🤖 SISTEMA DE PAUSA AUTOMÁTICA DA IA
+        console.log('🤖 AI PAUSE DEBUG - Iniciando processo de pausa automática...');
+        
+        const aiPauseContext: AiPauseContext = {
+          conversationId: actualConversationId,
+          senderType: 'professional',
+          deviceType: 'system', // ✅ CORRIGIDO: sistema usa 'system'
+          clinicId: 1,
+          userId: 4 // Caio Rodrigo
+        };
+        
+        console.log('🤖 AI PAUSE DEBUG - Contexto da pausa:', aiPauseContext);
+        
+        try {
+          const pauseApplied = await AiPauseService.applyAutomaticPause(aiPauseContext);
+          
+          console.log('🤖 AI PAUSE DEBUG - Resultado da pausa automática:', {
+            pauseApplied,
+            conversationId: actualConversationId,
+            trigger: 'professional + system message'
+          });
+          
+          if (pauseApplied) {
+            console.log('✅ AI PAUSE: Pausa automática aplicada com sucesso!');
+            
+            // Invalidar cache após aplicar pausa
+            await redisCacheService.invalidateConversationDetail(conversationId);
+            console.log('🧹 AI PAUSE: Cache invalidado após aplicar pausa automática');
+          } else {
+            console.log('ℹ️ AI PAUSE: Pausa automática não foi necessária (condições não atendidas)');
+          }
+          
+        } catch (pauseError) {
+          console.error('❌ AI PAUSE DEBUG - Erro no sistema de pausa automática:', {
+            error: pauseError.message,
+            conversationId: actualConversationId,
+            context: aiPauseContext
+          });
+          // Não interrompe o fluxo - sistema de pausa é opcional
+        }
         
       } catch (dbError) {
         console.error('❌ Database insert error:', dbError);
