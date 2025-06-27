@@ -214,15 +214,17 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('🔍 Processing conversation ID:', conversationIdParam, 'Scientific notation:', isScientificNotation);
       const clinicId = 1; // Hardcoded for testing
       
-      // ETAPA 2: Cache key includes pagination params for proper invalidation
-      const cacheKey = `${conversationId}_page_${page}_limit_${limit}`;
-      const cachedDetail = await redisCacheService.getCachedConversationDetail(cacheKey);
-      if (cachedDetail) {
-        console.log('🎯 Cache HIT: conversation detail', cacheKey);
+      // ETAPA 4: Smart Cache Implementation with Advanced TTL
+      const cacheKey = `conversation:${conversationId}:detail:page:${page}:limit:${limit}`;
+      
+      // ETAPA 4: Direct cache check with proper TTL (5 minutes instead of 2)
+      const cachedDetail = await redisCacheService.get(cacheKey, 'conversation_details');
+      if (cachedDetail !== null) {
+        console.log('🎯 ETAPA 4: Cache HIT [conversation_detail] key:', cacheKey, 'Performance: OPTIMIZED');
         return res.json(cachedDetail);
       }
       
-      console.log('💽 Cache MISS: fetching conversation detail from database');
+      console.log('💽 ETAPA 4: Cache MISS [conversation_detail] key:', cacheKey, 'Performance: NEEDS OPTIMIZATION');
 
       console.log('🔍 Fetching conversation detail:', conversationId);
 
