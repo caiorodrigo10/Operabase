@@ -9,14 +9,12 @@ import { Search, Bot, Calendar } from "lucide-react";
 // Função helper para formatação inteligente de timestamp
 const formatMessageTimestamp = (timestamp: string | null | undefined): string => {
   if (!timestamp) {
-    console.log('❌ No timestamp provided:', timestamp);
     return '';
   }
   
   try {
     const messageDate = new Date(timestamp);
     if (isNaN(messageDate.getTime())) {
-      console.log('❌ Invalid timestamp:', timestamp);
       return '';
     }
     
@@ -30,25 +28,19 @@ const formatMessageTimestamp = (timestamp: string | null | undefined): string =>
     
     // Mesmo dia: mostrar apenas hora (ex: "14:30")
     if (isToday) {
-      const timeFormat = messageDate.toLocaleTimeString('pt-BR', { 
+      return messageDate.toLocaleTimeString('pt-BR', { 
         hour: '2-digit', 
         minute: '2-digit',
         hour12: false
       });
-      console.log('✅ Today timestamp:', timestamp, '→', timeFormat);
-      return timeFormat;
     }
     
     // Dia diferente: mostrar dia e mês (ex: "25 jun", "2 jan")
-    const dateFormat = messageDate.toLocaleDateString('pt-BR', {
+    return messageDate.toLocaleDateString('pt-BR', {
       day: 'numeric',
       month: 'short'
     }).replace('.', ''); // Remove o ponto do mês abreviado
-    
-    console.log('📅 Other day timestamp:', timestamp, '→', dateFormat);
-    return dateFormat;
   } catch (error) {
-    console.error('Error formatting timestamp:', error);
     return '';
   }
 };
