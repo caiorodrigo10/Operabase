@@ -170,7 +170,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1">
               {conversation.ai_active && (
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="w-2 h-2 rounded-full bg-[#0f766e]"></div>
               )}
               {conversation.has_pending_appointment && (
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>

@@ -188,7 +188,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           ) : (
             <Avatar className="w-6 h-6">
               <AvatarImage src={message.sender_avatar} />
-              <AvatarFallback className="text-xs bg-blue-500 text-white">
+              <AvatarFallback className="text-xs text-white bg-[#0f766e]">
                 {message.sender_name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
