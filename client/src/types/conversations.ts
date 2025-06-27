@@ -33,6 +33,7 @@ export interface Message {
   id: number;
   conversation_id: number;
   type: 'received' | 'sent_system' | 'sent_ai' | 'sent_whatsapp' | 'sent_user' | 'note';
+  sender_type: 'patient' | 'professional' | 'ai' | 'system';
   content: string;
   timestamp: string;
   sender_name?: string;

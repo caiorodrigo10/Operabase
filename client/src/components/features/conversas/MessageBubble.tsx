@@ -82,7 +82,8 @@ function getMessageTypeIcon(type: Message['type']) {
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
-  const isReceived = message.type === 'received';
+  // Use sender_type to determine message positioning
+  const isReceived = message.sender_type === 'patient';
   const isNote = message.type === 'note';
   const isSent = !isReceived && !isNote;
   
