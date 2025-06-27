@@ -59,7 +59,7 @@ export function Dashboard() {
             title="Interações Hoje"
             value={metrics.mensagensHoje}
             icon={Mail}
-            iconColor="bg-teal-100 text-teal-700"
+            iconColor="bg-blue-100 text-medical-blue"
             trend={{ value: "+12% vs ontem", isPositive: true }}
           />
         </div>
@@ -68,7 +68,7 @@ export function Dashboard() {
             title="Sessões Agendadas"
             value={metrics.agendamentosHoje}
             icon={Calendar}
-            iconColor="bg-emerald-100 text-emerald-700"
+            iconColor="bg-green-100 text-medical-green"
             trend={{ value: "+5% vs ontem", isPositive: true }}
           />
         </div>
@@ -77,7 +77,7 @@ export function Dashboard() {
             title="Triagens Ativas"
             value={metrics.atendimentosAtivos}
             icon={UserCheck}
-            iconColor="bg-cyan-100 text-cyan-700"
+            iconColor="bg-purple-100 text-medical-purple"
             subtitle="Em andamento"
           />
         </div>
@@ -118,17 +118,17 @@ export function Dashboard() {
                   <Line 
                     type="monotone" 
                     dataKey="mensagens" 
-                    stroke="#0f766e" 
+                    stroke="#3b82f6" 
                     strokeWidth={3}
-                    dot={{ fill: '#0f766e', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
                     name="Mensagens"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="agendamentos" 
-                    stroke="#64748b" 
+                    stroke="#10b981" 
                     strokeWidth={3}
-                    dot={{ fill: '#64748b', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
                     name="Agendamentos"
                   />
                 </LineChart>
@@ -228,8 +228,8 @@ export function Dashboard() {
                   <Area
                     type="monotone"
                     dataKey="atividade"
-                    stroke="#0f766e"
-                    fill="#0f766e"
+                    stroke="#8b5cf6"
+                    fill="#8b5cf6"
                     fillOpacity={0.2}
                     strokeWidth={2}
                     name="Atividade"
@@ -249,21 +249,21 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-3 bg-teal-50 rounded-lg">
+            <div className="p-3 bg-green-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Bot className="w-4 h-4 text-teal-700" />
-                  <span className="text-sm font-medium text-teal-800">Livia IA</span>
+                  <Bot className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">Livia IA</span>
                 </div>
-                <div className="w-2 h-2 bg-teal-600 rounded-full animate-pulse" />
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               </div>
-              <p className="text-xs text-teal-700 mt-1">Respondendo em {metrics.tempoResposta}</p>
+              <p className="text-xs text-green-600 mt-1">Respondendo em {metrics.tempoResposta}</p>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-slate-600" />
+                  <Clock className="w-4 h-4 text-blue-600" />
                   <span className="text-sm text-slate-700">Tempo Médio</span>
                 </div>
                 <span className="text-sm font-semibold text-slate-800">{metrics.tempoResposta}</span>
@@ -271,18 +271,18 @@ export function Dashboard() {
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4 text-teal-600" />
+                  <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-slate-700">Taxa Sucesso</span>
                 </div>
-                <span className="text-sm font-semibold text-teal-600">{metrics.taxaSucesso}%</span>
+                <span className="text-sm font-semibold text-green-600">{metrics.taxaSucesso}%</span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <UserCheck className="w-4 h-4 text-slate-600" />
+                  <UserCheck className="w-4 h-4 text-purple-600" />
                   <span className="text-sm text-slate-700">Satisfação</span>
                 </div>
-                <span className="text-sm font-semibold text-slate-600">{metrics.satisfacao}/5</span>
+                <span className="text-sm font-semibold text-purple-600">{metrics.satisfacao}/5</span>
               </div>
             </div>
           </CardContent>
@@ -297,8 +297,8 @@ export function Dashboard() {
             Atividade Recente da Livia
           </CardTitle>
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-teal-600 rounded-full animate-pulse" />
-            <span className="text-xs text-teal-700 font-medium">Ao vivo</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-xs text-green-600 font-medium">Ao vivo</span>
           </div>
         </CardHeader>
         <CardContent>
