@@ -61,17 +61,15 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       
       console.log('📊 Found conversations:', conversationsData?.length || 0);
       
-      // ETAPA 1: Batch query para última mensagem e contagens
-      // Evita N+1 queries por conversa individual
+      // PERFORMANCE OPTIMIZATION: Single optimized query for last messages
+      // Uses window function to get only the latest message per conversation
       const conversationIds = (conversationsData || []).map(c => c.id);
-      // Batch load últimas mensagens de cada conversa (melhorada para garantir precisão)
+      
+      // Optimized query: Get only the latest message per conversation using window function
       const { data: allMessages } = await supabase
-        .from('messages')
-        .select('conversation_id, content, timestamp, id')
-        .in('conversation_id', conversationIds)
-        .not('timestamp', 'is', null)
-        .order('timestamp', { ascending: false })
-        .order('id', { ascending: false });
+        .rpc('get_latest_messages_per_conversation', { 
+          conversation_ids: conversationIds 
+        });
       
 
       
