@@ -440,7 +440,7 @@ export function ContatoDetalhes() {
                         <CardContent>
                           <div className="flex items-center justify-center py-8">
                             <div className="text-center">
-                              <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 bg-[#f0fdfa]">
                                 <div className="text-[#0f766e] text-2xl font-bold">$</div>
                               </div>
                               <p className="text-sm text-slate-500 mb-2">
