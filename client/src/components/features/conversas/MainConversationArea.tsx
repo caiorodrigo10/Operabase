@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -71,7 +71,7 @@ interface MainConversationAreaProps {
 }
 
 export function MainConversationArea({
-  timelineItems,
+  timelineItems: externalTimelineItems,
   patientInfo,
   onSendMessage,
   showInfoButton = false,
@@ -88,25 +88,73 @@ export function MainConversationArea({
   const timelineRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  // Buscar dados da conversa atual para sincronizar estado da IA
-  const { data: conversationData } = useConversationDetail(selectedConversationId?.toString() || '');
+  // ETAPA 3: Flag para usar paginação progressiva (pode ser alterada dinamicamente)
+  const [useProgressivePagination, setUseProgressivePagination] = useState(false);
+  
+  // Hook tradicional para compatibilidade
+  const { data: conversationData, isLoading: isLoadingTraditional } = useConversationDetail(
+    !useProgressivePagination ? selectedConversationId?.toString() || '' : null
+  );
+  
+  // Hook ETAPA 3: Paginação Progressiva com Infinite Query
+  const {
+    data: infiniteData,
+    isLoading: isLoadingInfinite,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteConversationDetail(
+    useProgressivePagination ? selectedConversationId?.toString() || '' : null,
+    25 // 25 mensagens por página
+  );
+
+  // Processar dados baseado no modo ativo
+  const activeConversationData = useProgressivePagination 
+    ? (infiniteData?.pages?.[0] || null)
+    : conversationData;
+    
+  const allMessages = useProgressivePagination && infiniteData?.pages
+    ? infiniteData.pages.flatMap(page => page.messages || [])
+    : (conversationData?.messages || []);
+    
+  const totalMessages = useProgressivePagination && infiniteData?.pages?.[0]?.pagination
+    ? infiniteData.pages[0].pagination.totalMessages
+    : (conversationData?.messages?.length || 0);
+    
+  const isLoading = useProgressivePagination ? isLoadingInfinite : isLoadingTraditional;
+
+  // Criar timeline inteligente: usa dados internos ou externos
+  const timelineItems = useMemo(() => {
+    // Se temos dados internos (hooks), use-os; senão use dados externos
+    if (allMessages.length > 0) {
+      return allMessages.map(message => ({
+        id: message.id,
+        type: 'message' as const,
+        timestamp: message.timestamp,
+        data: message
+      }));
+    }
+    
+    // Fallback para dados externos (para compatibilidade)
+    return externalTimelineItems || [];
+  }, [allMessages, externalTimelineItems]);
 
   // Sincronizar estado da IA com os dados do banco
   useEffect(() => {
-    if (conversationData?.conversation?.ai_active !== undefined) {
-      setIsAIActive(conversationData.conversation.ai_active);
+    const aiActive = activeConversationData?.conversation?.ai_active;
+    if (aiActive !== undefined && aiActive !== null) {
+      setIsAIActive(Boolean(aiActive));
     }
-  }, [conversationData?.conversation?.ai_active]);
+  }, [activeConversationData?.conversation?.ai_active]);
 
   // Mutation para alternar estado da IA
   const toggleAIMutation = useMutation({
     mutationFn: async (newAIState: boolean) => {
-      const response = await apiRequest(`/api/conversations/${selectedConversationId}/ai-toggle`, {
-        method: 'PATCH',
-        body: JSON.stringify({ ai_active: newAIState }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      return response;
+      return apiRequest(
+        `/api/conversations/${selectedConversationId}/ai-toggle`, 
+        'PATCH', 
+        { ai_active: newAIState }
+      );
     },
     onSuccess: () => {
       // Invalidar cache para atualizar dados
