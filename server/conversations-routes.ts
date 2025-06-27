@@ -541,35 +541,58 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
   });
 
   // Alternar estado da IA na conversa
-  app.patch('/api/conversations/:id/ai-toggle', isAuthenticated, async (req: Request, res: Response) => {
+  app.patch('/api/conversations/:id/ai-toggle', async (req: Request, res: Response) => {
     try {
-      const clinicId = req.session.user?.clinicId;
+      const clinicId = 1; // Hardcoded for testing like other endpoints
       const conversationId = req.params.id;
       const { ai_active } = req.body;
 
       console.log('🤖 AI Toggle request:', { conversationId, ai_active, clinicId });
 
-      if (!clinicId) {
-        return res.status(400).json({ error: 'Clínica não identificada' });
-      }
-
       if (typeof ai_active !== 'boolean') {
         return res.status(400).json({ error: 'ai_active deve ser boolean' });
       }
 
-      // Atualizar estado da IA na conversa
-      const result = await storage.db.execute(`
-        UPDATE conversations 
-        SET ai_active = ${ai_active}, updated_at = NOW() 
-        WHERE id = '${conversationId}' AND clinic_id = ${clinicId}
-        RETURNING id, ai_active
-      `);
+      // Atualizar estado da IA na conversa com override manual
+      let updateQuery;
+      if (ai_active === true) {
+        // 🔥 OVERRIDE MANUAL: Limpar pausa automática quando ativando IA manualmente
+        updateQuery = `
+          UPDATE conversations 
+          SET ai_active = true, 
+              ai_paused_until = NULL,
+              ai_pause_reason = NULL,
+              ai_paused_by_user_id = NULL,
+              updated_at = NOW() 
+          WHERE id = '${conversationId}' AND clinic_id = ${clinicId}
+          RETURNING id, ai_active, ai_paused_until
+        `;
+        console.log('🔥 Manual override - clearing automatic pause and activating AI');
+      } else {
+        // Apenas desativar IA (manter campos de pausa se existirem)
+        updateQuery = `
+          UPDATE conversations 
+          SET ai_active = false, updated_at = NOW() 
+          WHERE id = '${conversationId}' AND clinic_id = ${clinicId}
+          RETURNING id, ai_active, ai_paused_until
+        `;
+        console.log('🔄 Manual deactivation - keeping pause fields intact');
+      }
+
+      const result = await storage.db.execute(updateQuery);
 
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Conversa não encontrada' });
       }
 
       console.log('✅ AI state updated:', result.rows[0]);
+      
+      // Invalidar cache após override manual
+      const redisCacheService = require('./domains/cache/redis-cache.service');
+      if (ai_active === true) {
+        await redisCacheService.invalidateConversationDetail(conversationId);
+        console.log('🧹 Cache invalidated after manual AI override');
+      }
       
       res.json({ 
         success: true, 

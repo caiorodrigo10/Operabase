@@ -413,7 +413,12 @@ export function MainConversationArea({
             size="sm"
             onClick={handleToggleAI}
             disabled={toggleAIMutation.isPending}
-            className="justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-9 rounded-md px-3 flex items-center space-x-2 transition-all text-white hover:bg-blue-600 border-blue-500 bg-[#0f766e]"
+            className={cn(
+              "justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border h-9 rounded-md px-3 flex items-center space-x-2 transition-all",
+              isAIActive 
+                ? "text-white hover:bg-blue-600 border-blue-500 bg-[#0f766e]" 
+                : "text-gray-500 hover:text-gray-700 border-gray-300 bg-gray-100 hover:bg-gray-200"
+            )}
             title={isAIActive ? "IA ativada - clique para desativar" : "IA desativada - clique para ativar"}
           >
             <Bot className="w-4 h-4" />
