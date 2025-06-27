@@ -520,7 +520,7 @@ export const conversations = pgTable("conversations", {
 // Tabela de mensagens
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.conversation_id),
+  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.id),
   
   // Origem da mensagem
   sender_type: varchar("sender_type", { length: 50 }).notNull(), // professional, patient, system, ai
@@ -644,7 +644,7 @@ export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSche
 export const conversation_actions = pgTable("conversation_actions", {
   id: serial("id").primaryKey(),
   clinic_id: integer("clinic_id").notNull(),
-  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.conversation_id),
+  conversation_id: bigint("conversation_id", { mode: "bigint" }).references(() => conversations.id),
   
   // Tipo de ação
   action_type: varchar("action_type", { length: 50 }).notNull(), // appointment_created, appointment_status_changed, etc
