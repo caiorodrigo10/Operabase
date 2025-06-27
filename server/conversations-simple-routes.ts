@@ -1156,4 +1156,74 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
     }
   });
 
+  // Alternar estado da IA na conversa - AI Toggle with Manual Override
+  app.patch('/api/conversations/:id/ai-toggle', async (req: Request, res: Response) => {
+    try {
+      const clinicId = 1; // Hardcoded for testing like other endpoints
+      const conversationId = req.params.id;
+      const { ai_active } = req.body;
+
+      console.log('🤖 AI Toggle request:', { conversationId, ai_active, clinicId });
+
+      if (typeof ai_active !== 'boolean') {
+        return res.status(400).json({ error: 'ai_active deve ser boolean' });
+      }
+
+      // Use direct Supabase client like other endpoints
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      // Atualizar estado da IA na conversa com override manual
+      let updateData: any = { ai_active, updated_at: new Date().toISOString() };
+      
+      if (ai_active === true) {
+        // 🔥 OVERRIDE MANUAL: Limpar pausa automática quando ativando IA manualmente
+        updateData.ai_paused_until = null;
+        updateData.ai_pause_reason = null;
+        updateData.ai_paused_by_user_id = null;
+        console.log('🔥 Manual override - clearing automatic pause and activating AI');
+      } else {
+        console.log('🔄 Manual deactivation - keeping pause fields intact');
+      }
+
+      const { data: result, error } = await supabase
+        .from('conversations')
+        .update(updateData)
+        .eq('id', conversationId)
+        .eq('clinic_id', clinicId)
+        .select('id, ai_active, ai_paused_until');
+
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        return res.status(500).json({ error: 'Erro ao atualizar conversa' });
+      }
+
+      if (!result || result.length === 0) {
+        return res.status(404).json({ error: 'Conversa não encontrada' });
+      }
+
+      console.log('✅ AI state updated:', result[0]);
+      
+      // Invalidar cache após override manual
+      if (ai_active === true) {
+        await memoryCacheService.invalidateConversationDetail(conversationId);
+        console.log('🧹 Cache invalidated after manual AI override');
+      }
+      
+      res.json({ 
+        success: true, 
+        ai_active,
+        conversation_id: conversationId 
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao alternar IA:', error);
+      console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
 }
