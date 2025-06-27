@@ -287,12 +287,11 @@ export function MainConversationArea({
                 <div key={item.id}>
                   {showDateHeader && dateToShow && (
                     <div className="flex justify-center my-4">
-                      <div className="bg-blue-500 text-white text-sm font-medium px-3 py-1 rounded-full">
+                      <div className="text-white text-sm font-medium px-3 py-1 rounded-full bg-[#666666]">
                         {formatDateLabel(dateToShow)}
                       </div>
                     </div>
                   )}
-                  
                   {item.type === 'message' ? (
                     <MessageBubble message={item.data as any} />
                   ) : item.type === 'action' ? (

@@ -300,7 +300,7 @@ export function MediaMessage({
             <Button
               variant="ghost"
               size="sm"
-              className="w-8 h-8 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+              className="w-8 h-8 p-0 rounded-full hover:bg-blue-600 text-white bg-[#0f766e]"
               onClick={handlePlayPause}
             >
               {isPlaying ? (
@@ -341,7 +341,7 @@ export function MediaMessage({
               size="sm"
               onClick={handleTranscribe}
               disabled={isTranscribing}
-              className="h-7 px-3 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950"
+              className="h-7 px-3 text-xs hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950 text-[#ffffff]"
             >
               {isTranscribing ? (
                 <>
