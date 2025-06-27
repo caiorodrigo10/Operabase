@@ -780,7 +780,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         
         // 2. Invalidar Redis Cache (lista de conversas)
         try {
-          await redisCacheService.invalidateConversations(clinicId);
+          await redisCacheService.delete(`conversations:clinic:${clinicId}`);
           console.log(`🗑️ Redis cache invalidated for clinic: ${clinicId}`);
         } catch (redisError) {
           console.log('⚠️ Redis invalidation failed (cache continuará funcionando):', redisError);
@@ -789,14 +789,16 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         // 3. WebSocket: Broadcast para invalidação em tempo real
         try {
           const webSocketServer = app.get('webSocketServer');
-          if (webSocketServer) {
+          if (webSocketServer && webSocketServer.io) {
             const roomName = `clinic_${clinicId}`;
-            webSocketServer.to(roomName).emit('conversation:updated', {
+            webSocketServer.io.to(roomName).emit('conversation:updated', {
               conversationId: conversationIdForCache,
               type: 'new_message',
               messageId: result.message.id
             });
             console.log(`📡 WebSocket broadcast sent to room: ${roomName}`);
+          } else {
+            console.log('⚠️ WebSocket não disponível (não crítico)');
           }
         } catch (wsError) {
           console.log('⚠️ WebSocket broadcast failed (não crítico):', wsError);

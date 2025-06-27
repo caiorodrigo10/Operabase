@@ -156,6 +156,19 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Sistema Real-Time Corrigido: Cache Invalidation N8N ✅
+- **Problema Identificado**: Mensagens do N8N chegavam na sidebar mas demorava para aparecer no chat devido ao cache
+- **Root Cause**: Endpoint `/api/n8n/upload` não invalidava cache de detalhes da conversa após salvar mensagens
+- **Solução Implementada**: Cache invalidation completo no N8N endpoint com 3 camadas
+- **Memory Cache**: Invalidação imediata das chaves de detalhes da conversa
+- **Redis Cache**: Invalidação da lista de conversas por clínica  
+- **WebSocket**: Broadcast para notificação em tempo real (quando disponível)
+- **Teste Validado**: Mensagens agora aparecem instantaneamente no chat após invalidação
+- **Performance Mantida**: Sistema continua usando cache para requests subsequentes
+- **Zero Impact**: Funcionalidades existentes preservadas, apenas correção do tempo real
+- **Logs Confirmados**: Cache MISS forçado + busca de dados frescos + repovoamento automático
+- **Production Ready**: Sistema de mensagens em tempo real funcionando perfeitamente
+
 ### June 27, 2025 - Sistema de Pausa Automática da IA: ETAPA 2 Implementada ✅
 - **Lógica Integrada Completa**: Sistema combina ai_active (controle manual) + ai_paused_until (pausa automática)
 - **Condição IA Responde**: Apenas quando ai_active = true E ai_paused_until é null/expirado
