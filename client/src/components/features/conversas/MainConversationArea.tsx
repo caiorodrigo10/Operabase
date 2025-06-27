@@ -130,7 +130,7 @@ export function MainConversationArea({
       return allMessages.map(message => ({
         id: message.id,
         type: 'message' as const,
-        timestamp: message.timestamp,
+        timestamp: message.timestamp || message.created_at?.toString() || new Date().toISOString(),
         data: message
       }));
     }
@@ -327,7 +327,18 @@ export function MainConversationArea({
           </div>
         ) : (
           <>
-            {timelineItems.map((item, index) => {
+            {/* ETAPA 3: LoadMoreButton - Aparece apenas no modo paginação progressiva */}
+            {useProgressivePagination && hasNextPage && (
+              <LoadMoreButton
+                onLoadMore={() => fetchNextPage()}
+                isLoading={isFetchingNextPage}
+                hasMore={hasNextPage}
+                totalMessages={totalMessages}
+                loadedMessages={allMessages.length}
+              />
+            )}
+            
+            {timelineItems.map((item: any, index: number) => {
               const previousItem = index > 0 ? timelineItems[index - 1] : undefined;
               const showDateHeader = shouldShowDateHeader(item, previousItem);
               const dateToShow = item.data?.timestamp || item.data?.created_at;
