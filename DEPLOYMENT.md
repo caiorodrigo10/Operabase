@@ -53,14 +53,14 @@ SELECT pg_reload_conf();
 ```bash
 #!/bin/bash
 # Daily backup script
-BACKUP_DIR="/var/backups/taskmed"
+BACKUP_DIR="/var/backups/operabase"
 DATE=$(date +%Y%m%d_%H%M%S)
 DB_NAME="operabase_production"
 
 mkdir -p $BACKUP_DIR
 
 # Create compressed backup
-pg_dump -h localhost -U operabase_prod -d $DB_NAME | gzip > $BACKUP_DIR/taskmed_$DATE.sql.gz
+pg_dump -h localhost -U operabase_prod -d $DB_NAME | gzip > $BACKUP_DIR/operabase_$DATE.sql.gz
 
 # Keep only last 30 days
 find $BACKUP_DIR -name "operabase_*.sql.gz" -mtime +30 -delete
@@ -142,8 +142,8 @@ COPY --from=builder /app/client/dist ./client/dist
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
-RUN adduser -S taskmed -u 1001
-USER taskmed
+RUN adduser -S operabase -u 1001
+USER operabase
 
 EXPOSE 5000
 
@@ -394,7 +394,7 @@ const logger = winston.createLogger({
     winston.format.errors({ stack: true }),
     winston.format.json()
   ),
-  defaultMeta: { service: 'taskmed-api' },
+  defaultMeta: { service: 'operabase-api' },
   transports: [
     new winston.transports.File({ 
       filename: 'logs/error.log', 

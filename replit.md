@@ -156,6 +156,15 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Platform Rebranding to Operabase Complete ✅
+- **Nome da Plataforma**: Alterado de "TaskMed" para "Operabase" em toda documentação
+- **Logo Implementado**: Adicionado logo personalizado no header substituindo ícone anterior
+- **Documentação Atualizada**: Todas as referências TaskMed foram alteradas para Operabase
+- **Arquivos Atualizados**: replit.md, README.md, DEPLOYMENT.md, MCP-API-KEYS-DOCUMENTATION.md
+- **Scripts de Deploy**: Referências de repositório e variáveis de ambiente atualizadas
+- **Header Component**: Logo integrado com suporte responsivo e fallback
+- **Zero Impact**: Funcionalidades do sistema mantidas intactas, apenas mudança visual e de branding
+
 ### June 26, 2025 - Livia AI Configuration System Complete Implementation ✅
 - **Sistema de Configuração Completo**: Implementado sistema abrangente de configuração da assistente virtual Lívia
 - **Backend Robusto**: Sistema completo de storage com tenant isolation, CRUD operations e validação Zod
