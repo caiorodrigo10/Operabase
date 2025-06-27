@@ -442,13 +442,13 @@ export function ContatoDetalhes() {
                   <CardContent>
                     <div className="flex items-center justify-center py-8">
                       <div className="text-center">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <div className="text-blue-600 text-2xl font-bold">$</div>
+                        <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <div className="text-[#0f766e] text-2xl font-bold">$</div>
                         </div>
                         <p className="text-sm text-slate-500 mb-2">
                           Consulte o score e pendências que constam no CPF do seu paciente
                         </p>
-                        <Button variant="link" className="text-blue-600 p-0 h-auto text-sm">
+                        <Button variant="link" className="text-[#0f766e] p-0 h-auto text-sm">
                           Comprar créditos
                         </Button>
                       </div>
@@ -509,8 +509,8 @@ export function ContatoDetalhes() {
                     
                     {appointments?.length === 0 ? (
                       <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Edit className="w-8 h-8 text-blue-500" />
+                        <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Edit className="w-8 h-8 text-[#0f766e]" />
                         </div>
                         <p className="text-slate-500 mb-2">
                           Nenhuma evolução registrada ainda
@@ -520,7 +520,7 @@ export function ContatoDetalhes() {
                         </p>
                         <Button 
                           size="sm" 
-                          className="bg-medical-blue hover:bg-blue-700"
+                          className="bg-[#0f766e] hover:bg-teal-700 text-white"
                           onClick={() => setShowEvolucaoEditor(true)}
                         >
                           <Plus className="w-4 h-4 mr-2" />
@@ -533,7 +533,7 @@ export function ContatoDetalhes() {
                           <div key={appointment.id} className="p-3 border border-slate-100 rounded-lg hover:bg-slate-50 cursor-pointer">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-medical-blue rounded-full"></div>
+                                <div className="w-2 h-2 bg-[#0f766e] rounded-full"></div>
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium text-slate-900">
@@ -569,7 +569,7 @@ export function ContatoDetalhes() {
                             <Button 
                               variant="link" 
                               size="sm"
-                              className="text-medical-blue"
+                              className="text-[#0f766e]"
                               onClick={() => handleTabChange('evolucoes')}
                             >
                               Ver todas as {appointments.length} evoluções
@@ -638,8 +638,8 @@ export function ContatoDetalhes() {
                       
                       {appointments.length === 0 && (
                         <div className="text-center py-12">
-                          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Calendar className="w-8 h-8 text-blue-500" />
+                          <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Calendar className="w-8 h-8 text-[#0f766e]" />
                           </div>
                           <p className="text-slate-500 mb-2">
                             Nenhuma consulta registrada ainda
@@ -649,7 +649,7 @@ export function ContatoDetalhes() {
                           </p>
                           <Button 
                             size="sm" 
-                            className="bg-medical-blue hover:bg-blue-700"
+                            className="bg-[#0f766e] hover:bg-teal-700 text-white"
                             onClick={() => setShowAppointmentEditor(true)}
                           >
                             <Plus className="w-4 h-4 mr-2" />
@@ -714,7 +714,7 @@ export function ContatoDetalhes() {
                           <div
                             className={`max-w-[80%] p-3 rounded-lg ${
                               message.role === 'user'
-                                ? 'bg-blue-500 text-white'
+                                ? 'bg-[#0f766e] text-white'
                                 : 'bg-white border border-slate-200 text-slate-900'
                             }`}
                           >
@@ -836,7 +836,7 @@ export function ContatoDetalhes() {
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'visao-geral'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#0f766e] text-[#0f766e]'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('visao-geral')}
@@ -846,7 +846,7 @@ export function ContatoDetalhes() {
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'anamneses'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#0f766e] text-[#0f766e]'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('anamneses')}
@@ -856,7 +856,7 @@ export function ContatoDetalhes() {
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'mara-ai'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#0f766e] text-[#0f766e]'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('mara-ai')}
@@ -866,7 +866,7 @@ export function ContatoDetalhes() {
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'evolucoes'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#0f766e] text-[#0f766e]'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('evolucoes')}
@@ -876,7 +876,7 @@ export function ContatoDetalhes() {
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'documentos'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#0f766e] text-[#0f766e]'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('documentos')}
@@ -886,7 +886,7 @@ export function ContatoDetalhes() {
               <button
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'arquivos'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#0f766e] text-[#0f766e]'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 onClick={() => handleTabChange('arquivos')}
