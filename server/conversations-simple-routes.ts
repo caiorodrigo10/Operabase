@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { IStorage } from './storage';
 import { redisCacheService } from './services/redis-cache.service';
+import { memoryCacheService } from './cache/memory-cache.service';
 import { EvolutionMessageService } from './services/evolution-message.service';
 
 export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
@@ -217,16 +218,24 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // ETAPA 4: Smart Cache Implementation with Advanced TTL
       const cacheKey = `conversation:${conversationId}:detail:page:${page}:limit:${limit}`;
       
-      // ETAPA 4: Direct cache check with proper TTL (5 minutes instead of 2)
+      // ETAPA 4: Hybrid Cache Strategy (Redis + Memory Fallback)
       console.log('🔍 ETAPA 4: Attempting cache GET for key:', cacheKey);
-      const cachedDetail = await redisCacheService.get(cacheKey, 'conversation_details');
       
+      // Try Redis first
+      let cachedDetail = await redisCacheService.get(cacheKey, 'conversation_details');
       if (cachedDetail !== null) {
-        console.log('🎯 ETAPA 4: Cache HIT [conversation_detail] key:', cacheKey, 'Performance: OPTIMIZED');
+        console.log('🎯 ETAPA 4: Redis Cache HIT [conversation_detail] key:', cacheKey, 'Performance: OPTIMIZED');
         return res.json(cachedDetail);
-      } else {
-        console.log('❌ ETAPA 4: Cache returned null for key:', cacheKey);
       }
+      
+      // Fallback to Memory Cache
+      cachedDetail = memoryCacheService.get<any>(cacheKey);
+      if (cachedDetail !== null) {
+        console.log('🎯 ETAPA 4: Memory Cache HIT [conversation_detail] key:', cacheKey, 'Performance: FAST FALLBACK');
+        return res.json(cachedDetail);
+      }
+      
+      console.log('❌ ETAPA 4: Complete Cache MISS - both Redis and Memory failed for key:', cacheKey);
       
       console.log('💽 ETAPA 4: Cache MISS [conversation_detail] key:', cacheKey, 'Performance: NEEDS OPTIMIZATION');
 
@@ -539,20 +548,32 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         }
       };
 
-      // ETAPA 4: Advanced Cache Implementation with consistent get/set methods
+      // ETAPA 4: Hybrid Cache Implementation - Save to both Redis and Memory
       if (USE_PAGINATION) {
-        const cacheSuccess = await redisCacheService.set(cacheKey, responseData, 300, 'conversation_details');
-        console.log('💾 ETAPA 4: Cache SET result:', cacheSuccess, 'key:', cacheKey, 'TTL: 300s');
+        // Save to Redis
+        const redisCacheSuccess = await redisCacheService.set(cacheKey, responseData, 300, 'conversation_details');
+        console.log('💾 ETAPA 4: Redis Cache SET result:', redisCacheSuccess, 'key:', cacheKey, 'TTL: 300s');
         
-        // ETAPA 4: Test immediate read to verify cache is working
-        const testRead = await redisCacheService.get(cacheKey, 'conversation_details');
-        console.log('🧪 ETAPA 4: Immediate cache test read:', testRead ? 'SUCCESS' : 'FAILED');
+        // Save to Memory Cache as fallback (shorter TTL)
+        const memoryCacheSuccess = memoryCacheService.set(cacheKey, responseData, 180); // 3 minutes
+        console.log('💾 ETAPA 4: Memory Cache SET result:', memoryCacheSuccess, 'key:', cacheKey, 'TTL: 180s');
+        
+        // Test immediate read from both caches
+        const redisTestRead = await redisCacheService.get(cacheKey, 'conversation_details');
+        const memoryTestRead = memoryCacheService.get(cacheKey);
+        console.log('🧪 ETAPA 4: Immediate cache test - Redis:', redisTestRead ? 'SUCCESS' : 'FAILED', 'Memory:', memoryTestRead ? 'SUCCESS' : 'FAILED');
       } else {
+        // Legacy implementation with hybrid cache
         const legacyKey = `conversation:${actualConversationId}:detail`;
-        const cacheSuccess = await redisCacheService.set(legacyKey, responseData, 300, 'conversation_details');
-        console.log('💾 ETAPA 4: Cache SET result:', cacheSuccess, 'legacy key:', legacyKey, 'TTL: 300s');
+        const redisCacheSuccess = await redisCacheService.set(legacyKey, responseData, 300, 'conversation_details');
+        const memoryCacheSuccess = memoryCacheService.set(legacyKey, responseData, 180);
+        console.log('💾 ETAPA 4: Hybrid Cache SET - Redis:', redisCacheSuccess, 'Memory:', memoryCacheSuccess, 'legacy key:', legacyKey);
       }
 
+      // ETAPA 4: Cache Performance Metrics
+      const memoryStats = memoryCacheService.getStats();
+      console.log('📊 ETAPA 4: Memory Cache Stats - Requests:', memoryStats.totalRequests, 'Hit Rate:', memoryStats.hitRate + '%', 'Size:', memoryStats.memoryUsage);
+      
       res.json(responseData);
 
     } catch (error) {
