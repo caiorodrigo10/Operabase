@@ -8,6 +8,7 @@ import {
 } from '../shared/schema';
 import { eq, and, desc, asc, count, sql } from 'drizzle-orm';
 import { systemLogsService } from './services/system-logs.service';
+import { AiPauseService, AiPauseContext } from './domains/ai-pause/ai-pause.service';
 
 export function setupConversationsRoutes(app: any, storage: IStorage) {
   
@@ -239,6 +240,91 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
           updated_at: new Date()
         })
         .where(eq(conversations.id, conversationId));
+
+      // ✅ SISTEMA DE PAUSA AUTOMÁTICA DA IA
+      console.log('🚀 Aplicando sistema de pausa automática da IA');
+      
+      try {
+        const aiPauseService = AiPauseService.getInstance();
+        
+        // Criar contexto para análise de pausa
+        const pauseContext: AiPauseContext = {
+          conversationId: conversationId,
+          clinicId: clinicId,
+          senderId: userId?.toString() || 'unknown',
+          senderType: 'professional',
+          deviceType: 'system',
+          messageContent: validatedMessage.content || '',
+          timestamp: new Date()
+        };
+
+        // Buscar configuração da Lívia para esta clínica usando Supabase
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL!, 
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+
+        const { data: liviaConfig } = await supabase
+          .from('livia_configurations')
+          .select('*')
+          .eq('clinic_id', clinicId)
+          .single();
+
+        if (liviaConfig) {
+          console.log('🔍 AI PAUSE DEBUG - Processando mensagem:', {
+            conversationId,
+            clinicId,
+            senderType: pauseContext.senderType,
+            deviceType: pauseContext.deviceType,
+            liviaConfig: {
+              pause_duration_minutes: liviaConfig.pause_duration_minutes,
+              off_duration: liviaConfig.off_duration,
+              off_unit: liviaConfig.off_unit
+            }
+          });
+          
+          const pauseResult = await aiPauseService.processMessage(pauseContext, liviaConfig);
+          
+          console.log('🔍 AI PAUSE DEBUG - Resultado da análise:', pauseResult);
+          
+          if (pauseResult.shouldPause) {
+            console.log('✅ Pausando IA por mensagem system de profissional');
+            
+            // Atualizar conversa com informações de pausa
+            const { error: updateError } = await supabase
+              .from('conversations')
+              .update({
+                ai_paused_until: pauseResult.pausedUntil?.toISOString(),
+                ai_paused_by_user_id: pauseResult.pausedByUserId,
+                ai_pause_reason: pauseResult.pauseReason,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', conversationId);
+            
+            if (updateError) {
+              console.log('⚠️ Erro ao atualizar pausa da IA (não crítico):', updateError.message);
+            } else {
+              console.log('✅ IA pausada até:', pauseResult.pausedUntil?.toISOString());
+              console.log('📊 Duração da pausa:', liviaConfig.off_duration, liviaConfig.off_unit);
+            }
+            
+          } else {
+            console.log('⏭️ Mensagem não requer pausa da IA (condições não atendidas)');
+            console.log('🔍 AI PAUSE DEBUG - Condições verificadas:', {
+              is_professional: pauseContext.senderType === 'professional',
+              is_system: pauseContext.deviceType === 'system',
+              combined_condition: pauseContext.senderType === 'professional' && pauseContext.deviceType === 'system'
+            });
+          }
+          
+        } else {
+          console.log('⚠️ Configuração Lívia não encontrada - pausa automática desabilitada');
+        }
+        
+      } catch (pauseError) {
+        console.error('❌ Erro no sistema de pausa automática (não crítico):', pauseError);
+      }
 
       // Log da mensagem
       await systemLogsService.logAction({
