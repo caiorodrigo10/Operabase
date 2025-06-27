@@ -6,6 +6,8 @@ import { SupabaseStorageService } from '../services/supabase-storage.service';
 import { EvolutionAPIService } from '../services/evolution-api.service';
 import { validateN8NRequest, parseN8NUpload, sanitizeN8NHeaders } from '../n8n-auth';
 import { validateN8NApiKey, n8nRateLimiter } from '../middleware/n8n-auth.middleware';
+import { redisCacheService } from '../services/redis-cache.service';
+import { memoryCacheService } from '../cache/memory-cache.service';
 
 // Configurar multer para upload em memória
 const upload = multer({
@@ -759,6 +761,48 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           attachmentId: result.attachment.id,
           filename: result.attachment.filename
         });
+
+        // CORREÇÃO: Invalidar cache de detalhes da conversa para atualização instantânea
+        console.log('🧹 CORREÇÃO: Invalidando cache da conversa para atualização instantânea...');
+        const conversationIdForCache = conversationId.toString();
+        
+        // 1. Invalidar Memory Cache (detalhes da conversa)
+        const memoryCacheKeys = [
+          `conversation:${conversationIdForCache}:detail:page:1:limit:25`,
+          `conversation:${conversationIdForCache}:detail:page:1:limit:50`,
+          `conversation:${conversationIdForCache}:detail`
+        ];
+        
+        for (const key of memoryCacheKeys) {
+          memoryCacheService.delete(key);
+          console.log(`🗑️ Memory cache invalidated: ${key}`);
+        }
+        
+        // 2. Invalidar Redis Cache (lista de conversas)
+        try {
+          await redisCacheService.invalidateConversations(clinicId);
+          console.log(`🗑️ Redis cache invalidated for clinic: ${clinicId}`);
+        } catch (redisError) {
+          console.log('⚠️ Redis invalidation failed (cache continuará funcionando):', redisError);
+        }
+        
+        // 3. WebSocket: Broadcast para invalidação em tempo real
+        try {
+          const webSocketServer = app.get('webSocketServer');
+          if (webSocketServer) {
+            const roomName = `clinic_${clinicId}`;
+            webSocketServer.to(roomName).emit('conversation:updated', {
+              conversationId: conversationIdForCache,
+              type: 'new_message',
+              messageId: result.message.id
+            });
+            console.log(`📡 WebSocket broadcast sent to room: ${roomName}`);
+          }
+        } catch (wsError) {
+          console.log('⚠️ WebSocket broadcast failed (não crítico):', wsError);
+        }
+        
+        console.log('✅ CORREÇÃO: Cache invalidated - mensagens aparecerão instantaneamente no chat');
 
         res.json({
           success: true,
