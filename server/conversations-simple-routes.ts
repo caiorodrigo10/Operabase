@@ -776,13 +776,13 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         // 🤖 SISTEMA DE PAUSA AUTOMÁTICA DA IA
         console.log('🤖 AI PAUSE DEBUG - Iniciando processo de pausa automática...');
         
-        // ✅ CORRIGIDO: deviceType='manual' para triggerar pausa
+        // ✅ CORRIGIDO: deviceType='system' para mensagens do chat web
         const aiPauseContext: AiPauseContext = {
           conversationId: actualConversationId,
           clinicId: 1,
           senderId: '4', // Caio Rodrigo
           senderType: 'professional',
-          deviceType: 'manual', // ✅ CORRIGIDO: manual para triggerar pausa
+          deviceType: 'system', // ✅ CORRIGIDO: system para mensagens do chat web
           messageContent: content,
           timestamp: new Date()
         };

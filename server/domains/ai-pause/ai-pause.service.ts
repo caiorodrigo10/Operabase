@@ -44,20 +44,24 @@ export class AiPauseService {
       senderId: context.senderId
     });
 
-    // Regra principal: profissional enviando mensagem manual
-    const isProfessionalManualMessage = 
+    // Regra principal: profissional enviando mensagem (manual OU system)
+    const isProfessionalMessage = 
       context.senderType === 'professional' && 
-      context.deviceType === 'manual';
+      (context.deviceType === 'manual' || context.deviceType === 'system');
 
-    if (isProfessionalManualMessage) {
-      console.log('✅ ETAPA 3: Mensagem manual de profissional detectada - IA deve ser pausada');
+    if (isProfessionalMessage) {
+      console.log('✅ ETAPA 3: Mensagem de profissional detectada - IA deve ser pausada', {
+        senderType: context.senderType,
+        deviceType: context.deviceType,
+        trigger: context.deviceType === 'manual' ? 'manual_message' : 'system_web_message'
+      });
       return true;
     }
 
     console.log('⏭️ ETAPA 3: Mensagem não requer pausa da IA', {
       senderType: context.senderType,
       deviceType: context.deviceType,
-      reason: context.senderType !== 'professional' ? 'sender_not_professional' : 'device_not_manual'
+      reason: context.senderType !== 'professional' ? 'sender_not_professional' : 'device_not_manual_or_system'
     });
 
     return false;
