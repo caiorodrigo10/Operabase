@@ -207,12 +207,19 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
   // Enviar nova mensagem
   app.post('/api/conversations/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
     console.log('🎯 ENDPOINT CORRETO: /api/conversations/:id/messages sendo executado!');
+    console.log('🔍 DEBUG AUTH: req.session.user:', req.session.user);
+    console.log('🔍 DEBUG PARAMS: req.params.id:', req.params.id);
+    console.log('🔍 DEBUG BODY:', req.body);
+    
     try {
       const clinicId = req.session.user?.clinicId;
       const userId = req.session.user?.id;
       const conversationId = parseInt(req.params.id);
 
+      console.log('🔍 DEBUG VALUES: clinicId:', clinicId, 'userId:', userId, 'conversationId:', conversationId);
+
       if (!clinicId || !conversationId) {
+        console.log('❌ Parâmetros inválidos detectados');
         return res.status(400).json({ error: 'Parâmetros inválidos' });
       }
 
