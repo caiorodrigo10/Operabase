@@ -156,6 +156,15 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Sistema de Pausa Automática da IA: PERSISTÊNCIA DE DESATIVAÇÃO MANUAL IMPLEMENTADA ✅
+- **Problema Resolvido**: IA desativada manualmente era reativada quando profissionais enviavam mensagens pelo sistema
+- **Lógica Corrigida**: Sistema agora verifica `ai_pause_reason="manual"` antes de aplicar pausa automática
+- **Proteção Implementada**: Desativação manual (`ai_pause_reason="manual"`) persiste através de mensagens do sistema
+- **Middleware Atualizado**: Reativação automática só funciona para pausas do sistema (`ai_pause_reason="manual_message"`)
+- **AiPauseService Corrigido**: Recebe estado atual da IA e não sobrescreve desativações manuais
+- **Controle Profissional**: Permite desativar IA permanentemente para pacientes específicos
+- **Zero Impact**: Todas funcionalidades preservadas, apenas melhoria da lógica de controle manual
+
 ### June 27, 2025 - Sistema de Pausa Automática da IA: SINCRONIZAÇÃO FRONTEND-BACKEND CORRIGIDA ✅
 - **Problema Resolvido**: Frontend demorava para detectar reativação automática da IA, botão permanecia inativo por mais tempo
 - **Cache Invalidation Automática**: Middleware agora invalida cache quando reativa IA automaticamente
