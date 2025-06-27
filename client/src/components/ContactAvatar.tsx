@@ -51,7 +51,7 @@ export function ContactAvatar({
           onError={() => setImageError(true)}
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
+        <div className="w-full h-full flex items-center justify-center text-white font-semibold" style={{ backgroundColor: '#0f766e' }}>
           {getInitials(name)}
         </div>
       )}
