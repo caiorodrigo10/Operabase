@@ -206,6 +206,7 @@ export function setupConversationsRoutes(app: any, storage: IStorage) {
 
   // Enviar nova mensagem
   app.post('/api/conversations/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
+    console.log('🎯 ENDPOINT CORRETO: /api/conversations/:id/messages sendo executado!');
     try {
       const clinicId = req.session.user?.clinicId;
       const userId = req.session.user?.id;

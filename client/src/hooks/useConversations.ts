@@ -117,7 +117,7 @@ export function useSendMessage() {
       conversationId: number | string; 
       message: { content: string } 
     }) => {
-      const response = await fetch(`/api/conversations-simple/${conversationId}/messages`, {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
