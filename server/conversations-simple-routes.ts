@@ -814,10 +814,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             console.log('🤖 AI PAUSE DEBUG - Resultado da análise (config padrão):', pauseResult);
             
             if (pauseResult.shouldPause) {
-              // Aplicar pausa no banco de dados
+              // Aplicar pausa no banco de dados E desativar AI_ACTIVE
               const { error: updateError } = await supabase
                 .from('conversations')
                 .update({
+                  ai_active: false, // ✅ CRÍTICO: Desativar AI_ACTIVE para N8N
                   ai_paused_until: pauseResult.pausedUntil?.toISOString(),
                   ai_paused_by_user_id: pauseResult.pausedByUserId,
                   ai_pause_reason: pauseResult.pauseReason
@@ -839,10 +840,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             console.log('🤖 AI PAUSE DEBUG - Resultado da análise:', pauseResult);
             
             if (pauseResult.shouldPause) {
-              // Aplicar pausa no banco de dados
+              // Aplicar pausa no banco de dados E desativar AI_ACTIVE
               const { error: updateError } = await supabase
                 .from('conversations')
                 .update({
+                  ai_active: false, // ✅ CRÍTICO: Desativar AI_ACTIVE para N8N
                   ai_paused_until: pauseResult.pausedUntil?.toISOString(),
                   ai_paused_by_user_id: pauseResult.pausedByUserId,
                   ai_pause_reason: pauseResult.pauseReason

@@ -1,0 +1,70 @@
+/**
+ * Middleware para verificar e reativar AI quando pausa automática expira
+ * Conecta ai_paused_until com ai_active para N8N
+ */
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function checkAndReactivateExpiredAiPause() {
+  try {
+    console.log('🔄 Verificando conversas com pausa de IA expirada...');
+    
+    // Buscar conversas onde IA está pausada mas o tempo já expirou
+    const { data: expiredPauses, error } = await supabase
+      .from('conversations')
+      .select('id, ai_paused_until, ai_active')
+      .eq('ai_active', false) // AI está desativada
+      .not('ai_paused_until', 'is', null) // Tem pausa configurada
+      .lt('ai_paused_until', new Date().toISOString()); // Pausa já expirou
+    
+    if (error) {
+      console.error('❌ Erro ao buscar pausas expiradas:', error);
+      return;
+    }
+    
+    if (!expiredPauses || expiredPauses.length === 0) {
+      console.log('ℹ️ Nenhuma pausa de IA expirada encontrada');
+      return;
+    }
+    
+    console.log(`🔄 Encontradas ${expiredPauses.length} pausas expiradas para reativar`);
+    
+    // Reativar IA para conversas com pausa expirada
+    for (const conversation of expiredPauses) {
+      const { error: updateError } = await supabase
+        .from('conversations')
+        .update({
+          ai_active: true, // ✅ Reativar IA para N8N
+          ai_paused_until: null,
+          ai_pause_reason: null,
+          ai_paused_by_user_id: null
+        })
+        .eq('id', conversation.id);
+      
+      if (updateError) {
+        console.error(`❌ Erro ao reativar IA para conversa ${conversation.id}:`, updateError);
+      } else {
+        console.log(`✅ IA reativada para conversa ${conversation.id} (pausa expirou)`);
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro no verificador de pausa de IA:', error);
+  }
+}
+
+// Executar verificação a cada 30 segundos
+export function startAiPauseChecker() {
+  console.log('🚀 Iniciando verificador automático de pausa de IA...');
+  
+  // Execução inicial
+  checkAndReactivateExpiredAiPause();
+  
+  // Execução periódica a cada 30 segundos
+  setInterval(checkAndReactivateExpiredAiPause, 30000);
+}
