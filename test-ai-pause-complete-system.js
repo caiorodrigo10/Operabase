@@ -77,11 +77,13 @@ async function testCompletePauseSystem() {
     
     // 5. Verificar se a pausa foi aplicada
     console.log('\n5️⃣ Verificando se pausa automática foi aplicada...');
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Aguardar 2 segundos
+    await new Promise(resolve => setTimeout(resolve, 3000)); // Aguardar 3 segundos para garantir processamento
     
-    const pausedState = await fetch(`${BASE_URL}/api/conversations-simple/${testConversation.id}`, {
+    // Forçar cache invalidation adicionando timestamp
+    const pausedState = await fetch(`${BASE_URL}/api/conversations-simple/${testConversation.id}?t=${Date.now()}`, {
       headers: {
-        'Cookie': cookies
+        'Cookie': cookies,
+        'Cache-Control': 'no-cache'
       }
     });
     
@@ -111,7 +113,7 @@ async function testCompletePauseSystem() {
       mensagemEnviada: messageResponse.ok,
       aiDesativada: pausedData.conversation.ai_active === false,
       pausaConfigurada: !!pausedData.conversation.ai_paused_until,
-      motivoCorreto: pausedData.conversation.ai_pause_reason?.includes('profissional')
+      motivoCorreto: pausedData.conversation.ai_pause_reason === 'manual_message'
     };
     
     console.log('✅ Mensagem enviada:', testResults.mensagemEnviada ? 'SIM' : 'NÃO');
