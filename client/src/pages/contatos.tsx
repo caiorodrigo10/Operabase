@@ -272,7 +272,7 @@ export function Contatos() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 onClick={() => setIsAddContactOpen(true)}
-                className="bg-medical-blue hover:bg-blue-700 flex items-center gap-2"
+                className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" />
                 Adicionar Contato
