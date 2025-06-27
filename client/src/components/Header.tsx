@@ -169,9 +169,9 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
             {/* Logo */}
             <Link href={isAdminView ? "/admin" : "/"} className="flex items-center space-x-2">
               <img 
-                src="/operabase-logo.png" 
+                src="https://lkwrevhxugaxfpwiktdy.supabase.co/storage/v1/object/sign/docsgerais/operabaselogo.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82ZGMzM2E3My1kMjMyLTQwNTgtOWZkYi02ODBjZmZkMWY2MmEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2NzZ2VyYWlzL29wZXJhYmFzZWxvZ28uc3ZnIiwiaWF0IjoxNzUwOTkxMzg4LCJleHAiOjE3ODI1MjczODh9.idPoup3H2OxyHM6fY6Vxbt5iMAMdHY7nNiu8rpGfTPk" 
                 alt="Operabase Logo" 
-                className="w-8 h-8 rounded-lg object-contain"
+                className="w-8 h-8 object-contain"
               />
               <div className="hidden sm:block">
                 <span className="text-lg font-semibold text-slate-800">

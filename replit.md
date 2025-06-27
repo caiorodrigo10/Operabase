@@ -158,11 +158,13 @@ SESSION_SECRET=your_session_secret
 
 ### June 27, 2025 - Platform Rebranding to Operabase Complete ✅
 - **Nome da Plataforma**: Alterado de "TaskMed" para "Operabase" em toda documentação
-- **Logo Implementado**: Adicionado logo personalizado no header substituindo ícone anterior
+- **Logo SVG Implementado**: Logo oficial hospedado no Supabase Storage integrado ao header
+- **URL Logo**: Utilizando signed URL do Supabase para garantir disponibilidade e performance
 - **Documentação Atualizada**: Todas as referências TaskMed foram alteradas para Operabase
 - **Arquivos Atualizados**: replit.md, README.md, DEPLOYMENT.md, MCP-API-KEYS-DOCUMENTATION.md
 - **Scripts de Deploy**: Referências de repositório e variáveis de ambiente atualizadas
-- **Header Component**: Logo integrado com suporte responsivo e fallback
+- **Header Component**: Logo SVG responsivo integrado com tamanho otimizado (w-8 h-8)
+- **Qualidade Visual**: SVG garante nitidez em todas as resoluções de tela
 - **Zero Impact**: Funcionalidades do sistema mantidas intactas, apenas mudança visual e de branding
 
 ### June 26, 2025 - Livia AI Configuration System Complete Implementation ✅
