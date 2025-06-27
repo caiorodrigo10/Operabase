@@ -159,7 +159,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
               {conversation.patient_name}
             </h3>
             <span className="text-xs text-gray-400 flex-shrink-0 min-w-[50px]">
-              {conversation.last_message_at ? formatMessageTimestamp(conversation.last_message_at) : 'No time'}
+              {conversation.first_message_at ? formatMessageTimestamp(conversation.first_message_at) : 'No time'}
             </span>
           </div>
 

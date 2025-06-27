@@ -5,6 +5,7 @@ export interface Conversation {
   last_message: string;
   timestamp: string;
   last_message_at?: string; // Optional para casos onde está undefined
+  first_message_at?: string; // Timestamp da primeira mensagem
   unread_count: number;
   status: 'active' | 'inactive';
   ai_active?: boolean;

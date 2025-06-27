@@ -73,6 +73,15 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .order('timestamp', { ascending: false })
         .order('id', { ascending: false });
       
+      // Batch load primeiras mensagens de cada conversa (mais antigas)
+      const { data: firstMessages } = await supabase
+        .from('messages')
+        .select('conversation_id, content, timestamp, id')
+        .in('conversation_id', conversationIds)
+        .not('timestamp', 'is', null)
+        .order('timestamp', { ascending: true })
+        .order('id', { ascending: true });
+      
       // Agrupa por conversation_id para pegar APENAS a última mensagem real
       const lastMessageMap = {};
       allMessages?.forEach(msg => {
@@ -88,11 +97,29 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           };
         }
       });
+      
+      // Agrupa por conversation_id para pegar APENAS a primeira mensagem real (mais antiga)
+      const firstMessageMap = {};
+      firstMessages?.forEach(msg => {
+        if (!firstMessageMap[msg.conversation_id] && msg.timestamp) {
+          // Usa timezone correto do Brasil (America/Sao_Paulo)
+          const messageDate = new Date(msg.timestamp);
+          const brasiliaTime = new Date(messageDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+          
+          firstMessageMap[msg.conversation_id] = {
+            ...msg,
+            timestamp: brasiliaTime.toISOString(),
+            original_timestamp: msg.timestamp // Manter original para debug
+          };
+        }
+      });
 
       // Format for frontend com dados otimizados - fix large ID handling
       const formattedConversations = (conversationsData || []).map(conv => {
         const lastMsg = lastMessageMap[conv.id];
+        const firstMsg = firstMessageMap[conv.id];
         const lastMessageTime = lastMsg?.timestamp || conv.created_at; // Use created_at only for conversations without messages
+        const firstMessageTime = firstMsg?.timestamp || conv.created_at; // Use created_at for conversations without messages
         
         return {
           id: conv.id.toString(), // Convert to string to preserve large numbers
@@ -108,6 +135,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           contact_status: conv.contacts?.status || 'active',
           last_message: lastMsg?.content || 'Nenhuma mensagem ainda',
           last_message_at: lastMessageTime,
+          first_message_at: firstMessageTime, // Novo campo para primeira mensagem
           timestamp: lastMessageTime, // Fallback field for compatibility
           total_messages: 0, // Será calculado se necessário
           unread_count: 0 // Será calculado dinamicamente quando necessário
