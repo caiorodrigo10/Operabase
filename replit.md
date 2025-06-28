@@ -156,6 +156,18 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 28, 2025 - Sistema RAG Multi-Tenant: knowledge_base_id Sincronizado Completamente ✅
+- **Problema Resolvido**: Campo knowledge_base_id vazio na tabela rag_embeddings após migração inicial
+- **Script de Sincronização**: Criado sync-knowledge-base-ids.ts com verificação completa da estrutura RAG
+- **Sincronização Automática**: 2 embeddings conectados automaticamente à base "RAG Caio" (ID: 4)
+- **Mapeamento Validado**: Clínica 1 → KB 4 com 2 embeddings do documento "Amorafone"
+- **Estado Final**: 100% dos embeddings agora possuem knowledge_base_id definido (2/2)
+- **Bases Disponíveis**: 4 bases identificadas (RAG Caio, Doencas, Estudos, Base de Odonto)
+- **Sistema Multi-Tenant**: Isolamento completo por clinic_id + organização por knowledge_base_id
+- **Performance**: Índices funcionando corretamente para consultas RAG otimizadas
+- **Integridade**: Foreign keys validando relacionamentos entre embeddings e bases
+- **Status**: ✅ RAG SYSTEM READY - Sistema pronto para consultas semânticas multi-tenant
+
 ### June 28, 2025 - Sistema de Upload Performance OTIMIZADO: Cache + WebSocket + Background AI ✅
 - **Problema Resolvido**: Upload de arquivos lento (8+ segundos) comparado a mensagens de texto (<1 segundo)
 - **ETAPA 1 Implementada**: Cache invalidation imediato como nas mensagens de texto

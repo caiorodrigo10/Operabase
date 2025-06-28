@@ -123,7 +123,8 @@ async function syncKnowledgeBaseIds() {
       ORDER BY re.clinic_id, re.knowledge_base_id;
     `);
     
-    finalMappings.forEach((mapping, idx) => {
+    const mappingsArray = finalMappings.rows || finalMappings;
+    mappingsArray.forEach((mapping, idx) => {
       console.log(`   ${idx + 1}. Clínica ${mapping.clinic_id} → KB ${mapping.knowledge_base_id} ("${mapping.kb_name}"): ${mapping.embedding_count} embeddings`);
     });
 
