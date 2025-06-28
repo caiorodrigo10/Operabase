@@ -156,6 +156,16 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 28, 2025 - Bug de Desvinculamento da Lívia CORRIGIDO Definitivamente ✅
+- **Problema Identificado**: Configuração da Lívia retinha whatsapp_number_id mesmo quando nenhum número estava selecionado na interface
+- **Schema Zod Corrigido**: whatsapp_number_id agora aceita .nullable().optional() para desvinculamento explícito
+- **Backend Inteligente**: Route detecta automaticamente valores de desvinculamento (string vazia, undefined, null, "null")
+- **Conversão Automática**: Todos os casos de desvinculamento são convertidos para null no banco de dados
+- **Teste Abrangente**: Validados todos os cenários possíveis incluindo revinculamento funcional
+- **Zero Impact**: Outras configurações preservadas, sistema funcionando 100%
+- **Resultado Final**: whatsapp_number_id = null quando nenhum número é selecionado na interface
+- **Status**: ✅ CORRIGIDO - Interface e banco de dados agora sincronizam perfeitamente
+
 ### June 28, 2025 - Sistema de Soft Delete WhatsApp Implementado Completamente ✅
 - **Problema Resolvido**: Eliminados foreign key constraint errors ao deletar instâncias WhatsApp
 - **Soft Delete Schema**: Adicionadas colunas is_deleted, deleted_at, deleted_by_user_id à tabela whatsapp_numbers

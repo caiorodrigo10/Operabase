@@ -755,7 +755,7 @@ export const insertLiviaConfigurationSchema = createInsertSchema(livia_configura
 }).extend({
   clinic_id: z.number().min(1, "Clinic ID é obrigatório"),
   general_prompt: z.string().min(10, "Prompt deve ter pelo menos 10 caracteres"),
-  whatsapp_number_id: z.number().optional(),
+  whatsapp_number_id: z.number().nullable().optional(),
   off_duration: z.number().min(1, "Duração deve ser pelo menos 1").max(999, "Duração muito alta"),
   off_unit: z.enum(["minutos", "horas", "dias"]),
   selected_professional_ids: z.array(z.number()).optional(),
@@ -765,6 +765,7 @@ export const insertLiviaConfigurationSchema = createInsertSchema(livia_configura
 
 export const updateLiviaConfigurationSchema = insertLiviaConfigurationSchema.partial().extend({
   clinic_id: z.number().min(1, "Clinic ID é obrigatório"),
+  whatsapp_number_id: z.number().nullable().optional(),
 });
 
 // Types para TypeScript

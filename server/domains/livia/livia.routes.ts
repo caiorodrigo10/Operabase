@@ -137,9 +137,21 @@ Mantenha um tom acolhedor e use linguagem simples. Em caso de dúvidas médicas 
       console.log('🔧 LIVIA UPDATE: Raw request body:', JSON.stringify(req.body, null, 2));
       console.log('🔧 LIVIA UPDATE: Clinic ID:', clinicId);
       
+      // Handle whatsapp_number_id desvinculamento
+      let processedBody = { ...req.body };
+      
+      // Se whatsapp_number_id não está definido, é string vazia, ou é explicitamente null, definir como null
+      if (processedBody.whatsapp_number_id === '' || 
+          processedBody.whatsapp_number_id === undefined || 
+          processedBody.whatsapp_number_id === null ||
+          processedBody.whatsapp_number_id === 'null') {
+        processedBody.whatsapp_number_id = null;
+        console.log('🔗 LIVIA UPDATE: WhatsApp number desvinculado (set to null)');
+      }
+      
       // Add clinic_id to the request body for validation
       const bodyWithClinicId = {
-        ...req.body,
+        ...processedBody,
         clinic_id: clinicId
       };
       
