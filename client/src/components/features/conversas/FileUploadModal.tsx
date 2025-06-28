@@ -200,9 +200,7 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
     setProgress(0);
     setResult(null);
     
-    // ETAPA 5.3: Reset transition state
-    setIsTransitioning(false);
-    setTransitionStage('idle');
+    // NOVA ABORDAGEM: Estados simplificados
     
     // NOVA ABORDAGEM: Invalidar cache APENAS quando modal fechar
     // Isso garante que o arquivo apareça apenas quando modal já fechou
@@ -362,13 +360,10 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
             {status === 'idle' && (
               <Button 
                 onClick={handleUpload} 
-                disabled={files.length === 0 || isTransitioning}
+                disabled={files.length === 0}
                 className="min-w-[100px]"
               >
-                {isTransitioning && transitionStage === 'optimistic' && 'Enviando...'}
-                {isTransitioning && transitionStage === 'fetching' && 'Processando...'}
-                {isTransitioning && transitionStage === 'complete' && 'Enviado'}
-                {!isTransitioning && 'Enviar'}
+                Enviar
               </Button>
             )}
           </div>
