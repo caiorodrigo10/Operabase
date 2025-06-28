@@ -217,17 +217,39 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       console.log('🔍 Processing conversation ID:', conversationIdParam, 'Scientific notation:', isScientificNotation);
       const clinicId = 1; // Hardcoded for testing
       
+      // ETAPA 4: Cache Bypass Detection from Upload
+      const nocache = req.query.nocache;
+      const bustCache = req.query.bust;
+      const bypassCache = nocache || bustCache;
+      
+      if (bypassCache) {
+        console.log('🚫 ETAPA 4: Cache bypass requested - forcing fresh DB fetch');
+      }
+      
       // ETAPA 4: Smart Cache Implementation with Advanced TTL
       const cacheKey = `conversation:${conversationId}:detail:page:${page}:limit:${limit}`;
       
-      // ETAPA 4: Hybrid Cache Strategy (Redis + Memory Fallback)
-      console.log('🔍 ETAPA 4: Attempting cache GET for key:', cacheKey);
-      
-      // Try Redis first
-      let cachedDetail = await redisCacheService.get(cacheKey, 'conversation_details');
-      if (cachedDetail !== null) {
-        console.log('🎯 ETAPA 4: Redis Cache HIT [conversation_detail] key:', cacheKey, 'Performance: OPTIMIZED');
-        return res.json(cachedDetail);
+      // ETAPA 4: Hybrid Cache Strategy (Redis + Memory Fallback) - unless bypassed
+      if (!bypassCache) {
+        console.log('🔍 ETAPA 4: Attempting cache GET for key:', cacheKey);
+        
+        // Try Redis first
+        let cachedDetail = await redisCacheService.get(cacheKey, 'conversation_details');
+        if (cachedDetail !== null) {
+          console.log('🎯 ETAPA 4: Redis Cache HIT [conversation_detail] key:', cacheKey, 'Performance: OPTIMIZED');
+          return res.json(cachedDetail);
+        }
+        
+        // Try Memory cache as fallback
+        cachedDetail = await memoryCacheService.get(cacheKey);
+        if (cachedDetail !== null) {
+          console.log('🎯 ETAPA 4: Memory Cache HIT [conversation_detail] key:', cacheKey, 'Performance: FAST FALLBACK');
+          return res.json(cachedDetail);
+        }
+        
+        console.log('💽 ETAPA 4: Cache MISS - fetching from database');
+      } else {
+        console.log('🚫 ETAPA 4: Cache BYPASSED - forcing fresh database fetch');
       }
       
       // Fallback to Memory Cache

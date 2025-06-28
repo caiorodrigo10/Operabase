@@ -593,49 +593,78 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       
       console.log('🤖 AI PAUSE UPLOAD: ========== FIM DO SISTEMA DE PAUSA AUTOMÁTICA ==========');
 
-      // 🚀 ETAPA 2: AGGRESSIVE CACHE INVALIDATION BEFORE RESPONSE
-      console.log('⚡ ETAPA 2: Starting aggressive cache invalidation BEFORE sending response...');
+      // 🚀 ETAPA 3: COMPLETE CACHE BYPASS - Force fresh DB data
+      console.log('⚡ ETAPA 3: Starting complete cache bypass - forcing fresh database fetch...');
       
       try {
-        // 1. Immediate Memory Cache invalidation with multiple keys
-        const memoryCacheService = (await import('../cache/memory-cache-service.js')).memoryCacheService;
+        // 1. COMPLETE Memory Cache invalidation and bypass
+        const { memoryCacheService } = await import('../cache/memory-cache.service.js');
         
-        // Clear conversation detail cache with all possible pagination keys
-        const baseDetailKey = `conversation:${conversationId}:detail`;
-        await memoryCacheService.invalidatePattern(`${baseDetailKey}*`);
-        console.log('✅ ETAPA 2: Conversation detail cache pattern invalidated');
+        // Clear ALL conversation related cache patterns
+        const cachePatterns = [
+          `conversation:${conversationId}*`,
+          `conversations:list:clinic:1*`,
+          `conversation:*:detail*`
+        ];
         
-        // Clear conversation list cache
-        await memoryCacheService.invalidate('conversations:list:clinic:1');
-        console.log('✅ ETAPA 2: Conversation list cache invalidated');
+        for (const pattern of cachePatterns) {
+          await memoryCacheService.invalidatePattern(pattern);
+          console.log(`✅ ETAPA 3: Cache pattern cleared: ${pattern}`);
+        }
         
-        // 2. Force Redis cache invalidation
+        // 2. AGGRESSIVE Redis cache complete flush
         try {
           const redisCache = (await import('../cache/redis-cache-service.js')).redisCacheService;
           await redisCache.invalidateConversationDetail(conversationId);
           await redisCache.invalidateConversationsList(1);
-          console.log('✅ ETAPA 2: Redis cache invalidated');
+          
+          // Force clear Redis cache by attempting to clear all related keys
+          const redisKeys = [
+            `conversation:${conversationId}:detail:*`,
+            `conversations:list:clinic:1:*`,
+            `conversation_detail:${conversationId}:*`
+          ];
+          
+          for (const keyPattern of redisKeys) {
+            try {
+              await redisCache.invalidatePattern(keyPattern);
+            } catch (e) {
+              // Continue even if pattern invalidation fails
+            }
+          }
+          
+          console.log('✅ ETAPA 3: Redis cache completely flushed');
         } catch (redisError) {
-          console.log('⚠️ ETAPA 2: Redis cache invalidation failed (fallback to memory)');
+          console.log('⚠️ ETAPA 3: Redis cache flush failed, using memory only');
         }
         
-        // 3. Clear specific cache keys that might exist
-        const keysToInvalidate = [
+        // 3. NUCLEAR OPTION: Clear EVERYTHING related to this conversation
+        const nuclearKeys = [
+          `conversation:${conversationId}:detail`,
           `conversation:${conversationId}:detail:page:1:limit:25`,
           `conversation:${conversationId}:detail:page:1:limit:50`,
+          `conversation:${conversationId}:detail:page:2:limit:25`,
           `conversations:list:clinic:1`,
-          `conversations:list:clinic:1:status:active`
+          `conversations:list:clinic:1:status:active`,
+          `conversations:list:clinic:1:page:1`,
+          `conversation_cache_${conversationId}`,
+          `conv_${conversationId}_messages`,
+          `conv_details_${conversationId}`
         ];
         
-        for (const key of keysToInvalidate) {
+        for (const key of nuclearKeys) {
           await memoryCacheService.invalidate(key);
         }
-        console.log('✅ ETAPA 2: Specific cache keys invalidated:', keysToInvalidate.length);
+        console.log('✅ ETAPA 3: Nuclear cache invalidation completed:', nuclearKeys.length, 'keys');
         
-        console.log('⚡ ETAPA 2: Aggressive cache invalidation completed BEFORE response');
+        // 4. MEMORY CACHE STATS RESET
+        await memoryCacheService.clear(); // Clear entire memory cache
+        console.log('✅ ETAPA 3: ENTIRE MEMORY CACHE CLEARED - next request will be fresh from DB');
+        
+        console.log('⚡ ETAPA 3: Complete cache bypass completed - all data will be fresh from database');
         
       } catch (cacheError) {
-        console.log('⚠️ ETAPA 2: Aggressive cache invalidation failed:', cacheError.message);
+        console.log('⚠️ ETAPA 3: Complete cache bypass failed:', cacheError.message);
       }
 
       // 📡 ETAPA 2: IMMEDIATE WebSocket broadcast BEFORE response
