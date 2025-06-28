@@ -57,6 +57,10 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<any>(null);
   
+  // ETAPA 5.3: Transition state management to prevent button flicker
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionStage, setTransitionStage] = useState<'idle' | 'optimistic' | 'fetching' | 'complete'>('idle');
+  
   const uploadMutation = useUpload();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -106,6 +110,11 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const handleUpload = async () => {
     if (files.length === 0) return;
 
+    // ETAPA 5.3: Start transition state management
+    setIsTransitioning(true);
+    setTransitionStage('optimistic');
+
+    console.log('📤 ETAPA 5.3: Starting upload with transition management');
     console.log('📤 FileUploadModal: Starting upload with conversationId:', conversationId);
     console.log('📤 FileUploadModal: conversationId type:', typeof conversationId);
     console.log('📤 FileUploadModal: conversationId length:', conversationId?.length);
@@ -124,6 +133,9 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
       
       setStatus('processing');
       
+      // ETAPA 5.3: Mark transition to fetching stage
+      setTransitionStage('fetching');
+      
       console.log('📤 FileUploadModal: Calling uploadMutation with:', {
         conversationId,
         fileName: file.name,
@@ -138,6 +150,14 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
         caption: caption.trim() || undefined,
         sendToWhatsApp
       });
+      
+      // ETAPA 5.3: Wait for cache replacement to complete before completing transition
+      console.log('🔄 ETAPA 5.3: Upload successful, waiting for cache stabilization...');
+      setTimeout(() => {
+        setTransitionStage('complete');
+        setIsTransitioning(false);
+        console.log('✅ ETAPA 5.3: Transition completed - attachment fully stable');
+      }, 1500); // Give time for cache replacement to complete
       
       // Progresso final (50-100%)
       for (let p = 51; p <= 100; p += 10) {
@@ -159,6 +179,9 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
       console.error('Upload error:', error);
       setStatus('error');
       setResult({ error: error instanceof Error ? error.message : 'Erro no upload' });
+      // Reset transition on error
+      setIsTransitioning(false);
+      setTransitionStage('idle');
     }
   };
 
@@ -176,6 +199,11 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
     setStatus('idle');
     setProgress(0);
     setResult(null);
+    
+    // ETAPA 5.3: Reset transition state
+    setIsTransitioning(false);
+    setTransitionStage('idle');
+    
     onClose();
   };
 

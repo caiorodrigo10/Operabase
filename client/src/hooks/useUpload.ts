@@ -190,40 +190,26 @@ export function useUpload() {
         console.log('🧹 OPTIMISTIC: Cleaned up local file URL');
       }
       
-      // 🚀 ETAPA 2: AGGRESSIVE CACHE INVALIDATION - Force immediate server data fetch
-      console.log('⚡ ETAPA 2: Starting aggressive cache invalidation for instant visual update');
+      // 🚀 ETAPA 5.1: TRANSITION STATE MANAGEMENT - Preserve optimistic data during transition
+      console.log('⚡ ETAPA 5.1: Starting smooth transition from optimistic to real data');
+      
+      // Flag to preserve optimistic data until real data is confirmed
+      const transitionId = `transition-${Date.now()}`;
+      console.log('🔄 ETAPA 5.1: Created transition ID:', transitionId);
       
       try {
-        // 1. Force invalidate conversation detail with immediate refetch
-        queryClient.invalidateQueries({ 
-          queryKey: ['/api/conversations-simple', variables.conversationId],
-          refetchType: 'all' // Force refetch even if already fetching
-        });
-        console.log('🧹 ETAPA 2: Conversation detail cache invalidated with immediate refetch');
+        // ETAPA 5.1: Don't remove optimistic data immediately - let it persist during transition
+        console.log('🛡️ ETAPA 5.1: Preserving optimistic data during cache transition');
         
-        // 2. Force invalidate conversation list with immediate refetch
-        queryClient.invalidateQueries({ 
-          queryKey: ['/api/conversations-simple'],
-          refetchType: 'all'
-        });
-        console.log('🧹 ETAPA 2: Conversation list cache invalidated with immediate refetch');
-        
-        // 3. Remove any cached entries completely to force fresh fetch
-        queryClient.removeQueries({ 
-          queryKey: ['/api/conversations-simple', variables.conversationId] 
-        });
-        queryClient.removeQueries({ 
-          queryKey: ['/api/conversations-simple'] 
-        });
-        console.log('🧹 ETAPA 2: Cache entries completely removed for fresh fetch');
-        
-        // 4. ETAPA 4: Force backend cache bypass with query parameters
+        // ETAPA 5.2: CACHE REPLACEMENT - Fetch fresh data and replace cache directly
         const timestamp = Date.now();
         const bustParam = Math.random();
         
-        // Force fresh fetch with cache bypass parameters
-        queryClient.fetchQuery({
-          queryKey: ['/api/conversations-simple', variables.conversationId, 'bypass', timestamp],
+        console.log('🔄 ETAPA 5.2: Fetching fresh data with cache replacement strategy');
+        
+        // Fetch fresh conversation detail and replace cache directly (no invalidation gap)
+        const freshDetailPromise = queryClient.fetchQuery({
+          queryKey: ['/api/conversations-simple', variables.conversationId],
           queryFn: async () => {
             const response = await fetch(`/api/conversations-simple/${variables.conversationId}?nocache=${timestamp}&bust=${bustParam}`);
             return response.json();
@@ -232,8 +218,9 @@ export function useUpload() {
           gcTime: 0
         });
         
-        queryClient.fetchQuery({
-          queryKey: ['/api/conversations-simple', 'bypass', timestamp],
+        // Fetch fresh conversation list and replace cache directly
+        const freshListPromise = queryClient.fetchQuery({
+          queryKey: ['/api/conversations-simple'],
           queryFn: async () => {
             const response = await fetch(`/api/conversations-simple?nocache=${timestamp}&bust=${bustParam}`);
             return response.json();
@@ -242,16 +229,13 @@ export function useUpload() {
           gcTime: 0
         });
         
-        // 5. Force immediate refetch of normal queries after cache bypass
-        setTimeout(() => {
-          queryClient.refetchQueries({
-            queryKey: ['/api/conversations-simple', variables.conversationId]
-          });
-          queryClient.refetchQueries({
-            queryKey: ['/api/conversations-simple']
-          });
-          console.log('⚡ ETAPA 4: Cache bypass fetch + normal refetch executed');
-        }, 100); // Small delay to ensure cache bypass completes
+        // ETAPA 5.2: Wait for fresh data and then seamlessly replace cache
+        Promise.all([freshDetailPromise, freshListPromise]).then(() => {
+          console.log('✅ ETAPA 5.2: Fresh data fetched and cache replaced seamlessly');
+          console.log('🔄 ETAPA 5.2: Transition completed - optimistic → real data replacement');
+        }).catch(error => {
+          console.error('❌ ETAPA 5.2: Error during cache replacement:', error);
+        });
         
         // 5. Set staleTime to 0 temporarily for immediate updates
         queryClient.setQueryDefaults(['/api/conversations-simple', variables.conversationId], {
