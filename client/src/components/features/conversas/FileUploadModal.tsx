@@ -8,8 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { X, Upload, FileIcon, Image, Video, Music, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSimpleUpload } from '@/hooks/useSimpleUpload';
-import { useQueryClient } from '@tanstack/react-query';
+import { useUpload } from '@/hooks/useUpload';
 
 interface FileUploadModalProps {
   isOpen: boolean;
@@ -58,10 +57,11 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<any>(null);
   
-  // NOVA ABORDAGEM: Sem estados de transição - upload simples
+  // ETAPA 5.3: Transition state management to prevent button flicker
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionStage, setTransitionStage] = useState<'idle' | 'optimistic' | 'fetching' | 'complete'>('idle');
   
-  const uploadMutation = useSimpleUpload();
-  const queryClient = useQueryClient();
+  const uploadMutation = useUpload();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map(file => {
@@ -110,14 +110,14 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const handleUpload = async () => {
     if (files.length === 0) return;
 
-    console.log('🎯 NOVA ABORDAGEM: Upload simples SEM preview - elimina flicker completamente');
-    
-    console.log('📤 NOVA ABORDAGEM: Upload silencioso para:', {
-      conversationId,
-      fileName: files[0].name,
-      fileSize: files[0].size,
-      sendToWhatsApp
-    });
+    // ETAPA 5.3: Start transition state management
+    setIsTransitioning(true);
+    setTransitionStage('optimistic');
+
+    console.log('📤 ETAPA 5.3: Starting upload with transition management');
+    console.log('📤 FileUploadModal: Starting upload with conversationId:', conversationId);
+    console.log('📤 FileUploadModal: conversationId type:', typeof conversationId);
+    console.log('📤 FileUploadModal: conversationId length:', conversationId?.length);
 
     setStatus('uploading');
     setProgress(0);
@@ -133,7 +133,8 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
       
       setStatus('processing');
       
-      // NOVA ABORDAGEM: Processando upload sem preview
+      // ETAPA 5.3: Mark transition to fetching stage
+      setTransitionStage('fetching');
       
       console.log('📤 FileUploadModal: Calling uploadMutation with:', {
         conversationId,
@@ -150,7 +151,13 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
         sendToWhatsApp
       });
       
-      console.log('✅ NOVA ABORDAGEM: Upload bem-sucedido - arquivo aparecerá ao fechar modal');
+      // ETAPA 5.3: Wait for cache replacement to complete before completing transition
+      console.log('🔄 ETAPA 5.3: Upload successful, waiting for cache stabilization...');
+      setTimeout(() => {
+        setTransitionStage('complete');
+        setIsTransitioning(false);
+        console.log('✅ ETAPA 5.3: Transition completed - attachment fully stable');
+      }, 1500); // Give time for cache replacement to complete
       
       // Progresso final (50-100%)
       for (let p = 51; p <= 100; p += 10) {
@@ -169,9 +176,12 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
       }, 2000);
       
     } catch (error) {
-      console.error('❌ NOVA ABORDAGEM: Upload failed:', error);
+      console.error('Upload error:', error);
       setStatus('error');
       setResult({ error: error instanceof Error ? error.message : 'Erro no upload' });
+      // Reset transition on error
+      setIsTransitioning(false);
+      setTransitionStage('idle');
     }
   };
 
@@ -190,10 +200,9 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
     setProgress(0);
     setResult(null);
     
-    // NOVA ABORDAGEM: Estados simplificados
-    
-    // NOVA ABORDAGEM: Cache já foi invalidado imediatamente após upload
-    // Não precisa invalidar novamente aqui
+    // ETAPA 5.3: Reset transition state
+    setIsTransitioning(false);
+    setTransitionStage('idle');
     
     onClose();
   };
@@ -337,10 +346,13 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
             {status === 'idle' && (
               <Button 
                 onClick={handleUpload} 
-                disabled={files.length === 0}
+                disabled={files.length === 0 || isTransitioning}
                 className="min-w-[100px]"
               >
-                Enviar
+                {isTransitioning && transitionStage === 'optimistic' && 'Enviando...'}
+                {isTransitioning && transitionStage === 'fetching' && 'Processando...'}
+                {isTransitioning && transitionStage === 'complete' && 'Enviado'}
+                {!isTransitioning && 'Enviar'}
               </Button>
             )}
           </div>
