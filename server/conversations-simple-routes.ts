@@ -51,7 +51,8 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
             name,
             phone,
             email,
-            status
+            status,
+            profile_picture
           )
         `)
         .eq('clinic_id', clinicId)
@@ -138,6 +139,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           ai_active: conv.ai_active ?? true, // Incluído campo ai_active
           contact_name: conv.contacts?.name || `Contato ${conv.contact_id}`,
           patient_name: conv.contacts?.name || `Contato ${conv.contact_id}`, // Frontend expects patient_name
+          patient_avatar: conv.contacts?.profile_picture || null, // Profile picture from contacts table
           contact_phone: conv.contacts?.phone || '',
           contact_email: conv.contacts?.email || '',
           contact_status: conv.contacts?.status || 'active',

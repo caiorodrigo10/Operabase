@@ -34,6 +34,7 @@ export const contactSchema = z.object({
   medical_history: nullableString,
   current_medications: z.array(z.string()).nullable().optional(),
   allergies: z.array(z.string()).nullable().optional(),
+  profile_picture: nullableString, // URL da foto do perfil
   status: contactStatusSchema,
   priority: prioritySchema.default('normal'),
   source: sourceSchema.default('whatsapp'),
@@ -57,6 +58,7 @@ export const createContactSchema = contactSchema.omit({
   emergency_contact: z.union([z.string(), z.null()]).optional(),
   medical_history: z.union([z.string(), z.null()]).optional(),
   age: z.union([z.number().int().min(0).max(150), z.null()]).optional(),
+  profile_picture: z.union([z.string().url(), z.literal(""), z.null()]).optional(),
 });
 
 // Contact update schema (partial)
