@@ -251,17 +251,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       } else {
         console.log('🚫 ETAPA 4: Cache BYPASSED - forcing fresh database fetch');
       }
-      
-      // Fallback to Memory Cache
-      cachedDetail = memoryCacheService.get<any>(cacheKey);
-      if (cachedDetail !== null) {
-        console.log('🎯 ETAPA 4: Memory Cache HIT [conversation_detail] key:', cacheKey, 'Performance: FAST FALLBACK');
-        return res.json(cachedDetail);
-      }
-      
-      console.log('❌ ETAPA 4: Complete Cache MISS - both Redis and Memory failed for key:', cacheKey);
-      
-      console.log('💽 ETAPA 4: Cache MISS [conversation_detail] key:', cacheKey, 'Performance: NEEDS OPTIMIZATION');
+
 
       console.log('🔍 Fetching conversation detail:', conversationId);
 

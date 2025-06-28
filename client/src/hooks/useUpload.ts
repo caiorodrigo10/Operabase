@@ -217,7 +217,32 @@ export function useUpload() {
         });
         console.log('🧹 ETAPA 2: Cache entries completely removed for fresh fetch');
         
-        // 4. Force immediate refetch of conversation data
+        // 4. ETAPA 4: Force backend cache bypass with query parameters
+        const timestamp = Date.now();
+        const bustParam = Math.random();
+        
+        // Force fresh fetch with cache bypass parameters
+        queryClient.fetchQuery({
+          queryKey: ['/api/conversations-simple', variables.conversationId, 'bypass', timestamp],
+          queryFn: async () => {
+            const response = await fetch(`/api/conversations-simple/${variables.conversationId}?nocache=${timestamp}&bust=${bustParam}`);
+            return response.json();
+          },
+          staleTime: 0,
+          gcTime: 0
+        });
+        
+        queryClient.fetchQuery({
+          queryKey: ['/api/conversations-simple', 'bypass', timestamp],
+          queryFn: async () => {
+            const response = await fetch(`/api/conversations-simple?nocache=${timestamp}&bust=${bustParam}`);
+            return response.json();
+          },
+          staleTime: 0,
+          gcTime: 0
+        });
+        
+        // 5. Force immediate refetch of normal queries after cache bypass
         setTimeout(() => {
           queryClient.refetchQueries({
             queryKey: ['/api/conversations-simple', variables.conversationId]
@@ -225,8 +250,8 @@ export function useUpload() {
           queryClient.refetchQueries({
             queryKey: ['/api/conversations-simple']
           });
-          console.log('⚡ ETAPA 2: Immediate forced refetch executed');
-        }, 50); // Small delay to ensure cache clearing
+          console.log('⚡ ETAPA 4: Cache bypass fetch + normal refetch executed');
+        }, 100); // Small delay to ensure cache bypass completes
         
         // 5. Set staleTime to 0 temporarily for immediate updates
         queryClient.setQueryDefaults(['/api/conversations-simple', variables.conversationId], {
