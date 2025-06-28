@@ -156,6 +156,20 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 28, 2025 - Sistema Working Days MCP: Proteção Completa Contra Agendamentos Indevidos ✅
+- **Problema Crítico Resolvido**: IA agendando consultas em sábados apesar da clínica configurar apenas dias úteis
+- **ETAPA 1 Implementada**: Validação de working days em consulta de disponibilidade (getAvailableSlots)
+- **ETAPA 2 Implementada**: Validação de working days em criação (createAppointment) e reagendamento (rescheduleAppointment)
+- **ETAPA 3 Implementada**: Sistema completo de testes e validação para todos os endpoints MCP
+- **Função Helper**: isWorkingDay() implementada com consulta direta à configuração da clínica
+- **Proteção Tripla**: Disponibilidade (0 slots), criação (erro específico), reagendamento (erro específico)
+- **Logs Detalhados**: Sistema registra todas as validações para debugging e monitoramento
+- **Configuração Testada**: Working days [monday, tuesday, thursday, friday] - bloqueia [wednesday, saturday, sunday]
+- **Zero Impact**: Funcionalidades existentes preservadas, performance mantida, compatibilidade N8N intacta
+- **Resultado Final**: IA não consegue mais agendar em dias não configurados como úteis pela clínica
+- **Endpoints Protegidos**: /mcp/appointments/availability, /mcp/appointments/create, /mcp/appointments/reschedule
+- **Status**: ✅ SISTEMA WORKING DAYS 100% FUNCIONAL - Proteção completa implementada e validada
+
 ### June 28, 2025 - Sistema RAG Multi-Tenant: knowledge_base_id Sincronizado Completamente ✅
 - **Problema Resolvido**: Campo knowledge_base_id vazio na tabela rag_embeddings após migração inicial
 - **Script de Sincronização**: Criado sync-knowledge-base-ids.ts com verificação completa da estrutura RAG
