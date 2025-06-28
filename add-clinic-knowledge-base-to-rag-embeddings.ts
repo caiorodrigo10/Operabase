@@ -4,10 +4,7 @@
  */
 
 import { sql } from 'drizzle-orm';
-import { getDB } from './server/storage.js';
-
-// Usar a conexão existente do sistema
-const db = getDB();
+import { db } from './server/db.js';
 
 async function addClinicKnowledgeBaseToRagEmbeddings() {
   console.log('🚀 Iniciando migração: Adicionar clinic_id e knowledge_base_id à rag_embeddings');
@@ -77,15 +74,61 @@ async function addClinicKnowledgeBaseToRagEmbeddings() {
       console.log(`✅ knowledge_base_id atualizado para ${updateKnowledgeBaseResult.count} registros`);
     }
 
-    // ETAPA 5: Tornar clinic_id obrigatório
-    console.log('\n🔒 ETAPA 5: Tornando clinic_id obrigatório...');
+    // ETAPA 5: Investigar e lidar com valores NULL
+    console.log('\n🔍 ETAPA 5: Investigando estrutura da tabela...');
     
-    await db.execute(sql`
-      ALTER TABLE rag_embeddings 
-      ALTER COLUMN clinic_id SET NOT NULL;
+    // Verificar se a coluna já existe
+    const columnExists = await db.execute(sql`
+      SELECT column_name, is_nullable, column_default 
+      FROM information_schema.columns 
+      WHERE table_name = 'rag_embeddings' AND column_name = 'clinic_id';
     `);
     
-    console.log('✅ clinic_id agora é obrigatório');
+    console.log('📊 Informações da coluna clinic_id:', columnExists[0]);
+
+    // Verificar dados reais na tabela
+    const allData = await db.execute(sql`
+      SELECT id, chunk_id, clinic_id, knowledge_base_id 
+      FROM rag_embeddings 
+      LIMIT 5;
+    `);
+    
+    console.log('📊 Primeiros 5 registros:', allData);
+
+    // Forçar update de todos os registros NULL
+    console.log('\n🔧 ETAPA 5: Atualizando TODOS os registros NULL...');
+    
+    const updateResult = await db.execute(sql`
+      UPDATE rag_embeddings 
+      SET clinic_id = 1 
+      WHERE clinic_id IS NULL;
+    `);
+    
+    console.log(`✅ Atualizados ${updateResult.rowCount} registros`);
+
+    // Verificar novamente
+    const finalNullCount = await db.execute(sql`
+      SELECT COUNT(*) as total, 
+             COUNT(clinic_id) as with_clinic,
+             COUNT(*) - COUNT(clinic_id) as nulls
+      FROM rag_embeddings;
+    `);
+    
+    console.log('📊 Status final:', finalNullCount[0]);
+
+    // Só tentar tornar NOT NULL se não houver mais NULLs
+    if (finalNullCount[0]?.nulls === 0) {
+      console.log('\n🔒 ETAPA 5b: Tornando clinic_id obrigatório...');
+      
+      await db.execute(sql`
+        ALTER TABLE rag_embeddings 
+        ALTER COLUMN clinic_id SET NOT NULL;
+      `);
+      
+      console.log('✅ clinic_id agora é obrigatório');
+    } else {
+      console.log('⚠️ Ainda há valores NULL, pulando constraint NOT NULL');
+    }
 
     // ETAPA 6: Adicionar foreign keys (se as tabelas existirem)
     console.log('\n🔗 ETAPA 6: Adicionando foreign keys...');
