@@ -156,6 +156,15 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 27, 2025 - Reorganização de Navegação: Consultas como Página Inicial ✅
+- **Página Inicial Alterada**: "/" agora aponta para a página de Consultas (agenda) em vez do Dashboard
+- **Painel Movido**: Dashboard antigo agora acessível em "/relatorios" dentro do menu de aplicativos
+- **Menu Simplificado**: Removido "Painel" da navegação principal, mantendo apenas "Agenda" e "Pacientes"
+- **Relatórios Funcional**: Link no dropdown de aplicativos agora direciona para o painel dashboard
+- **Compatibilidade**: Rota "/consultas" mantida para compatibilidade, mas "/" é a nova rota principal
+- **Mobile Atualizado**: Menu mobile também reflete as mudanças com Relatórios acessível
+- **Zero Impact**: Todas funcionalidades preservadas, apenas reorganização da interface de navegação
+
 ### June 27, 2025 - N8N RAG VIEWs Otimizadas: Sistema Dual Implementado ✅
 - **Problema RAG Resolvido**: Endpoint RAG corrigido para usar clinic_id=1 em vez de email, bases de conhecimento carregando corretamente
 - **Sistema Dual de VIEWs**: Criadas 2 VIEWs otimizadas para N8N com Drizzle ORM
