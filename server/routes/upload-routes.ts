@@ -461,6 +461,134 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         whatsappSent: result.whatsapp.sent
       });
 
+      // 🤖 APLICAR SISTEMA DE PAUSA AUTOMÁTICA DA IA PARA UPLOADS
+      try {
+        console.log('🤖 AI PAUSE UPLOAD: Aplicando sistema de pausa automática após upload de arquivo...');
+        
+        // Importar serviços necessários
+        const { AiPauseService } = await import('../domains/ai-pause/ai-pause.service');
+        const aiPauseService = AiPauseService.getInstance();
+        
+        // Importar cliente Supabase
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        
+        // Buscar estado atual da conversa para verificar IA
+        const { data: currentConversation } = await supabase
+          .from('conversations')
+          .select('ai_active, ai_pause_reason')
+          .eq('id', conversationId)
+          .single();
+        
+        console.log('🤖 AI PAUSE UPLOAD: Estado atual da conversa:', {
+          conversationId,
+          ai_active: currentConversation?.ai_active,
+          ai_pause_reason: currentConversation?.ai_pause_reason
+        });
+        
+        // Criar contexto de pausa para upload de arquivo
+        const aiPauseContext = {
+          conversationId: conversationId,
+          clinicId: finalProfile.clinic_id,
+          senderId: finalUser?.id?.toString() || '4', // User ID do profissional
+          senderType: 'professional' as const,
+          deviceType: 'manual' as const, // Upload via interface web = manual
+          messageContent: `[Arquivo: ${req.file.originalname}]`,
+          timestamp: new Date()
+        };
+        
+        console.log('🤖 AI PAUSE UPLOAD: Contexto criado:', aiPauseContext);
+        
+        // Buscar configuração da Lívia
+        const { data: liviaConfig } = await supabase
+          .from('livia_configurations')
+          .select('*')
+          .eq('clinic_id', finalProfile.clinic_id)
+          .single();
+        
+        console.log('🤖 AI PAUSE UPLOAD: Configuração Lívia:', liviaConfig);
+        
+        if (!liviaConfig) {
+          console.log('⚠️ AI PAUSE UPLOAD: Configuração da Lívia não encontrada, usando padrões');
+          // Configuração padrão
+          const defaultConfig = {
+            off_duration: 30,
+            off_unit: 'minutes'
+          };
+          
+          const pauseResult = await aiPauseService.processMessage(
+            aiPauseContext, 
+            defaultConfig as any,
+            currentConversation?.ai_active,
+            currentConversation?.ai_pause_reason
+          );
+          console.log('🤖 AI PAUSE UPLOAD: Resultado da análise (config padrão):', pauseResult);
+          
+          if (pauseResult.shouldPause) {
+            // Aplicar pausa no banco de dados
+            const { error: updateError } = await supabase
+              .from('conversations')
+              .update({
+                ai_active: false, // ✅ CRÍTICO: Desativar IA durante pausa
+                ai_paused_until: pauseResult.pausedUntil?.toISOString(),
+                ai_paused_by_user_id: pauseResult.pausedByUserId,
+                ai_pause_reason: pauseResult.pauseReason
+              })
+              .eq('id', conversationId);
+            
+            if (updateError) {
+              console.error('❌ AI PAUSE UPLOAD: Erro ao aplicar pausa no banco:', updateError);
+            } else {
+              console.log('✅ AI PAUSE UPLOAD: Pausa automática aplicada com sucesso!');
+              
+              // Invalidar cache após aplicar pausa
+              const { redisCacheService } = await import('../cache/redis-cache-service');
+              await redisCacheService.invalidateConversationDetail(conversationId);
+              console.log('🧹 AI PAUSE UPLOAD: Cache invalidado após aplicar pausa automática');
+            }
+          }
+        } else {
+          const pauseResult = await aiPauseService.processMessage(
+            aiPauseContext, 
+            liviaConfig,
+            currentConversation?.ai_active,
+            currentConversation?.ai_pause_reason
+          );
+          console.log('🤖 AI PAUSE UPLOAD: Resultado da análise:', pauseResult);
+          
+          if (pauseResult.shouldPause) {
+            // Aplicar pausa no banco de dados E desativar AI_ACTIVE
+            const { error: updateError } = await supabase
+              .from('conversations')
+              .update({
+                ai_active: false, // ✅ CRÍTICO: Desativar IA durante pausa
+                ai_paused_until: pauseResult.pausedUntil?.toISOString(),
+                ai_paused_by_user_id: pauseResult.pausedByUserId,
+                ai_pause_reason: pauseResult.pauseReason
+              })
+              .eq('id', conversationId);
+            
+            if (updateError) {
+              console.error('❌ AI PAUSE UPLOAD: Erro ao aplicar pausa no banco:', updateError);
+            } else {
+              console.log('✅ AI PAUSE UPLOAD: Pausa automática aplicada com sucesso!');
+              
+              // Invalidar cache após aplicar pausa
+              const { redisCacheService } = await import('../cache/redis-cache-service');
+              await redisCacheService.invalidateConversationDetail(conversationId);
+              console.log('🧹 AI PAUSE UPLOAD: Cache invalidado após aplicar pausa automática');
+            }
+          }
+        }
+        
+      } catch (aiPauseError) {
+        console.error('❌ AI PAUSE UPLOAD: Erro no sistema de pausa automática:', aiPauseError);
+        // Não bloquear o upload por erro na pausa - continuar normalmente
+      }
+
       res.json({
         success: true,
         data: {
