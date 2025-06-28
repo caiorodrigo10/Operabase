@@ -57,7 +57,14 @@ export function useSimpleUpload() {
         };
         
       } catch (error) {
-        console.error('❌ NOVA ABORDAGEM: Erro no upload:', error);
+        console.error('❌ NOVA ABORDAGEM: Erro detalhado no upload:', {
+          error,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          type: typeof error,
+          conversationId: variables.conversationId
+        });
+        
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Erro desconhecido no upload'
@@ -74,14 +81,14 @@ export function useSimpleUpload() {
     onSuccess: (result, variables) => {
       console.log('✅ NOVA ABORDAGEM: Upload bem-sucedido - invalidando cache para aparecer imediatamente');
       
-      // CORREÇÃO: Invalidar cache imediatamente após upload
-      // Isso garante que o arquivo apareça rapidamente
+      // CORREÇÃO: Invalidar cache imediatamente após upload com chaves corretas
+      // Usando mesmo padrão de chaves do sistema principal
       queryClient.invalidateQueries({
-        queryKey: ['conversations-simple', variables.conversationId]
+        queryKey: ['/api/conversations-simple', variables.conversationId]
       });
       
       queryClient.invalidateQueries({
-        queryKey: ['conversations-simple']
+        queryKey: ['/api/conversations-simple']
       });
       
       console.log('🧹 Cache invalidado - arquivo aparecerá instantaneamente');
