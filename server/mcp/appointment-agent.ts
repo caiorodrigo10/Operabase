@@ -118,6 +118,25 @@ export class AppointmentMCPAgent {
       // Validate input parameters
       const validated = CreateAppointmentSchema.parse(params);
       
+      console.log(`🔍 MCP Appointment Creation: ${validated.scheduled_date} for clinic ${validated.clinic_id}`);
+      
+      // ETAPA 2: Check if the scheduled date is a working day
+      const isWorkingDay = await this.isWorkingDay(validated.scheduled_date, validated.clinic_id);
+      
+      if (!isWorkingDay) {
+        console.log(`❌ Cannot create appointment on ${validated.scheduled_date} - not a working day for clinic ${validated.clinic_id}`);
+        return {
+          success: false,
+          data: null,
+          error: `Cannot schedule appointment on ${validated.scheduled_date}. This day is not configured as a working day for the clinic.`,
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        };
+      }
+      
+      console.log(`✅ Date ${validated.scheduled_date} is a working day, proceeding with appointment creation`);
+      
       // Verify contact exists and belongs to clinic
       const contact = await db.select()
         .from(contacts)
@@ -317,6 +336,25 @@ export class AppointmentMCPAgent {
   async rescheduleAppointment(params: z.infer<typeof RescheduleSchema>): Promise<MCPResponse> {
     try {
       const validated = RescheduleSchema.parse(params);
+      
+      console.log(`🔍 MCP Appointment Reschedule: ${validated.scheduled_date} for clinic ${validated.clinic_id}`);
+      
+      // ETAPA 2: Check if the new scheduled date is a working day
+      const isWorkingDay = await this.isWorkingDay(validated.scheduled_date, validated.clinic_id);
+      
+      if (!isWorkingDay) {
+        console.log(`❌ Cannot reschedule appointment to ${validated.scheduled_date} - not a working day for clinic ${validated.clinic_id}`);
+        return {
+          success: false,
+          data: null,
+          error: `Cannot reschedule appointment to ${validated.scheduled_date}. This day is not configured as a working day for the clinic.`,
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        };
+      }
+      
+      console.log(`✅ Date ${validated.scheduled_date} is a working day, proceeding with reschedule`);
       
       // Get existing appointment
       const existingAppointment = await db.select()
