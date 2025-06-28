@@ -447,11 +447,16 @@ router.put('/api/whatsapp/numbers/:id/professional', async (req, res) => {
 });
 
 // Delete WhatsApp number
-router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
+router.delete('/api/whatsapp/numbers/:id', isAuthenticated, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid WhatsApp number ID' });
+    }
+
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
     const storage = await getStorage();
@@ -461,7 +466,12 @@ router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
       return res.status(404).json({ error: 'WhatsApp number not found' });
     }
 
-    console.log(`🗑️ Deleting WhatsApp number ${id} with instance: ${whatsappNumber.instance_name}`);
+    // Verify user has permission to delete (same clinic)
+    if (whatsappNumber.clinic_id !== user.clinic_id) {
+      return res.status(403).json({ error: 'Unauthorized: Cannot delete WhatsApp number from different clinic' });
+    }
+
+    console.log(`🗑️ Soft deleting WhatsApp number ${id} with instance: ${whatsappNumber.instance_name} by user ${user.id}`);
 
     // Try to delete instance from Evolution API (don't fail if instance doesn't exist)
     try {
@@ -469,18 +479,23 @@ router.delete('/api/whatsapp/numbers/:id', async (req, res) => {
       console.log(`✅ Evolution API instance deleted: ${whatsappNumber.instance_name}`);
     } catch (apiError: any) {
       console.log(`⚠️ Evolution API deletion failed (continuing): ${apiError.message}`);
-      // Continue with database deletion even if API deletion fails
+      // Continue with soft delete even if API deletion fails
     }
 
-    // Delete from database
-    const deleted = await storage.deleteWhatsAppNumber(id);
+    // Soft delete from database with user tracking
+    const deleted = await storage.deleteWhatsAppNumber(id, user.id);
     
     if (!deleted) {
       return res.status(500).json({ error: 'Failed to delete from database' });
     }
 
-    console.log(`✅ WhatsApp number ${id} deleted from database`);
-    res.json({ success: true, message: 'WhatsApp number deleted successfully' });
+    console.log(`✅ WhatsApp number ${id} soft deleted from database by user ${user.id}`);
+    res.json({ 
+      success: true, 
+      message: 'WhatsApp number deleted successfully',
+      type: 'soft_delete',
+      deletedBy: user.id
+    });
   } catch (error) {
     console.error('Error deleting WhatsApp number:', error);
     res.status(500).json({ error: 'Failed to delete WhatsApp number' });
