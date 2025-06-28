@@ -77,7 +77,8 @@ function Router() {
   }
 
   const getCurrentPage = () => {
-    if (location === "/") return "dashboard";
+    if (location === "/") return "consultas";
+    if (location === "/relatorios") return "dashboard";
     return location.substring(1);
   };
 
@@ -146,7 +147,8 @@ function Router() {
   return (
     <Layout currentPage={getCurrentPage()}>
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={Consultas} />
+        <Route path="/relatorios" component={Dashboard} />
         <Route path="/pipeline" component={Pipeline} />
         <Route path="/consultas" component={Consultas} />
         <Route path="/contatos" component={Contatos} />

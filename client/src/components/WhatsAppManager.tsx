@@ -468,38 +468,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                   </div>
                 </div>
 
-                {/* Professional Assignment Section */}
-                <div className="flex items-center gap-3 pt-2 border-t">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
-                  </div>
-                  <Select
-                    value={number.user_id?.toString() || "none"}
-                    onValueChange={(value) => {
-                      const userId = value === "none" ? null : parseInt(value);
-                      updateProfessionalMutation.mutate({ 
-                        numberId: number.id, 
-                        userId 
-                      });
-                    }}
-                    disabled={updateProfessionalMutation.isPending}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Selecionar profissional" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhum profissional</SelectItem>
-                      {professionalsArray.map((professional: any) => 
-                        professional.id ? (
-                          <SelectItem key={professional.id} value={professional.id.toString()}>
-                            {professional.name || professional.email || 'Profissional'}
-                          </SelectItem>
-                        ) : null
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                
               </div>
             ))}
           </div>

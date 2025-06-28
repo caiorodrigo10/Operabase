@@ -39,8 +39,7 @@ interface HeaderProps {
 
 // Navigation items for the new horizontal menu
 const navigationItems = [
-  { name: "Painel", href: "/", key: "dashboard", icon: Home },
-  { name: "Agenda", href: "/consultas", key: "consultas", icon: Calendar },
+  { name: "Agenda", href: "/", key: "consultas", icon: Calendar },
   { name: "Pacientes", href: "/contatos", key: "contatos", icon: Users },
 ];
 
@@ -164,7 +163,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
             <nav className="hidden md:flex items-center space-x-2">
               {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
                 const isActive = location === item.href || 
-                  (item.key === "dashboard" && location === "/") ||
+                  (item.key === "consultas" && location === "/") ||
                   (item.key === "admin-dashboard" && location === "/admin") ||
                   (item.key === "contatos" && location.startsWith("/contatos")) ||
                   (item.key === "consultas" && location.startsWith("/consultas")) ||
@@ -256,22 +255,16 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                         <span className="text-sm font-medium text-slate-900 text-center">Campanhas Automáticas</span>
                       </div>
 
-                      <div 
+                      <Link
+                        href="/relatorios"
                         className="flex flex-col items-center justify-center p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors min-h-[80px]"
-                        onClick={() => {
-                          setIsAppsDropdownOpen(false);
-                          toast({
-                            title: "Funcionalidade em desenvolvimento",
-                            description: "Relatórios estará disponível em breve",
-                            variant: "default",
-                          });
-                        }}
+                        onClick={() => setIsAppsDropdownOpen(false)}
                       >
                         <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
                           <BarChart3 className="h-5 w-5 text-slate-500" />
                         </div>
                         <span className="text-sm font-medium text-slate-900 text-center">Relatórios</span>
-                      </div>
+                      </Link>
                     </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -434,7 +427,7 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
             <div className="flex space-x-4 mb-3">
               {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
                 const isActive = location === item.href || 
-                  (item.key === "dashboard" && location === "/") ||
+                  (item.key === "consultas" && location === "/") ||
                   (item.key === "admin-dashboard" && location === "/admin") ||
                   (item.key === "contatos" && location.startsWith("/contatos")) ||
                   (item.key === "consultas" && location.startsWith("/consultas")) ||
@@ -508,21 +501,15 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                     <span className="text-xs font-medium text-slate-900">Campanhas</span>
                   </div>
 
-                  <div 
+                  <Link
+                    href="/relatorios"
                     className="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => {
-                      toast({
-                        title: "Funcionalidade em desenvolvimento",
-                        description: "Relatórios estará disponível em breve",
-                        variant: "default",
-                      });
-                    }}
                   >
                     <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-1">
                       <BarChart3 className="h-4 w-4 text-slate-500" />
                     </div>
                     <span className="text-xs font-medium text-slate-900">Relatórios</span>
-                  </div>
+                  </Link>
                 </div>
               </div>
             )}
