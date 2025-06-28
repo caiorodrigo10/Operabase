@@ -122,7 +122,7 @@ export default function ConversasPage() {
     return conversationsData.conversations.map(conv => ({
       id: conv.id,
       patient_name: conv.contact_name || 'Contato sem nome',
-      patient_avatar: undefined,
+      patient_avatar: conv.patient_avatar || undefined,
       last_message: conv.last_message || 'Toque para ver a conversa',
       timestamp: conv.last_message_at || conv.timestamp, // CORRIGIDO: usar timestamp da última mensagem
       updated_at: conv.updated_at,
@@ -226,7 +226,7 @@ export default function ConversasPage() {
         name: conversation.contact_name || 'Contato sem nome',
         phone: conversation.contact_phone || '',
         email: conversation.contact_email || '',
-        avatar: undefined,
+        avatar: conversation.patient_avatar || undefined,
         last_appointment: undefined,
         recent_appointments: []
       });

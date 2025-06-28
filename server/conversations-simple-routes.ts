@@ -323,6 +323,23 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       const actualConversationId = conversation.id;
       console.log('✅ Found conversation:', actualConversationId);
 
+      // Buscar dados do contato com profile_picture
+      const { data: contactData, error: contactError } = await supabase
+        .from('contacts')
+        .select('id, name, phone, email, status, profile_picture')
+        .eq('id', conversation.contact_id)
+        .single();
+
+      if (contactError) {
+        console.error('❌ Error fetching contact data:', contactError);
+      }
+
+      // Enriquecer dados da conversa com informações do contato
+      const enrichedConversation = {
+        ...conversation,
+        contact: contactData
+      };
+
       // ETAPA 2: Sistema de Paginação Avançado com Feature Flag e Fallback
       // Elimina problema de performance com conversas muito longas
       const queryConversationId = actualConversationId;
@@ -551,7 +568,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
 
       // ETAPA 2: Response com informações de paginação
       const responseData = {
-        conversation: conversation,
+        conversation: enrichedConversation,
         messages: finalFormattedMessages,
         actions: actionNotifications,
         // ETAPA 2: Pagination metadata
