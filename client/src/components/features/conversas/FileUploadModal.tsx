@@ -110,14 +110,14 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const handleUpload = async () => {
     if (files.length === 0) return;
 
-    // ETAPA 5.3: Start transition state management
-    setIsTransitioning(true);
-    setTransitionStage('optimistic');
-
-    console.log('📤 ETAPA 5.3: Starting upload with transition management');
-    console.log('📤 FileUploadModal: Starting upload with conversationId:', conversationId);
-    console.log('📤 FileUploadModal: conversationId type:', typeof conversationId);
-    console.log('📤 FileUploadModal: conversationId length:', conversationId?.length);
+    console.log('🎯 NOVA ABORDAGEM: Upload simples SEM preview - elimina flicker completamente');
+    
+    console.log('📤 NOVA ABORDAGEM: Upload silencioso para:', {
+      conversationId,
+      fileName: files[0].name,
+      fileSize: files[0].size,
+      sendToWhatsApp
+    });
 
     setStatus('uploading');
     setProgress(0);
@@ -133,8 +133,7 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
       
       setStatus('processing');
       
-      // ETAPA 5.3: Mark transition to fetching stage
-      setTransitionStage('fetching');
+      // NOVA ABORDAGEM: Processando upload sem preview
       
       console.log('📤 FileUploadModal: Calling uploadMutation with:', {
         conversationId,
@@ -151,13 +150,7 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
         sendToWhatsApp
       });
       
-      // ETAPA 5.3: Wait for cache replacement to complete before completing transition
-      console.log('🔄 ETAPA 5.3: Upload successful, waiting for cache stabilization...');
-      setTimeout(() => {
-        setTransitionStage('complete');
-        setIsTransitioning(false);
-        console.log('✅ ETAPA 5.3: Transition completed - attachment fully stable');
-      }, 1500); // Give time for cache replacement to complete
+      console.log('✅ NOVA ABORDAGEM: Upload bem-sucedido - arquivo aparecerá ao fechar modal');
       
       // Progresso final (50-100%)
       for (let p = 51; p <= 100; p += 10) {
@@ -176,12 +169,9 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
       }, 2000);
       
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ NOVA ABORDAGEM: Upload failed:', error);
       setStatus('error');
       setResult({ error: error instanceof Error ? error.message : 'Erro no upload' });
-      // Reset transition on error
-      setIsTransitioning(false);
-      setTransitionStage('idle');
     }
   };
 
