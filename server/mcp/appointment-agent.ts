@@ -6,6 +6,7 @@ import { appointments } from '../domains/appointments/appointments.schema';
 import { contacts } from '../domains/contacts/contacts.schema';
 import { users } from '../domains/auth/auth.schema';
 import { appointment_tags } from '../../shared/schema';
+import { clinics } from '../domains/clinics/clinics.schema';
 
 // Valid appointment statuses as defined in the platform
 export const VALID_APPOINTMENT_STATUSES = [
@@ -70,6 +71,44 @@ export interface MCPResponse {
 }
 
 export class AppointmentMCPAgent {
+  
+  /**
+   * Helper function to check if a date is a working day based on clinic configuration
+   */
+  private async isWorkingDay(date: string, clinicId: number): Promise<boolean> {
+    try {
+      // Get clinic configuration
+      const clinic = await db.select()
+        .from(clinics)
+        .where(eq(clinics.id, clinicId))
+        .limit(1);
+      
+      if (clinic.length === 0) {
+        console.log(`⚠️ Clinic ${clinicId} not found, defaulting to working days Mon-Fri`);
+        // Default to Monday-Friday if clinic not found
+        const dayOfWeek = new Date(date).getDay();
+        return dayOfWeek >= 1 && dayOfWeek <= 5; // 1=Monday, 5=Friday
+      }
+      
+      const clinicConfig = clinic[0];
+      const workingDays = clinicConfig.working_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+      
+      // Convert date to day of week key
+      const dayOfWeek = new Date(date).getDay();
+      const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayKey = dayKeys[dayOfWeek];
+      
+      const isWorking = workingDays.includes(dayKey);
+      console.log(`📅 Working days check: ${date} (${dayKey}) - Working days: [${workingDays.join(', ')}] - Is working: ${isWorking}`);
+      
+      return isWorking;
+    } catch (error) {
+      console.error('Error checking working days:', error);
+      // Default to Monday-Friday on error
+      const dayOfWeek = new Date(date).getDay();
+      return dayOfWeek >= 1 && dayOfWeek <= 5;
+    }
+  }
   
   /**
    * Create a new appointment with full validation
@@ -425,6 +464,25 @@ export class AppointmentMCPAgent {
   async getAvailableSlots(params: z.infer<typeof AvailabilitySchema>): Promise<MCPResponse> {
     try {
       const validated = AvailabilitySchema.parse(params);
+      
+      console.log(`🔍 MCP Availability Check: ${validated.date} for clinic ${validated.clinic_id}`);
+      
+      // ETAPA 1: Check if the requested date is a working day
+      const isWorkingDay = await this.isWorkingDay(validated.date, validated.clinic_id);
+      
+      if (!isWorkingDay) {
+        console.log(`❌ Date ${validated.date} is not a working day for clinic ${validated.clinic_id}`);
+        return {
+          success: true,
+          data: [], // Empty slots array for non-working days
+          error: null,
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        };
+      }
+      
+      console.log(`✅ Date ${validated.date} is a working day, generating time slots`);
       
       // Get existing appointments for the day
       const startOfTargetDay = startOfDay(new Date(`${validated.date}T00:00:00`));
