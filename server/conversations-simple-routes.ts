@@ -46,6 +46,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           status,
           created_at,
           updated_at,
+          ai_active,
           contacts!inner (
             name,
             phone,
@@ -134,6 +135,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           status: conv.status || 'active',
           created_at: conv.created_at,
           updated_at: conv.updated_at,
+          ai_active: conv.ai_active ?? true, // Incluído campo ai_active
           contact_name: conv.contacts?.name || `Contato ${conv.contact_id}`,
           patient_name: conv.contacts?.name || `Contato ${conv.contact_id}`, // Frontend expects patient_name
           contact_phone: conv.contacts?.phone || '',
@@ -256,7 +258,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         // Para IDs científicos, buscar primeiro todas as conversas e fazer match robusto
         const { data: allConversations } = await supabase
           .from('conversations')
-          .select('*')
+          .select('*, ai_active')
           .eq('clinic_id', clinicId);
         
         // Múltiplas estratégias de match para garantir encontrar a conversa correta
@@ -290,7 +292,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       } else {
         const result = await supabase
           .from('conversations')
-          .select('*')
+          .select('*, ai_active')
           .eq('id', conversationId)
           .eq('clinic_id', clinicId)
           .single();
