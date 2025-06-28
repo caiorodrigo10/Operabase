@@ -109,6 +109,55 @@ export class AppointmentMCPAgent {
       return dayOfWeek >= 1 && dayOfWeek <= 5;
     }
   }
+
+  /**
+   * Helper function to check if a time falls within lunch break for the clinic
+   */
+  private async isLunchTime(timeString: string, date: string, clinicId: number): Promise<boolean> {
+    try {
+      // Get clinic configuration
+      const clinic = await db.select()
+        .from(clinics)
+        .where(eq(clinics.id, clinicId))
+        .limit(1);
+      
+      if (clinic.length === 0) {
+        console.log(`⚠️ Clinic ${clinicId} not found for lunch break check`);
+        return false; // No lunch break if clinic not found
+      }
+      
+      const clinicConfig = clinic[0];
+      
+      // If lunch break is not enabled, return false
+      if (!clinicConfig.has_lunch_break) {
+        console.log(`🍽️ Lunch break check: ${timeString} on ${date} - Clinic ${clinicId} has lunch break DISABLED`);
+        return false;
+      }
+      
+      const lunchStart = clinicConfig.lunch_start || '12:00';
+      const lunchEnd = clinicConfig.lunch_end || '13:00';
+      
+      // Convert time strings to minutes for comparison
+      const timeToMinutes = (time: string): number => {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+      
+      const currentTimeMinutes = timeToMinutes(timeString);
+      const lunchStartMinutes = timeToMinutes(lunchStart);
+      const lunchEndMinutes = timeToMinutes(lunchEnd);
+      
+      // Check if current time falls within lunch break
+      const isInLunchBreak = currentTimeMinutes >= lunchStartMinutes && currentTimeMinutes < lunchEndMinutes;
+      
+      console.log(`🍽️ Lunch break check: ${timeString} on ${date} - Clinic ${clinicId} lunch: ${lunchStart}-${lunchEnd} - Is lunch time: ${isInLunchBreak}`);
+      
+      return isInLunchBreak;
+    } catch (error) {
+      console.error('Error checking lunch break:', error);
+      return false; // Default to no lunch break on error
+    }
+  }
   
   /**
    * Create a new appointment with full validation
@@ -136,6 +185,23 @@ export class AppointmentMCPAgent {
       }
       
       console.log(`✅ Date ${validated.scheduled_date} is a working day, proceeding with appointment creation`);
+      
+      // ETAPA 3: Check if the scheduled time conflicts with lunch break
+      const isLunchConflict = await this.isLunchTime(validated.scheduled_time, validated.scheduled_date, validated.clinic_id);
+      
+      if (isLunchConflict) {
+        console.log(`❌ Cannot create appointment at ${validated.scheduled_time} on ${validated.scheduled_date} - conflicts with lunch break for clinic ${validated.clinic_id}`);
+        return {
+          success: false,
+          data: null,
+          error: `Cannot schedule appointment at ${validated.scheduled_time} on ${validated.scheduled_date}. This time conflicts with the clinic's lunch break.`,
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        };
+      }
+      
+      console.log(`✅ Time ${validated.scheduled_time} does not conflict with lunch break, proceeding with appointment creation`);
       
       // Verify contact exists and belongs to clinic
       const contact = await db.select()
@@ -356,6 +422,23 @@ export class AppointmentMCPAgent {
       
       console.log(`✅ Date ${validated.scheduled_date} is a working day, proceeding with reschedule`);
       
+      // ETAPA 3: Check if the new scheduled time conflicts with lunch break
+      const isLunchConflict = await this.isLunchTime(validated.scheduled_time, validated.scheduled_date, validated.clinic_id);
+      
+      if (isLunchConflict) {
+        console.log(`❌ Cannot reschedule appointment to ${validated.scheduled_time} on ${validated.scheduled_date} - conflicts with lunch break for clinic ${validated.clinic_id}`);
+        return {
+          success: false,
+          data: null,
+          error: `Cannot reschedule appointment to ${validated.scheduled_time} on ${validated.scheduled_date}. This time conflicts with the clinic's lunch break.`,
+          appointment_id: null,
+          conflicts: null,
+          next_available_slots: null
+        };
+      }
+      
+      console.log(`✅ Time ${validated.scheduled_time} does not conflict with lunch break, proceeding with reschedule`);
+      
       // Get existing appointment
       const existingAppointment = await db.select()
         .from(appointments)
@@ -557,7 +640,10 @@ export class AppointmentMCPAgent {
           return (slotStart < aptEnd && slotEnd > aptStart);
         });
         
-        if (!hasConflict) {
+        // ETAPA 2: Check if this slot conflicts with lunch break
+        const isLunchConflict = await this.isLunchTime(timeString, validated.date, validated.clinic_id);
+        
+        if (!hasConflict && !isLunchConflict) {
           slots.push({
             time: timeString,
             duration_minutes: validated.duration_minutes,
