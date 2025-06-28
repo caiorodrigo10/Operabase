@@ -376,11 +376,16 @@ export const rag_chunks = pgTable("rag_chunks", {
 export const rag_embeddings = pgTable("rag_embeddings", {
   id: serial("id").primaryKey(),
   chunk_id: integer("chunk_id").notNull().references(() => rag_chunks.id, { onDelete: "cascade" }),
+  clinic_id: integer("clinic_id").notNull().references(() => clinics.id),
+  knowledge_base_id: integer("knowledge_base_id").references(() => rag_knowledge_bases.id),
   embedding: vector("embedding", { dimensions: 1536 }), // OpenAI text-embedding-3-small
   model_used: varchar("model_used", { length: 50 }).default("text-embedding-3-small"),
   created_at: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_rag_embeddings_chunk").on(table.chunk_id),
+  index("idx_rag_embeddings_clinic").on(table.clinic_id),
+  index("idx_rag_embeddings_knowledge_base").on(table.knowledge_base_id),
+  index("idx_rag_embeddings_clinic_kb").on(table.clinic_id, table.knowledge_base_id),
 ]);
 
 // Consultas RAG para analytics
