@@ -142,22 +142,39 @@ async function addClinicKnowledgeBaseToRagEmbeddings() {
     `);
     
     if (clinicsTableExists[0]?.exists) {
-      await db.execute(sql`
-        ALTER TABLE rag_embeddings 
-        ADD CONSTRAINT IF NOT EXISTS fk_rag_embeddings_clinic 
-        FOREIGN KEY (clinic_id) REFERENCES clinics(id);
-      `);
-      console.log('✅ Foreign key para clinics adicionada');
+      try {
+        await db.execute(sql`
+          ALTER TABLE rag_embeddings 
+          ADD CONSTRAINT fk_rag_embeddings_clinic 
+          FOREIGN KEY (clinic_id) REFERENCES clinics(id);
+        `);
+        console.log('✅ Foreign key para clinics adicionada');
+      } catch (error) {
+        if (error.code === '42710') { // constraint already exists
+          console.log('✅ Foreign key para clinics já existe');
+        } else {
+          console.log('⚠️ Erro ao criar foreign key para clinics:', error.message);
+        }
+      }
     } else {
       console.log('⚠️ Tabela clinics não encontrada - foreign key não adicionada');
     }
 
     // Foreign key para knowledge_bases
-    await db.execute(sql`
-      ALTER TABLE rag_embeddings 
-      ADD CONSTRAINT IF NOT EXISTS fk_rag_embeddings_knowledge_base 
-      FOREIGN KEY (knowledge_base_id) REFERENCES rag_knowledge_bases(id);
-    `);
+    try {
+      await db.execute(sql`
+        ALTER TABLE rag_embeddings 
+        ADD CONSTRAINT fk_rag_embeddings_knowledge_base 
+        FOREIGN KEY (knowledge_base_id) REFERENCES rag_knowledge_bases(id);
+      `);
+      console.log('✅ Foreign key para rag_knowledge_bases adicionada');
+    } catch (error) {
+      if (error.code === '42710') { // constraint already exists
+        console.log('✅ Foreign key para rag_knowledge_bases já existe');
+      } else {
+        console.log('⚠️ Erro ao criar foreign key para rag_knowledge_bases:', error.message);
+      }
+    }
     
     console.log('✅ Foreign key para rag_knowledge_bases adicionada');
 
@@ -194,13 +211,13 @@ async function addClinicKnowledgeBaseToRagEmbeddings() {
       FROM rag_embeddings;
     `);
     
-    const stats = finalStats[0];
+    const stats = finalStats[0] || {};
     console.log('📈 Estatísticas finais:');
-    console.log(`   • Total de embeddings: ${stats.total_embeddings}`);
-    console.log(`   • Com clinic_id: ${stats.embeddings_with_clinic}`);
-    console.log(`   • Com knowledge_base_id: ${stats.embeddings_with_kb}`);
-    console.log(`   • Clínicas únicas: ${stats.unique_clinics}`);
-    console.log(`   • Bases de conhecimento únicas: ${stats.unique_knowledge_bases}`);
+    console.log(`   • Total de embeddings: ${stats.total_embeddings || 0}`);
+    console.log(`   • Com clinic_id: ${stats.embeddings_with_clinic || 0}`);
+    console.log(`   • Com knowledge_base_id: ${stats.embeddings_with_kb || 0}`);
+    console.log(`   • Clínicas únicas: ${stats.unique_clinics || 0}`);
+    console.log(`   • Bases de conhecimento únicas: ${stats.unique_knowledge_bases || 0}`);
 
     console.log('\n🎉 Migração concluída com sucesso!');
     console.log('✅ Tabela rag_embeddings agora suporta multi-tenant com clinic_id e knowledge_base_id');
