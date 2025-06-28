@@ -615,7 +615,10 @@ export class AppointmentMCPAgent {
       return {
         success: true,
         data: transformedData,
-        error: null
+        error: null,
+        appointment_id: null,
+        conflicts: null,
+        next_available_slots: null
       };
       
     } catch (error) {
