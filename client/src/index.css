@@ -333,19 +333,19 @@ body.drag-active * {
 }
 
 .drop-zone-active {
-  background-color: rgba(59, 130, 246, 0.05);
-  border-left: 3px solid #3b82f6;
+  background-color: rgba(15, 118, 110, 0.05);
+  border-left: 3px solid #0f766e;
 }
 
 .drop-zone-target {
-  background-color: rgba(59, 130, 246, 0.1);
-  border-left: 3px solid #3b82f6;
+  background-color: rgba(15, 118, 110, 0.1);
+  border-left: 3px solid #0f766e;
 }
 
 /* Snap indicator for 5-minute precision */
 .snap-indicator {
   animation: pulse 1s infinite;
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(90deg, #0f766e, #0d9488);
   border-radius: 1px;
 }
 
@@ -481,8 +481,8 @@ body.drag-active * {
 }
 
 .editor2-block-selected {
-  border: 2px solid #3b82f6;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+  border: 2px solid #0f766e;
+  box-shadow: 0 4px 16px rgba(15, 118, 110, 0.15);
 }
 
 .editor2-column-container {
@@ -492,12 +492,12 @@ body.drag-active * {
 }
 
 .editor2-column-selected {
-  background-color: rgba(59, 130, 246, 0.05);
-  border: 2px dashed #3b82f6;
+  background-color: rgba(15, 118, 110, 0.05);
+  border: 2px dashed #0f766e;
 }
 
 .editor2-column-hovered {
-  border: 2px dashed #93c5fd;
+  border: 2px dashed #5eead4;
 }
 
 .editor2-resize-handle {
@@ -662,7 +662,7 @@ body.drag-active * {
 
 /* Enhanced drag drop zone with snap indicators */
 .drag-drop-zone.active {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(15, 118, 110, 0.08);
 }
 
 /* Enhanced Drag Preview Component - 5 Minute Precision */

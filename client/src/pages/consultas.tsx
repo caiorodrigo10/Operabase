@@ -1928,7 +1928,7 @@ export function Consultas() {
                                 return (
                                   <div
                                     key={`${minute}`}
-                                    className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-blue-50' : ''}`}
+                                    className={`absolute left-0 right-0 group ${isSlotAvailable ? 'cursor-crosshair hover:bg-teal-50' : ''}`}
                                     style={{ 
                                       top: `${(minute / 60) * PIXELS_PER_HOUR}px`, 
                                       height: `${PIXELS_PER_QUARTER}px` 
@@ -1947,7 +1947,7 @@ export function Consultas() {
                                     {/* Time indicator on hover */}
                                     {isSlotAvailable && (
                                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                                        <div className="bg-blue-100 border border-blue-300 rounded px-2 py-1 text-xs font-medium text-blue-800">
+                                        <div className="bg-teal-100 border border-teal-300 rounded px-2 py-1 text-xs font-medium text-teal-800">
                                           {timeLabel}
                                         </div>
                                       </div>
