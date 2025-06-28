@@ -156,6 +156,18 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 28, 2025 - Repositório GitHub Operabase Criado Oficialmente ✅
+- **Repositório GitHub**: Criado repositório oficial em https://github.com/caiorodrigo10/operabase
+- **README Atualizado**: Completamente reescrito para refletir funcionalidades avançadas da plataforma
+- **Branding Completo**: Nome alterado de TaskMed para Operabase em toda documentação
+- **Funcionalidades Destacadas**: Sistema de comunicação em tempo real, AI RAG, WhatsApp Evolution API V2
+- **Arquitetura Documentada**: Stack tecnológico completo com React 18, Node.js, PostgreSQL, Redis
+- **Performance Metrics**: Sub-200ms para maioria das operações, WebSocket com fallback automático
+- **Integrações Avançadas**: Supabase Storage, OpenAI GPT-4, N8N workflows, Google Calendar
+- **Recursos Únicos**: Upload dual-channel, sistema de pausa automática da IA, isolamento multi-tenant
+- **Documentação Técnica**: Links para todos os sistemas especializados (conversas, WhatsApp, AI, N8N)
+- **Status Produção**: v2.0 Production Ready com recursos avançados de comunicação e IA
+
 ### June 27, 2025 - Reorganização de Navegação: Consultas como Página Inicial ✅
 - **Página Inicial Alterada**: "/" agora aponta para a página de Consultas (agenda) em vez do Dashboard
 - **Painel Movido**: Dashboard antigo agora acessível em "/relatorios" dentro do menu de aplicativos
