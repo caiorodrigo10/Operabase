@@ -192,21 +192,8 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
     
     // NOVA ABORDAGEM: Estados simplificados
     
-    // NOVA ABORDAGEM: Invalidar cache APENAS quando modal fechar
-    // Isso garante que o arquivo apareça apenas quando modal já fechou
-    if (result?.success) {
-      console.log('🎯 NOVA ABORDAGEM: Modal fechando após upload bem-sucedido - invalidando cache agora');
-      
-      queryClient.invalidateQueries({
-        queryKey: ['/api/conversations-simple', conversationId]
-      });
-      
-      queryClient.invalidateQueries({
-        queryKey: ['/api/conversations-simple']
-      });
-      
-      console.log('✅ NOVA ABORDAGEM: Cache invalidado APÓS modal fechar - preview aparecerá agora');
-    }
+    // NOVA ABORDAGEM: Cache já foi invalidado imediatamente após upload
+    // Não precisa invalidar novamente aqui
     
     onClose();
   };

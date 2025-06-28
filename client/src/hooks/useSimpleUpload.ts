@@ -72,8 +72,19 @@ export function useSimpleUpload() {
     },
     
     onSuccess: (result, variables) => {
-      console.log('✅ NOVA ABORDAGEM: Upload bem-sucedido - aguardando modal fechar para invalidar cache');
-      // NÃO invalidar cache aqui - será feito no modal ao fechar
+      console.log('✅ NOVA ABORDAGEM: Upload bem-sucedido - invalidando cache para aparecer imediatamente');
+      
+      // CORREÇÃO: Invalidar cache imediatamente após upload
+      // Isso garante que o arquivo apareça rapidamente
+      queryClient.invalidateQueries({
+        queryKey: ['conversations-simple', variables.conversationId]
+      });
+      
+      queryClient.invalidateQueries({
+        queryKey: ['conversations-simple']
+      });
+      
+      console.log('🧹 Cache invalidado - arquivo aparecerá instantaneamente');
     },
     
     onError: (error, variables) => {
