@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { X, Upload, FileIcon, Image, Video, Music, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUpload } from '@/hooks/useUpload';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface FileUploadModalProps {
   isOpen: boolean;
@@ -62,6 +63,7 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const [transitionStage, setTransitionStage] = useState<'idle' | 'optimistic' | 'fetching' | 'complete'>('idle');
   
   const uploadMutation = useUpload();
+  const queryClient = useQueryClient();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map(file => {
@@ -203,6 +205,22 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
     // ETAPA 5.3: Reset transition state
     setIsTransitioning(false);
     setTransitionStage('idle');
+    
+    // NOVA ABORDAGEM: Invalidar cache APENAS quando modal fechar
+    // Isso garante que o arquivo apareça apenas quando modal já fechou
+    if (result?.success) {
+      console.log('🎯 NOVA ABORDAGEM: Modal fechando após upload bem-sucedido - invalidando cache agora');
+      
+      queryClient.invalidateQueries({
+        queryKey: ['/api/conversations-simple', conversationId]
+      });
+      
+      queryClient.invalidateQueries({
+        queryKey: ['/api/conversations-simple']
+      });
+      
+      console.log('✅ NOVA ABORDAGEM: Cache invalidado APÓS modal fechar - preview aparecerá agora');
+    }
     
     onClose();
   };
