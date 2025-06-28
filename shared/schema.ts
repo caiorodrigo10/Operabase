@@ -26,11 +26,15 @@ export const whatsapp_numbers = pgTable("whatsapp_numbers", {
   connected_at: timestamp("connected_at"),
   disconnected_at: timestamp("disconnected_at"),
   last_seen: timestamp("last_seen"),
+  is_deleted: boolean("is_deleted").default(false), // Soft delete flag
+  deleted_at: timestamp("deleted_at"), // Timestamp when deleted
+  deleted_by_user_id: integer("deleted_by_user_id"), // User who deleted
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_whatsapp_numbers_clinic").on(table.clinic_id),
   index("idx_whatsapp_numbers_user").on(table.user_id),
+  index("idx_whatsapp_numbers_deleted").on(table.is_deleted),
   unique("unique_phone_clinic").on(table.phone_number, table.clinic_id),
   unique("unique_instance_name").on(table.instance_name),
 ]);

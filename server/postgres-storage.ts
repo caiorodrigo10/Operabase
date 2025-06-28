@@ -1595,13 +1595,19 @@ export class PostgreSQLStorage implements IStorage {
 
   async getWhatsAppNumbers(clinicId: number): Promise<WhatsAppNumber[]> {
     return db.select().from(whatsapp_numbers)
-      .where(eq(whatsapp_numbers.clinic_id, clinicId))
+      .where(and(
+        eq(whatsapp_numbers.clinic_id, clinicId),
+        eq(whatsapp_numbers.is_deleted, false)
+      ))
       .orderBy(desc(whatsapp_numbers.created_at));
   }
 
   async getWhatsAppNumber(id: number): Promise<WhatsAppNumber | undefined> {
     const result = await db.select().from(whatsapp_numbers)
-      .where(eq(whatsapp_numbers.id, id))
+      .where(and(
+        eq(whatsapp_numbers.id, id),
+        eq(whatsapp_numbers.is_deleted, false)
+      ))
       .limit(1);
     return result[0];
   }
@@ -1610,7 +1616,8 @@ export class PostgreSQLStorage implements IStorage {
     const result = await db.select().from(whatsapp_numbers)
       .where(and(
         eq(whatsapp_numbers.phone_number, phone),
-        eq(whatsapp_numbers.clinic_id, clinicId)
+        eq(whatsapp_numbers.clinic_id, clinicId),
+        eq(whatsapp_numbers.is_deleted, false)
       ))
       .limit(1);
     return result[0];
@@ -1618,7 +1625,10 @@ export class PostgreSQLStorage implements IStorage {
 
   async getWhatsAppNumberByInstance(instanceName: string): Promise<WhatsAppNumber | undefined> {
     const result = await db.select().from(whatsapp_numbers)
-      .where(eq(whatsapp_numbers.instance_name, instanceName))
+      .where(and(
+        eq(whatsapp_numbers.instance_name, instanceName),
+        eq(whatsapp_numbers.is_deleted, false)
+      ))
       .limit(1);
     return result[0];
   }
@@ -1989,16 +1999,101 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
-  async deleteWhatsAppNumber(id: number): Promise<boolean> {
+  async deleteWhatsAppNumber(id: number, deletedByUserId?: number): Promise<boolean> {
     try {
-      const result = await db.execute(sql`
-        DELETE FROM whatsapp_numbers WHERE id = ${id}
-      `);
+      console.log(`🗑️ Soft deleting WhatsApp instance ID: ${id}`);
       
-      return result.rowCount > 0;
+      // Primeiro verificar se a instância existe e não está deletada
+      const existing = await db.select()
+        .from(whatsapp_numbers)
+        .where(and(
+          eq(whatsapp_numbers.id, id),
+          eq(whatsapp_numbers.is_deleted, false)
+        ))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        console.warn(`⚠️ WhatsApp instance ${id} not found or already deleted`);
+        return false;
+      }
+      
+      const instance = existing[0];
+      
+      // Cleanup das referências relacionadas antes do soft delete
+      await this.cleanupWhatsAppReferences(id, instance.clinic_id);
+      
+      // Executar soft delete
+      const result = await db.update(whatsapp_numbers)
+        .set({
+          is_deleted: true,
+          deleted_at: new Date(),
+          deleted_by_user_id: deletedByUserId,
+          status: 'deleted',
+          updated_at: new Date()
+        })
+        .where(eq(whatsapp_numbers.id, id));
+      
+      const success = (result.rowCount || 0) > 0;
+      
+      if (success) {
+        console.log(`✅ WhatsApp instance ${id} soft deleted successfully`);
+        // Log the deletion for audit trail
+        await this.logSystemEvent({
+          clinic_id: instance.clinic_id,
+          event_type: 'whatsapp_instance_deleted',
+          description: `WhatsApp instance ${instance.phone_number} (${instance.instance_name}) was deleted`,
+          metadata: {
+            instance_id: id,
+            phone_number: instance.phone_number,
+            instance_name: instance.instance_name,
+            deleted_by: deletedByUserId,
+            deletion_type: 'soft_delete'
+          }
+        });
+      }
+      
+      return success;
     } catch (error) {
-      console.error('❌ Error deleting WhatsApp number:', error);
+      console.error('❌ Error soft deleting WhatsApp number:', error);
       return false;
+    }
+  }
+
+  /**
+   * Cleanup das referências relacionadas antes da exclusão da instância WhatsApp
+   */
+  private async cleanupWhatsAppReferences(whatsappId: number, clinicId: number): Promise<void> {
+    try {
+      console.log(`🧹 Cleaning up references for WhatsApp instance ${whatsappId}`);
+      
+      // 1. Marcar conversas relacionadas como arquivadas (não deletar para preservar histórico)
+      await db.update(conversations)
+        .set({
+          whatsapp_number_id: null, // Remove referência
+          status: 'archived',
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(conversations.whatsapp_number_id, whatsappId),
+          eq(conversations.clinic_id, clinicId)
+        ));
+      
+      // 2. Remover referências na configuração da Lívia (se existir)
+      await db.update(livia_configurations)
+        .set({
+          whatsapp_number_id: null,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(livia_configurations.whatsapp_number_id, whatsappId),
+          eq(livia_configurations.clinic_id, clinicId)
+        ));
+      
+      console.log(`✅ References cleaned up for WhatsApp instance ${whatsappId}`);
+      
+    } catch (error) {
+      console.error('❌ Error cleaning up WhatsApp references:', error);
+      // Não falhar o processo principal por causa do cleanup
     }
   }
 
