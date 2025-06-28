@@ -593,6 +593,53 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       
       console.log('🤖 AI PAUSE UPLOAD: ========== FIM DO SISTEMA DE PAUSA AUTOMÁTICA ==========');
 
+      // 🚀 PERFORMANCE FIX: Cache invalidation imediato como nas mensagens de texto
+      console.log('🧹 UPLOAD PERFORMANCE: Iniciando cache invalidation...');
+      
+      try {
+        // Memory Cache invalidation
+        const { memoryCacheService } = await import('../cache/memory-cache-service');
+        await memoryCacheService.invalidateConversationDetail(conversationId);
+        console.log('✅ UPLOAD PERFORMANCE: Memory cache invalidado');
+        
+        // Conversations list cache invalidation
+        await memoryCacheService.invalidate('conversations:list:clinic:1');
+        console.log('✅ UPLOAD PERFORMANCE: Lista de conversas invalidada');
+        
+      } catch (cacheError) {
+        console.log('⚠️ UPLOAD PERFORMANCE: Cache invalidation falhou:', cacheError.message);
+      }
+
+      // 📡 PERFORMANCE FIX: WebSocket broadcast como nas mensagens de texto
+      console.log('📡 UPLOAD PERFORMANCE: Enviando WebSocket broadcast...');
+      
+      try {
+        const { getWebSocketServer } = await import('../websocket-server');
+        const io = getWebSocketServer();
+        
+        if (io) {
+          // Broadcast para a clínica
+          io.to(`clinic-1`).emit('conversation:updated', {
+            conversationId: conversationId,
+            type: 'file_upload',
+            messageId: result.message.id,
+            attachmentId: result.attachment.id
+          });
+          
+          // Broadcast específico da conversa
+          io.to(`conversation-${conversationId}`).emit('message:new', {
+            conversationId: conversationId,
+            message: result.message,
+            attachment: result.attachment
+          });
+          
+          console.log('✅ UPLOAD PERFORMANCE: WebSocket broadcast enviado');
+        }
+      } catch (wsError) {
+        console.log('⚠️ UPLOAD PERFORMANCE: WebSocket broadcast falhou:', wsError.message);
+      }
+
+      // 🎯 RESPOSTA IMEDIATA: Retornar resultado sem aguardar processos em background
       res.json({
         success: true,
         data: {
@@ -601,6 +648,104 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           signedUrl: result.signedUrl,
           expiresAt: result.expiresAt,
           whatsapp: result.whatsapp
+        }
+      });
+
+      console.log('⚡ UPLOAD PERFORMANCE: Resposta enviada imediatamente');
+
+      // 🚀 PERFORMANCE FIX: Mover AI Pause para background (não bloquear resposta)
+      setImmediate(async () => {
+        try {
+          console.log('🤖 AI PAUSE UPLOAD BACKGROUND: Iniciando sistema de pausa automática...');
+          
+          const { AiPauseService } = await import('../domains/ai-pause/ai-pause.service');
+          const aiPauseService = AiPauseService.getInstance();
+          
+          // Buscar estado atual da conversa para verificar IA
+          const { data: currentConversation } = await supabase
+            .from('conversations')
+            .select('ai_active, ai_pause_reason')
+            .eq('id', conversationId)
+            .single();
+          
+          console.log('🤖 AI PAUSE UPLOAD BACKGROUND: Estado atual da conversa:', {
+            conversationId,
+            ai_active: currentConversation?.ai_active,
+            ai_pause_reason: currentConversation?.ai_pause_reason
+          });
+          
+          // Buscar configuração da Lívia
+          const { data: liviaConfig } = await supabase
+            .from('livia_configurations')
+            .select('*')
+            .eq('clinic_id', 1)
+            .single();
+          
+          if (liviaConfig) {
+            const aiPauseContext = {
+              conversationId: conversationId,
+              clinicId: 1,
+              senderId: finalUser?.id?.toString() || '4',
+              senderType: 'professional' as const,
+              deviceType: 'manual' as const,
+              messageContent: `[Arquivo: ${req.file.originalname}]`,
+              timestamp: new Date()
+            };
+            
+            const pauseResult = await aiPauseService.processMessage(
+              aiPauseContext, 
+              liviaConfig,
+              currentConversation?.ai_active,
+              currentConversation?.ai_pause_reason
+            );
+            
+            console.log('🤖 AI PAUSE UPLOAD BACKGROUND: Resultado da análise:', pauseResult);
+            
+            if (pauseResult.shouldPause) {
+              // Aplicar pausa no banco de dados
+              const { error: updateError } = await supabase
+                .from('conversations')
+                .update({
+                  ai_active: false,
+                  ai_paused_until: pauseResult.pausedUntil?.toISOString(),
+                  ai_paused_by_user_id: pauseResult.pausedByUserId,
+                  ai_pause_reason: pauseResult.pauseReason
+                })
+                .eq('id', conversationId);
+              
+              if (!updateError) {
+                console.log('✅ AI PAUSE UPLOAD BACKGROUND: Pausa automática aplicada com sucesso!');
+                
+                // WebSocket broadcast para notificar mudança do AI
+                try {
+                  const { getWebSocketServer } = await import('../websocket-server');
+                  const io = getWebSocketServer();
+                  
+                  if (io) {
+                    io.to(`clinic-1`).emit('ai_paused', {
+                      conversationId: conversationId,
+                      reason: 'file_upload'
+                    });
+                    console.log('📡 AI PAUSE UPLOAD BACKGROUND: WebSocket broadcast enviado');
+                  }
+                } catch (wsError) {
+                  console.log('⚠️ AI PAUSE UPLOAD BACKGROUND: WebSocket falhou:', wsError.message);
+                }
+                
+                // Cache invalidation adicional para AI state
+                try {
+                  const { memoryCacheService } = await import('../cache/memory-cache-service');
+                  await memoryCacheService.invalidateConversationDetail(conversationId);
+                  console.log('🧹 AI PAUSE UPLOAD BACKGROUND: Cache invalidado após pausa');
+                } catch (cacheError) {
+                  console.log('⚠️ AI PAUSE UPLOAD BACKGROUND: Cache invalidation falhou');
+                }
+              }
+            }
+          }
+          
+        } catch (error) {
+          console.error('❌ AI PAUSE UPLOAD BACKGROUND: Erro:', error.message);
         }
       });
 

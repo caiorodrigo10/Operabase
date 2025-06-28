@@ -72,17 +72,41 @@ export function useUpload() {
       return result;
     },
     onSuccess: (data, variables) => {
-      console.log(`🔄 Invalidating cache for conversation ${variables.conversationId}`);
+      console.log('✅ UPLOAD FRONTEND: Upload completed successfully');
       
-      // Invalidar cache da conversa específica
-      queryClient.invalidateQueries({
-        queryKey: ['/api/conversations-simple', variables.conversationId]
-      });
+      // 🚀 PERFORMANCE FIX: Cache invalidation completo como nas mensagens de texto
+      console.log('🧹 UPLOAD FRONTEND: Iniciando cache invalidation...');
       
-      // Invalidar lista de conversas
-      queryClient.invalidateQueries({
-        queryKey: ['/api/conversations-simple']
-      });
+      try {
+        // Invalidar cache da conversa específica (mesma chave do sistema de mensagens)
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple', variables.conversationId] 
+        });
+        console.log('✅ UPLOAD FRONTEND: Cache da conversa invalidado');
+        
+        // Invalidar cache da lista de conversas
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple'] 
+        });
+        console.log('✅ UPLOAD FRONTEND: Cache da lista invalidado');
+        
+        // 📡 WEBSOCKET: Tentar emitir evento WebSocket se disponível
+        const webSocketEmit = (window as any).webSocketEmit;
+        if (webSocketEmit) {
+          webSocketEmit('conversation:updated', {
+            conversationId: variables.conversationId,
+            type: 'file_upload',
+            messageId: data.data.message.id,
+            attachmentId: data.data.attachment.id
+          });
+          console.log('📡 UPLOAD FRONTEND: WebSocket evento emitido');
+        }
+        
+        console.log('⚡ UPLOAD FRONTEND: Cache invalidation completo');
+        
+      } catch (error) {
+        console.log('⚠️ UPLOAD FRONTEND: Cache invalidation falhou:', error);
+      }
     },
     onError: (error) => {
       console.error('❌ Upload failed:', error);
