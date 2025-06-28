@@ -156,6 +156,18 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 28, 2025 - Sistema de Soft Delete WhatsApp Implementado Completamente ✅
+- **Problema Resolvido**: Eliminados foreign key constraint errors ao deletar instâncias WhatsApp
+- **Soft Delete Schema**: Adicionadas colunas is_deleted, deleted_at, deleted_by_user_id à tabela whatsapp_numbers
+- **Backend Completo**: Método deleteWhatsAppNumber convertido para soft delete com cleanup automático
+- **Filtros Atualizados**: Todos os métodos de consulta (getWhatsAppNumbers, getWhatsAppNumber, etc.) filtram instâncias deletadas
+- **Cleanup Inteligente**: Conversas relacionadas marcadas como 'archived', referências da Lívia removidas
+- **Segurança Reforçada**: Rota de exclusão com autenticação obrigatória e validação por clínica
+- **Auditoria Completa**: Logs detalhados registram quem deletou, quando e qual instância
+- **Performance Otimizada**: Índice específico em is_deleted para consultas rápidas
+- **Zero Impact**: Histórico de conversas preservado, integridade referencial mantida
+- **Pronto para Uso**: Sistema completamente implementado, aguardando apenas execução SQL no Supabase
+
 ### June 28, 2025 - Repositório GitHub Operabase Criado Oficialmente ✅
 - **Repositório GitHub**: Criado repositório oficial em https://github.com/caiorodrigo10/operabase
 - **README Atualizado**: Completamente reescrito para refletir funcionalidades avançadas da plataforma
