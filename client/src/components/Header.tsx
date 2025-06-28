@@ -35,6 +35,7 @@ interface HeaderProps {
   currentPage: string;
   onMenuClick: () => void;
   isMobile: boolean;
+  showNavigation?: boolean;
 }
 
 // Navigation items for the new horizontal menu
@@ -91,7 +92,7 @@ const adminIconButtons = [
   },
 ];
 
-export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
+export function Header({ currentPage, onMenuClick, isMobile, showNavigation = true }: HeaderProps) {
   const [location] = useLocation();
   const { user, signOut } = useAuth();
   const { isAdminView, toggleAdminView } = useAdmin();
@@ -159,9 +160,10 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
               )}
             </Link>
 
-            {/* Main Navigation - Hidden on mobile */}
-            <nav className="hidden md:flex items-center space-x-2">
-              {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
+            {/* Main Navigation - Hidden on mobile and when sidebar is present */}
+            {showNavigation && (
+              <nav className="hidden md:flex items-center space-x-2">
+                {(isAdminView ? adminNavigationItems : navigationItems).map((item) => {
                 const isActive = location === item.href || 
                   (item.key === "consultas" && location === "/") ||
                   (item.key === "admin-dashboard" && location === "/admin") ||
@@ -190,10 +192,11 @@ export function Header({ currentPage, onMenuClick, isMobile }: HeaderProps) {
                   </Link>
                 );
               })}
-            </nav>
+              </nav>
+            )}
 
-            {/* Apps Dropdown - Only show in regular view */}
-            {!isAdminView && (
+            {/* Apps Dropdown - Only show in regular view and when navigation is shown */}
+            {!isAdminView && showNavigation && (
               <div className="hidden md:block">
                 <DropdownMenu open={isAppsDropdownOpen} onOpenChange={setIsAppsDropdownOpen}>
                   <DropdownMenuTrigger asChild>
