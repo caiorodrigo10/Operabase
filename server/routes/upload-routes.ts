@@ -462,6 +462,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       });
 
       // 🤖 APLICAR SISTEMA DE PAUSA AUTOMÁTICA DA IA PARA UPLOADS
+      console.log('🤖 AI PAUSE UPLOAD: ========== INICIANDO SISTEMA DE PAUSA AUTOMÁTICA ==========');
       try {
         console.log('🤖 AI PAUSE UPLOAD: Aplicando sistema de pausa automática após upload de arquivo...');
         
@@ -586,8 +587,11 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         
       } catch (aiPauseError) {
         console.error('❌ AI PAUSE UPLOAD: Erro no sistema de pausa automática:', aiPauseError);
+        console.error('❌ AI PAUSE UPLOAD: Stack trace:', aiPauseError.stack);
         // Não bloquear o upload por erro na pausa - continuar normalmente
       }
+      
+      console.log('🤖 AI PAUSE UPLOAD: ========== FIM DO SISTEMA DE PAUSA AUTOMÁTICA ==========');
 
       res.json({
         success: true,
