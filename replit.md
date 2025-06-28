@@ -156,6 +156,29 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 28, 2025 - Sistema de Upload Performance OTIMIZADO: Cache + WebSocket + Background AI ✅
+- **Problema Resolvido**: Upload de arquivos lento (8+ segundos) comparado a mensagens de texto (<1 segundo)
+- **ETAPA 1 Implementada**: Cache invalidation imediato como nas mensagens de texto
+  - Memory cache invalidation para conversation detail e lista de conversas
+  - Mesmo sistema de chaves usado no sistema de mensagens para consistência
+  - Cache invalidation executado ANTES de retornar resposta ao frontend
+- **ETAPA 2 Implementada**: WebSocket broadcast em tempo real
+  - Evento 'conversation:updated' para clínica e 'message:new' para conversa específica
+  - Broadcast imediato após upload para notificação instantânea do frontend
+  - Mesmo padrão de eventos usado no sistema de mensagens
+- **ETAPA 3 Implementada**: AI Pause movido para background (setImmediate)
+  - Sistema de pausa automática da IA não bloqueia mais resposta do upload
+  - Processamento assíncrono preserva funcionalidade sem impacto na performance
+  - Frontend recebe resposta imediata enquanto AI pause processa em background
+- **ETAPA 4 Implementada**: Frontend cache invalidation otimizado
+  - useUpload.ts agora invalida cache React Query com mesmas chaves das mensagens
+  - Cache da conversa específica e lista de conversas invalidados automaticamente
+  - WebSocket frontend emite eventos quando disponível para sincronização
+- **Performance Metrics**: Upload de 8202ms → resposta imediata (cache + WebSocket)
+- **Funcionalidades Preservadas**: AI Pause, Supabase Storage, Evolution API, todas funcionando
+- **Resultado**: Sistema de upload agora tem mesma performance das mensagens de texto
+- **Status**: ✅ IMPLEMENTADO - Upload aparecem instantaneamente + botão AI atualiza em tempo real
+
 ### June 28, 2025 - Bug de Desvinculamento da Lívia CORRIGIDO Definitivamente ✅
 - **Problema Identificado**: Configuração da Lívia retinha whatsapp_number_id mesmo quando nenhum número estava selecionado na interface
 - **Schema Zod Corrigido**: whatsapp_number_id agora aceita .nullable().optional() para desvinculamento explícito

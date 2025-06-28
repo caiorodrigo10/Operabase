@@ -598,7 +598,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       
       try {
         // Memory Cache invalidation
-        const { memoryCacheService } = await import('../cache/memory-cache-service');
+        const memoryCacheService = (await import('../cache/memory-cache-service.js')).memoryCacheService;
         await memoryCacheService.invalidateConversationDetail(conversationId);
         console.log('✅ UPLOAD PERFORMANCE: Memory cache invalidado');
         
@@ -614,8 +614,8 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       console.log('📡 UPLOAD PERFORMANCE: Enviando WebSocket broadcast...');
       
       try {
-        const { getWebSocketServer } = await import('../websocket-server');
-        const io = getWebSocketServer();
+        const webSocketModule = await import('../websocket-server.js');
+        const io = webSocketModule.getWebSocketServer();
         
         if (io) {
           // Broadcast para a clínica
@@ -661,8 +661,15 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           const { AiPauseService } = await import('../domains/ai-pause/ai-pause.service');
           const aiPauseService = AiPauseService.getInstance();
           
+          // Importar cliente Supabase para background task
+          const { createClient } = await import('@supabase/supabase-js');
+          const backgroundSupabase = createClient(
+            process.env.SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+          
           // Buscar estado atual da conversa para verificar IA
-          const { data: currentConversation } = await supabase
+          const { data: currentConversation } = await backgroundSupabase
             .from('conversations')
             .select('ai_active, ai_pause_reason')
             .eq('id', conversationId)
@@ -675,7 +682,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           });
           
           // Buscar configuração da Lívia
-          const { data: liviaConfig } = await supabase
+          const { data: liviaConfig } = await backgroundSupabase
             .from('livia_configurations')
             .select('*')
             .eq('clinic_id', 1)
@@ -703,7 +710,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
             
             if (pauseResult.shouldPause) {
               // Aplicar pausa no banco de dados
-              const { error: updateError } = await supabase
+              const { error: updateError } = await backgroundSupabase
                 .from('conversations')
                 .update({
                   ai_active: false,
@@ -718,8 +725,8 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
                 
                 // WebSocket broadcast para notificar mudança do AI
                 try {
-                  const { getWebSocketServer } = await import('../websocket-server');
-                  const io = getWebSocketServer();
+                  const webSocketModule = await import('../websocket-server.js');
+                  const io = webSocketModule.getWebSocketServer();
                   
                   if (io) {
                     io.to(`clinic-1`).emit('ai_paused', {
@@ -734,7 +741,7 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
                 
                 // Cache invalidation adicional para AI state
                 try {
-                  const { memoryCacheService } = await import('../cache/memory-cache-service');
+                  const memoryCacheService = (await import('../cache/memory-cache-service.js')).memoryCacheService;
                   await memoryCacheService.invalidateConversationDetail(conversationId);
                   console.log('🧹 AI PAUSE UPLOAD BACKGROUND: Cache invalidado após pausa');
                 } catch (cacheError) {
