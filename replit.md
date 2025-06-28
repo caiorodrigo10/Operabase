@@ -72,9 +72,18 @@ The platform features a sophisticated conversation system with dual-channel file
    - Patient context-aware responses
    - Medical knowledge retrieval
 
+8. **MCP Appointment System**
+   - Model Context Protocol for AI appointment scheduling
+   - Triple-layer validation system for scheduling restrictions
+   - Working days validation (blocks non-working days)
+   - Lunch break validation (blocks lunch hour appointments)
+   - Working hours validation (blocks off-hours appointments)
+   - Dynamic clinic configuration support
+
 ### Advanced Features
 - **RAG System**: Vector-based knowledge retrieval using pgvector extension
-- **MCP Protocol**: Model Context Protocol implementation for AI integrations
+- **MCP Protocol**: Model Context Protocol implementation for AI integrations with complete scheduling restrictions
+- **Appointment Validation**: Triple-layer protection system (working days, lunch break, working hours)
 - **System Logging**: Comprehensive audit trail for compliance
 - **Performance Monitoring**: Real-time performance metrics and alerting
 
