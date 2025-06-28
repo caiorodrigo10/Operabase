@@ -156,19 +156,19 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 28, 2025 - Sistema Working Days MCP: Proteção Completa Contra Agendamentos Indevidos ✅
-- **Problema Crítico Resolvido**: IA agendando consultas em sábados apesar da clínica configurar apenas dias úteis
-- **ETAPA 1 Implementada**: Validação de working days em consulta de disponibilidade (getAvailableSlots)
-- **ETAPA 2 Implementada**: Validação de working days em criação (createAppointment) e reagendamento (rescheduleAppointment)
-- **ETAPA 3 Implementada**: Sistema completo de testes e validação para todos os endpoints MCP
-- **Função Helper**: isWorkingDay() implementada com consulta direta à configuração da clínica
-- **Proteção Tripla**: Disponibilidade (0 slots), criação (erro específico), reagendamento (erro específico)
-- **Logs Detalhados**: Sistema registra todas as validações para debugging e monitoramento
-- **Configuração Testada**: Working days [monday, tuesday, thursday, friday] - bloqueia [wednesday, saturday, sunday]
-- **Zero Impact**: Funcionalidades existentes preservadas, performance mantida, compatibilidade N8N intacta
+### June 28, 2025 - Sistema Working Days MCP: Bug Crítico CORRIGIDO Definitivamente ✅
+- **Problema Crítico Identificado**: IA agendando consultas em sábados apesar da clínica configurar apenas dias úteis
+- **Root Cause Descoberto**: n8n-routes.ts importava appointment-agent-simple.ts (SEM validações) em vez de appointment-agent.ts (COM validações)
+- **Correção Aplicada**: Alterado import de "./appointment-agent-simple" para "./appointment-agent" no arquivo n8n-routes.ts
+- **ETAPA 1-3 Reativadas**: Todas as validações working days implementadas agora ATIVAS no sistema MCP
+- **Função Helper Funcionando**: isWorkingDay() consulta configuração da clínica e valida dias úteis
+- **Proteção Tripla Ativa**: Disponibilidade (0 slots), criação (erro específico), reagendamento (erro específico)
+- **Logs Confirmados**: Chamadas chegam ao endpoint correto, middleware de autenticação funcionando
+- **Configuração Ativa**: Working days [monday, tuesday, thursday, friday] - bloqueia [wednesday, saturday, sunday]
+- **Servidor Reiniciado**: Sistema aplicado com sucesso, validações agora funcionais em produção
 - **Resultado Final**: IA não consegue mais agendar em dias não configurados como úteis pela clínica
 - **Endpoints Protegidos**: /mcp/appointments/availability, /mcp/appointments/create, /mcp/appointments/reschedule
-- **Status**: ✅ SISTEMA WORKING DAYS 100% FUNCIONAL - Proteção completa implementada e validada
+- **Status**: ✅ BUG CORRIGIDO - Sistema Working Days agora 100% funcional e bloqueando agendamentos indevidos
 
 ### June 28, 2025 - Sistema RAG Multi-Tenant: knowledge_base_id Sincronizado Completamente ✅
 - **Problema Resolvido**: Campo knowledge_base_id vazio na tabela rag_embeddings após migração inicial

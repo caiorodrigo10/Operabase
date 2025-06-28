@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { appointmentAgent } from './appointment-agent-simple';
+import { appointmentAgent } from './appointment-agent';
 import { chatInterpreter } from './chat-interpreter';
 import { z } from 'zod';
 import { db } from '../db';
