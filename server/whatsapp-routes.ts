@@ -490,11 +490,21 @@ router.delete('/api/whatsapp/numbers/:id', isAuthenticated, async (req, res) => 
     }
 
     console.log(`✅ WhatsApp number ${id} soft deleted from database by user ${user.id}`);
+    
+    // Check if instance was linked to Livia for user feedback
+    const liviaConfig = await storage.getLiviaConfiguration(user.clinic_id);
+    const wasLinkedToLivia = liviaConfig && liviaConfig.whatsapp_number_id === id;
+    
     res.json({ 
       success: true, 
       message: 'WhatsApp number deleted successfully',
       type: 'soft_delete',
-      deletedBy: user.id
+      deletedBy: user.id,
+      warnings: wasLinkedToLivia ? [
+        'Esta instância estava vinculada à Lívia',
+        'Lívia foi desvinculada automaticamente',
+        'Configure um novo número WhatsApp para a Lívia nas configurações'
+      ] : []
     });
   } catch (error) {
     console.error('Error deleting WhatsApp number:', error);

@@ -289,11 +289,31 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
   // Mutation to delete number
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest(`/api/whatsapp/numbers/${id}`, 'DELETE'),
-    onSuccess: () => {
+    onSuccess: async (response) => {
+      const data = await response.json();
+      
+      // Base success message
+      let description = "Número WhatsApp removido com sucesso";
+      
+      // Check for Livia warnings
+      if (data.warnings && data.warnings.length > 0) {
+        description = data.warnings.join(". ");
+        
+        // Show additional toast for Livia warning
+        setTimeout(() => {
+          toast({
+            title: "Atenção - Lívia desvinculada",
+            description: "Configure um novo número WhatsApp para a Lívia nas configurações",
+            variant: "destructive"
+          });
+        }, 2000);
+      }
+      
       toast({
         title: "Número removido",
-        description: "Número WhatsApp removido com sucesso"
+        description
       });
+      
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/numbers', clinicId] });
     },
     onError: (error: any) => {

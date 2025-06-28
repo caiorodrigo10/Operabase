@@ -2066,8 +2066,8 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`🧹 Cleaning up references for WhatsApp instance ${whatsappId}`);
       
-      // 1. Marcar conversas relacionadas como arquivadas (não deletar para preservar histórico)
-      await db.update(conversations)
+      // 1. Marcar conversas relacionadas como arquivadas (preservar histórico)
+      const conversationsResult = await db.update(conversations)
         .set({
           whatsapp_number_id: null, // Remove referência
           status: 'archived',
@@ -2078,18 +2078,36 @@ export class PostgreSQLStorage implements IStorage {
           eq(conversations.clinic_id, clinicId)
         ));
       
-      // 2. Remover referências na configuração da Lívia (se existir)
-      await db.update(livia_configurations)
-        .set({
-          whatsapp_number_id: null,
-          updated_at: new Date()
-        })
+      const conversationsAffected = conversationsResult.rowCount || 0;
+      console.log(`📂 ${conversationsAffected} conversas arquivadas e desvinculadas`);
+      
+      // 2. Verificar e remover referências na configuração da Lívia
+      const liviaConfig = await db.select()
+        .from(livia_configurations)
         .where(and(
           eq(livia_configurations.whatsapp_number_id, whatsappId),
           eq(livia_configurations.clinic_id, clinicId)
-        ));
+        ))
+        .limit(1);
       
-      console.log(`✅ References cleaned up for WhatsApp instance ${whatsappId}`);
+      if (liviaConfig.length > 0) {
+        await db.update(livia_configurations)
+          .set({
+            whatsapp_number_id: null,
+            updated_at: new Date()
+          })
+          .where(and(
+            eq(livia_configurations.whatsapp_number_id, whatsappId),
+            eq(livia_configurations.clinic_id, clinicId)
+          ));
+        
+        console.log(`🤖 Instância WhatsApp desvinculada da configuração da Lívia`);
+        console.log(`⚠️ Lívia ficará sem número WhatsApp - configure um novo número nas configurações`);
+      } else {
+        console.log(`ℹ️ Instância não estava vinculada à Lívia`);
+      }
+      
+      console.log(`✅ Referencias cleaned up for WhatsApp instance ${whatsappId}`);
       
     } catch (error) {
       console.error('❌ Error cleaning up WhatsApp references:', error);
