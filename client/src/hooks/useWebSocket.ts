@@ -164,6 +164,29 @@ export const useWebSocket = (userId?: string, clinicId?: number) => {
         });
       });
 
+      // ⚡ AI CONFIG CHANGED: Real-time sync when Livia configuration changes
+      socket.on('ai_config_changed', (data: { 
+        clinic_id: number; 
+        whatsapp_connected: boolean; 
+        ai_should_be_active: boolean; 
+        timestamp: string 
+      }) => {
+        console.log('⚡ SYNC: Livia config changed via WebSocket - invalidating ALL caches immediately');
+        console.log('📋 Config change details:', data);
+        
+        // Force immediate invalidation of ALL conversation caches
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple']
+        });
+        
+        // Force refetch to bypass any cache
+        queryClient.refetchQueries({
+          queryKey: ['/api/conversations-simple']
+        });
+        
+        console.log('✅ SYNC: Cache invalidation complete - AI buttons should update in <5 seconds');
+      });
+
       // Join clinic room for notifications
       socket.emit('clinic:join', clinicId);
 
