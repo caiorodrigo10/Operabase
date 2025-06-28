@@ -558,6 +558,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
           sender_type: msg.sender_type,
           sender_name: msg.sender_type === 'professional' ? 'Caio Rodrigo' : 
                       msg.sender_type === 'ai' ? 'Mara AI' : 'Paciente',
+          sender_avatar: msg.sender_type === 'patient' ? contactData?.profile_picture : undefined,
           direction: msg.sender_type === 'professional' ? 'outbound' : 'inbound',
           message_type: messageType,
           timestamp: msg.timestamp,
