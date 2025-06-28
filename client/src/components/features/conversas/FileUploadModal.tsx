@@ -346,10 +346,13 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
             {status === 'idle' && (
               <Button 
                 onClick={handleUpload} 
-                disabled={files.length === 0}
+                disabled={files.length === 0 || isTransitioning}
                 className="min-w-[100px]"
               >
-                Enviar
+                {isTransitioning && transitionStage === 'optimistic' && 'Enviando...'}
+                {isTransitioning && transitionStage === 'fetching' && 'Processando...'}
+                {isTransitioning && transitionStage === 'complete' && 'Enviado'}
+                {!isTransitioning && 'Enviar'}
               </Button>
             )}
           </div>
