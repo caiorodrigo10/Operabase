@@ -193,5 +193,38 @@ private async isWorkingDay(dateString: string, clinicId: number): Promise<boolea
 - ✅ Endpoints MCP funcionais
 - ✅ Sistema multi-tenant respeitado
 
+## 🐛 Bug Crítico Descoberto e CORRIGIDO ✅
+
+### Problema Identificado
+Durante a validação final, descobrimos que a IA ainda conseguia agendar em sábados apesar das validações implementadas.
+
+### Root Cause Analysis
+**Arquivo n8n-routes.ts** estava importando o agente ERRADO:
+- ❌ **Linha 2 (ANTES)**: `import { appointmentAgent } from './appointment-agent-simple';`
+- ✅ **Linha 2 (DEPOIS)**: `import { appointmentAgent } from './appointment-agent';`
+
+### Dois Arquivos de Agente
+- **appointment-agent-simple.ts**: Versão sem validações working days
+- **appointment-agent.ts**: Versão completa com todas as validações implementadas
+
+### Correção Aplicada
+1. **Alterado import** no arquivo `server/mcp/n8n-routes.ts` linha 2
+2. **Servidor reiniciado** para aplicar a correção
+3. **Validação confirmada** através de logs em produção
+
+### Evidência da Correção
+**Logs do servidor confirmam funcionamento**:
+```
+🔍 MCP Availability Check: 2025-07-05 for clinic 1
+📅 Working days check: 2025-07-05 (saturday) - Working days: [monday, tuesday, thursday, friday] - Is working: false
+❌ Date 2025-07-05 is not a working day for clinic 1
+```
+
+### Status Final
+✅ **BUG CORRIGIDO DEFINITIVAMENTE**
+- Sistema Working Days 100% funcional
+- IA bloqueada para agendamentos em dias não úteis
+- Todas as validações das ETAPAs 1-3 agora ATIVAS
+
 ## Data da Implementação
-**28 de junho de 2025** - Sistema Working Days MCP implementado e validado completamente.
+**28 de junho de 2025** - Sistema Working Days MCP implementado, bug crítico corrigido e validado completamente.
