@@ -184,6 +184,48 @@ Mantenha um tom acolhedor e use linguagem simples. Em caso de dúvidas médicas 
         console.error('❌ AI RULE 1: Erro ao aplicar regra após mudança de configuração:', aiError);
         // Não falhar a operação por causa da regra da IA
       }
+
+      // ⚡ CACHE INVALIDATION: Invalidar caches para atualização em tempo real
+      try {
+        console.log('⚡ CACHE INVALIDATION: Iniciando invalidação após mudança da Lívia...');
+        
+        // Invalidar cache memory + Redis para todas as conversas
+        const { cacheService } = await import('../../cache/cache-service');
+        const { webSocketService } = await import('../../websocket/websocket-service');
+        
+        // 1. Invalidar lista de conversas
+        await cacheService.invalidate(`conversations:clinic:${clinicId}`);
+        console.log('🗑️ Cache de lista de conversas invalidado');
+        
+        // 2. Invalidar detalhes de todas as conversas da clínica
+        const conversations = await storage.getConversations(clinicId);
+        for (const conv of conversations) {
+          const cacheKeys = [
+            `conversation:${conv.id}:detail:page:1:limit:25`,
+            `conversation:${conv.id}:detail:page:1:limit:50`
+          ];
+          
+          for (const key of cacheKeys) {
+            await cacheService.invalidate(key);
+          }
+        }
+        console.log(`🗑️ Cache de ${conversations.length} conversas invalidado`);
+        
+        // 3. Notificar via WebSocket para atualização em tempo real
+        webSocketService.broadcastToClinic(clinicId, 'ai_config_changed', {
+          clinic_id: clinicId,
+          whatsapp_connected: config.whatsapp_number_id !== null,
+          ai_should_be_active: config.whatsapp_number_id !== null,
+          timestamp: new Date().toISOString()
+        });
+        console.log('📡 WebSocket notification enviada para clínica:', clinicId);
+        
+        console.log('✅ CACHE INVALIDATION: Concluída com sucesso - frontend deve atualizar em <5 segundos');
+        
+      } catch (cacheError) {
+        console.error('⚠️ CACHE INVALIDATION: Erro na invalidação, mas configuração foi salva:', cacheError);
+        // Não falhar a operação por causa do cache
+      }
       
       res.json(config);
     } catch (error) {
