@@ -682,13 +682,13 @@ body.drag-active * {
 
 .preview-card {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 2px solid #3b82f6;
+  border: 2px solid #0f766e;
   border-radius: 12px;
   padding: 12px;
   box-shadow: 
     0 20px 25px -5px rgba(0, 0, 0, 0.1), 
     0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(59, 130, 246, 0.1);
+    0 0 0 1px rgba(15, 118, 110, 0.1);
   max-width: 220px;
   backdrop-filter: blur(8px);
 }
@@ -696,7 +696,7 @@ body.drag-active * {
 .preview-patient {
   font-size: 13px;
   font-weight: 600;
-  color: #1e40af;
+  color: #0f766e;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -759,25 +759,25 @@ body.drag-active * {
 
 .snap-indicator {
   position: absolute;
-  background: rgba(59, 130, 246, 0.8);
+  background: rgba(15, 118, 110, 0.8);
   height: 3px;
   left: 0;
   right: 0;
   z-index: 50;
   transition: all 0.1s ease;
   border-radius: 1px;
-  box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 4px rgba(15, 118, 110, 0.5);
 }
 
 /* Snap behavior visual feedback */
 .time-slot.snap-target {
-  background: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: rgba(15, 118, 110, 0.12);
+  border: 1px solid rgba(15, 118, 110, 0.4);
   transition: all 0.1s ease;
 }
 
 .time-slot.snap-active {
-  background: rgba(59, 130, 246, 0.2);
-  border: 2px solid rgba(59, 130, 246, 0.6);
+  background: rgba(15, 118, 110, 0.2);
+  border: 2px solid rgba(15, 118, 110, 0.6);
   transform: scale(1.01);
 }
