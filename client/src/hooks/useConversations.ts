@@ -54,15 +54,17 @@ export function useConversationDetail(conversationId: number | string | null) {
     queryKey: ['/api/conversations-simple', conversationId],
     queryFn: async () => {
       if (!conversationId) return null;
-      const response = await fetch(`/api/conversations-simple/${conversationId}`);
+      // ETAPA 2: Add timestamp to bypass browser cache completely
+      const timestamp = Date.now();
+      const response = await fetch(`/api/conversations-simple/${conversationId}?t=${timestamp}`);
       if (!response.ok) {
         throw new Error('Erro ao buscar conversa');
       }
       return response.json() as Promise<ConversationDetailResponse>;
     },
     enabled: !!conversationId,
-    staleTime: 3000, // Reduzido para 3 segundos para updates imediatos
-    gcTime: 5 * 60 * 1000, // 5 minutos de cache em garbage collection
+    staleTime: 1000, // ETAPA 2: Reduced to 1 second for immediate updates
+    gcTime: 2 * 60 * 1000, // ETAPA 2: Reduced to 2 minutes for faster cache clearing
     refetchInterval: (data, query) => {
       // Polling adaptativo baseado no estado da IA
       if (!data?.conversation) return false;
@@ -70,10 +72,14 @@ export function useConversationDetail(conversationId: number | string | null) {
       const conversation = data.conversation;
       const isAiPaused = conversation.ai_active === false;
       
+      // ETAPA 2: More aggressive polling during uploads
       // Se IA pausada: polling mais frequente para detectar reativação
       // Se IA ativa: polling normal
-      return isAiPaused ? 2000 : 5000; // 2s vs 5s
+      return isAiPaused ? 1000 : 3000; // 1s vs 3s (mais agressivo)
     },
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   return queryResult;

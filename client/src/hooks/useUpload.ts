@@ -190,42 +190,58 @@ export function useUpload() {
         console.log('🧹 OPTIMISTIC: Cleaned up local file URL');
       }
       
-      // Update cache with real data from server
-      queryClient.setQueryData(['/api/conversations-simple', variables.conversationId], (old: any) => {
-        if (!old) return old;
-        
-        console.log('⚡ OPTIMISTIC: Replacing optimistic data with server data');
-        
-        // Remove the optimistic message and add the real one
-        const filteredMessages = old.messages.filter((msg: any) => 
-          msg.id !== context?.optimisticMessage?.id
-        );
-        
-        return {
-          ...old,
-          conversation: {
-            ...old.conversation,
-            ai_active: data.data.message.ai_active !== undefined ? data.data.message.ai_active : false
-          },
-          messages: [
-            ...filteredMessages,
-            {
-              ...data.data.message,
-              attachments: [data.data.attachment]
-            }
-          ]
-        };
-      });
-      
-      // 🚀 PERFORMANCE FIX: Cache invalidation adicional para sincronização completa
-      console.log('🧹 OPTIMISTIC: Iniciando cache invalidation final...');
+      // 🚀 ETAPA 2: AGGRESSIVE CACHE INVALIDATION - Force immediate server data fetch
+      console.log('⚡ ETAPA 2: Starting aggressive cache invalidation for instant visual update');
       
       try {
-        // Invalidar cache da lista de conversas para atualizar last message
+        // 1. Force invalidate conversation detail with immediate refetch
         queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple', variables.conversationId],
+          refetchType: 'all' // Force refetch even if already fetching
+        });
+        console.log('🧹 ETAPA 2: Conversation detail cache invalidated with immediate refetch');
+        
+        // 2. Force invalidate conversation list with immediate refetch
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/conversations-simple'],
+          refetchType: 'all'
+        });
+        console.log('🧹 ETAPA 2: Conversation list cache invalidated with immediate refetch');
+        
+        // 3. Remove any cached entries completely to force fresh fetch
+        queryClient.removeQueries({ 
+          queryKey: ['/api/conversations-simple', variables.conversationId] 
+        });
+        queryClient.removeQueries({ 
           queryKey: ['/api/conversations-simple'] 
         });
-        console.log('✅ OPTIMISTIC: Cache da lista invalidado');
+        console.log('🧹 ETAPA 2: Cache entries completely removed for fresh fetch');
+        
+        // 4. Force immediate refetch of conversation data
+        setTimeout(() => {
+          queryClient.refetchQueries({
+            queryKey: ['/api/conversations-simple', variables.conversationId]
+          });
+          queryClient.refetchQueries({
+            queryKey: ['/api/conversations-simple']
+          });
+          console.log('⚡ ETAPA 2: Immediate forced refetch executed');
+        }, 50); // Small delay to ensure cache clearing
+        
+        // 5. Set staleTime to 0 temporarily for immediate updates
+        queryClient.setQueryDefaults(['/api/conversations-simple', variables.conversationId], {
+          staleTime: 0,
+          gcTime: 0
+        });
+        
+        setTimeout(() => {
+          // Reset to normal cache settings after 5 seconds
+          queryClient.setQueryDefaults(['/api/conversations-simple', variables.conversationId], {
+            staleTime: 3000,
+            gcTime: 5 * 60 * 1000
+          });
+          console.log('⚡ ETAPA 2: Cache settings reset to normal');
+        }, 5000);
         
         // 📡 WEBSOCKET: Tentar emitir evento WebSocket se disponível
         const webSocketEmit = (window as any).webSocketEmit;
@@ -236,13 +252,13 @@ export function useUpload() {
             messageId: data.data.message.id,
             attachmentId: data.data.attachment.id
           });
-          console.log('📡 OPTIMISTIC: WebSocket evento emitido');
+          console.log('📡 ETAPA 2: WebSocket evento emitido');
         }
         
-        console.log('⚡ OPTIMISTIC: Cache invalidation completo');
+        console.log('✅ ETAPA 2: Aggressive cache invalidation completed - data should appear instantly');
         
       } catch (error) {
-        console.log('⚠️ OPTIMISTIC: Cache invalidation falhou:', error);
+        console.log('⚠️ ETAPA 2: Aggressive cache invalidation falhou:', error);
       }
     },
     onError: (error, variables, context) => {

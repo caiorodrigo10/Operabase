@@ -593,25 +593,53 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
       
       console.log('🤖 AI PAUSE UPLOAD: ========== FIM DO SISTEMA DE PAUSA AUTOMÁTICA ==========');
 
-      // 🚀 PERFORMANCE FIX: Cache invalidation imediato como nas mensagens de texto
-      console.log('🧹 UPLOAD PERFORMANCE: Iniciando cache invalidation...');
+      // 🚀 ETAPA 2: AGGRESSIVE CACHE INVALIDATION BEFORE RESPONSE
+      console.log('⚡ ETAPA 2: Starting aggressive cache invalidation BEFORE sending response...');
       
       try {
-        // Memory Cache invalidation
+        // 1. Immediate Memory Cache invalidation with multiple keys
         const memoryCacheService = (await import('../cache/memory-cache-service.js')).memoryCacheService;
-        await memoryCacheService.invalidateConversationDetail(conversationId);
-        console.log('✅ UPLOAD PERFORMANCE: Memory cache invalidado');
         
-        // Conversations list cache invalidation
+        // Clear conversation detail cache with all possible pagination keys
+        const baseDetailKey = `conversation:${conversationId}:detail`;
+        await memoryCacheService.invalidatePattern(`${baseDetailKey}*`);
+        console.log('✅ ETAPA 2: Conversation detail cache pattern invalidated');
+        
+        // Clear conversation list cache
         await memoryCacheService.invalidate('conversations:list:clinic:1');
-        console.log('✅ UPLOAD PERFORMANCE: Lista de conversas invalidada');
+        console.log('✅ ETAPA 2: Conversation list cache invalidated');
+        
+        // 2. Force Redis cache invalidation
+        try {
+          const redisCache = (await import('../cache/redis-cache-service.js')).redisCacheService;
+          await redisCache.invalidateConversationDetail(conversationId);
+          await redisCache.invalidateConversationsList(1);
+          console.log('✅ ETAPA 2: Redis cache invalidated');
+        } catch (redisError) {
+          console.log('⚠️ ETAPA 2: Redis cache invalidation failed (fallback to memory)');
+        }
+        
+        // 3. Clear specific cache keys that might exist
+        const keysToInvalidate = [
+          `conversation:${conversationId}:detail:page:1:limit:25`,
+          `conversation:${conversationId}:detail:page:1:limit:50`,
+          `conversations:list:clinic:1`,
+          `conversations:list:clinic:1:status:active`
+        ];
+        
+        for (const key of keysToInvalidate) {
+          await memoryCacheService.invalidate(key);
+        }
+        console.log('✅ ETAPA 2: Specific cache keys invalidated:', keysToInvalidate.length);
+        
+        console.log('⚡ ETAPA 2: Aggressive cache invalidation completed BEFORE response');
         
       } catch (cacheError) {
-        console.log('⚠️ UPLOAD PERFORMANCE: Cache invalidation falhou:', cacheError.message);
+        console.log('⚠️ ETAPA 2: Aggressive cache invalidation failed:', cacheError.message);
       }
 
-      // 📡 PERFORMANCE FIX: WebSocket broadcast como nas mensagens de texto
-      console.log('📡 UPLOAD PERFORMANCE: Enviando WebSocket broadcast...');
+      // 📡 ETAPA 2: IMMEDIATE WebSocket broadcast BEFORE response
+      console.log('📡 ETAPA 2: Sending immediate WebSocket broadcast BEFORE response...');
       
       try {
         const webSocketModule = await import('../websocket-server.js');
@@ -623,23 +651,26 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
             conversationId: conversationId,
             type: 'file_upload',
             messageId: result.message.id,
-            attachmentId: result.attachment.id
+            attachmentId: result.attachment.id,
+            timestamp: new Date().toISOString()
           });
           
           // Broadcast específico da conversa
           io.to(`conversation-${conversationId}`).emit('message:new', {
             conversationId: conversationId,
             message: result.message,
-            attachment: result.attachment
+            attachment: result.attachment,
+            timestamp: new Date().toISOString()
           });
           
-          console.log('✅ UPLOAD PERFORMANCE: WebSocket broadcast enviado');
+          console.log('✅ ETAPA 2: Immediate WebSocket broadcast sent BEFORE response');
         }
       } catch (wsError) {
-        console.log('⚠️ UPLOAD PERFORMANCE: WebSocket broadcast falhou:', wsError.message);
+        console.log('⚠️ ETAPA 2: Immediate WebSocket broadcast failed:', wsError.message);
       }
 
-      // 🎯 RESPOSTA IMEDIATA: Retornar resultado sem aguardar processos em background
+      // 🎯 ETAPA 2: RESPONSE AFTER CACHE INVALIDATION
+      console.log('⚡ ETAPA 2: Sending response after cache invalidation...');
       res.json({
         success: true,
         data: {
