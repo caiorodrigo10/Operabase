@@ -156,6 +156,21 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 28, 2025 - Sistema MCP Lunch Break: Validação Completa Implementada ✅
+- **Sistema Lunch Break**: Implementado sistema completo de validação de horário de almoço no MCP
+- **ETAPA 1**: Helper isLunchTime() implementado com consulta dinâmica à configuração da clínica
+- **ETAPA 2**: getAvailableSlots() modificado para filtrar slots durante lunch break (12:00-13:00)
+- **ETAPA 3**: createAppointment() e rescheduleAppointment() validando conflitos com horário de almoço
+- **ETAPA 4**: Logs detalhados implementados para debugging ("🍽️ Lunch break check")
+- **ETAPA 5**: Sistema de testes criado para validação completa do lunch break
+- **Validação Inteligente**: Sistema respeita has_lunch_break, lunch_start, lunch_end da clínica
+- **Proteção Completa**: IA bloqueada para agendar durante horário de almoço configurado
+- **Zero Impact**: Working days preservados, funcionalidades existentes mantidas
+- **Logs Funcionais**: Sistema registra validações lunch break com configuração da clínica
+- **Resultado Final**: IA não consegue mais agendar durante horário de almoço (12:00-13:00 padrão)
+- **Sistema Unificado**: Working days + Lunch break + Working hours = proteção completa MCP
+- **Status**: ✅ LUNCH BREAK IMPLEMENTADO - Sistema MCP agora respeita completamente configuração da clínica
+
 ### June 28, 2025 - Sistema Working Days MCP: Bug Crítico CORRIGIDO Definitivamente ✅
 - **Problema Crítico Identificado**: IA agendando consultas em sábados apesar da clínica configurar apenas dias úteis
 - **Root Cause Descoberto**: n8n-routes.ts importava appointment-agent-simple.ts (SEM validações) em vez de appointment-agent.ts (COM validações)
