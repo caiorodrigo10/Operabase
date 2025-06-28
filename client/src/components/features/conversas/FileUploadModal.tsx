@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { X, Upload, FileIcon, Image, Video, Music, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUpload } from '@/hooks/useUpload';
+import { useSimpleUpload } from '@/hooks/useSimpleUpload';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface FileUploadModalProps {
@@ -58,11 +58,9 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<any>(null);
   
-  // ETAPA 5.3: Transition state management to prevent button flicker
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionStage, setTransitionStage] = useState<'idle' | 'optimistic' | 'fetching' | 'complete'>('idle');
+  // NOVA ABORDAGEM: Sem estados de transição - upload simples
   
-  const uploadMutation = useUpload();
+  const uploadMutation = useSimpleUpload();
   const queryClient = useQueryClient();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
