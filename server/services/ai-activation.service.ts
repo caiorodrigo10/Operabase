@@ -2,8 +2,11 @@
  * AI Activation Service - Regra 1: Ativação baseada na vinculação WhatsApp da Lívia
  * 
  * Regra 1: AI baseada na vinculação WhatsApp
- * - Quando whatsapp_number_id = null → todas conversas ai_active = false
- * - Quando whatsapp_number_id = ID_válido → novas conversas ai_active = true
+ * - Quando whatsapp_number_id = null → todas conversas ai_active = false  
+ * - Quando whatsapp_number_id = ID_válido → todas conversas ai_active = true
+ * 
+ * APLICAÇÃO: Apenas quando configuração da Lívia muda (Ponto 4)
+ * NÃO aplicar em mensagens individuais (Pontos 2,3 removidos)
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -32,12 +35,12 @@ export class AIActivationService {
   }
 
   /**
-   * Determina se a IA deve estar ativa para novas conversas baseado na configuração da Lívia
+   * Determina se a IA deve estar ativa baseado na configuração atual da Lívia
    * 
    * @param clinicId ID da clínica
    * @returns Contexto de ativação da IA
    */
-  async shouldActivateAIForNewConversation(clinicId: number): Promise<AIActivationContext> {
+  async shouldActivateAI(clinicId: number): Promise<AIActivationContext> {
     try {
       console.log(`🤖 AI RULE 1: Verificando ativação da IA para clínica ${clinicId}`);
 
@@ -160,42 +163,38 @@ export class AIActivationService {
   }
 
   /**
-   * Aplica a Regra 1 para uma conversa específica recém-criada
+   * Aplica a Regra 1 quando a configuração da Lívia muda
+   * Atualiza TODAS as conversas da clínica baseado na nova configuração
    * 
-   * @param conversationId ID da conversa
    * @param clinicId ID da clínica
-   * @returns Status final da IA aplicado
+   * @returns Resultado da aplicação
    */
-  async applyRule1ToNewConversation(conversationId: string, clinicId: number): Promise<boolean> {
+  async applyRule1OnConfigChange(clinicId: number): Promise<{ success: boolean; updated: number; reason: string }> {
     try {
-      const aiContext = await this.shouldActivateAIForNewConversation(clinicId);
+      console.log(`🔄 AI RULE 1: Aplicando Regra 1 após mudança de configuração da Lívia para clínica ${clinicId}`);
       
-      console.log(`🎯 AI RULE 1: Aplicando regra para conversa ${conversationId}:`, {
+      const aiContext = await this.shouldActivateAI(clinicId);
+      
+      console.log(`🎯 AI RULE 1: Nova configuração determinada:`, {
         shouldActivate: aiContext.shouldActivateAI,
         reason: aiContext.reason
       });
 
-      // Atualizar conversa com o status correto da IA
-      const { error } = await this.supabase
-        .from('conversations')
-        .update({ 
-          ai_active: aiContext.shouldActivateAI,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', conversationId)
-        .eq('clinic_id', clinicId);
+      const result = await this.updateAllConversationsAIStatus(
+        clinicId, 
+        aiContext.shouldActivateAI, 
+        `config_change_${aiContext.reason}`
+      );
 
-      if (error) {
-        console.error('❌ AI RULE 1: Erro ao aplicar regra à conversa:', error);
-        return false; // Fallback seguro
-      }
-
-      console.log(`✅ AI RULE 1: Conversa ${conversationId} configurada com ai_active = ${aiContext.shouldActivateAI}`);
-      return aiContext.shouldActivateAI;
+      return {
+        success: result.updated >= 0,
+        updated: result.updated,
+        reason: result.reason
+      };
 
     } catch (error) {
-      console.error('❌ AI RULE 1: Erro ao aplicar regra à conversa:', error);
-      return false; // Fallback seguro
+      console.error('❌ AI RULE 1: Erro ao aplicar regra após mudança de configuração:', error);
+      return { success: false, updated: 0, reason: 'error' };
     }
   }
 }

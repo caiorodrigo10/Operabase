@@ -168,6 +168,22 @@ Mantenha um tom acolhedor e use linguagem simples. Em caso de dúvidas médicas 
           error: 'Configuração da Livia não encontrada' 
         });
       }
+
+      // 🤖 REGRA 1: Aplicar ativação automática da IA após mudança na configuração da Lívia
+      try {
+        console.log('🤖 AI RULE 1: Configuração da Lívia alterada, aplicando Regra 1...');
+        const { aiActivationService } = await import('../../services/ai-activation.service');
+        const result = await aiActivationService.applyRule1OnConfigChange(clinicId);
+        
+        if (result.success) {
+          console.log(`✅ AI RULE 1: ${result.updated} conversas atualizadas após mudança na configuração da Lívia`);
+        } else {
+          console.error('⚠️ AI RULE 1: Falha ao aplicar regra, configuração salva mas IA pode estar desatualizada');
+        }
+      } catch (aiError) {
+        console.error('❌ AI RULE 1: Erro ao aplicar regra após mudança de configuração:', aiError);
+        // Não falhar a operação por causa da regra da IA
+      }
       
       res.json(config);
     } catch (error) {
