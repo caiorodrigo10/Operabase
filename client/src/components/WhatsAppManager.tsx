@@ -372,7 +372,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
           <Button 
             onClick={() => startConnectionMutation.mutate()}
             disabled={startConnectionMutation.isPending}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-[#0f766e] hover:bg-[#0f766e]/90"
           >
             <Plus className="w-4 h-4" />
             Adicionar Número
@@ -478,7 +478,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
                           <AlertDialogAction 
                             onClick={() => deleteMutation.mutate(number.id)}
                             disabled={deleteMutation.isPending}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-[#0f766e] hover:bg-[#0d5a56]"
                           >
                             Remover
                           </AlertDialogAction>

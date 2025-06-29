@@ -279,7 +279,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
         <div className="flex gap-2">
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+              <Button className="flex items-center gap-2 bg-[#0f766e] hover:bg-teal-700">
                 <UserPlus className="h-4 w-4" />
                 Criar Usuário
               </Button>
@@ -354,7 +354,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
                 <Button
                   onClick={() => createUserMutation.mutate(newUserData)}
                   disabled={createUserMutation.isPending || !newUserData.name || !newUserData.email}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-[#0f766e] hover:bg-teal-700"
                 >
                   {createUserMutation.isPending ? 'Criando...' : 'Criar Usuário'}
                 </Button>
@@ -380,7 +380,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
                   {/* Avatar */}
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={user.avatar_url} alt={user.name} />
-                    <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                    <AvatarFallback className="bg-teal-100 text-teal-600 font-medium">
                       {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -444,7 +444,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
               <div className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={selectedUser.avatar_url} alt={selectedUser.name} />
-                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium text-lg">
+                  <AvatarFallback className="bg-teal-100 text-teal-600 font-medium text-lg">
                     {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -495,7 +495,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
             <Button
               onClick={handleUpdateUser}
               disabled={updateUserMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-[#0f766e] hover:bg-teal-700"
             >
               {updateUserMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
