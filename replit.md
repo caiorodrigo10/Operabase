@@ -163,7 +163,58 @@ SESSION_SECRET=your_session_secret
 - **Input Validation**: Zod schema validation for all API inputs
 - **SQL Injection Prevention**: Parameterized queries via Drizzle ORM
 
+## Key Components
+
+### Modular Page Architecture 🏗️
+
+The Operabase platform implements a sophisticated **modular page architecture** that separates complex functionalities into organized, navigable sub-pages. This architecture is used in two main areas:
+
+#### 1. Contact Details System
+- **6 Sub-Pages**: Each contact has dedicated pages for different aspects
+- **Shared Layout**: `ContactLayout` component provides unified navigation and header
+- **Consistent Routing**: `/contatos/:id/[sub-page]` structure
+- **Sub-Pages**:
+  - `visao-geral` - Patient overview dashboard
+  - `anamneses` - Medical history templates management
+  - `mara-ai` - AI conversation interface
+  - `evolucoes` - Medical evolutions and records
+  - `documentos` - Document management system
+  - `arquivos` - Media file management
+
+#### 2. Configuration System
+- **5 Sub-Pages**: Settings organized by functional area
+- **Sidebar Navigation**: `ConfiguracoesLayout` with elegant left sidebar
+- **Modular Routes**: `/configuracoes/[section]` structure
+- **Sections**:
+  - `clinica` - Clinic basic settings
+  - `equipe` - Team and user management
+  - `integracoes` - API integrations
+  - `planos` - Subscription plans
+  - `anamneses` - Anamnesis template management
+
+#### Benefits of Modular Architecture
+- **Better Code Organization**: Each page has focused responsibilities
+- **Improved Performance**: Lazy loading of sub-pages
+- **Enhanced UX**: Clear navigation between related functions
+- **Easy Maintenance**: Isolated changes per functionality
+- **Scalability**: Simple to add new sub-pages
+
+#### Technical Implementation
+- **Shared Layouts**: Consistent navigation and theming
+- **React Query**: Shared data management across sub-pages
+- **Wouter Routing**: Clean URL structure
+- **TypeScript**: Full type safety across modular components
+
 ## Changelog
+
+### June 29, 2025 - Modular Page Architecture Documentation Complete ✅
+- **Complete Documentation**: Created comprehensive guide for modular page architecture
+- **Two Systems Documented**: Contact details and configuration systems fully explained
+- **Technical Patterns**: Shared layouts, routing, and implementation patterns documented
+- **Architecture Benefits**: Performance, maintainability, and scalability advantages outlined
+- **Developer Guide**: Templates and patterns for adding new modular pages
+- **User Experience**: Navigation consistency and responsive design principles
+- **File Created**: `MODULAR-PAGE-ARCHITECTURE-DOCUMENTATION.md` with complete technical details
 
 ### June 29, 2025 - Contact Details Page Complete Modular Restructuring ✅
 - **Modular Page System**: Successfully restructured contact details into 6 separate sub-pages with shared navigation

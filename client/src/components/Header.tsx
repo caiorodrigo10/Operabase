@@ -69,7 +69,7 @@ const iconButtons = [
   { 
     icon: Settings, 
     tooltip: "Configurações Gerais", 
-    href: "/configuracoes",
+    href: "/configuracoes/clinica",
     active: true 
   },
 ];

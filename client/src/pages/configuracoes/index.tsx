@@ -83,13 +83,11 @@ const ConfiguracoesLayout = ({ children }: ConfiguracoesLayoutProps) => {
 };
 
 export default function ConfiguracoesIndex() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   
-  // Redirect to clinic page by default
+  // Redirect to clinic page by default using React navigation
   if (location === '/configuracoes' || location === '/configuracoes/') {
-    setTimeout(() => {
-      window.location.href = '/configuracoes/clinica';
-    }, 0);
+    setLocation('/configuracoes/clinica');
     return null;
   }
   
