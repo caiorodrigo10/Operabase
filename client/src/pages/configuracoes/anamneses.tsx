@@ -238,7 +238,7 @@ export default function ConfiguracoesAnamnesisPage() {
         </div>
 
         {/* Help Section */}
-        <div className="w-80">
+        <div className="w-64">
           <Card className="bg-gray-50">
             <CardContent className="p-6">
               <div className="text-center mb-4">
