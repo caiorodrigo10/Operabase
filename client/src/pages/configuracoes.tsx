@@ -640,7 +640,7 @@ export function Configuracoes() {
                   <textarea
                     id="clinic-description"
                     defaultValue={clinic?.description || ""}
-                    className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     rows={3}
                     placeholder="Descreva os serviços e especialidades da clínica..."
                   />
@@ -1143,7 +1143,7 @@ export function Configuracoes() {
                               </div>
 
                               <div className="flex justify-end">
-                                <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                                <Button variant="outline" size="sm" className="text-[#0f766e] border-teal-200 hover:bg-teal-50">
                                   <Settings className="w-4 h-4 mr-2" />
                                   Configurações Avançadas
                                 </Button>
@@ -1185,8 +1185,8 @@ export function Configuracoes() {
                 }}
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-teal-600" />
                   </div>
                   <div>
                     <p className="font-medium text-slate-800">Google Calendar</p>
@@ -1215,8 +1215,8 @@ export function Configuracoes() {
 
               <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg opacity-50">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-teal-600" />
                   </div>
                   <div>
                     <p className="font-medium text-slate-800">iCloud Calendar</p>
@@ -1261,29 +1261,29 @@ export function Configuracoes() {
                       <div className="text-center">
                         <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                           <Calendar className="w-8 h-8 text-slate-600" />
-                          <Plus className="w-4 h-4 text-blue-600 ml-1" />
+                          <Plus className="w-4 h-4 text-teal-600 ml-1" />
                         </div>
                         <p className="text-sm font-medium text-slate-800">Sistema</p>
-                        <p className="text-xs text-blue-600 mt-1">Agendamentos do Sistema</p>
+                        <p className="text-xs text-teal-600 mt-1">Agendamentos do Sistema</p>
                       </div>
                       
                       <div className="flex flex-col items-center space-y-2">
                         <div className="flex items-center space-x-2">
-                          <div className="w-12 h-0.5 bg-blue-400"></div>
-                          <div className="w-0 h-0 border-l-4 border-l-blue-400 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
+                          <div className="w-12 h-0.5 bg-teal-400"></div>
+                          <div className="w-0 h-0 border-l-4 border-l-teal-400 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <div className="w-0 h-0 border-r-4 border-r-blue-400 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
-                          <div className="w-12 h-0.5 bg-blue-400"></div>
+                          <div className="w-0 h-0 border-r-4 border-r-teal-400 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
+                          <div className="w-12 h-0.5 bg-teal-400"></div>
                         </div>
                       </div>
 
                       <div className="text-center">
-                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                          <Calendar className="w-8 h-8 text-blue-600" />
+                        <div className="w-16 h-16 bg-teal-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                          <Calendar className="w-8 h-8 text-teal-600" />
                         </div>
                         <p className="text-sm font-medium text-slate-800">Calendário vinculado</p>
-                        <p className="text-xs text-blue-600 mt-1">Eventos do Calendário Vinculado</p>
+                        <p className="text-xs text-teal-600 mt-1">Eventos do Calendário Vinculado</p>
                       </div>
                     </div>
                   </div>
@@ -1303,12 +1303,12 @@ export function Configuracoes() {
                               name="add-events-calendar"
                               value="google-account"
                               checked={addEventsToCalendar === "google-account"}
-                              className="w-4 h-4 text-blue-600"
+                              className="w-4 h-4 text-teal-600"
                               onChange={() => setAddEventsToCalendar("google-account")}
                             />
                             <div className="flex items-center space-x-2 flex-1">
-                              <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                                <Calendar className="w-4 h-4 text-blue-600" />
+                              <div className="w-8 h-8 bg-teal-100 rounded flex items-center justify-center">
+                                <Calendar className="w-4 h-4 text-teal-600" />
                               </div>
                               <Label htmlFor="google-account" className="cursor-pointer flex-1">
                                 <span className="font-medium text-slate-700">
@@ -1326,7 +1326,7 @@ export function Configuracoes() {
                             name="add-events-calendar"
                             value="none"
                             checked={addEventsToCalendar === "none"}
-                            className="w-4 h-4 text-blue-600"
+                            className="w-4 h-4 text-teal-600"
                             onChange={() => setAddEventsToCalendar("none")}
                           />
                           <div className="flex items-center space-x-2 flex-1">
@@ -1368,9 +1368,9 @@ export function Configuracoes() {
                     )}
 
                     {linkedCalendarId && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="p-3 bg-blue-50 border border-teal-200 rounded-lg">
                         <div className="flex items-start space-x-2">
-                          <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <Info className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="text-sm font-medium text-blue-800">Calendário selecionado anteriormente</p>
                             <p className="text-xs text-blue-700 mt-1">
@@ -1527,7 +1527,7 @@ export function Configuracoes() {
                       value="one-way"
                       checked={syncPreference === 'one-way'}
                       onChange={() => setSyncPreference('one-way')}
-                      className="w-4 h-4 text-blue-600 mt-1"
+                      className="w-4 h-4 text-teal-600 mt-1"
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
@@ -1559,7 +1559,7 @@ export function Configuracoes() {
                       value="bidirectional"
                       checked={syncPreference === 'bidirectional'}
                       onChange={() => setSyncPreference('bidirectional')}
-                      className="w-4 h-4 text-blue-600 mt-1"
+                      className="w-4 h-4 text-teal-600 mt-1"
                     />
                     <div className="flex-1">
                       <Label htmlFor="bidirectional-sync" className="cursor-pointer font-medium mb-2 block">
@@ -1574,9 +1574,9 @@ export function Configuracoes() {
               </div>
 
               {/* Information box */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="p-3 bg-blue-50 border border-teal-200 rounded-lg">
                 <div className="flex items-start space-x-2">
-                  <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <Info className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-blue-800">Configuração de Sincronização</p>
                     <p className="text-xs text-blue-700 mt-1">
