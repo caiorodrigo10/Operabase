@@ -226,7 +226,7 @@ export default function PreencherAnamnese() {
 
   const handleTemplateChange = (templateId: string) => {
     if (templateId === 'create-new') {
-      setLocation('/anamneses');
+      setLocation('/configuracoes/anamneses');
       return;
     }
     setSelectedTemplateId(parseInt(templateId));

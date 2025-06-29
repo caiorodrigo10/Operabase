@@ -165,18 +165,23 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 29, 2025 - Configuration Page Sidebar Navigation System Implemented ✅
+### June 29, 2025 - Configuration Page Complete Implementation with Anamneses Integration ✅
 - **Sidebar Navigation**: Replaced tab-based navigation with elegant left sidebar system
-- **Separate Route Pages**: Created individual pages /configuracoes/clinica, /configuracoes/equipe, /configuracoes/integracoes
+- **Separate Route Pages**: Created individual pages /configuracoes/clinica, /configuracoes/equipe, /configuracoes/integracoes, /configuracoes/planos, /configuracoes/anamneses
 - **ConfiguracoesLayout Component**: Implemented shared layout with sidebar navigation for all configuration pages
 - **White Sidebar Design**: Added white background with border and shadow for visual appeal
-- **Navigation Items**: "Clínica", "Equipe" (renamed from "Usuários"), "Integrações" with proper icons
+- **Navigation Items**: "Clínica", "Equipe" (renamed from "Usuários"), "Integrações", "Planos", "Anamneses" with proper icons
 - **Content Migration**: Migrated all existing functionality from tabs to separate pages preserving features
 - **Auto-redirect**: Default /configuracoes route redirects to /configuracoes/clinica
 - **Teal Theme Maintained**: Kept complete Operabase green teal (#0f766e) color scheme across all components
 - **Link Fix**: Corrected wouter Link nesting issue to prevent DOM validation warnings
-- **Zero Functionality Loss**: All configuration features preserved in new sidebar structure
-- **Status**: ✅ COMPLETED - Sidebar navigation system fully implemented and functional
+- **Planos Page**: Added placeholder page for future plans/subscription management functionality
+- **Anamneses Integration**: Migrated complete anamneses functionality from /anamneses to /configuracoes/anamneses
+- **Routing Update**: Updated App.tsx with all new configuration routes including anamneses editing
+- **Button Redirects Fixed**: Updated "adicionar modelo" button routing from /anamneses to /configuracoes/anamneses
+- **Legacy Routes Preserved**: Original /anamneses routes maintained for compatibility
+- **Zero Functionality Loss**: All configuration and anamneses features preserved in new sidebar structure
+- **Status**: ✅ COMPLETED - Complete configuration system with integrated anamneses management
 
 ### June 28, 2025 - Sistema MCP Lunch Break: Validação Completa Implementada ✅
 - **Sistema Lunch Break**: Implementado sistema completo de validação de horário de almoço no MCP

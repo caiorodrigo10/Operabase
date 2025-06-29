@@ -386,7 +386,7 @@ export default function EditarAnamnesePage() {
       <div className="container mx-auto p-6">
         <div className="text-center">
           <p className="text-gray-600">Modelo não encontrado</p>
-          <Button onClick={() => setLocation('/anamneses')} className="mt-4">
+          <Button onClick={() => setLocation('/configuracoes/anamneses')} className="mt-4">
             Voltar aos modelos
           </Button>
         </div>
@@ -402,7 +402,7 @@ export default function EditarAnamnesePage() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => setLocation('/anamneses')}
+            onClick={() => setLocation('/configuracoes/anamneses')}
             className="text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
