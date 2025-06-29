@@ -9,7 +9,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, FileText, Edit } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { apiRequest } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase';
 import { ConfiguracoesLayout } from './index';
 
@@ -52,96 +51,118 @@ export default function ConfiguracoesAnamnesisPage() {
     }
   });
 
-  // Criar novo modelo
-  const createMutation = useMutation({
-    mutationFn: async (templateData: any) => {
-      return apiRequest('/api/anamneses', {
+  // Mutation para criar modelo
+  const createTemplateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch('/api/anamneses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(templateData)
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(data)
       });
+      if (!response.ok) throw new Error('Failed to create template');
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newTemplate) => {
       queryClient.invalidateQueries({ queryKey: ['/api/anamneses'] });
       setIsCreateDialogOpen(false);
       setCreateForm({ name: '', copyFromId: '', createFromScratch: true });
+      // Navigate to the edit page of the newly created template
+      setLocation(`/configuracoes/anamneses/${newTemplate.id}/editar`);
+    },
+    onError: (error) => {
+      console.error('Error creating template:', error);
+      // Show error to user if needed
     }
   });
 
   const handleCreateTemplate = () => {
-    const templateData = {
-      name: createForm.name,
+    if (!createForm.name.trim()) return;
+
+    const payload = {
+      name: createForm.name.trim(),
+      description: '',
       copyFromId: createForm.createFromScratch ? null : createForm.copyFromId,
-      description: `Modelo de anamnese: ${createForm.name}`
+      questions: createForm.createFromScratch ? [] : undefined
     };
-    createMutation.mutate(templateData);
+
+    createTemplateMutation.mutate(payload);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const handleEditTemplate = (templateId: number) => {
+    setLocation(`/configuracoes/anamneses/${templateId}/editar`);
   };
+
+  if (isLoading) {
+    return (
+      <ConfiguracoesLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando modelos...</p>
+          </div>
+        </div>
+      </ConfiguracoesLayout>
+    );
+  }
 
   return (
     <ConfiguracoesLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium">Modelos de Anamnese</h3>
-            <p className="text-sm text-muted-foreground">
-              Gerencie os modelos de anamnese da sua clínica.
-            </p>
-          </div>
-          
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Modelo
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Criar Novo Modelo de Anamnese</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nome do Modelo</Label>
-                  <Input
-                    id="name"
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    placeholder="Digite o nome do modelo"
-                  />
-                </div>
-                
-                <div>
-                  <Label>Tipo de Criação</Label>
-                  <RadioGroup
-                    value={createForm.createFromScratch ? 'scratch' : 'copy'}
-                    onValueChange={(value) => 
-                      setCreateForm({ ...createForm, createFromScratch: value === 'scratch' })
-                    }
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="scratch" id="scratch" />
-                      <Label htmlFor="scratch">Criar do zero</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="copy" id="copy" />
-                      <Label htmlFor="copy">Copiar de modelo existente</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                {!createForm.createFromScratch && (
-                  <div>
-                    <Label htmlFor="copyFrom">Copiar de</Label>
-                    <Select
-                      value={createForm.copyFromId}
-                      onValueChange={(value) => setCreateForm({ ...createForm, copyFromId: value })}
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-2xl font-semibold text-gray-900">Modelos de anamnese</h1>
+        </div>
+        
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-teal-600 hover:bg-teal-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Criar modelo
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Criar modelo de anamnese</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="template-name">* Nome da Anamnese</Label>
+                <Input
+                  id="template-name"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ex: Anamnese de Odontopediatria"
+                  className="mt-1"
+                />
+              </div>
+              
+              <RadioGroup 
+                value={createForm.createFromScratch ? "scratch" : "copy"}
+                onValueChange={(value) => setCreateForm(prev => ({ 
+                  ...prev, 
+                  createFromScratch: value === "scratch",
+                  copyFromId: value === "scratch" ? '' : prev.copyFromId
+                }))}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="copy" id="copy-template" />
+                  <Label htmlFor="copy-template" className="flex items-center space-x-2">
+                    <span>Copiar perguntas da</span>
+                    <Select 
+                      value={createForm.copyFromId} 
+                      onValueChange={(value) => setCreateForm(prev => ({ ...prev, copyFromId: value }))}
+                      disabled={createForm.createFromScratch}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um modelo" />
+                      <SelectTrigger className="w-64">
+                        <SelectValue placeholder="Anamnese de Cirurgia e Impl..." />
                       </SelectTrigger>
                       <SelectContent>
                         {templates.map((template: AnamnesisTemplate) => (
@@ -151,71 +172,62 @@ export default function ConfiguracoesAnamnesisPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                )}
-                
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsCreateDialogOpen(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleCreateTemplate}
-                    disabled={!createForm.name || createMutation.isPending}
-                    className="bg-teal-600 hover:bg-teal-700"
-                  >
-                    {createMutation.isPending ? 'Criando...' : 'Criar Modelo'}
-                  </Button>
+                  </Label>
                 </div>
+                
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="scratch" id="create-scratch" />
+                  <Label htmlFor="create-scratch">Criar um modelo do zero</Label>
+                </div>
+              </RadioGroup>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleCreateTemplate}
+                  disabled={!createForm.name.trim() || createTemplateMutation.isPending}
+                  className="bg-teal-600 hover:bg-teal-700"
+                >
+                  {createTemplateMutation.isPending ? 'Criando...' : 'Continuar'}
+                </Button>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-20"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex gap-8">
+        {/* Templates Grid */}
+        <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {templates.map((template: AnamnesisTemplate) => (
               <Card key={template.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-teal-600" />
-                    {template.name}
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {template.question_count} perguntas
-                  </p>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg font-medium text-gray-900 mb-1">
+                        {template.name}
+                      </CardTitle>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {template.description || 'Sem descrição'}
-                  </p>
+                <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      Criado em {formatDate(template.created_at)}
+                    <span className="text-sm text-gray-500">
+                      {template.question_count} pergunta{template.question_count !== 1 ? 's' : ''}
                     </span>
-                    <Button
-                      variant="outline"
+                    <Button 
+                      variant="outline" 
                       size="sm"
-                      onClick={() => setLocation(`/configuracoes/anamneses/${template.id}/editar`)}
+                      onClick={() => handleEditTemplate(template.id)}
+                      className="text-gray-600 hover:text-gray-900"
                     >
-                      <Edit className="h-3 w-3 mr-1" />
+                      <Edit className="w-4 h-4 mr-1" />
                       Editar
                     </Button>
                   </div>
@@ -223,26 +235,26 @@ export default function ConfiguracoesAnamnesisPage() {
               </Card>
             ))}
           </div>
-        )}
+        </div>
 
-        {!isLoading && templates.length === 0 && (
-          <div className="text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhum modelo encontrado
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Comece criando seu primeiro modelo de anamnese.
-            </p>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-teal-600 hover:bg-teal-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Primeiro Modelo
-            </Button>
-          </div>
-        )}
+        {/* Help Section */}
+        <div className="w-80">
+          <Card className="bg-gray-50">
+            <CardContent className="p-6">
+              <div className="text-center mb-4">
+                <div className="w-24 h-24 mx-auto mb-4 bg-teal-100 rounded-lg flex items-center justify-center">
+                  <FileText className="w-12 h-12 text-teal-600" />
+                </div>
+                <h3 className="font-medium text-gray-900 mb-2">
+                  Dúvidas sobre as anamneses?
+                </h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Acesse nossos artigos e vídeos e aprenda mais sobre esta funcionalidade.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </ConfiguracoesLayout>
   );

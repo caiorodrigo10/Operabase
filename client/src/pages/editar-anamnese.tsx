@@ -131,7 +131,7 @@ interface Template {
 }
 
 export default function EditarAnamnesePage() {
-  const [, params] = useRoute('/anamneses/:id/editar');
+  const [, params] = useRoute('/configuracoes/anamneses/:id/editar');
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   
