@@ -367,6 +367,222 @@ export default function PlanosPage() {
             </Card>
           )}
         </div>
+
+        {/* Dialog de Detalhes do Plano - Popup Grande */}
+        <Dialog open={planoDetalhesOpen} onOpenChange={setPlanoDetalhesOpen}>
+          <DialogContent className="max-w-[95vw] w-full h-[90vh] max-h-[90vh] p-0 overflow-hidden">
+            <DialogHeader className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <DialogTitle className="text-lg font-medium">
+                    Detalhes do Plano
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Configure os tratamentos e valores do plano
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" size="sm" className="text-slate-600">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Reajustar valores
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-slate-600">
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setPlanoDetalhesOpen(false)}
+                    className="text-slate-500 hover:text-slate-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Configurações do Plano */}
+              <div className="px-6 py-4 border-b bg-slate-50">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="nome-plano-popup">Nome do plano*</Label>
+                    <Input
+                      id="nome-plano-popup"
+                      value={planoNome}
+                      onChange={(e) => setPlanoNome(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-center">
+                    <div className="flex items-center space-x-4">
+                      <Label className={cn("text-sm", !pagoPorConvenio ? "text-slate-900" : "text-slate-500")}>
+                        Pago pelo convênio
+                      </Label>
+                      <Switch
+                        checked={pagoPorConvenio}
+                        onCheckedChange={setPagoPorConvenio}
+                        className="data-[state=checked]:bg-teal-600"
+                      />
+                      <Label className={cn("text-sm", pagoPorConvenio ? "text-teal-600" : "text-slate-500")}>
+                        Plano padrão
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Layout Principal */}
+              <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-4">
+                {/* Sidebar - Especialidades */}
+                <div className="lg:col-span-1 border-r bg-white overflow-y-auto">
+                  <div className="p-4 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Buscar especialidades ou tratamentos..."
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-2">
+                    {especialidadesFiltradas.map((especialidade) => (
+                      <button
+                        key={especialidade.id}
+                        onClick={() => setEspecialidadeSelecionada(especialidade.id)}
+                        className={cn(
+                          "w-full text-left p-3 rounded-lg mb-2 transition-colors",
+                          especialidadeSelecionada === especialidade.id
+                            ? "bg-teal-50 text-teal-900 border border-teal-200"
+                            : "hover:bg-slate-50 text-slate-700"
+                        )}
+                      >
+                        <div className="font-medium">{especialidade.nome}</div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {especialidade.tratamentos.filter(t => t.ativo).length} tratamentos ativos
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Conteúdo Principal - Tratamentos */}
+                <div className="lg:col-span-3 overflow-y-auto">
+                  {especialidadeAtual && (
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h3 className="text-lg font-medium">{especialidadeAtual.nome}</h3>
+                          <p className="text-sm text-slate-600">
+                            {tratamentosAtivos} de {totalTratamentos} tratamentos ativos
+                          </p>
+                        </div>
+                        <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Novo tratamento
+                        </Button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {especialidadeAtual.tratamentos.map((tratamento) => (
+                          <Card key={tratamento.id} className={cn(
+                            "transition-all",
+                            !tratamento.ativo && "opacity-50 bg-slate-50"
+                          )}>
+                            <CardContent className="p-4">
+                              <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-center">
+                                <div className="lg:col-span-2">
+                                  <div className="flex items-center gap-3">
+                                    <Switch
+                                      checked={tratamento.ativo}
+                                      onCheckedChange={(checked) => 
+                                        handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'ativo', checked)
+                                      }
+                                      className="data-[state=checked]:bg-teal-600"
+                                    />
+                                    <div>
+                                      <Input
+                                        value={tratamento.nome}
+                                        onChange={(e) => 
+                                          handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'nome', e.target.value)
+                                        }
+                                        className="font-medium border-0 p-0 h-auto bg-transparent"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-slate-500">Valor do tratamento</Label>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">R$</span>
+                                    <Input
+                                      type="number"
+                                      value={tratamento.valorTratamento}
+                                      onChange={(e) => 
+                                        handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'valorTratamento', parseFloat(e.target.value) || 0)
+                                      }
+                                      className="pl-8"
+                                      step="0.01"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-slate-500">Custo do tratamento</Label>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">R$</span>
+                                    <Input
+                                      type="number"
+                                      value={tratamento.custoTratamento}
+                                      onChange={(e) => 
+                                        handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'custoTratamento', parseFloat(e.target.value) || 0)
+                                      }
+                                      className="pl-8"
+                                      step="0.01"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-slate-500">Convênio</Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Switch
+                                      checked={tratamento.aceitaConvenio}
+                                      onCheckedChange={(checked) => 
+                                        handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'aceitaConvenio', checked)
+                                      }
+                                      className="data-[state=checked]:bg-green-600"
+                                    />
+                                    <span className="text-xs text-slate-600">
+                                      {tratamento.aceitaConvenio ? 'Aceita' : 'Não aceita'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </ConfiguracoesLayout>
   );
