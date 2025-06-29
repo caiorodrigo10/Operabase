@@ -1,4 +1,4 @@
-import { Building2, Users, Plug } from 'lucide-react';
+import { Building2, Users, Plug, CreditCard, FileText } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,18 @@ const ConfiguracoesLayout = ({ children }: ConfiguracoesLayoutProps) => {
       label: 'Integrações',
       icon: Plug,
       href: '/configuracoes/integracoes',
+    },
+    {
+      id: 'planos',
+      label: 'Planos',
+      icon: CreditCard,
+      href: '/configuracoes/planos',
+    },
+    {
+      id: 'anamneses',
+      label: 'Anamneses',
+      icon: FileText,
+      href: '/configuracoes/anamneses',
     },
   ];
 
