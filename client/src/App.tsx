@@ -25,6 +25,7 @@ import ClinicaPage from "./pages/configuracoes/clinica";
 import EquipePage from "./pages/configuracoes/equipe";
 import IntegracoesPage from "./pages/configuracoes/integracoes";
 import PlanosPage from "./pages/configuracoes/planos";
+import PlanoDetalhesPage from "./pages/configuracoes/plano-detalhes";
 import ConfiguracoesAnamnesisPage from "./pages/configuracoes/anamneses";
 import LiviaConfigurationPage from "./pages/LiviaConfigurationPage";
 import { ContatoDetalhes } from "./pages/contato-detalhes";
@@ -183,6 +184,7 @@ function Router() {
         <Route path="/configuracoes/equipe" component={EquipePage} />
         <Route path="/configuracoes/integracoes" component={IntegracoesPage} />
         <Route path="/configuracoes/planos" component={PlanosPage} />
+        <Route path="/configuracoes/planos/:id" component={PlanoDetalhesPage} />
         <Route path="/configuracoes/anamneses" component={ConfiguracoesAnamnesisPage} />
         <Route path="/configuracoes/anamneses/:id/editar" component={EditarAnamnesePage} />
         <Route path="/livia-configuration" component={LiviaConfigurationPage} />

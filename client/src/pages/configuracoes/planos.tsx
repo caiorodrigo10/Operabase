@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { ConfiguracoesLayout } from './index';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ interface Plano {
 }
 
 export default function PlanosPage() {
+  const [, setLocation] = useLocation();
   const [planos, setPlanos] = useState<Plano[]>([
     {
       id: '1',
@@ -215,6 +217,7 @@ export default function PlanosPage() {
                       variant="outline" 
                       size="sm" 
                       className="text-teal-600 border-teal-200 hover:bg-teal-50"
+                      onClick={() => setLocation(`/configuracoes/planos/${plano.id}`)}
                     >
                       Ver detalhes do plano
                     </Button>
