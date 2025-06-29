@@ -11,7 +11,8 @@ import {
   Mail, 
   MapPin,
   User,
-  Star
+  Star,
+  Edit
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -122,26 +123,21 @@ export function ContactLayout({ children, currentTab }: ContactLayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header with back button */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="container mx-auto px-6 py-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => setLocation('/contatos')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar para contatos
-          </Button>
-        </div>
-      </div>
-
       {/* Contact Header */}
       <div className="bg-white border-b border-slate-200">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-start gap-6">
-            {/* Avatar */}
-            <div className="flex-shrink-0">
+            {/* Back Button + Avatar unified */}
+            <div className="flex-shrink-0 flex items-start gap-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => setLocation('/contatos')}
+                className="mt-1"
+                size="sm"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar
+              </Button>
               <ContactAvatar 
                 name={contact?.name || "Contato"} 
                 profilePicture={contact?.profile_picture}
@@ -191,16 +187,28 @@ export function ContactLayout({ children, currentTab }: ContactLayoutProps) {
                   )}
                 </div>
                 
-                {/* Quick Stats */}
+                {/* Edit Button + Quick Stats */}
                 <div className="flex-shrink-0 text-right">
-                  <div className="text-sm text-slate-500 mb-1">
-                    Paciente desde {contact.created_at && format(new Date(contact.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                  </div>
-                  {contact.appointment_count !== undefined && (
-                    <div className="text-sm text-slate-600">
-                      {contact.appointment_count} consulta{contact.appointment_count !== 1 ? 's' : ''}
+                  <div className="flex items-start gap-3">
+                    <div>
+                      <div className="text-sm text-slate-500 mb-1">
+                        Paciente desde {contact.created_at && format(new Date(contact.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </div>
+                      {contact.appointment_count !== undefined && (
+                        <div className="text-sm text-slate-600">
+                          {contact.appointment_count} consulta{contact.appointment_count !== 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="ml-2"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
