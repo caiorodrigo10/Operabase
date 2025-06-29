@@ -525,7 +525,7 @@ export default function PlanosPage() {
                             !tratamento.ativo && "opacity-50 bg-slate-50"
                           )}>
                             <CardContent className="p-4">
-                              <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-center">
+                              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
                                 <div className="lg:col-span-2">
                                   <div className="flex items-center gap-3">
                                     <Switch
@@ -580,22 +580,6 @@ export default function PlanosPage() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-1">
-                                  <Label className="text-xs text-slate-500">Convênio</Label>
-                                  <div className="flex items-center space-x-2">
-                                    <Switch
-                                      checked={tratamento.aceitaConvenio}
-                                      onCheckedChange={(checked) => 
-                                        handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'aceitaConvenio', checked)
-                                      }
-                                      className="data-[state=checked]:bg-green-600"
-                                    />
-                                    <span className="text-xs text-slate-600">
-                                      {tratamento.aceitaConvenio ? 'Aceita' : 'Não aceita'}
-                                    </span>
-                                  </div>
-                                </div>
-
                                 <div className="flex justify-end">
                                   <Button 
                                     variant="ghost" 
@@ -610,6 +594,29 @@ export default function PlanosPage() {
                             </CardContent>
                           </Card>
                         ))}
+                      
+                      {/* Botão Salvar */}
+                      <div className="flex justify-end pt-6 border-t border-slate-200 mt-6">
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setPlanoDetalhesOpen(false)}
+                            className="text-slate-600"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button 
+                            className="bg-teal-600 hover:bg-teal-700"
+                            onClick={() => {
+                              // Aqui você pode adicionar a lógica de salvamento
+                              console.log('Salvando plano:', { planoNome, especialidades });
+                              setPlanoDetalhesOpen(false);
+                            }}
+                          >
+                            Salvar alterações
+                          </Button>
+                        </div>
+                      </div>
                       </div>
                     </div>
                   )}
