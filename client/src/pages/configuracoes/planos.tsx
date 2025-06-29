@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { Plus, CreditCard, Settings, Edit, Trash2 } from 'lucide-react';
+import { Plus, CreditCard, Settings, Edit, Trash2, Search, DollarSign, Download, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 interface Plano {
   id: string;
@@ -18,6 +20,83 @@ interface Plano {
   tratamentos: string[];
   isAtivo: boolean;
 }
+
+interface Tratamento {
+  id: string;
+  nome: string;
+  valorTratamento: number;
+  custoTratamento: number;
+  aceitaConvenio: boolean;
+  ativo: boolean;
+}
+
+interface Especialidade {
+  id: string;
+  nome: string;
+  tratamentos: Tratamento[];
+}
+
+// Dados mockados das especialidades
+const especialidadesMock: Especialidade[] = [
+  {
+    id: 'cirurgia',
+    nome: 'Cirurgia',
+    tratamentos: [
+      { id: 'alveoloplastia', nome: 'Alveoloplastia', valorTratamento: 140.00, custoTratamento: 0.00, aceitaConvenio: true, ativo: true },
+      { id: 'cirurgia-periodontal', nome: 'Cirurgia Periodontal', valorTratamento: 250.00, custoTratamento: 80.00, aceitaConvenio: true, ativo: true },
+      { id: 'exodontia', nome: 'Exodontia', valorTratamento: 85.00, custoTratamento: 15.00, aceitaConvenio: true, ativo: true },
+    ]
+  },
+  {
+    id: 'dentistica',
+    nome: 'Dentística',
+    tratamentos: [
+      { id: 'restauracao-resina', nome: 'Restauração em Resina', valorTratamento: 120.00, custoTratamento: 25.00, aceitaConvenio: true, ativo: true },
+      { id: 'clareamento', nome: 'Clareamento Dental', valorTratamento: 300.00, custoTratamento: 50.00, aceitaConvenio: false, ativo: true },
+      { id: 'faceta-porcelana', nome: 'Faceta de Porcelana', valorTratamento: 800.00, custoTratamento: 200.00, aceitaConvenio: false, ativo: true },
+    ]
+  },
+  {
+    id: 'endodontia',
+    nome: 'Endodontia',
+    tratamentos: [
+      { id: 'tratamento-canal', nome: 'Tratamento de Canal', valorTratamento: 350.00, custoTratamento: 100.00, aceitaConvenio: true, ativo: true },
+      { id: 'retratamento-canal', nome: 'Retratamento de Canal', valorTratamento: 450.00, custoTratamento: 150.00, aceitaConvenio: true, ativo: true },
+    ]
+  },
+  {
+    id: 'ortodontia',
+    nome: 'Ortodontia',
+    tratamentos: [
+      { id: 'aparelho-fixo', nome: 'Aparelho Ortodôntico Fixo', valorTratamento: 2500.00, custoTratamento: 800.00, aceitaConvenio: false, ativo: true },
+      { id: 'aparelho-movel', nome: 'Aparelho Ortodôntico Móvel', valorTratamento: 1200.00, custoTratamento: 400.00, aceitaConvenio: false, ativo: true },
+    ]
+  },
+  {
+    id: 'protese',
+    nome: 'Prótese',
+    tratamentos: [
+      { id: 'protese-total', nome: 'Prótese Total', valorTratamento: 1500.00, custoTratamento: 600.00, aceitaConvenio: true, ativo: true },
+      { id: 'protese-parcial', nome: 'Prótese Parcial', valorTratamento: 800.00, custoTratamento: 300.00, aceitaConvenio: true, ativo: true },
+    ]
+  },
+  {
+    id: 'implantodontia',
+    nome: 'Implantodontia',
+    tratamentos: [
+      { id: 'implante-unitario', nome: 'Implante Unitário', valorTratamento: 2200.00, custoTratamento: 1000.00, aceitaConvenio: false, ativo: true },
+      { id: 'enxerto-osseo', nome: 'Enxerto Ósseo', valorTratamento: 800.00, custoTratamento: 300.00, aceitaConvenio: false, ativo: true },
+    ]
+  },
+  {
+    id: 'periodontia',
+    nome: 'Periodontia',
+    tratamentos: [
+      { id: 'limpeza-periodontal', nome: 'Limpeza Periodontal', valorTratamento: 150.00, custoTratamento: 30.00, aceitaConvenio: true, ativo: true },
+      { id: 'raspagem-alisamento', nome: 'Raspagem e Alisamento', valorTratamento: 200.00, custoTratamento: 50.00, aceitaConvenio: true, ativo: true },
+    ]
+  }
+];
 
 export default function PlanosPage() {
   const [, setLocation] = useLocation();
@@ -40,6 +119,43 @@ export default function PlanosPage() {
   const [novoPlanoDialogOpen, setNovoPlanoDialogOpen] = useState(false);
   const [novoPlanoNome, setNovoPlanoNome] = useState('');
   const [opcaoCopiaTratamentos, setOpcaoCopiaTratamentos] = useState<'copiar' | 'vazio'>('copiar');
+  const [planoDetalhesOpen, setPlanoDetalhesOpen] = useState(false);
+  const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null);
+  
+  // Estados para o popup de detalhes
+  const [especialidades, setEspecialidades] = useState<Especialidade[]>(especialidadesMock);
+  const [especialidadeSelecionada, setEspecialidadeSelecionada] = useState('cirurgia');
+  const [busca, setBusca] = useState('');
+  const [planoNome, setPlanoNome] = useState('Plano Particular');
+  const [pagoPorConvenio, setPagoPorConvenio] = useState(false);
+
+  // Funções auxiliares para o popup de detalhes
+  const especialidadesFiltradas = especialidades.map(esp => ({
+    ...esp,
+    tratamentos: esp.tratamentos.filter(trat => 
+      trat.nome.toLowerCase().includes(busca.toLowerCase())
+    )
+  })).filter(esp => 
+    esp.nome.toLowerCase().includes(busca.toLowerCase()) || esp.tratamentos.length > 0
+  );
+
+  const especialidadeAtual = especialidadesFiltradas.find(esp => esp.id === especialidadeSelecionada);
+
+  const handleTratamentoChange = (especialidadeId: string, tratamentoId: string, field: keyof Tratamento, value: any) => {
+    setEspecialidades(prev => prev.map(esp => 
+      esp.id === especialidadeId 
+        ? {
+            ...esp,
+            tratamentos: esp.tratamentos.map(trat =>
+              trat.id === tratamentoId ? { ...trat, [field]: value } : trat
+            )
+          }
+        : esp
+    ));
+  };
+
+  const tratamentosAtivos = especialidadeAtual?.tratamentos.filter(t => t.ativo).length || 0;
+  const totalTratamentos = especialidadeAtual?.tratamentos.length || 0;
 
   const handleCriarPlano = () => {
     if (!novoPlanoNome.trim()) return;
@@ -217,7 +333,10 @@ export default function PlanosPage() {
                       variant="outline" 
                       size="sm" 
                       className="text-teal-600 border-teal-200 hover:bg-teal-50"
-                      onClick={() => setLocation(`/configuracoes/planos/${plano.id}`)}
+                      onClick={() => {
+                        setPlanoSelecionado(plano);
+                        setPlanoDetalhesOpen(true);
+                      }}
                     >
                       Ver detalhes do plano
                     </Button>
