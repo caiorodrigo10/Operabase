@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Bot, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save, Phone, Users, Timer, QrCode } from "lucide-react";
+import { MessageSquare, Database, Calendar, Mail, CheckCircle, AlertCircle, Plus, Trash2, Settings, Edit, Info, Link, Unlink, X, RefreshCw, Save, Phone, Users, Timer, QrCode } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -87,23 +87,7 @@ const integrations = [
   },
 ];
 
-const systemStatus = [
-  {
-    name: "IA Livia",
-    status: "Online",
-    color: "bg-green-500",
-  },
-  {
-    name: "WhatsApp API",
-    status: "Conectado",
-    color: "bg-green-500",
-  },
-  {
-    name: "Base de Dados",
-    status: "Operacional",
-    color: "bg-green-500",
-  },
-];
+
 
 export function Configuracoes() {
   const { toast } = useToast();
@@ -542,12 +526,10 @@ export function Configuracoes() {
         </div>
 
         <Tabs defaultValue="clinic" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="clinic">Clínica</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="integrations">Integrações</TabsTrigger>
-            <TabsTrigger value="ai">IA Livia</TabsTrigger>
-            <TabsTrigger value="system">Sistema</TabsTrigger>
           </TabsList>
 
           <TabsContent value="clinic" className="space-y-6">
@@ -1177,60 +1159,9 @@ export function Configuracoes() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="ai" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações da IA</CardTitle>
-                <p className="text-sm text-slate-600">
-                  Configure o comportamento e templates da assistente virtual Livia.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Bot className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Assistente IA Ativa</p>
-                      <p className="text-sm text-slate-600">
-                        A IA Livia está respondendo automaticamente as mensagens
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      Ativo
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="system" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Status do Sistema</CardTitle>
-                <p className="text-sm text-slate-600">
-                  Monitore o status dos componentes críticos do sistema.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {systemStatus.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                        <span className="font-medium">{item.name}</span>
-                      </div>
-                      <Badge variant="outline" className="text-green-600 border-green-200">
-                        {item.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
+
         </Tabs>
 
 
