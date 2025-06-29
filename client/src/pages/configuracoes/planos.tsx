@@ -395,7 +395,7 @@ export default function PlanosPage() {
 
         {/* Dialog de Detalhes do Plano - Popup Grande */}
         <Dialog open={planoDetalhesOpen} onOpenChange={setPlanoDetalhesOpen}>
-          <DialogContent className="max-w-[95vw] w-full h-[90vh] max-h-[90vh] p-0 overflow-hidden">
+          <DialogContent className="max-w-[80vw] w-full h-[90vh] max-h-[90vh] p-0 overflow-hidden">
             <DialogHeader className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
                 <div>
