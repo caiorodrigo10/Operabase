@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, FileText, Edit } from 'lucide-react';
+import { Plus, FileText, Edit, Trash2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { supabase } from '@/lib/supabase';
 import { ConfiguracoesLayout } from './index';
@@ -98,6 +98,36 @@ export default function ConfiguracoesAnamnesisPage() {
 
   const handleEditTemplate = (templateId: number) => {
     setLocation(`/configuracoes/anamneses/${templateId}/editar`);
+  };
+
+  // Mutação para deletar template
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch(`/api/anamneses/${templateId}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete template');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/anamneses'] });
+    }
+  });
+
+  const handleDeleteTemplate = (templateId: number, templateName: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o modelo "${templateName}"? Esta ação não pode ser desfeita.`)) {
+      deleteTemplateMutation.mutate(templateId);
+    }
   };
 
   if (isLoading) {
@@ -247,15 +277,27 @@ export default function ConfiguracoesAnamnesisPage() {
                         </p>
                       </div>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEditTemplate(template.id)}
-                      className="text-gray-600 hover:text-gray-900"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditTemplate(template.id)}
+                        className="text-gray-600 hover:text-gray-900"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteTemplate(template.id, template.name)}
+                        className="text-red-600 hover:text-red-900 hover:border-red-300"
+                        disabled={deleteTemplateMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Apagar
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
