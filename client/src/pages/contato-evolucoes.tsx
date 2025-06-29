@@ -63,6 +63,15 @@ export default function ContatoEvolucoes() {
   // Fetch appointments
   const { data: appointments = [] } = useQuery<Appointment[]>({
     queryKey: ['/api/appointments', { contact_id: contactId }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        clinic_id: '1',
+        contact_id: contactId.toString()
+      });
+      const response = await fetch(`/api/appointments?${params}`);
+      if (!response.ok) throw new Error('Erro ao carregar consultas');
+      return response.json();
+    },
     enabled: !!contactId
   });
 

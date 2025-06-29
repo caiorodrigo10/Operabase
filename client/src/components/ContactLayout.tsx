@@ -67,6 +67,11 @@ export function ContactLayout({ children, currentTab }: ContactLayoutProps) {
   // Fetch contact data
   const { data: contact, isLoading } = useQuery<Contact>({
     queryKey: ['/api/contacts', contactId],
+    queryFn: async () => {
+      const response = await fetch(`/api/contacts/${contactId}?clinic_id=1`);
+      if (!response.ok) throw new Error('Erro ao carregar contato');
+      return response.json();
+    },
     enabled: !!contactId
   });
 

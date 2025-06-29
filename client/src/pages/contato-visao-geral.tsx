@@ -87,12 +87,26 @@ export default function ContatoVisaoGeral() {
   // Fetch contact data
   const { data: contact } = useQuery<Contact>({
     queryKey: ['/api/contacts', contactId],
+    queryFn: async () => {
+      const response = await fetch(`/api/contacts/${contactId}?clinic_id=1`);
+      if (!response.ok) throw new Error('Erro ao carregar contato');
+      return response.json();
+    },
     enabled: !!contactId
   });
 
   // Fetch appointments
   const { data: appointments = [] } = useQuery<Appointment[]>({
     queryKey: ['/api/appointments', { contact_id: contactId }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        clinic_id: '1',
+        contact_id: contactId.toString()
+      });
+      const response = await fetch(`/api/appointments?${params}`);
+      if (!response.ok) throw new Error('Erro ao carregar consultas');
+      return response.json();
+    },
     enabled: !!contactId
   });
 
