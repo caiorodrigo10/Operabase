@@ -107,6 +107,13 @@ export function AnamnesisManager({ contactId }: AnamnesisManagerProps) {
             Preenchido pelo paciente
           </Badge>
         );
+      case 'preenchido_profissional':
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Preenchido pelo profissional
+          </Badge>
+        );
       case 'solicitado':
         return (
           <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200 font-medium">

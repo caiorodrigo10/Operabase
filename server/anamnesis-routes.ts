@@ -453,11 +453,11 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
 
       // Log anamnesis creation
       await systemLogsService.logAnamnesisAction(
-        filled_by_professional ? 'completed_by_professional' : 'created',
+        filled_by_professional ? 'filled' : 'created',
         result.rows[0].id,
         clinicAccess.clinicId,
         'system',
-        'system',
+        'professional',
         null,
         result.rows[0],
         {
