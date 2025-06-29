@@ -165,6 +165,17 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 29, 2025 - Configuration Page UI Updates and Complete Color Scheme Implementation ✅
+- **Configuration Page Streamlined**: Removed AI Livia and Sistema tabs from /configuracoes page as requested
+- **Complete Teal Color Scheme**: Updated entire application color scheme from blue to Operabase green teal (#0f766e)
+- **Checkbox Colors Fixed**: Updated CSS primary variables to use teal theme for all checkboxes and form controls
+- **Component Color Consistency**: Applied teal color scheme across UserManagement, WhatsAppManager, PatientTimeline components
+- **Calendar Integration Colors**: Updated all calendar integration UI elements to match teal theme
+- **Global CSS Variables**: Modified both light and dark mode primary colors to maintain consistency
+- **Zero Functionality Impact**: All features and functionality preserved during visual updates
+- **Brand Consistency**: Complete visual alignment with Operabase brand identity across all UI components
+- **Status**: ✅ COMPLETED - Configuration page simplified and complete teal color scheme implemented
+
 ### June 28, 2025 - Sistema MCP Lunch Break: Validação Completa Implementada ✅
 - **Sistema Lunch Break**: Implementado sistema completo de validação de horário de almoço no MCP
 - **ETAPA 1**: Helper isLunchTime() implementado com consulta dinâmica à configuração da clínica

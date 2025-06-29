@@ -1250,7 +1250,7 @@ export function Configuracoes() {
             <div className="space-y-6 py-4">
               {isLoadingCalendars ? (
                 <div className="text-center py-4">
-                  <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+                  <div className="animate-spin w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full mx-auto"></div>
                   <p className="text-sm text-slate-600 mt-2">Carregando agendas...</p>
                 </div>
               ) : (userCalendars as any[]).length > 0 ? (
@@ -1368,12 +1368,12 @@ export function Configuracoes() {
                     )}
 
                     {linkedCalendarId && (
-                      <div className="p-3 bg-blue-50 border border-teal-200 rounded-lg">
+                      <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg">
                         <div className="flex items-start space-x-2">
                           <Info className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="text-sm font-medium text-blue-800">Calendário selecionado anteriormente</p>
-                            <p className="text-xs text-blue-700 mt-1">
+                            <p className="text-sm font-medium text-teal-800">Calendário selecionado anteriormente</p>
+                            <p className="text-xs text-teal-700 mt-1">
                               O calendário {(userCalendars as any[]).find(cal => cal.id === linkedCalendarId)?.summary} será removido dos calendários vinculado e de conflito.
                             </p>
                           </div>
@@ -1410,7 +1410,7 @@ export function Configuracoes() {
                     });
                   }
                 }} 
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-[#0f766e] hover:bg-[#0f766e]/90"
                 disabled={saveLinkedCalendarMutation.isPending || (!linkedCalendarId && !addEventsToCalendar)}
               >
                 {saveLinkedCalendarMutation.isPending ? "Salvando..." : "Salvar"}
@@ -1516,7 +1516,7 @@ export function Configuracoes() {
                 {/* One-way sync option */}
                 <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   syncPreference === 'one-way' 
-                    ? 'border-blue-500 bg-blue-50' 
+                    ? 'border-teal-500 bg-teal-50' 
                     : 'border-slate-200 hover:border-slate-300'
                 }`}>
                   <div className="flex items-start space-x-3">
@@ -1548,7 +1548,7 @@ export function Configuracoes() {
                 {/* Bidirectional sync option */}
                 <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   syncPreference === 'bidirectional' 
-                    ? 'border-blue-500 bg-blue-50' 
+                    ? 'border-teal-500 bg-teal-50' 
                     : 'border-slate-200 hover:border-slate-300'
                 }`}>
                   <div className="flex items-start space-x-3">
@@ -1574,12 +1574,12 @@ export function Configuracoes() {
               </div>
 
               {/* Information box */}
-              <div className="p-3 bg-blue-50 border border-teal-200 rounded-lg">
+              <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg">
                 <div className="flex items-start space-x-2">
                   <Info className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-blue-800">Configuração de Sincronização</p>
-                    <p className="text-xs text-blue-700 mt-1">
+                    <p className="text-sm font-medium text-teal-800">Configuração de Sincronização</p>
+                    <p className="text-xs text-teal-700 mt-1">
                       {syncPreference === 'one-way' 
                         ? 'Os eventos do seu calendário Google aparecerão como horários ocupados, mas não serão criados agendamentos no sistema.'
                         : 'Eventos do Google Calendar serão automaticamente convertidos em agendamentos no sistema, criando contatos quando necessário.'
@@ -1596,7 +1596,7 @@ export function Configuracoes() {
               </Button>
               <Button 
                 onClick={handleSaveSyncPreferences}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-[#0f766e] hover:bg-[#0f766e]/90"
                 disabled={updateSyncPreferencesMutation.isPending}
               >
                 {updateSyncPreferencesMutation.isPending ? "Salvando..." : "Salvar Preferências"}
