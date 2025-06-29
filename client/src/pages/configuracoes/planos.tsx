@@ -525,15 +525,16 @@ export default function PlanosPage() {
                             !tratamento.ativo && "opacity-50 bg-slate-50"
                           )}>
                             <CardContent className="p-4">
-                              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
-                                <div className="lg:col-span-2">
+                              <div className="flex items-start gap-4">
+                                {/* Nome com Switch - ocupa espaço flexível */}
+                                <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-3">
                                     <Switch
                                       checked={tratamento.ativo}
                                       onCheckedChange={(checked) => 
                                         handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'ativo', checked)
                                       }
-                                      className="data-[state=checked]:bg-teal-600"
+                                      className="data-[state=checked]:bg-teal-600 flex-shrink-0"
                                     />
                                     <div className="flex-1">
                                       <Input
@@ -548,7 +549,8 @@ export default function PlanosPage() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-1">
+                                {/* Valor - tamanho fixo */}
+                                <div className="w-36 flex-shrink-0">
                                   <Label className="text-xs text-slate-500">Valor do tratamento</Label>
                                   <div className="relative">
                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">R$</span>
@@ -564,7 +566,8 @@ export default function PlanosPage() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-1">
+                                {/* Custo - tamanho fixo */}
+                                <div className="w-36 flex-shrink-0">
                                   <Label className="text-xs text-slate-500">Custo do tratamento</Label>
                                   <div className="relative">
                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">R$</span>
@@ -580,7 +583,8 @@ export default function PlanosPage() {
                                   </div>
                                 </div>
 
-                                <div className="flex justify-end">
+                                {/* Botão excluir - alinhado ao topo dos campos */}
+                                <div className="flex-shrink-0 pt-6">
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
