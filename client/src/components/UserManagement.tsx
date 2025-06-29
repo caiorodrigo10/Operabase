@@ -255,7 +255,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f766e]"></div>
             <span className="ml-2">Carregando usuários...</span>
           </div>
         </CardContent>
@@ -518,7 +518,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
               <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={selectedUser.avatar_url} alt={selectedUser.name} />
-                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                  <AvatarFallback className="bg-teal-100 text-teal-600 font-medium">
                     {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -560,7 +560,7 @@ export function UserManagement({ clinicId }: UserManagementProps) {
               <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={selectedUser.avatar_url} alt={selectedUser.name} />
-                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                  <AvatarFallback className="bg-teal-100 text-teal-600 font-medium">
                     {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
