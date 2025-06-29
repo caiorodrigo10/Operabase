@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { WhatsAppManager } from '@/components/WhatsAppManager';
 import { useAuth } from '@/hooks/useAuth';
+import { ConfiguracoesLayout } from './index';
 
 export default function IntegracoesPage() {
   const { toast } = useToast();
@@ -154,7 +155,8 @@ export default function IntegracoesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <ConfiguracoesLayout>
+      <div className="space-y-6">
       {/* WhatsApp Manager */}
       <WhatsAppManager clinicId={1} userId={user?.id || '5'} />
 
@@ -472,6 +474,7 @@ export default function IntegracoesPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </ConfiguracoesLayout>
   );
 }

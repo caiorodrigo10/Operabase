@@ -490,6 +490,7 @@ export default function ClinicaPage() {
           )}
         </Button>
       </div>
-    </div>
+      </div>
+    </ConfiguracoesLayout>
   );
 }
