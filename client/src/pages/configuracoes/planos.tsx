@@ -166,7 +166,7 @@ export default function PlanosPage() {
 
     setEspecialidades(prev => prev.map(esp => 
       esp.id === especialidadeId 
-        ? { ...esp, tratamentos: [...esp.tratamentos, novoTratamento] }
+        ? { ...esp, tratamentos: [novoTratamento, ...esp.tratamentos] }
         : esp
     ));
   };
