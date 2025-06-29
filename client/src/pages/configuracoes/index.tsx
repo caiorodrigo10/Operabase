@@ -80,7 +80,9 @@ export default function ConfiguracoesIndex() {
   
   // Redirect to clinic page by default
   if (location === '/configuracoes' || location === '/configuracoes/') {
-    window.location.href = '/configuracoes/clinica';
+    setTimeout(() => {
+      window.location.href = '/configuracoes/clinica';
+    }, 0);
     return null;
   }
   
