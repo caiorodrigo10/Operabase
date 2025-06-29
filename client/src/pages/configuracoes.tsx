@@ -1039,7 +1039,7 @@ export function Configuracoes() {
                                     </div>
                                     <div className="flex items-center space-x-2">
                                       {integration.calendar_id && (
-                                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                                        <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-200">
                                           Calendário Vinculado
                                         </Badge>
                                       )}
@@ -1063,8 +1063,8 @@ export function Configuracoes() {
                                         <p className="text-xs text-slate-600">Adicionar calendários adicionais para verificar conflitos de agendamento duplo</p>
                                         {integration.calendar_id && (
                                           <div className="mt-1 flex items-center space-x-2">
-                                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                            <span className="text-xs font-medium text-blue-700">{integration.email}</span>
+                                            <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                                            <span className="text-xs font-medium text-teal-700">{integration.email}</span>
                                           </div>
                                         )}
                                       </div>
