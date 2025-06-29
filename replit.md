@@ -165,16 +165,18 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
-### June 29, 2025 - Configuration Page UI Updates and Complete Color Scheme Implementation ✅
-- **Configuration Page Streamlined**: Removed AI Livia and Sistema tabs from /configuracoes page as requested
-- **Complete Teal Color Scheme**: Updated entire application color scheme from blue to Operabase green teal (#0f766e)
-- **Checkbox Colors Fixed**: Updated CSS primary variables to use teal theme for all checkboxes and form controls
-- **Component Color Consistency**: Applied teal color scheme across UserManagement, WhatsAppManager, PatientTimeline components
-- **Calendar Integration Colors**: Updated all calendar integration UI elements to match teal theme
-- **Global CSS Variables**: Modified both light and dark mode primary colors to maintain consistency
-- **Zero Functionality Impact**: All features and functionality preserved during visual updates
-- **Brand Consistency**: Complete visual alignment with Operabase brand identity across all UI components
-- **Status**: ✅ COMPLETED - Configuration page simplified and complete teal color scheme implemented
+### June 29, 2025 - Configuration Page Sidebar Navigation System Implemented ✅
+- **Sidebar Navigation**: Replaced tab-based navigation with elegant left sidebar system
+- **Separate Route Pages**: Created individual pages /configuracoes/clinica, /configuracoes/equipe, /configuracoes/integracoes
+- **ConfiguracoesLayout Component**: Implemented shared layout with sidebar navigation for all configuration pages
+- **White Sidebar Design**: Added white background with border and shadow for visual appeal
+- **Navigation Items**: "Clínica", "Equipe" (renamed from "Usuários"), "Integrações" with proper icons
+- **Content Migration**: Migrated all existing functionality from tabs to separate pages preserving features
+- **Auto-redirect**: Default /configuracoes route redirects to /configuracoes/clinica
+- **Teal Theme Maintained**: Kept complete Operabase green teal (#0f766e) color scheme across all components
+- **Link Fix**: Corrected wouter Link nesting issue to prevent DOM validation warnings
+- **Zero Functionality Loss**: All configuration features preserved in new sidebar structure
+- **Status**: ✅ COMPLETED - Sidebar navigation system fully implemented and functional
 
 ### June 28, 2025 - Sistema MCP Lunch Break: Validação Completa Implementada ✅
 - **Sistema Lunch Break**: Implementado sistema completo de validação de horário de almoço no MCP

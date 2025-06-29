@@ -31,39 +31,34 @@ const ConfiguracoesLayout = ({ children }: ConfiguracoesLayoutProps) => {
   ];
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="space-y-0.5">
-        <h2 className="text-2xl font-bold tracking-tight">Configurações</h2>
-        <p className="text-muted-foreground">
-          Gerencie as configurações da sua clínica e integrações do sistema.
-        </p>
-      </div>
-      
+    <div className="flex-1 p-4 md:p-8 pt-6">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar */}
         <div className="w-full lg:w-64 flex-shrink-0">
-          <nav className="space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location === item.href;
-              
-              return (
-                <Link key={item.id} href={item.href}>
-                  <a
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-teal-100 text-teal-900 dark:bg-teal-900 dark:text-teal-100"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </a>
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+            <nav className="space-y-2">
+              {sidebarItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location === item.href;
+                
+                return (
+                  <Link key={item.id} href={item.href}>
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                        isActive
+                          ? "bg-teal-100 text-teal-900 dark:bg-teal-900 dark:text-teal-100"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
         
         {/* Content */}
