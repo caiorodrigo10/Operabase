@@ -396,7 +396,15 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
   app.post('/api/contacts/:contactId/anamnesis', async (req: Request, res: Response) => {
     try {
       const contactId = parseInt(req.params.contactId);
-      const { template_id, status } = req.body;
+      const { 
+        template_id, 
+        status, 
+        responses, 
+        patient_name, 
+        patient_email, 
+        patient_phone, 
+        filled_by_professional 
+      } = req.body;
 
       // Simplified authentication - bypass session checks for anamnesis creation
       // This allows the sharing functionality to work properly
@@ -411,27 +419,41 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
+      // Determine status and completion based on whether this is professional fill
+      let finalStatus = status || 'solicitado';
+      let completedAt = null;
+      let finalResponses = responses || {};
+
+      if (filled_by_professional && responses && Object.keys(responses).length > 0) {
+        finalStatus = 'preenchido_profissional';
+        completedAt = new Date();
+      }
+
       // Use direct SQL query to avoid schema conflicts
       const client = await pool.connect();
       const result = await client.query(`
         INSERT INTO anamnesis_responses 
-        (contact_id, clinic_id, template_id, responses, status, share_token, expires_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id, contact_id, clinic_id, template_id, responses, status, share_token, expires_at
+        (contact_id, clinic_id, template_id, responses, status, share_token, expires_at, patient_name, patient_email, patient_phone, completed_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING id, contact_id, clinic_id, template_id, responses, status, share_token, expires_at, patient_name, patient_email, patient_phone, completed_at
       `, [
         contactId,
         clinicAccess.clinicId,
         parseInt(template_id),
-        JSON.stringify({}),
-        status || 'solicitado',
+        JSON.stringify(finalResponses),
+        finalStatus,
         shareToken,
-        expiresAt
+        expiresAt,
+        patient_name || null,
+        patient_email || null,
+        patient_phone || null,
+        completedAt
       ]);
       client.release();
 
       // Log anamnesis creation
       await systemLogsService.logAnamnesisAction(
-        'created',
+        filled_by_professional ? 'completed_by_professional' : 'created',
         result.rows[0].id,
         clinicAccess.clinicId,
         'system',
@@ -441,7 +463,8 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
         {
           source: 'web',
           contact_id: contactId,
-          template_id: parseInt(template_id)
+          template_id: parseInt(template_id),
+          filled_by_professional: filled_by_professional || false
         }
       );
 

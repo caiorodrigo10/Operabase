@@ -112,11 +112,22 @@ export default function PreencherAnamnese() {
       
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Anamnese criada com sucesso",
-        description: "O link foi gerado e está pronto para ser enviado ao paciente."
-      });
+    onSuccess: (data, variables) => {
+      // Check if this was a direct fill by professional (has responses) vs link creation (no responses)
+      const isDirectFill = variables.responses && Object.keys(variables.responses).length > 0;
+      
+      if (isDirectFill) {
+        toast({
+          title: "Anamnese salva com sucesso",
+          description: "A anamnese foi preenchida pelo profissional e salva no sistema."
+        });
+      } else {
+        toast({
+          title: "Anamnese criada com sucesso",
+          description: "O link foi gerado e está pronto para ser enviado ao paciente."
+        });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/contacts', contactId, 'anamnesis'] });
       setLocation(`/contatos/${contactId}`);
     },
@@ -259,13 +270,15 @@ export default function PreencherAnamnese() {
 
     if (!selectedTemplate) return;
 
-    // Allow partial saves for internal filling - no required field validation
+    // Send as professional fill with appropriate status
     createAnamnesisMutation.mutate({
       template_id: selectedTemplateId,
       patient_name: patientInfo.name,
       patient_email: patientInfo.email,
       patient_phone: patientInfo.phone,
-      responses: responses
+      responses: responses,
+      status: 'preenchido_profissional', // Set status for professional fill
+      filled_by_professional: true // Flag to indicate this is professional fill
     });
   };
 
