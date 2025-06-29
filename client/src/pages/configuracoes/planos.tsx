@@ -154,6 +154,31 @@ export default function PlanosPage() {
     ));
   };
 
+  const handleNovoTratamento = (especialidadeId: string) => {
+    const novoTratamento: Tratamento = {
+      id: `novo-${Date.now()}`,
+      nome: 'Novo tratamento',
+      valorTratamento: 0,
+      custoTratamento: 0,
+      aceitaConvenio: true,
+      ativo: true
+    };
+
+    setEspecialidades(prev => prev.map(esp => 
+      esp.id === especialidadeId 
+        ? { ...esp, tratamentos: [...esp.tratamentos, novoTratamento] }
+        : esp
+    ));
+  };
+
+  const handleRemoverTratamento = (especialidadeId: string, tratamentoId: string) => {
+    setEspecialidades(prev => prev.map(esp => 
+      esp.id === especialidadeId 
+        ? { ...esp, tratamentos: esp.tratamentos.filter(trat => trat.id !== tratamentoId) }
+        : esp
+    ));
+  };
+
   const tratamentosAtivos = especialidadeAtual?.tratamentos.filter(t => t.ativo).length || 0;
   const totalTratamentos = especialidadeAtual?.tratamentos.length || 0;
 
@@ -483,7 +508,11 @@ export default function PlanosPage() {
                             {tratamentosAtivos} de {totalTratamentos} tratamentos ativos
                           </p>
                         </div>
-                        <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
+                        <Button 
+                          size="sm" 
+                          className="bg-teal-600 hover:bg-teal-700"
+                          onClick={() => handleNovoTratamento(especialidadeAtual.id)}
+                        >
                           <Plus className="h-4 w-4 mr-2" />
                           Novo tratamento
                         </Button>
@@ -506,13 +535,14 @@ export default function PlanosPage() {
                                       }
                                       className="data-[state=checked]:bg-teal-600"
                                     />
-                                    <div>
+                                    <div className="flex-1">
                                       <Input
                                         value={tratamento.nome}
                                         onChange={(e) => 
                                           handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'nome', e.target.value)
                                         }
-                                        className="font-medium border-0 p-0 h-auto bg-transparent"
+                                        className="font-medium border border-slate-200 hover:border-slate-300 focus:border-teal-500 px-3 py-2 rounded-md bg-white"
+                                        placeholder="Nome do tratamento"
                                       />
                                     </div>
                                   </div>
@@ -567,7 +597,12 @@ export default function PlanosPage() {
                                 </div>
 
                                 <div className="flex justify-end">
-                                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleRemoverTratamento(especialidadeAtual.id, tratamento.id)}
+                                  >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
