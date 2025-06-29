@@ -567,23 +567,6 @@ export default function PlanosPage() {
                                   </div>
                                 </div>
 
-                                {/* Custo - tamanho fixo */}
-                                <div className="w-36 flex-shrink-0">
-                                  <Label className="text-xs text-slate-500">Custo do tratamento</Label>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">R$</span>
-                                    <Input
-                                      type="number"
-                                      value={tratamento.custoTratamento}
-                                      onChange={(e) => 
-                                        handleTratamentoChange(especialidadeAtual.id, tratamento.id, 'custoTratamento', parseFloat(e.target.value) || 0)
-                                      }
-                                      className="pl-8"
-                                      step="0.01"
-                                    />
-                                  </div>
-                                </div>
-
                                 {/* Botão excluir - alinhado ao topo dos campos */}
                                 <div className="flex-shrink-0 pt-6">
                                   <Button 
