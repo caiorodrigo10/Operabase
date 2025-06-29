@@ -528,7 +528,8 @@ export default function PlanosPage() {
                               <div className="flex items-start gap-4">
                                 {/* Nome com Switch - ocupa espaço flexível */}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-3">
+                                  <Label className="text-xs text-slate-500">Nome do tratamento</Label>
+                                  <div className="flex items-center gap-3 mt-1">
                                     <Switch
                                       checked={tratamento.ativo}
                                       onCheckedChange={(checked) => 
