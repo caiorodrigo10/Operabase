@@ -886,7 +886,7 @@ export function Configuracoes() {
                 Cancelar
               </Button>
               <Button 
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-teal-600 hover:bg-teal-700"
                 onClick={handleSaveConfiguration}
                 disabled={isSaving}
               >
@@ -924,7 +924,7 @@ export function Configuracoes() {
                   </div>
                   <Button 
                     onClick={() => setShowProviderDialog(true)}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-teal-600 hover:bg-teal-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Conectar Calendário
@@ -942,7 +942,7 @@ export function Configuracoes() {
                       </p>
                       <Button 
                         onClick={() => setShowProviderDialog(true)}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-teal-600 hover:bg-teal-700"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Conectar Primeiro Calendário
@@ -954,8 +954,8 @@ export function Configuracoes() {
                         <div key={integration.id} className="border border-slate-200 rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Calendar className="w-5 h-5 text-blue-600" />
+                              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                                <Calendar className="w-5 h-5 text-teal-600" />
                               </div>
                               <div>
                                 <div className="flex items-center space-x-2">
@@ -1017,8 +1017,8 @@ export function Configuracoes() {
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                                     <div className="flex items-center space-x-3">
-                                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <Calendar className="w-5 h-5 text-blue-600" />
+                                      <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                                        <Calendar className="w-5 h-5 text-teal-600" />
                                       </div>
                                       <div className="flex-1">
                                         <p className="font-medium text-sm">Calendário Vinculado</p>
@@ -1026,8 +1026,8 @@ export function Configuracoes() {
                                         {integration.calendar_id && (
                                           <div className="mt-1 space-y-1">
                                             <div className="flex items-center space-x-2">
-                                              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                              <span className="text-xs font-medium text-blue-700">{integration.email}</span>
+                                              <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                                              <span className="text-xs font-medium text-teal-700">{integration.email}</span>
                                             </div>
                                             <div className="flex items-center space-x-2">
                                               <Calendar className="w-3 h-3 text-slate-500" />
