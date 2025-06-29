@@ -165,6 +165,24 @@ SESSION_SECRET=your_session_secret
 
 ## Changelog
 
+### June 29, 2025 - Contact Details Page Complete Modular Restructuring ✅
+- **Modular Page System**: Successfully restructured contact details into 6 separate sub-pages with shared navigation
+- **ContactLayout Component**: Created shared layout component with sidebar navigation for all contact sub-pages
+- **Six Sub-Pages Created**: 
+  - `/contatos/:id/visao-geral` - Complete overview with contact info, appointments, and quick actions
+  - `/contatos/:id/anamneses` - Anamnesis templates management with AnamnesisManager integration
+  - `/contatos/:id/mara-ai` - AI conversation interface with Mara chatbot
+  - `/contatos/:id/evolucoes` - Medical evolutions and appointment history
+  - `/contatos/:id/documentos` - Document management with categorization and search
+  - `/contatos/:id/arquivos` - File management for images, audio, video, and documents
+- **Navigation Consistency**: Maintained exact same visual elements and Operabase teal theme (#0f766e) across all pages
+- **Smart Redirection**: Original `/contatos/:id` route now automatically redirects to `/contatos/:id/visao-geral`
+- **App.tsx Routing**: Added all 6 new contact routes to routing system
+- **ContactAvatar Fix**: Corrected ContactAvatar component props from contact object to individual name/profilePicture props
+- **Backward Compatibility**: Preserved all existing functionality while enabling modular navigation
+- **Zero Data Loss**: All contact features preserved and accessible through new modular structure
+- **Status**: ✅ COMPLETED - Contact details fully modularized with 6 separate navigable pages
+
 ### June 29, 2025 - Configuration Page Complete Implementation with Anamneses Integration ✅
 - **Sidebar Navigation**: Replaced tab-based navigation with elegant left sidebar system
 - **Separate Route Pages**: Created individual pages /configuracoes/clinica, /configuracoes/equipe, /configuracoes/integracoes, /configuracoes/planos, /configuracoes/anamneses

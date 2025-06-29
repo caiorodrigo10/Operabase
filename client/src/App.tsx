@@ -167,6 +167,12 @@ function Router() {
         <Route path="/conversas" component={ConversasPage} />
         <Route path="/conversas2" component={Conversas2Page} />
         <Route path="/contatos/:id" component={ContatoDetalhes} />
+        <Route path="/contatos/:id/visao-geral" component={ContatoVisaoGeral} />
+        <Route path="/contatos/:id/anamneses" component={ContatoAnamneses} />
+        <Route path="/contatos/:id/mara-ai" component={ContatoMaraAI} />
+        <Route path="/contatos/:id/evolucoes" component={ContatoEvolucoes} />
+        <Route path="/contatos/:id/documentos" component={ContatoDocumentos} />
+        <Route path="/contatos/:id/arquivos" component={ContatoArquivos} />
         <Route path="/contatos/:contactId/preencher-anamnese" component={PreencherAnamnese} />
         <Route path="/contatos/:contactId/anamnese/:anamnesisId/editar" component={EditarAnamneseResposta} />
         <Route path="/anamneses" component={AnamnesisTemplatesPage} />

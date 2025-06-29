@@ -138,7 +138,8 @@ export function ContactLayout({ children, currentTab }: ContactLayoutProps) {
             {/* Avatar */}
             <div className="flex-shrink-0">
               <ContactAvatar 
-                contact={contact} 
+                name={contact?.name || "Contato"} 
+                profilePicture={contact?.profile_picture}
                 size="lg"
                 className="w-20 h-20"
               />
