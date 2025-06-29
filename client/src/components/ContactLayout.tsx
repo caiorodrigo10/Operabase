@@ -251,3 +251,5 @@ export function ContactLayout({ children, currentTab }: ContactLayoutProps) {
     </div>
   );
 }
+
+export default ContactLayout;
