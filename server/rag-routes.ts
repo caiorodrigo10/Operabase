@@ -192,10 +192,10 @@ router.post('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
 // Upload genérico de documentos (text, url)
 router.post('/documents', ragAuth, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
     const { title, content, content_type, knowledge_base } = req.body;
 
-    console.log('📝 Creating document:', { title, content_type, knowledge_base, userId });
+    console.log('📝 Creating document:', { title, content_type, knowledge_base, clinicId });
 
     if (!title || !content || !content_type) {
       return res.status(400).json({ error: 'Título, conteúdo e tipo são obrigatórios' });
@@ -213,7 +213,7 @@ router.post('/documents', ragAuth, async (req: any, res: Response) => {
     const [document] = await db
       .insert(rag_documents)
       .values({
-        external_user_id: userId,
+        external_user_id: clinicId, // Usar clinic_id para consistência
         title: content_type === 'url' ? content : title, // Use URL as title for URL documents
         content_type,
         original_content: content,
@@ -294,7 +294,7 @@ router.post('/crawl/preview', ragAuth, async (req: any, res: Response) => {
 // Processar URLs selecionadas do crawling
 router.post('/crawl/process', ragAuth, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
     const { selectedPages, knowledge_base } = req.body;
 
     if (!selectedPages || !Array.isArray(selectedPages) || selectedPages.length === 0) {
@@ -311,7 +311,7 @@ router.post('/crawl/process', ragAuth, async (req: any, res: Response) => {
       const [document] = await db
         .insert(rag_documents)
         .values({
-          external_user_id: userId,
+          external_user_id: clinicId, // Usar clinic_id para consistência
           title: url, // Always use URL as title for crawled pages
           content_type: 'url',
           source_url: url,
@@ -341,7 +341,7 @@ router.post('/crawl/process', ragAuth, async (req: any, res: Response) => {
 // Upload de PDF (endpoint original)
 router.post('/documents/pdf', ragAuth, upload.single('file'), async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
     const { title } = req.body;
     const file = req.file;
 
@@ -352,7 +352,7 @@ router.post('/documents/pdf', ragAuth, upload.single('file'), async (req: any, r
     const [document] = await db
       .insert(rag_documents)
       .values({
-        external_user_id: userId,
+        external_user_id: clinicId, // Usar clinic_id para consistência
         title,
         content_type: 'pdf',
         file_path: file.path,
@@ -377,9 +377,12 @@ router.post('/documents/pdf', ragAuth, upload.single('file'), async (req: any, r
 // Upload de PDF (endpoint usado pelo frontend)
 router.post('/documents/upload', ragAuth, upload.single('file'), async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
     const { knowledge_base } = req.body;
     const file = req.file;
+
+    console.log('🔍 Upload Debug - Clinic ID:', clinicId);
+    console.log('🔍 Upload Debug - Knowledge Base:', knowledge_base);
 
     if (!knowledge_base || !file) {
       return res.status(400).json({ error: 'Base de conhecimento e arquivo são obrigatórios' });
@@ -392,7 +395,7 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: any
     const [document] = await db
       .insert(rag_documents)
       .values({
-        external_user_id: userId,
+        external_user_id: clinicId, // Usar clinic_id para consistência
         title: cleanTitle,
         content_type: 'pdf',
         file_path: file.path,
@@ -403,6 +406,13 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: any
         processing_status: 'pending'
       })
       .returning();
+
+    console.log('✅ Upload Debug - Document created:', {
+      id: document.id,
+      title: document.title,
+      external_user_id: document.external_user_id,
+      metadata: document.metadata
+    });
 
     // Iniciar processamento em background
     processDocumentAsync(document.id);
