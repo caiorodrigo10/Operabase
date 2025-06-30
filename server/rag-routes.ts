@@ -116,13 +116,29 @@ router.get('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
 // Listar documentos do usuário
 router.get('/documents', ragAuth, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString();
     
+    console.log(`🔍 RAG Documents: Buscando documentos para clinic_id: ${clinicId}`);
+    
+    // Buscar documentos usando clinic_id (consistente com knowledge-bases)
     const documents = await db
       .select()
       .from(rag_documents)
-      .where(eq(rag_documents.external_user_id, userId))
+      .where(eq(rag_documents.external_user_id, clinicId))
       .orderBy(desc(rag_documents.created_at));
+
+    console.log(`📄 RAG Documents: Encontrados ${documents.length} documentos`);
+    
+    // Log detalhado dos documentos para debug
+    documents.forEach((doc, index) => {
+      console.log(`📄 Document ${index + 1}:`, {
+        id: doc.id,
+        title: doc.title,
+        content_type: doc.content_type,
+        metadata: doc.metadata,
+        processing_status: doc.processing_status
+      });
+    });
 
     res.json(documents);
   } catch (error) {

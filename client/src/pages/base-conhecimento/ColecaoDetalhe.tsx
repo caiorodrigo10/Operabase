@@ -19,6 +19,7 @@ interface RAGDocument {
   created_at: string;
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
   error_message?: string;
+  knowledge_base_id?: number;
   metadata?: {
     knowledge_base?: string;
     description?: string;
@@ -101,10 +102,20 @@ export default function ColecaoDetalhe() {
         throw new Error('Falha ao carregar documentos');
       }
       const allDocuments = await response.json() as RAGDocument[];
-      // Filtrar documentos que pertencem a esta base de conhecimento
-      return allDocuments.filter(doc => 
-        doc.metadata?.knowledge_base === knowledgeBase?.name
-      );
+      
+      console.log('🔍 Frontend Debug: All documents received:', allDocuments.length);
+      console.log('🔍 Frontend Debug: Looking for knowledge_base name:', knowledgeBase?.name);
+      
+      // Filtrar documentos que pertencem a esta base de conhecimento usando metadata
+      const filteredDocs = allDocuments.filter(doc => {
+        const kbNameInMetadata = doc.metadata?.knowledge_base;
+        const matches = kbNameInMetadata === knowledgeBase?.name;
+        console.log(`📄 Document ${doc.id}: metadata.knowledge_base="${kbNameInMetadata}", looking for="${knowledgeBase?.name}", matches=${matches}`);
+        return matches;
+      });
+      
+      console.log('✅ Frontend Debug: Filtered documents:', filteredDocs.length);
+      return filteredDocs;
     },
     enabled: !!knowledgeBase?.name
   });
