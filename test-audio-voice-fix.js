@@ -3,9 +3,9 @@
  * Verifica se rota específica está funcionando e usando endpoint correto
  */
 
-const FormData = require('form-data');
-const fs = require('fs');
-const path = require('path');
+import FormData from 'form-data';
+import fs from 'fs';
+import path from 'path';
 
 async function testAudioVoiceFix() {
   console.log('🎤 TESTE: Iniciando validação do sistema de áudio gravado...\n');
