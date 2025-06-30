@@ -1166,8 +1166,19 @@ export class ConversationUploadService {
       
       console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
       
-      // 5. Criar mensagem no banco com sender_type='patient' e message_type específico para WhatsApp
+      // 5. Criar mensagem no banco com identificação correta baseada no senderType
       console.log('💾 Creating N8N message in database...');
+      
+      // 🤖 NOVA LÓGICA: Identificação da origem (patient/ai)
+      const isAIMessage = senderType === 'ai';
+      console.log(`🤖 Message identification: ${isAIMessage ? 'AI-generated' : 'Patient-sent'}`);
+      
+      // Determinar sender_type e device_type baseado na origem
+      const finalSenderType = isAIMessage ? 'ai' : 'patient';
+      const finalDeviceType = isAIMessage ? 'system' : 'manual';
+      
+      console.log(`📝 Using sender_type: '${finalSenderType}', device_type: '${finalDeviceType}'`);
+      
       // Se cliente enviar caption, usar caption. Se não enviar, deixar mensagem vazia (só arquivo)
       let messageContent = '';
       if (caption !== undefined && caption !== null && caption.trim() !== '') {
@@ -1187,9 +1198,9 @@ export class ConversationUploadService {
       const message = await this.storage.createMessage({
         conversation_id: conversation.id.toString(),
         content: messageContent,
-        sender_type: 'patient', // Mensagem vem do paciente via WhatsApp
+        sender_type: finalSenderType, // 🤖 'ai' ou 'patient' baseado na identificação
         message_type: messageType,
-        device_type: 'manual', // WhatsApp é considerado manual (não sistema)
+        device_type: finalDeviceType, // 🤖 'system' para IA, 'manual' para paciente
         timestamp: brasiliaTimestamp,
         created_at: brasiliaTimestamp,
         sent_at: brasiliaTimestamp,

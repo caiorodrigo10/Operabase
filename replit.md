@@ -207,6 +207,21 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### June 30, 2025 - AI Audio Identification System: COMPLETE IMPLEMENTATION ✅
+- **Sistema de Identificação da IA**: Implementado sistema completo para distinguir áudios de pacientes vs áudios gerados pela IA
+- **Header Detection**: Sistema detecta header `X-Sender-Type: ai` no endpoint N8N existente para identificação automática
+- **Database Classification**: Mensagens da IA usam `sender_type: 'ai'` + `device_type: 'system'`, pacientes usam `sender_type: 'patient'` + `device_type: 'manual'`
+- **Zero Impact**: Preservação total do sistema de áudio de pacientes existente - funcionalidade atual 100% intacta
+- **Backward Compatible**: Header opcional, ausência do header mantém comportamento padrão (paciente)
+- **Endpoint Reusage**: Utiliza endpoint N8N existente `/api/n8n/upload` sem criação de nova API
+- **Comprehensive Testing**: Script de validação confirma funcionamento correto para ambos cenários
+- **N8NUploadParams Interface**: Adicionado campo `senderType?: string` para identificação da origem
+- **ConversationUploadService**: Lógica condicional implementada no método `uploadFromN8N` para identificação automática
+- **Detailed Logging**: Sistema registra identificação da origem com logs específicos para debugging
+- **Documentation**: Documentação técnica completa criada em AI-AUDIO-IDENTIFICATION-SYSTEM.md
+- **Production Ready**: Sistema validado e pronto para diferenciar áudios da IA de áudios de pacientes
+- **Status**: ✅ IMPLEMENTADO - IA pode agora enviar áudios com identificação automática sem danificar sistema de pacientes
+
 ### June 30, 2025 - WhatsApp Audio Recording + AI Transcription System: COMPLETE IMPLEMENTATION ✅
 - **FINAL SOLUTION**: Audio recording system working 100% with base64 conversion + OpenAI Whisper transcription for AI memory
 - **AI Transcription**: Implemented OpenAI Whisper integration for automatic audio-to-text conversion
