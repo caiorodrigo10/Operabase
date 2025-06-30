@@ -81,7 +81,10 @@ The platform features a sophisticated conversation system with dual-channel file
    - Dynamic clinic configuration support
 
 ### Advanced Features
-- **RAG System**: Vector-based knowledge retrieval using pgvector extension
+- **RAG System**: Official LangChain/Supabase structure with vector-based knowledge retrieval using pgvector extension
+- **Vector Database**: Single documents table with content, metadata, and embedding columns following official standards
+- **Semantic Search**: match_documents function compatible with SupabaseVectorStore.similaritySearch()
+- **Multi-Tenant RAG**: match_documents_clinic function for isolated knowledge bases per clinic
 - **MCP Protocol**: Model Context Protocol implementation for AI integrations with complete scheduling restrictions
 - **Appointment Validation**: Triple-layer protection system (working days, lunch break, working hours)
 - **System Logging**: Comprehensive audit trail for compliance
@@ -206,6 +209,20 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 - **TypeScript**: Full type safety across modular components
 
 ## Changelog
+
+### June 30, 2025 - RAG System Complete Migration to Official LangChain/Supabase Structure ✅
+- **Arquitetura Oficial**: Migração completa do sistema RAG personalizado para estrutura oficial LangChain/Supabase
+- **Tabela Unificada**: Substituição de 4 tabelas personalizadas (rag_documents, rag_chunks, rag_embeddings, rag_queries) por tabela única "documents"
+- **Schema Oficial**: Implementado schema oficial com campos content, metadata (JSONB), embedding (vector 1536)
+- **Funções Padrão**: Criadas funções match_documents() e match_documents_clinic() compatíveis com SupabaseVectorStore
+- **Multi-Tenant Mantido**: Sistema preserva isolamento por clínica usando metadata->>'clinic_id'
+- **Índices Otimizados**: Índice vetorial HNSW para busca semântica + índices GIN para metadata
+- **Compatibilidade Total**: Sistema agora 100% compatível com SupabaseVectorStore.similaritySearch()
+- **APIs Limpas**: Endpoints RAG simplificados (/documents, /search, /status) seguindo padrões oficiais
+- **Zero Impact**: Migração não afeta outras funcionalidades do sistema
+- **Limpeza Completa**: Sistema RAG antigo removido completamente, estrutura oficial implementada
+- **Performance Preservada**: Índices otimizados mantêm performance de busca semântica
+- **Status**: ✅ MIGRAÇÃO COMPLETA - Sistema RAG oficial LangChain/Supabase pronto para produção
 
 ### June 30, 2025 - AI Audio Identification System: COMPLETE IMPLEMENTATION ✅
 - **Sistema de Identificação da IA**: Implementado sistema completo para distinguir áudios de pacientes vs áudios gerados pela IA
