@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { rag_documents, rag_chunks, rag_embeddings } from "../../shared/schema";
+import { rag_documents, rag_chunks, rag_embeddings, rag_knowledge_bases } from "../../shared/schema";
 import { eq } from "drizzle-orm";
 import { PDFProcessor } from "./pdf-processor";
 import { URLProcessor } from "./url-processor";
@@ -110,14 +110,39 @@ export class DocumentWorkflow {
       console.log(`🔮 Gerando embeddings para ${chunks.length} chunks`);
       const embeddingChunks = await this.embeddingService.generateEmbeddings(chunks);
 
-      // 8. Salvar embeddings no banco
+      // 8. Obter clinic_id e knowledge_base_id do documento
+      const clinicId = document.external_user_id.match(/^\d+$/) ? parseInt(document.external_user_id) : 1;
+      
+      // Tentar encontrar knowledge_base_id a partir dos metadados do documento
+      let knowledgeBaseId = null;
+      if (document.metadata && typeof document.metadata === 'object') {
+        const metadata = document.metadata as any;
+        if (metadata.knowledge_base) {
+          // Buscar base de conhecimento pelo nome
+          const knowledgeBases = await db
+            .select()
+            .from(rag_knowledge_bases)
+            .where(eq(rag_knowledge_bases.external_user_id, document.external_user_id));
+          
+          const matchingKB = knowledgeBases.find(kb => kb.name === metadata.knowledge_base);
+          if (matchingKB) {
+            knowledgeBaseId = matchingKB.id;
+          }
+        }
+      }
+
+      console.log(`🔗 Vinculando embeddings: clinic_id=${clinicId}, knowledge_base_id=${knowledgeBaseId}`);
+
+      // 9. Salvar embeddings no banco com campos obrigatórios
       await db
         .insert(rag_embeddings)
         .values(
           embeddingChunks.map((chunk, index) => ({
             chunk_id: insertedChunks[index].id,
             embedding: chunk.embedding,
-            model_used: 'text-embedding-3-small'
+            model_used: 'text-embedding-3-small',
+            clinic_id: clinicId,
+            knowledge_base_id: knowledgeBaseId
           }))
         );
 
