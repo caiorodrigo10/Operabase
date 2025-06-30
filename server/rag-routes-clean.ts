@@ -593,7 +593,7 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
     
     if (knowledge_base_id) {
       documentsResult = await db.execute(sql`
-        SELECT id, content, metadata
+        SELECT id, content, metadata, embedding
         FROM documents 
         WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
           AND metadata->>'knowledge_base_id' = ${knowledge_base_id.toString()}
@@ -601,7 +601,7 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
       `);
     } else {
       documentsResult = await db.execute(sql`
-        SELECT id, content, metadata
+        SELECT id, content, metadata, embedding
         FROM documents 
         WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
         ORDER BY id DESC
@@ -617,6 +617,7 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
       source: doc.metadata?.source || 'unknown',
       created_by: doc.metadata?.created_by,
       created_at: doc.metadata?.created_at,
+      embedding: doc.embedding,
       // Status de processamento: se tem conteúdo e embedding, está completo
       processing_status: (doc.content && doc.content.length > 0) ? 'completed' : 'pending',
       original_content: doc.content
