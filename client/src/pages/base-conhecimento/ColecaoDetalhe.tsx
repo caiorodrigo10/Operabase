@@ -323,19 +323,44 @@ export default function ColecaoDetalhe() {
           return;
         }
 
+        console.log('📄 Frontend: Iniciando upload de PDF:', {
+          collectionId,
+          collectionData,
+          fileName: selectedFiles[0].name,
+          fileSize: selectedFiles[0].size
+        });
+
         // Upload do PDF usando FormData
         const formData = new FormData();
-        formData.append('knowledge_base', collectionData.name);
+        formData.append('knowledge_base_id', collectionId); // CORRIGIDO: usar ID em vez de nome
+        formData.append('title', selectedFiles[0].name.replace(/\.pdf$/i, ''));
         formData.append('file', selectedFiles[0]);
+
+        console.log('📤 Frontend: Enviando FormData:', {
+          knowledge_base_id: collectionId,
+          title: selectedFiles[0].name.replace(/\.pdf$/i, ''),
+          fileName: selectedFiles[0].name
+        });
 
         const response = await fetch('/api/rag/documents/upload', {
           method: 'POST',
           body: formData
         });
 
+        console.log('📦 Frontend: Resposta do servidor:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+
         if (!response.ok) {
-          throw new Error('Falha no upload do PDF');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('❌ Frontend: Erro na resposta:', errorData);
+          throw new Error(errorData.error || 'Falha no upload do PDF');
         }
+
+        const result = await response.json();
+        console.log('✅ Frontend: Upload bem-sucedido:', result);
 
         // Invalidar cache e fechar modal
         queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });

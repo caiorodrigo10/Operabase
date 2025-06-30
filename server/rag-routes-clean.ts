@@ -363,13 +363,29 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
       clinic_id,
       knowledge_base_id,
       title,
-      filename: file?.originalname
+      filename: file?.originalname,
+      body: req.body,
+      fileInfo: file ? {
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        path: file.path
+      } : null
     });
 
-    if (!knowledge_base_id || !file) {
+    if (!knowledge_base_id) {
+      console.error('❌ RAG: Knowledge base ID ausente:', { body: req.body });
       return res.status(400).json({ 
         success: false, 
-        error: "Knowledge base ID e arquivo são obrigatórios" 
+        error: "Knowledge base ID é obrigatório" 
+      });
+    }
+
+    if (!file) {
+      console.error('❌ RAG: Arquivo ausente');
+      return res.status(400).json({ 
+        success: false, 
+        error: "Arquivo PDF é obrigatório" 
       });
     }
 
