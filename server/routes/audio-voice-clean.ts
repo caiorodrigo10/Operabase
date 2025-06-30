@@ -213,9 +213,6 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
       console.log('🌐 ÁUDIO LIMPO: URL para Evolution:', publicUrl.signedUrl);
       
       try {
-        const evolutionService = new EvolutionAPIService();
-        
-        // Debug dos dados antes da chamada
         console.log('🔍 ÁUDIO LIMPO: Dados antes da chamada Evolution:', {
           instanceName: activeInstance.instance_name,
           phone: conversationDetail.contact.phone,
@@ -223,20 +220,34 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
           hasUrl: !!publicUrl.signedUrl
         });
         
-        const payload = {
-          number: conversationDetail.contact.phone,
-          mediaMessage: {
-            mediaType: 'audio' as const,
-            media: publicUrl.signedUrl, // URL pública temporária acessível externamente
-            caption: 'Mensagem de voz'
-          },
-          options: {
-            delay: 1000,
-            presence: 'recording' as const
-          }
+        console.log('🔍 ÁUDIO LIMPO: Inicializando EvolutionAPIService...');
+        const evolutionService = new EvolutionAPIService();
+        console.log('✅ ÁUDIO LIMPO: EvolutionAPIService inicializado');
+        
+        // Helper para MIME type correto (baseado no conversation-upload.service.ts)
+        const getMimeType = (mediaType: string): string => {
+          const mimeTypes = {
+            'image': 'image/png',
+            'video': 'video/mp4', 
+            'audio': 'audio/mpeg',
+            'document': 'application/pdf'
+          };
+          return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
         };
         
-        console.log('🔍 ÁUDIO LIMPO: Payload completo:', JSON.stringify(payload, null, 2));
+        const payload = {
+          number: conversationDetail.contact.phone,
+          mediatype: 'audio' as const,
+          mimetype: getMimeType('audio'),
+          media: publicUrl.signedUrl, // URL pública temporária acessível externamente
+          fileName: file.originalname,
+          caption: 'Mensagem de voz',
+          delay: 1000,
+          presence: 'recording' as const
+        };
+        
+        console.log('🔍 ÁUDIO LIMPO: Payload completo (Evolution V2):', JSON.stringify(payload, null, 2));
+        console.log('🔍 ÁUDIO LIMPO: Chamando sendMedia...');
         
         const whatsappResult = await evolutionService.sendMedia(activeInstance.instance_name, payload);
         

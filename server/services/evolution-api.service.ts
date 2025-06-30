@@ -1,15 +1,12 @@
 interface EvolutionMediaPayload {
   number: string;
-  mediaMessage: {
-    mediaType: 'image' | 'video' | 'document' | 'audio';
-    fileName?: string;
-    caption?: string;
-    media: string;
-  };
-  options?: {
-    delay?: number;
-    presence?: 'composing' | 'recording';
-  };
+  mediatype: 'image' | 'video' | 'document' | 'audio';
+  mimetype: string;
+  media: string;
+  fileName?: string;
+  caption?: string;
+  delay?: number;
+  presence?: 'composing' | 'recording';
 }
 
 interface EvolutionResponse {
@@ -46,9 +43,9 @@ export class EvolutionAPIService {
     console.log('📡 Payload details:', {
       hasNumber: !!payload?.number,
       number: payload?.number,
-      hasMediaMessage: !!payload?.mediaMessage,
-      mediaType: payload?.mediaMessage?.mediaType,
-      hasCaption: !!payload?.mediaMessage?.caption
+      mediatype: payload?.mediatype,
+      mimetype: payload?.mimetype,
+      hasCaption: !!payload?.caption
     });
 
     try {
