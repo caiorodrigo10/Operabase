@@ -554,10 +554,14 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
       id: doc.id,
       title: doc.metadata?.title || 'Documento sem título',
       content: doc.content?.substring(0, 200) + (doc.content?.length > 200 ? '...' : ''),
+      content_type: doc.metadata?.source || 'unknown',
       knowledge_base_id: doc.metadata?.knowledge_base_id,
       source: doc.metadata?.source || 'unknown',
       created_by: doc.metadata?.created_by,
-      created_at: doc.metadata?.created_at
+      created_at: doc.metadata?.created_at,
+      // Status de processamento: se tem conteúdo e embedding, está completo
+      processing_status: (doc.content && doc.content.length > 0) ? 'completed' : 'pending',
+      original_content: doc.content
     }));
 
     console.log('✅ RAG: Documentos encontrados:', documentsList.length);
