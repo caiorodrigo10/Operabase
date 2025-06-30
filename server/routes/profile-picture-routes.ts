@@ -25,16 +25,55 @@ const upload = multer({
 // Upload de profile picture
 router.post('/upload-profile-picture', upload.single('image'), async (req, res) => {
   try {
-    // Verificar autenticação
-    const session = req.session as any;
-    const user = session?.user || session?.supabaseUser || session?.userData;
+    // Verificar autenticação Supabase (mesmo padrão do sistema)
+    console.log('🔐 Profile Picture Auth: Checking authentication...');
+    console.log('🔍 Headers:', req.headers.authorization ? 'Bearer token present' : 'No bearer token');
     
-    if (!user) {
+    // Check Supabase token authentication
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ No Bearer token found');
       return res.status(401).json({
         success: false,
-        error: 'Usuário não autenticado'
+        error: 'Token de autenticação não encontrado'
       });
     }
+    
+    const token = authHeader.substring(7);
+    console.log('🔑 Found Bearer token, verifying...');
+    
+    // Verify Supabase token and get user
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL!, 
+      process.env.SUPABASE_ANON_KEY!
+    );
+    
+    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !supabaseUser) {
+      console.log('❌ Supabase token verification failed:', error?.message);
+      return res.status(401).json({
+        success: false,
+        error: 'Token inválido'
+      });
+    }
+    
+    console.log('✅ Supabase user verified:', supabaseUser.email);
+    
+    // Get user from database by email
+    const storage = req.app.get('storage');
+    const user = await storage.getUserByEmail(supabaseUser.email);
+    
+    if (!user) {
+      console.log('❌ User not found in database:', supabaseUser.email);
+      return res.status(401).json({
+        success: false,
+        error: 'Usuário não encontrado no banco de dados'
+      });
+    }
+    
+    console.log('✅ Database user found:', user.name);
 
     // Verificar se arquivo foi enviado
     if (!req.file) {
