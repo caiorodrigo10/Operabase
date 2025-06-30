@@ -4,11 +4,48 @@
  */
 
 import { Router, type Request, Response } from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { db } from "./db";
 import { documents, knowledge_bases, insertKnowledgeBaseSchema, updateKnowledgeBaseSchema } from "../shared/schema";
 import { sql, eq, desc, and } from "drizzle-orm";
 
 const router = Router();
+
+// Configuração do multer para upload de PDFs
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads', 'rag');
+    
+    // Criar diretório se não existir
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    cb(null, `${timestamp}-${random}-${sanitizedName}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req: any, file: any, cb: any) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos PDF são permitidos'), false);
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  }
+});
 
 // Middleware simplificado para autenticação RAG
 const ragAuth = (req: any, res: any, next: any) => {
@@ -310,6 +347,98 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('❌ RAG: Erro ao adicionar documento:', error);
     res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
+ * POST /api/rag/documents/upload - Upload de PDF
+ */
+router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    const clinic_id = (req as any).clinic_id;
+    const { knowledge_base_id, title } = req.body;
+    const file = (req as any).file;
+
+    console.log('📄 RAG: Upload de PDF iniciado:', {
+      clinic_id,
+      knowledge_base_id,
+      title,
+      filename: file?.originalname
+    });
+
+    if (!knowledge_base_id || !file) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Knowledge base ID e arquivo são obrigatórios" 
+      });
+    }
+
+    // Verificar se a knowledge base existe e pertence à clínica
+    const knowledgeBase = await db
+      .select()
+      .from(knowledge_bases)
+      .where(and(
+        eq(knowledge_bases.id, parseInt(knowledge_base_id)),
+        eq(knowledge_bases.clinic_id, clinic_id)
+      ))
+      .limit(1);
+
+    if (!knowledgeBase.length) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "Knowledge base não encontrada" 
+      });
+    }
+
+    // Usar título do arquivo se não fornecido
+    const documentTitle = title || file.originalname.replace(/\.pdf$/i, '');
+
+    // Inserir documento na estrutura oficial LangChain
+    const documentResult = await db.execute(sql`
+      INSERT INTO documents (content, metadata)
+      VALUES (
+        'PDF processado: ' || ${documentTitle},
+        ${JSON.stringify({
+          clinic_id: clinic_id.toString(),
+          knowledge_base_id: knowledge_base_id.toString(),
+          title: documentTitle,
+          source: 'pdf',
+          file_path: file.path,
+          file_name: file.originalname,
+          file_size: file.size,
+          created_by: (req as any).user.email,
+          created_at: new Date().toISOString(),
+          processing_status: 'pending'
+        })}
+      )
+      RETURNING id
+    `);
+
+    const documentId = (documentResult.rows[0] as any).id;
+
+    console.log('✅ RAG: PDF carregado na estrutura oficial LangChain:', {
+      documentId,
+      title: documentTitle,
+      clinic_id,
+      knowledge_base_id
+    });
+
+    res.json({
+      success: true,
+      data: {
+        id: documentId,
+        title: documentTitle,
+        status: 'uploaded',
+        message: 'PDF carregado com sucesso na estrutura oficial LangChain'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ RAG: Erro no upload de PDF:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: String(error) 
+    });
   }
 });
 

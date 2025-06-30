@@ -218,11 +218,17 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 - **Multi-Tenant Mantido**: Sistema preserva isolamento por clínica usando metadata->>'clinic_id'
 - **Índices Otimizados**: Índice vetorial HNSW para busca semântica + índices GIN para metadata
 - **Compatibilidade Total**: Sistema agora 100% compatível com SupabaseVectorStore.similaritySearch()
-- **APIs Limpas**: Endpoints RAG simplificados (/documents, /search, /status) seguindo padrões oficiais
+- **APIs Funcionais**: Todos os endpoints principais funcionando perfeitamente
+  - ✅ Knowledge Bases: criação/listagem (GET/POST /api/rag/knowledge-bases)
+  - ✅ Documentos: adição de texto (POST /api/rag/documents)
+  - ✅ Upload PDF: sistema completo implementado (POST /api/rag/documents/upload)
+  - ✅ Busca Semântica: busca por texto operacional (POST /api/rag/search)
+  - ✅ Listagem: documentos por base funcionando (GET /api/rag/documents)
+- **Upload PDF Restaurado**: Sistema de upload de PDF totalmente funcional com multer e validação
 - **Zero Impact**: Migração não afeta outras funcionalidades do sistema
 - **Limpeza Completa**: Sistema RAG antigo removido completamente, estrutura oficial implementada
 - **Performance Preservada**: Índices otimizados mantêm performance de busca semântica
-- **Status**: ✅ MIGRAÇÃO COMPLETA - Sistema RAG oficial LangChain/Supabase pronto para produção
+- **Status**: ✅ MIGRAÇÃO COMPLETA E OPERACIONAL - Sistema RAG oficial LangChain/Supabase pronto para produção
 
 ### June 30, 2025 - AI Audio Identification System: COMPLETE IMPLEMENTATION ✅
 - **Sistema de Identificação da IA**: Implementado sistema completo para distinguir áudios de pacientes vs áudios gerados pela IA
