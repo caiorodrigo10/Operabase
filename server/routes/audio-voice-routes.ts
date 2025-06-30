@@ -113,13 +113,13 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
         const evolutionAPI = new EvolutionAPIService();
         
         // Buscar conversa para obter telefone
-        const conversation = await storage.getConversationWithContact(conversationId);
+        const conversation = await storage.getConversationById(conversationId);
         if (!conversation) {
           throw new Error('Conversa não encontrada');
         }
         
         // Buscar instância WhatsApp da clínica
-        const instances = await storage.getWhatsAppInstances(1);
+        const instances = await storage.getWhatsAppNumbers(1);
         const activeInstance = instances.find(i => i.status === 'open');
         if (!activeInstance) {
           throw new Error('Nenhuma instância WhatsApp ativa');
