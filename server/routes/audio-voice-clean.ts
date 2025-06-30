@@ -126,6 +126,12 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
         try {
           console.log('🔤 TRANSCRIPTION: Iniciando processo de transcrição em background...');
           
+          // Verificar se o arquivo existe antes de processar
+          if (!req.file || !req.file.buffer || !req.file.originalname) {
+            console.error('❌ TRANSCRIPTION: Arquivo não disponível para transcrição');
+            return;
+          }
+          
           // 1. Importar serviços
           const TranscriptionService = (await import('../services/transcription.service.js')).default;
           const { saveToN8NTable } = await import('../utils/n8n-integration.js');
@@ -308,12 +314,12 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
         const whatsappResult = await evolutionService.sendWhatsAppAudio(activeInstance.instance_name, audioPayload);
         
         console.log('✅ ÁUDIO LIMPO: Evolution API - Sucesso!');
-        console.log('📨 ÁUDIO LIMPO: MessageId:', whatsappResult.messageId);
+        console.log('📨 ÁUDIO LIMPO: MessageId:', whatsappResult.key?.id);
         
         // Atualizar status da mensagem
         await storage.updateMessage(message.id, { 
           evolution_status: 'sent',
-          evolution_message_id: whatsappResult.messageId 
+          evolution_message_id: whatsappResult.key?.id 
         });
         
         console.log('🎯 ÁUDIO LIMPO: SUCESSO COMPLETO - Áudio enviado para WhatsApp!');
@@ -325,7 +331,7 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
             attachment,
             whatsapp: {
               sent: true,
-              messageId: whatsappResult.messageId
+              messageId: whatsappResult.key?.id
             }
           },
           message: 'Áudio enviado com sucesso para WhatsApp'

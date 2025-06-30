@@ -19,34 +19,39 @@ export async function saveToN8NTable(
   try {
     console.log('📋 N8N Integration: Iniciando para conversa:', conversationId);
     
-    // 1. Buscar dados da conversa (mesma lógica do conversations-simple-routes.ts)
+    // 1. Buscar contato da conversa
     const { data: conversation, error: conversationError } = await supabase
       .from('conversations')
-      .select('contact_id, contacts!inner(phone)')
+      .select('contact_id')
       .eq('id', conversationId)
       .eq('clinic_id', 1)
       .single();
     
-    if (conversationError) {
-      console.error('❌ N8N Integration: Erro ao buscar conversa:', conversationError.message);
-      throw conversationError;
-    }
-    
-    // Usar any para evitar erro de tipagem Supabase
-    const contactPhone = (conversation as any)?.contacts?.phone;
-    
-    if (!contactPhone) {
-      console.log('⚠️ N8N Integration: Telefone do contato não encontrado para conversa:', conversationId);
+    if (conversationError || !conversation) {
+      console.error('❌ N8N Integration: Erro ao buscar conversa:', conversationError?.message);
       return;
     }
     
-    console.log('✅ N8N Integration: Conversa encontrada:', {
+    // 2. Buscar telefone do contato
+    const { data: contact, error: contactError } = await supabase
+      .from('contacts')
+      .select('phone')
+      .eq('id', conversation.contact_id)
+      .eq('clinic_id', 1)
+      .single();
+    
+    if (contactError || !contact?.phone) {
+      console.log('⚠️ N8N Integration: Telefone do contato não encontrado');
+      return;
+    }
+    
+    console.log('✅ N8N Integration: Contato encontrado:', {
       conversationId,
       contactId: conversation.contact_id,
-      contactPhone: contactPhone
+      contactPhone: contact.phone
     });
     
-    // 2. Buscar número WhatsApp da clínica (mesma lógica do sistema atual)
+    // 3. Buscar número WhatsApp da clínica (mesma lógica do sistema atual)
     const { data: clinicWhatsApp, error: whatsappError } = await supabase
       .from('whatsapp_numbers')
       .select('phone_number')
@@ -62,8 +67,8 @@ export async function saveToN8NTable(
     
     console.log('✅ N8N Integration: Número da clínica encontrado:', clinicWhatsApp.phone_number);
     
-    // 3. Formatar session_id: "CONTACT_PHONE-CLINIC_PHONE" (formato padrão identificado)
-    const sessionId = `${contactPhone}-${clinicWhatsApp.phone_number}`;
+    // 4. Formatar session_id: "CONTACT_PHONE-CLINIC_PHONE" (formato padrão identificado)
+    const sessionId = `${contact.phone}-${clinicWhatsApp.phone_number}`;
     console.log('🆔 N8N Integration: Session ID formatado:', sessionId);
     
     // 4. Criar estrutura de mensagem EXATAMENTE como no sistema atual
