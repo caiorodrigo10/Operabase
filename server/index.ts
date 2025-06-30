@@ -125,6 +125,8 @@ app.use((req, res, next) => {
     console.log('🎤 BYPASS MIDDLEWARE - Upload de áudio detectado');
     console.log('🎤 URL:', req.originalUrl);
     console.log('🎤 Method:', req.method);
+    console.log('🎤 PARAMS:', req.params);
+    console.log('🎤 ROUTE MATCHED!');
     
     // Definir usuário fixo para uploads de áudio
     req.user = {
