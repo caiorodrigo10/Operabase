@@ -214,13 +214,31 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
       
       try {
         const evolutionService = new EvolutionAPIService();
-        const whatsappResult = await evolutionService.sendMedia({
+        
+        // Debug dos dados antes da chamada
+        console.log('🔍 ÁUDIO LIMPO: Dados antes da chamada Evolution:', {
           instanceName: activeInstance.instance_name,
-          number: conversationDetail.contact.phone,
-          media: publicUrl.signedUrl, // URL pública temporária acessível externamente
-          mediatype: 'audio',
-          caption: 'Mensagem de voz'
+          phone: conversationDetail.contact.phone,
+          urlLength: publicUrl.signedUrl?.length || 0,
+          hasUrl: !!publicUrl.signedUrl
         });
+        
+        const payload = {
+          number: conversationDetail.contact.phone,
+          mediaMessage: {
+            mediaType: 'audio' as const,
+            media: publicUrl.signedUrl, // URL pública temporária acessível externamente
+            caption: 'Mensagem de voz'
+          },
+          options: {
+            delay: 1000,
+            presence: 'recording' as const
+          }
+        };
+        
+        console.log('🔍 ÁUDIO LIMPO: Payload completo:', JSON.stringify(payload, null, 2));
+        
+        const whatsappResult = await evolutionService.sendMedia(activeInstance.instance_name, payload);
         
         console.log('✅ ÁUDIO LIMPO: Evolution API - Sucesso!');
         console.log('📨 ÁUDIO LIMPO: MessageId:', whatsappResult.messageId);

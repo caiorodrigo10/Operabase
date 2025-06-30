@@ -41,10 +41,14 @@ export class EvolutionAPIService {
       throw new Error('Evolution API not configured');
     }
 
-    console.log(`📡 Sending media via Evolution API to instance ${instanceId}:`, {
-      number: payload.number,
-      mediaType: payload.mediaMessage.mediaType,
-      hasCaption: !!payload.mediaMessage.caption
+    console.log(`📡 Sending media via Evolution API to instance ${instanceId}:`);
+    console.log('📡 Full payload received:', JSON.stringify(payload, null, 2));
+    console.log('📡 Payload details:', {
+      hasNumber: !!payload?.number,
+      number: payload?.number,
+      hasMediaMessage: !!payload?.mediaMessage,
+      mediaType: payload?.mediaMessage?.mediaType,
+      hasCaption: !!payload?.mediaMessage?.caption
     });
 
     try {

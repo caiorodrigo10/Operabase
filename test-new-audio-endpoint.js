@@ -7,7 +7,7 @@ import FormData from 'form-data';
 import fetch from 'node-fetch';
 
 const API_BASE = 'http://localhost:5000';
-const CONVERSATION_ID = '559887694034551150391104'; // Caio Rodrigo
+const CONVERSATION_ID = '5511965860124551150391104'; // Caio Rodrigo (com WhatsApp ativo)
 
 async function testNewAudioEndpoint() {
   console.log('\n🎤 =================================');
