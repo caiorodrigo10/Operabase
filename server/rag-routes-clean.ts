@@ -334,10 +334,8 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
       console.warn('⚠️ RAG: Erro ao gerar embedding:', error);
     }
 
-    // Inserir documento na estrutura oficial LangChain usando SQL direto
+    // Inserir documento na estrutura oficial LangChain usando colunas diretas
     const documentMetadata = {
-      clinic_id: clinic_id.toString(),
-      knowledge_base_id: knowledge_base_id.toString(),
       title: title || 'Documento sem título',
       source: source,
       created_by: user.email,
@@ -345,9 +343,9 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
     };
 
     const result = await db.execute(sql`
-      INSERT INTO documents (content, metadata, embedding)
-      VALUES (${content}, ${JSON.stringify(documentMetadata)}, ${embeddingVector ? JSON.stringify(embeddingVector) : null})
-      RETURNING id, content, metadata, embedding
+      INSERT INTO documents (content, metadata, embedding, clinic_id, knowledge_base_id)
+      VALUES (${content}, ${JSON.stringify(documentMetadata)}, ${embeddingVector ? JSON.stringify(embeddingVector) : null}, ${clinic_id}, ${knowledge_base_id})
+      RETURNING id, content, metadata, embedding, clinic_id, knowledge_base_id
     `);
 
     const newDocument = result.rows[0] as any;
@@ -468,12 +466,10 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
 
     // Inserir documento na estrutura oficial LangChain com embedding
     const documentResult = await db.execute(sql`
-      INSERT INTO documents (content, metadata, embedding)
+      INSERT INTO documents (content, metadata, embedding, clinic_id, knowledge_base_id)
       VALUES (
         ${documentContent},
         ${JSON.stringify({
-          clinic_id: clinic_id.toString(),
-          knowledge_base_id: knowledge_base_id.toString(),
           title: documentTitle,
           source: 'pdf',
           file_path: file.path,
@@ -483,7 +479,9 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
           created_at: new Date().toISOString(),
           processing_status: embeddingVector ? 'completed' : 'pending'
         })},
-        ${embeddingVector ? JSON.stringify(embeddingVector) : null}
+        ${embeddingVector ? JSON.stringify(embeddingVector) : null},
+        ${clinic_id},
+        ${parseInt(knowledge_base_id)}
       )
       RETURNING id
     `);
@@ -536,19 +534,19 @@ router.post('/search', ragAuth, async (req: Request, res: Response) => {
     
     if (knowledge_base_id) {
       searchResults = await db.execute(sql`
-        SELECT id, content, metadata
+        SELECT id, content, metadata, clinic_id, knowledge_base_id
         FROM documents 
-        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
-          AND metadata->>'knowledge_base_id' = ${knowledge_base_id.toString()}
+        WHERE clinic_id = ${clinic_id}
+          AND knowledge_base_id = ${parseInt(knowledge_base_id.toString())}
           AND content ILIKE ${'%' + query + '%'}
         ORDER BY id DESC
         LIMIT ${match_count}
       `);
     } else {
       searchResults = await db.execute(sql`
-        SELECT id, content, metadata
+        SELECT id, content, metadata, clinic_id, knowledge_base_id
         FROM documents 
-        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+        WHERE clinic_id = ${clinic_id}
           AND content ILIKE ${'%' + query + '%'}
         ORDER BY id DESC
         LIMIT ${match_count}
@@ -593,17 +591,17 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
     
     if (knowledge_base_id) {
       documentsResult = await db.execute(sql`
-        SELECT id, content, metadata, embedding
+        SELECT id, content, metadata, embedding, clinic_id, knowledge_base_id
         FROM documents 
-        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
-          AND metadata->>'knowledge_base_id' = ${knowledge_base_id.toString()}
+        WHERE clinic_id = ${clinic_id}
+          AND knowledge_base_id = ${parseInt(knowledge_base_id.toString())}
         ORDER BY id DESC
       `);
     } else {
       documentsResult = await db.execute(sql`
-        SELECT id, content, metadata, embedding
+        SELECT id, content, metadata, embedding, clinic_id, knowledge_base_id
         FROM documents 
-        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+        WHERE clinic_id = ${clinic_id}
         ORDER BY id DESC
       `);
     }
@@ -613,7 +611,7 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
       title: doc.metadata?.title || 'Documento sem título',
       content: doc.content?.substring(0, 200) + (doc.content?.length > 200 ? '...' : ''),
       content_type: doc.metadata?.source || 'unknown',
-      knowledge_base_id: doc.metadata?.knowledge_base_id,
+      knowledge_base_id: doc.knowledge_base_id, // Usando coluna direta
       source: doc.metadata?.source || 'unknown',
       created_by: doc.metadata?.created_by,
       created_at: doc.metadata?.created_at,
