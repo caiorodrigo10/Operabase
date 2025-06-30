@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft, X, Brain } from "lucide-react";
+import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft, X, Brain, Database } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,7 @@ export default function ColecaoDetalhe() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
   const [isProcessingEmbeddings, setIsProcessingEmbeddings] = useState(false);
+  const [isMigratingColumns, setIsMigratingColumns] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -549,6 +550,23 @@ export default function ColecaoDetalhe() {
             <p className="text-gray-600">{collectionData.description}</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => migrateDocumentsColumns()}
+              disabled={isMigratingColumns}
+            >
+              {isMigratingColumns ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                  Migrando Colunas...
+                </>
+              ) : (
+                <>
+                  <Database className="h-4 w-4 mr-2" />
+                  Migrar Colunas
+                </>
+              )}
+            </Button>
             <Button 
               variant="outline" 
               onClick={() => processEmbeddings()}

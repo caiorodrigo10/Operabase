@@ -846,6 +846,131 @@ router.delete('/cleanup-old-tables', ragAuth, async (req: Request, res: Response
 });
 
 /**
+ * POST /api/rag/migrate-documents-columns - Adicionar colunas clinic_id e knowledge_base_id
+ */
+router.post('/migrate-documents-columns', ragAuth, async (req: Request, res: Response) => {
+  try {
+    console.log('🔧 RAG: Iniciando migração de colunas na tabela documents...');
+    
+    // Verificar se as colunas já existem
+    const columnCheck = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'documents' 
+      AND table_schema = 'public'
+      AND column_name IN ('clinic_id', 'knowledge_base_id');
+    `);
+    
+    const existingColumns = columnCheck.rows.map((row: any) => row.column_name);
+    console.log('📋 RAG: Colunas existentes:', existingColumns);
+    
+    const results = [];
+    
+    // Adicionar coluna clinic_id se não existir
+    if (!existingColumns.includes('clinic_id')) {
+      console.log('➕ RAG: Adicionando coluna clinic_id...');
+      await db.execute(sql`
+        ALTER TABLE documents 
+        ADD COLUMN clinic_id INTEGER;
+      `);
+      console.log('✅ RAG: Coluna clinic_id adicionada');
+      results.push('clinic_id column added');
+    } else {
+      console.log('ℹ️ RAG: Coluna clinic_id já existe');
+      results.push('clinic_id column already exists');
+    }
+    
+    // Adicionar coluna knowledge_base_id se não existir
+    if (!existingColumns.includes('knowledge_base_id')) {
+      console.log('➕ RAG: Adicionando coluna knowledge_base_id...');
+      await db.execute(sql`
+        ALTER TABLE documents 
+        ADD COLUMN knowledge_base_id INTEGER;
+      `);
+      console.log('✅ RAG: Coluna knowledge_base_id adicionada');
+      results.push('knowledge_base_id column added');
+    } else {
+      console.log('ℹ️ RAG: Coluna knowledge_base_id já existe');
+      results.push('knowledge_base_id column already exists');
+    }
+    
+    // Povoar as colunas com dados do metadata JSONB
+    console.log('📊 RAG: Populando colunas com dados do metadata...');
+    
+    const updateResult = await db.execute(sql`
+      UPDATE documents 
+      SET 
+        clinic_id = CAST(metadata->>'clinic_id' AS INTEGER),
+        knowledge_base_id = CAST(metadata->>'knowledge_base_id' AS INTEGER)
+      WHERE 
+        metadata->>'clinic_id' IS NOT NULL 
+        AND metadata->>'knowledge_base_id' IS NOT NULL;
+    `);
+    
+    console.log(`✅ RAG: ${updateResult.rowCount || 0} documentos atualizados`);
+    results.push(`${updateResult.rowCount || 0} documents updated with IDs`);
+    
+    // Criar índices para performance
+    try {
+      await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_documents_clinic_id 
+        ON documents(clinic_id);
+      `);
+      
+      await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_documents_knowledge_base_id 
+        ON documents(knowledge_base_id);
+      `);
+      
+      await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_documents_clinic_kb 
+        ON documents(clinic_id, knowledge_base_id);
+      `);
+      
+      console.log('✅ RAG: Índices de performance criados');
+      results.push('performance indexes created');
+      
+    } catch (indexError) {
+      console.log('⚠️ RAG: Índices podem já existir');
+      results.push('indexes already exist');
+    }
+    
+    // Verificar resultado final
+    const finalCheck = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total_documents,
+        COUNT(clinic_id) as documents_with_clinic_id,
+        COUNT(knowledge_base_id) as documents_with_knowledge_base_id
+      FROM documents;
+    `);
+    
+    const stats = finalCheck.rows[0] as any;
+    
+    console.log('📈 RAG: Migração concluída - estatísticas finais:');
+    console.log(`  - Total de documentos: ${stats.total_documents}`);
+    console.log(`  - Documentos com clinic_id: ${stats.documents_with_clinic_id}`);
+    console.log(`  - Documentos com knowledge_base_id: ${stats.documents_with_knowledge_base_id}`);
+    
+    res.json({
+      success: true,
+      message: 'Migração concluída: colunas clinic_id e knowledge_base_id adicionadas',
+      data: {
+        actions_performed: results,
+        statistics: {
+          total_documents: stats.total_documents,
+          documents_with_clinic_id: stats.documents_with_clinic_id,
+          documents_with_knowledge_base_id: stats.documents_with_knowledge_base_id
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ RAG: Erro na migração:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
  * GET /api/rag/status - Status do sistema RAG
  */
 router.get('/status', ragAuth, async (req: Request, res: Response) => {
