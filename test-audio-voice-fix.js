@@ -3,100 +3,105 @@
  * Verifica se rota específica está funcionando e usando endpoint correto
  */
 
-import FormData from 'form-data';
-import fs from 'fs';
-import path from 'path';
-
 async function testAudioVoiceFix() {
-  console.log('🎤 TESTE: Iniciando validação do sistema de áudio gravado...\n');
+  const API_BASE = 'http://localhost:5000';
+  const CONVERSATION_ID = '5511965860124551150391104';
+  
+  console.log('🎤 TESTE CORREÇÃO: Sistema de Áudio Gravado');
+  console.log('=============================================');
   
   try {
-    // 1. Verificar se as rotas estão registradas corretamente
-    console.log('🔍 ETAPA 1: Verificando logs do servidor...');
-    const fetch = await import('node-fetch');
+    // 1. Verificar se a rota está ativa
+    console.log('\n🔍 STEP 1: Verificando se rota está registrada...');
     
-    // Criar arquivo de áudio simulado para teste
-    const audioBuffer = Buffer.from('MOCK_AUDIO_CONTENT_FOR_TESTING');
+    const { spawn } = await import('child_process');
+    const curlTest = spawn('curl', [
+      '-X', 'POST',
+      `${API_BASE}/api/conversations/${CONVERSATION_ID}/upload-voice`,
+      '--data-raw', '',
+      '--max-time', '3'
+    ]);
     
-    // 2. Testar rota específica de áudio gravado
-    console.log('🎤 ETAPA 2: Testando rota específica /upload-voice...');
-    
-    const form = new FormData();
-    form.append('file', audioBuffer, {
-      filename: 'gravacao_test_' + Date.now() + '.webm',
-      contentType: 'audio/webm'
+    let curlOutput = '';
+    curlTest.stdout.on('data', (data) => {
+      curlOutput += data.toString();
     });
-    form.append('caption', 'Teste de áudio gravado via rota específica');
     
-    const response = await fetch.default('http://localhost:5000/api/conversations/5511965860124551150391104/upload-voice', {
+    curlTest.stderr.on('data', (data) => {
+      curlOutput += data.toString();
+    });
+    
+    await new Promise((resolve) => {
+      curlTest.on('close', (code) => {
+        console.log('📊 Curl Response:', curlOutput);
+        if (curlOutput.includes('Nenhum arquivo enviado') || curlOutput.includes('400')) {
+          console.log('✅ Rota está ATIVA - retornou erro de arquivo esperado');
+        } else if (curlOutput.includes('500') || curlOutput.includes('Internal Server Error')) {
+          console.log('⚠️ Rota está ativa mas com erro interno');
+        } else {
+          console.log('❌ Rota pode não estar registrada ou servidor com problema');
+        }
+        resolve();
+      });
+    });
+    
+    // 2. Testar com arquivo de verdade via FormData
+    console.log('\n🔍 STEP 2: Testando com arquivo real...');
+    
+    const FormData = (await import('form-data')).default;
+    const formData = new FormData();
+    
+    // Criar dados de áudio WebM simulados
+    const audioData = Buffer.from([
+      // WebM header simplificado
+      0x1A, 0x45, 0xDF, 0xA3,
+      ...Array(100).fill(0).map(() => Math.floor(Math.random() * 256))
+    ]);
+    
+    formData.append('file', audioData, {
+      filename: 'teste_fix.webm',
+      contentType: 'audio/webm;codecs=opus'
+    });
+    
+    console.log('📤 Enviando arquivo de teste...');
+    
+    const response = await fetch(`${API_BASE}/api/conversations/${CONVERSATION_ID}/upload-voice`, {
       method: 'POST',
-      body: form,
-      headers: {
-        ...form.getHeaders()
-      }
+      body: formData,
+      headers: formData.getHeaders()
     });
     
-    console.log('📊 RESPOSTA DA ROTA /upload-voice:');
-    console.log('Status:', response.status);
-    console.log('Status Text:', response.statusText);
+    console.log('📊 Response Status:', response.status);
     
-    const responseText = await response.text();
-    console.log('Body:', responseText);
-    
-    let result;
     try {
-      result = JSON.parse(responseText);
-      console.log('\n✅ RESULTADO ESTRUTURADO:');
-      console.log('- Success:', result.success);
-      console.log('- Message:', result.message);
-      console.log('- Message Type:', result.data?.message?.message_type);
-      console.log('- WhatsApp Sent:', result.data?.whatsapp?.sent);
-      console.log('- WhatsApp Error:', result.data?.whatsapp?.error);
+      const result = await response.json();
+      console.log('📋 Response Body:', JSON.stringify(result, null, 2));
+      
+      if (result.success) {
+        console.log('\n✅ SUCESSO TOTAL!');
+        console.log('  💾 Mensagem salva:', result.data?.message?.id);
+        console.log('  📎 Anexo criado:', result.data?.attachment?.id);
+        console.log('  📱 WhatsApp enviado:', result.data?.whatsapp?.sent);
+        
+        if (result.data?.whatsapp?.sent) {
+          console.log('  🎯 Evolution messageId:', result.data?.whatsapp?.messageId);
+          console.log('\n🎉 ÁUDIO FUNCIONOU COMPLETAMENTE!');
+        } else {
+          console.log('  ⚠️ WhatsApp Error:', result.data?.whatsapp?.error);
+          console.log('\n⚠️ Upload OK, WhatsApp com problema');
+        }
+      } else {
+        console.log('\n❌ FALHOU:', result.error);
+      }
+      
     } catch (parseError) {
-      console.error('❌ Erro ao parsear resposta:', parseError.message);
+      const text = await response.text();
+      console.log('📋 Response Text:', text);
     }
-    
-    // 3. Verificar registros no console do servidor
-    console.log('\n🔍 ETAPA 3: Validação dos logs...');
-    console.log('Verifique no console do servidor se apareceram:');
-    console.log('- 🎤 ROTA ISOLADA ÁUDIO GRAVADO ATIVADA');
-    console.log('- 🎤 BYPASS DIRETO - Payload /sendWhatsAppAudio');
-    console.log('- Uso do campo "audio" no payload (não "media")');
-    console.log('- Endpoint /sendWhatsAppAudio (não /sendMedia)');
-    
-    // 4. Resultado final
-    console.log('\n📋 RESUMO DO TESTE:');
-    if (response.status === 200 || response.status === 201) {
-      console.log('✅ Rota específica de áudio FUNCIONANDO');
-      
-      if (result?.data?.message?.message_type === 'audio_voice') {
-        console.log('✅ Tipo de mensagem correto: audio_voice');
-      } else {
-        console.log('❌ Tipo de mensagem incorreto:', result?.data?.message?.message_type);
-      }
-      
-      if (result?.success) {
-        console.log('✅ Upload processado com sucesso');
-      } else {
-        console.log('⚠️ Upload processado com avisos');
-      }
-    } else {
-      console.log('❌ Falha na rota específica de áudio');
-      console.log('Status:', response.status);
-      console.log('Resposta:', responseText);
-    }
-    
-    console.log('\n🎯 PONTOS CRÍTICOS A VERIFICAR:');
-    console.log('1. Logs devem mostrar uso de /sendWhatsAppAudio (não /sendMedia)');
-    console.log('2. Payload deve ter campo "audio" (não "media")');
-    console.log('3. message_type deve ser "audio_voice"');
-    console.log('4. Rota específica deve ser executada, não a genérica');
     
   } catch (error) {
-    console.error('❌ ERRO NO TESTE:', error.message);
-    console.error('Stack:', error.stack);
+    console.log('\n❌ ERRO GERAL:', error.message);
   }
 }
 
-// Executar teste
 testAudioVoiceFix();
