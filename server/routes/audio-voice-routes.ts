@@ -137,18 +137,29 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
         const phoneNumber = conversation.contact.phone.replace(/\D/g, '');
         
         console.log('📞 Phone number formatted:', phoneNumber);
-        console.log('🔗 Audio URL:', storageResult.signed_url);
+        console.log('🔄 Converting Supabase file to base64 for Evolution API access...');
+        
+        // SOLUÇÃO: Evolution API não pode acessar URLs do Supabase, converter para base64
+        const audioResponse = await fetch(storageResult.signed_url);
+        if (!audioResponse.ok) {
+          throw new Error(`Failed to fetch audio from Supabase: ${audioResponse.status}`);
+        }
+        const audioBuffer = await audioResponse.arrayBuffer();
+        const base64Audio = Buffer.from(audioBuffer).toString('base64');
+        const audioBase64 = `data:${req.file.mimetype};base64,${base64Audio}`;
+        
+        console.log('✅ Audio converted to base64, size:', audioBase64.length);
         
         // Usando endpoint /sendWhatsAppAudio que funcionou nos testes diretos
         const whatsappPayload = {
           number: phoneNumber,
-          audio: storageResult.signed_url,
+          audio: audioBase64,
           delay: 1000
         };
         
         console.log('🎤 USANDO /sendWhatsAppAudio - Payload:', {
           number: whatsappPayload.number,
-          audio: whatsappPayload.audio,
+          audio: whatsappPayload.audio.substring(0, 50) + '...[base64 truncated]',
           delay: whatsappPayload.delay
         });
         console.log('🎤 URL:', `${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`);
