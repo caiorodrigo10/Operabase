@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
+import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft, X, Brain } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,7 @@ export default function ColecaoDetalhe() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
+  const [isProcessingEmbeddings, setIsProcessingEmbeddings] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -449,6 +450,42 @@ export default function ColecaoDetalhe() {
     }
   };
 
+  // Função para processar embeddings
+  const processEmbeddings = async () => {
+    setIsProcessingEmbeddings(true);
+    try {
+      const response = await fetch('/api/rag/documents/process-embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao processar embeddings');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Embeddings Processados",
+        description: result.message,
+      });
+      
+      // Invalidar cache para atualizar a lista
+      queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao processar embeddings",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingEmbeddings(false);
+    }
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "text":
@@ -511,10 +548,29 @@ export default function ColecaoDetalhe() {
             <h1 className="text-2xl font-bold text-gray-900">{collectionData.name}</h1>
             <p className="text-gray-600">{collectionData.description}</p>
           </div>
-          <Button onClick={handleOpenAddModal}>
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Conhecimento
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => processEmbeddings()}
+              disabled={isProcessingEmbeddings}
+            >
+              {isProcessingEmbeddings ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Processando Embeddings...
+                </>
+              ) : (
+                <>
+                  <Brain className="h-4 w-4 mr-2" />
+                  Processar Embeddings
+                </>
+              )}
+            </Button>
+            <Button onClick={handleOpenAddModal}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Conhecimento
+            </Button>
+          </div>
         </div>
       </div>
 

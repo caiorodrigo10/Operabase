@@ -663,6 +663,7 @@ router.post('/documents/process-embeddings', ragAuth, async (req: Request, res: 
       try {
         console.log(`🤖 RAG: Processando embedding para documento ${doc.id}...`);
         
+        const docContent = (doc as any).content || '';
         const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
           method: 'POST',
           headers: {
@@ -670,7 +671,7 @@ router.post('/documents/process-embeddings', ragAuth, async (req: Request, res: 
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            input: doc.content.substring(0, 8000),
+            input: docContent.substring(0, 8000),
             model: 'text-embedding-ada-002'
           })
         });
