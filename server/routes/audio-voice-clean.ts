@@ -235,21 +235,36 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
           return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
         };
         
-        const payload = {
+        // Download file from Supabase and convert to base64 for Evolution API
+        console.log('📥 ÁUDIO LIMPO: Baixando arquivo do Supabase para base64...');
+        const response = await fetch(publicUrl.signedUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download audio file: ${response.status}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64Audio = buffer.toString('base64');
+        
+        console.log('✅ ÁUDIO LIMPO: Arquivo convertido para base64:', {
+          originalSize: buffer.length,
+          base64Length: base64Audio.length
+        });
+
+        const audioPayload = {
           number: conversationDetail.contact.phone,
-          mediatype: 'audio' as const,
-          mimetype: getMimeType('audio'),
-          media: publicUrl.signedUrl, // URL pública temporária acessível externamente
-          fileName: req.file.originalname,
-          caption: 'Mensagem de voz',
-          delay: 1000,
-          presence: 'recording' as const
+          audio: base64Audio, // Base64 encoded audio for better Evolution API compatibility
+          delay: 1000
         };
         
-        console.log('🔍 ÁUDIO LIMPO: Payload completo (Evolution V2):', JSON.stringify(payload, null, 2));
-        console.log('🔍 ÁUDIO LIMPO: Chamando sendMedia...');
+        console.log('🔍 ÁUDIO LIMPO: Payload de áudio (sendWhatsAppAudio):', {
+          number: audioPayload.number,
+          audioLength: audioPayload.audio.length,
+          delay: audioPayload.delay
+        });
+        console.log('🔍 ÁUDIO LIMPO: Chamando sendWhatsAppAudio...');
         
-        const whatsappResult = await evolutionService.sendMedia(activeInstance.instance_name, payload);
+        const whatsappResult = await evolutionService.sendWhatsAppAudio(activeInstance.instance_name, audioPayload);
         
         console.log('✅ ÁUDIO LIMPO: Evolution API - Sucesso!');
         console.log('📨 ÁUDIO LIMPO: MessageId:', whatsappResult.messageId);

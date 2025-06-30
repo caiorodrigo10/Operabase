@@ -9,6 +9,23 @@ interface EvolutionMediaPayload {
   presence?: 'composing' | 'recording';
 }
 
+interface EvolutionAudioPayload {
+  number: string;
+  audio: string;
+  delay?: number;
+  linkPreview?: boolean;
+  mentionsEveryOne?: boolean;
+  mentioned?: string[];
+  quoted?: {
+    key: {
+      remoteJid: string;
+      fromMe: boolean;
+      id: string;
+    };
+    message: any;
+  };
+}
+
 interface EvolutionResponse {
   key?: {
     id: string;
@@ -74,6 +91,52 @@ export class EvolutionAPIService {
 
     } catch (error) {
       console.error('❌ Evolution API request failed:', error);
+      throw error;
+    }
+  }
+
+  async sendWhatsAppAudio(instanceId: string, payload: EvolutionAudioPayload): Promise<EvolutionResponse> {
+    if (!this.baseUrl || !this.apiKey) {
+      throw new Error('Evolution API not configured');
+    }
+
+    console.log(`🎤 Sending WhatsApp audio via Evolution API to instance ${instanceId}:`);
+    console.log('🎤 Audio payload received:', JSON.stringify(payload, null, 2));
+    console.log('🎤 Audio payload details:', {
+      hasNumber: !!payload?.number,
+      number: payload?.number,
+      hasAudio: !!payload?.audio,
+      audioLength: payload?.audio?.length || 0,
+      delay: payload?.delay
+    });
+
+    try {
+      const response = await fetch(`${this.baseUrl}/message/sendWhatsAppAudio/${instanceId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': this.apiKey
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Evolution API audio error ${response.status}:`, errorText);
+        throw new Error(`Evolution API audio error: ${response.status} - ${errorText}`);
+      }
+
+      const result: EvolutionResponse = await response.json();
+      console.log('✅ Evolution API audio response:', {
+        messageId: result.key?.id,
+        status: result.status,
+        messageTimestamp: result.messageTimestamp
+      });
+
+      return result;
+
+    } catch (error) {
+      console.error('❌ Evolution API audio request failed:', error);
       throw error;
     }
   }
