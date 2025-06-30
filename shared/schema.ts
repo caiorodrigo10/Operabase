@@ -328,19 +328,11 @@ export type InsertMaraProfessionalConfig = z.infer<typeof insertMaraProfessional
 
 // Tabela documents oficial LangChain/Supabase
 export const documents = pgTable("documents", {
-  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey(),
   content: text("content"), // corresponds to Document.pageContent
   metadata: jsonb("metadata"), // corresponds to Document.metadata (multi-tenant: clinic_id, knowledge_base_id, etc)
   embedding: vector("embedding", { dimensions: 1536 }), // 1536 works for OpenAI embeddings
-}, (table) => [
-  // Índice vetorial HNSW para busca semântica (oficial LangChain)
-  index("idx_documents_embedding").on(table.embedding),
-  // Índices para metadata multi-tenant
-  index("idx_documents_clinic_id").on(sql`((metadata->>'clinic_id')::integer)`),
-  index("idx_documents_knowledge_base_id").on(sql`((metadata->>'knowledge_base_id')::integer)`),
-  // Índice GIN para metadata geral
-  index("idx_documents_metadata").on(table.metadata),
-]);
+});
 
 // Zod schemas for documents table
 export const insertDocumentSchema = createInsertSchema(documents).omit({
@@ -365,19 +357,7 @@ export const selectDocumentSchema = z.object({
 
 // Types for documents table
 export type Document = typeof documents.$inferSelect;
-export type InsertRagKnowledgeBase = z.infer<typeof insertRagKnowledgeBaseSchema>;
-
-export type RagDocument = typeof rag_documents.$inferSelect;
-export type InsertRagDocument = z.infer<typeof insertRagDocumentSchema>;
-
-export type RagChunk = typeof rag_chunks.$inferSelect;
-export type InsertRagChunk = z.infer<typeof insertRagChunkSchema>;
-
-export type RagEmbedding = typeof rag_embeddings.$inferSelect;
-export type InsertRagEmbedding = z.infer<typeof insertRagEmbeddingSchema>;
-
-export type RagQuery = typeof rag_queries.$inferSelect;
-export type InsertRagQuery = z.infer<typeof insertRagQuerySchema>;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 
 // ================================================================
 // SYSTEM LOGS - CENTRALIZED AUDIT TRAIL (PHASE 1)

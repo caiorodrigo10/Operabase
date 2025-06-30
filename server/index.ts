@@ -411,8 +411,8 @@ app.use((req, res, next) => {
   const whatsappRoutes = await import('./whatsapp-routes');
   app.use(whatsappRoutes.default);
   
-  // Add RAG routes (after auth setup is complete)
-  const ragRoutes = await import('./rag-routes');
+  // Add RAG routes (after auth setup is complete) - OFICIAL LANGCHAIN/SUPABASE
+  const ragRoutes = await import('./rag-routes-official');
   app.use('/api/rag', ragRoutes.default);
   
   // Add System Logs routes
