@@ -90,6 +90,11 @@ app.use((req, res, next) => {
   setupUploadRoutes(app, storage);
   console.log('✅ Upload routes registered BEFORE middleware chain');
   
+  // Setup profile picture routes
+  const profilePictureRoutes = await import('./routes/profile-picture-routes');
+  app.use('/api/user', profilePictureRoutes.default);
+  console.log('📸 Profile picture routes registered');
+  
   // BYPASS TOTAL DE MIDDLEWARE PARA UPLOADS - SOLUÇÃO DEFINITIVA
   app.use('/api/conversations/:id/upload', (req: any, res: any, next: any) => {
     console.log('🔥 BYPASS MIDDLEWARE - Upload detectado, pulando TODA autenticação');
