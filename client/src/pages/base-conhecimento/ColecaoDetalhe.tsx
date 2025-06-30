@@ -95,29 +95,31 @@ export default function ColecaoDetalhe() {
 
   // Query para buscar documentos da base de conhecimento
   const { data: documents = [], isLoading: isLoadingDocs } = useQuery({
-    queryKey: ['/api/rag/documents', knowledgeBase?.name],
+    queryKey: ['/api/rag/documents', collectionId],
     queryFn: async () => {
       const response = await fetch('/api/rag/documents');
       if (!response.ok) {
         throw new Error('Falha ao carregar documentos');
       }
-      const allDocuments = await response.json() as RAGDocument[];
+      const result = await response.json();
+      const allDocuments = result.data || [];
       
+      console.log('🔍 Frontend Debug: API Response:', result);
       console.log('🔍 Frontend Debug: All documents received:', allDocuments.length);
-      console.log('🔍 Frontend Debug: Looking for knowledge_base name:', knowledgeBase?.name);
+      console.log('🔍 Frontend Debug: Looking for knowledge_base_id:', collectionId);
       
-      // Filtrar documentos que pertencem a esta base de conhecimento usando metadata
-      const filteredDocs = allDocuments.filter(doc => {
-        const kbNameInMetadata = doc.metadata?.knowledge_base;
-        const matches = kbNameInMetadata === knowledgeBase?.name;
-        console.log(`📄 Document ${doc.id}: metadata.knowledge_base="${kbNameInMetadata}", looking for="${knowledgeBase?.name}", matches=${matches}`);
+      // Filtrar documentos que pertencem a esta base de conhecimento usando knowledge_base_id
+      const filteredDocs = allDocuments.filter((doc: any) => {
+        const kbIdInDoc = doc.knowledge_base_id?.toString();
+        const matches = kbIdInDoc === collectionId;
+        console.log(`📄 Document ${doc.id}: knowledge_base_id="${kbIdInDoc}", looking for="${collectionId}", matches=${matches}`);
         return matches;
       });
       
       console.log('✅ Frontend Debug: Filtered documents:', filteredDocs.length);
       return filteredDocs;
     },
-    enabled: !!knowledgeBase?.name
+    enabled: !!collectionId
   });
 
   const isLoading = isLoadingKB || isLoadingDocs;
@@ -332,7 +334,7 @@ export default function ColecaoDetalhe() {
 
         // Upload do PDF usando FormData
         const formData = new FormData();
-        formData.append('knowledge_base_id', collectionId); // CORRIGIDO: usar ID em vez de nome
+        formData.append('knowledge_base_id', collectionId!); // Non-null assertion já que collectionId é validado
         formData.append('title', selectedFiles[0].name.replace(/\.pdf$/i, ''));
         formData.append('file', selectedFiles[0]);
 

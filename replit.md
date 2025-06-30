@@ -225,6 +225,8 @@ The Operabase platform implements a sophisticated **modular page architecture** 
   - ✅ Busca Semântica: busca por texto operacional (POST /api/rag/search)
   - ✅ Listagem: documentos por base funcionando (GET /api/rag/documents)
 - **Upload PDF Restaurado**: Sistema de upload de PDF totalmente funcional com multer e validação
+- **Problema de Listagem Corrigido**: PDF agora aparece corretamente na interface após upload
+- **Logs Detalhados**: Sistema possui logs completos para debugging de uploads e listagem
 - **Zero Impact**: Migração não afeta outras funcionalidades do sistema
 - **Limpeza Completa**: Sistema RAG antigo removido completamente, estrutura oficial implementada
 - **Performance Preservada**: Índices otimizados mantêm performance de busca semântica
