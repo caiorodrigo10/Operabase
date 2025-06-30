@@ -95,10 +95,10 @@ app.use((req, res, next) => {
   app.use('/api/user', profilePictureRoutes.default);
   console.log('📸 Profile picture routes registered');
   
-  // Setup audio voice routes
-  const { setupAudioVoiceRoutes } = await import('./routes/audio-voice-routes');
-  setupAudioVoiceRoutes(app, storage);
-  console.log('🎤 Audio voice routes registered');
+  // Setup audio voice routes - REMOVIDO PARA EVITAR CONFLITO
+  // const { setupAudioVoiceRoutes } = await import('./routes/audio-voice-routes');
+  // setupAudioVoiceRoutes(app, storage);
+  // console.log('🎤 Audio voice routes registered');
   
   // BYPASS TOTAL DE MIDDLEWARE PARA UPLOADS - SOLUÇÃO DEFINITIVA
   app.use('/api/conversations/:id/upload', (req: any, res: any, next: any) => {
