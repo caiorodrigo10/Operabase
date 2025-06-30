@@ -149,21 +149,23 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
         
         console.log('✅ Audio converted to base64, size:', base64Audio.length);
         
-        // Usando endpoint /sendWhatsAppAudio - base64 SEM prefixo conforme documentação
+        // SOLUÇÃO: Usar /sendMedia que já funciona no sistema existente
         const whatsappPayload = {
           number: phoneNumber,
-          audio: base64Audio, // SEM o prefixo data:audio/webm;base64,
+          media: base64Audio, // Campo 'media' como no sistema existente
+          mediatype: 'audio', // Especifica que é áudio
           delay: 1000
         };
         
-        console.log('🎤 USANDO /sendWhatsAppAudio - Payload:', {
+        console.log('🎤 USANDO /sendMedia (SOLUÇÃO TESTADA) - Payload:', {
           number: whatsappPayload.number,
-          audio: whatsappPayload.audio.substring(0, 50) + '...[base64 truncated]',
+          media: whatsappPayload.media.substring(0, 50) + '...[base64 truncated]',
+          mediatype: whatsappPayload.mediatype,
           delay: whatsappPayload.delay
         });
-        console.log('🎤 URL:', `${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`);
+        console.log('🎤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
         
-        const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`, {
+        const response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
