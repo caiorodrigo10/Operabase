@@ -489,7 +489,15 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: any, res: Response) =
 
     console.log(`📊 Found ${documents.length} documents to delete`);
 
-    // Deletar arquivos físicos se existirem
+    // 1. Primeiro remover referências da tabela mara_professional_configs
+    console.log(`🔍 Removing Mara config references for knowledge base ID: ${knowledgeBase.id}`);
+    await db.execute(sql`
+      DELETE FROM mara_professional_configs 
+      WHERE knowledge_base_id = ${knowledgeBase.id}
+    `);
+    console.log(`✅ Mara config references removed`);
+
+    // 2. Deletar arquivos físicos se existirem
     for (const document of documents) {
       if (document.content_type === 'pdf' && document.file_path) {
         try {
@@ -503,14 +511,14 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: any, res: Response) =
       }
     }
 
-    // Deletar todos os documentos encontrados
+    // 3. Deletar todos os documentos encontrados
     for (const document of documents) {
       await db
         .delete(rag_documents)
         .where(eq(rag_documents.id, document.id));
     }
 
-    // Deletar a base de conhecimento
+    // 4. Deletar a base de conhecimento
     await db
       .delete(rag_knowledge_bases)
       .where(eq(rag_knowledge_bases.id, knowledgeBase.id));
