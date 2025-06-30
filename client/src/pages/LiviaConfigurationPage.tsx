@@ -69,6 +69,7 @@ export default function LiviaConfigurationPage() {
 
   const handleSave = async () => {
     const configData = {
+      clinic_id: 1, // Adicionar clinic_id obrigatório
       general_prompt: generalPrompt,
       whatsapp_number_id: whatsappNumberId && whatsappNumberId !== 'none' ? parseInt(whatsappNumberId) : null,
       off_duration: offDuration,
@@ -374,11 +375,36 @@ export default function LiviaConfigurationPage() {
                   </div>
                   <Switch
                     checked={connectedKnowledgeBaseIds.includes(kb.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setConnectedKnowledgeBaseIds([...connectedKnowledgeBaseIds, kb.id]);
-                      } else {
-                        setConnectedKnowledgeBaseIds(connectedKnowledgeBaseIds.filter(id => id !== kb.id));
+                    onCheckedChange={async (checked) => {
+                      const newConnectedIds = checked 
+                        ? [...connectedKnowledgeBaseIds, kb.id]
+                        : connectedKnowledgeBaseIds.filter(id => id !== kb.id);
+                      
+                      setConnectedKnowledgeBaseIds(newConnectedIds);
+                      
+                      // Auto-salvar quando alterar bases de conhecimento
+                      const configData = {
+                        clinic_id: 1, // Adicionar clinic_id obrigatório
+                        general_prompt: generalPrompt,
+                        whatsapp_number_id: whatsappNumberId && whatsappNumberId !== 'none' ? parseInt(whatsappNumberId) : null,
+                        off_duration: offDuration,
+                        off_unit: offUnit,
+                        selected_professional_ids: selectedProfessionalIds,
+                        connected_knowledge_base_ids: newConnectedIds,
+                        is_active: isActive,
+                      };
+
+                      try {
+                        if (config?.id) {
+                          await updateMutation.mutateAsync(configData);
+                        } else {
+                          await createMutation.mutateAsync(configData);
+                        }
+                        refetchConfig();
+                      } catch (error) {
+                        console.error('Error auto-saving configuration:', error);
+                        // Reverter mudança se falhar
+                        setConnectedKnowledgeBaseIds(connectedKnowledgeBaseIds);
                       }
                     }}
                     className="data-[state=checked]:bg-emerald-600"
