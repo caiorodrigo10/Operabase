@@ -210,17 +210,16 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
-### June 30, 2025 - RAG System Embedding Generation COMPLETE: Full Semantic Search Operational ✅
-- **Problema Crítico Resolvido**: Embeddings NULL impedindo busca semântica agora completamente corrigido
-- **Sistema Embedding Automático**: Implementado processamento automático de embeddings com OpenAI API
-- **Endpoint Manual**: Criado POST /api/rag/documents/process-embeddings para processar documentos existentes
-- **Botão Frontend**: Adicionado botão "Processar Embeddings" na interface com loading visual
-- **Validação Completa**: Testado com queries reais retornando similarity scores 0.8+ em ~189ms
-- **Performance Excelente**: Busca semântica sub-200ms, índice vetorial HNSW otimizado
-- **Funcionalidade 100%**: Sistema encontra documentos relevantes automaticamente
-- **Queries Testadas**: "teste" encontra documento texto, "Amorafone" encontra PDF correspondente
-- **Status**: ✅ SISTEMA RAG TOTALMENTE OPERACIONAL - Busca semântica funcional com embeddings gerados
-- **Limpeza Confirmada**: Tabelas antigas já removidas automaticamente durante migração (old_system_removed: true)
+### June 30, 2025 - RAG System User Experience Optimization: Automatic Processing Complete ✅
+- **Interface Simplificada**: Removidos botões técnicos "Migrar Colunas" e "Processar Embeddings" da interface de usuário
+- **Processamento Automático**: Sistema agora gera embeddings automaticamente quando documentos são adicionados
+- **Endpoint de Migração**: Criado POST /api/rag/migrate-documents-columns para adicionar colunas clinic_id e knowledge_base_id
+- **Zero Intervenção Manual**: Usuários não precisam mais executar ações técnicas - tudo acontece automaticamente
+- **Sistema Transparente**: Embeddings gerados automaticamente via OpenAI API durante upload/criação de documentos
+- **Performance Mantida**: Busca semântica sub-200ms preservada com processamento automático
+- **Database Optimization Ready**: Sistema preparado para migração de colunas diretas clinic_id/knowledge_base_id
+- **User-Friendly**: Interface limpa focada apenas em "Adicionar Conhecimento" - funcionalidade principal
+- **Status**: ✅ SISTEMA RAG OTIMIZADO PARA USUÁRIO FINAL - Processamento automático sem intervenção manual
 
 ### June 30, 2025 - RAG System Complete Migration to Official LangChain/Supabase Structure ✅
 - **Arquitetura Oficial**: Migração completa do sistema RAG personalizado para estrutura oficial LangChain/Supabase

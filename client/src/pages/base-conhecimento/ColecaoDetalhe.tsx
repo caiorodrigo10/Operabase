@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft, X, Brain, Database } from "lucide-react";
+import { Search, Filter, FileText, ExternalLink, Upload, Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,8 +58,7 @@ export default function ColecaoDetalhe() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
-  const [isProcessingEmbeddings, setIsProcessingEmbeddings] = useState(false);
-  const [isMigratingColumns, setIsMigratingColumns] = useState(false);
+
 
   const queryClient = useQueryClient();
 
@@ -451,80 +450,7 @@ export default function ColecaoDetalhe() {
     }
   };
 
-  // Função para processar embeddings
-  const processEmbeddings = async () => {
-    setIsProcessingEmbeddings(true);
-    try {
-      const response = await fetch('/api/rag/documents/process-embeddings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (!response.ok) {
-        throw new Error('Falha ao processar embeddings');
-      }
-
-      const result = await response.json();
-      
-      toast({
-        title: "Embeddings Processados",
-        description: result.message,
-      });
-      
-      // Invalidar cache para atualizar a lista
-      queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
-      
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao processar embeddings",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessingEmbeddings(false);
-    }
-  };
-
-  // Função para migrar colunas da tabela documents
-  const migrateDocumentsColumns = async () => {
-    setIsMigratingColumns(true);
-    try {
-      const response = await fetch('/api/rag/migrate-documents-columns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha na migração das colunas');
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        const stats = result.data.statistics;
-        toast({
-          title: "Migração Concluída",
-          description: `Total: ${stats.total_documents} docs | clinic_id: ${stats.documents_with_clinic_id} | knowledge_base_id: ${stats.documents_with_knowledge_base_id}`,
-        });
-        
-        // Recarregar dados
-        queryClient.invalidateQueries({ queryKey: ['/api/rag/knowledge-bases'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
-      } else {
-        throw new Error(result.error || 'Erro na migração');
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha na migração: " + String(error),
-        variant: "destructive"
-      });
-    } finally {
-      setIsMigratingColumns(false);
-    }
-  };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -589,40 +515,6 @@ export default function ColecaoDetalhe() {
             <p className="text-gray-600">{collectionData.description}</p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => migrateDocumentsColumns()}
-              disabled={isMigratingColumns}
-            >
-              {isMigratingColumns ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
-                  Migrando Colunas...
-                </>
-              ) : (
-                <>
-                  <Database className="h-4 w-4 mr-2" />
-                  Migrar Colunas
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => processEmbeddings()}
-              disabled={isProcessingEmbeddings}
-            >
-              {isProcessingEmbeddings ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  Processando Embeddings...
-                </>
-              ) : (
-                <>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Processar Embeddings
-                </>
-              )}
-            </Button>
             <Button onClick={handleOpenAddModal}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Conhecimento
