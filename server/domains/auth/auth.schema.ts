@@ -10,7 +10,7 @@ export const users = pgTable("users", {
   password: varchar("password").notNull(),
   name: varchar("name").notNull(),
   role: varchar("role").notNull().default("admin"), // super_admin, admin, manager, user
-  profile_picture: text("profile_picture"), // URL da imagem de perfil no Supabase Storage
+  // profile_picture: text("profile_picture"), // TEMPORARIAMENTE COMENTADO - coluna não existe no banco
   is_active: boolean("is_active").notNull().default(true),
   last_login: timestamp("last_login"),
   created_at: timestamp("created_at").defaultNow(),
