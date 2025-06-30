@@ -487,6 +487,45 @@ export default function ColecaoDetalhe() {
     }
   };
 
+  // Função para migrar colunas da tabela documents
+  const migrateDocumentsColumns = async () => {
+    setIsMigratingColumns(true);
+    try {
+      const response = await fetch('/api/rag/migrate-documents-columns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha na migração das colunas');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        const stats = result.data.statistics;
+        toast({
+          title: "Migração Concluída",
+          description: `Total: ${stats.total_documents} docs | clinic_id: ${stats.documents_with_clinic_id} | knowledge_base_id: ${stats.documents_with_knowledge_base_id}`,
+        });
+        
+        // Recarregar dados
+        queryClient.invalidateQueries({ queryKey: ['/api/rag/knowledge-bases'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
+      } else {
+        throw new Error(result.error || 'Erro na migração');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha na migração: " + String(error),
+        variant: "destructive"
+      });
+    } finally {
+      setIsMigratingColumns(false);
+    }
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "text":
