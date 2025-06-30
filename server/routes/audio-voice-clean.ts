@@ -240,7 +240,7 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
           mediatype: 'audio' as const,
           mimetype: getMimeType('audio'),
           media: publicUrl.signedUrl, // URL pública temporária acessível externamente
-          fileName: file.originalname,
+          fileName: req.file.originalname,
           caption: 'Mensagem de voz',
           delay: 1000,
           presence: 'recording' as const
