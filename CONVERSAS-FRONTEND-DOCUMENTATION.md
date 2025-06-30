@@ -1646,6 +1646,376 @@ useEffect(() => {
 
 ---
 
+## WhatsApp Audio Recording + AI Transcription System
+
+### Overview
+
+O sistema de gravação de áudio integra perfeitamente com WhatsApp e IA, proporcionando uma experiência completa de comunicação por voz com memória automática para a assistente virtual.
+
+### Technical Architecture
+
+#### Frontend Components
+
+```typescript
+// MainConversationArea.tsx - Integração do gravador
+const MainConversationArea = () => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  
+  // Modal de gravação com interface intuitiva
+  const AudioRecorderModal = () => (
+    <Dialog open={showAudioRecorder} onOpenChange={setShowAudioRecorder}>
+      <DialogContent className="audio-recorder-dialog">
+        <AudioRecorder 
+          onRecordingComplete={handleAudioRecordingComplete}
+          onCancel={() => setShowAudioRecorder(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
+```
+
+#### Audio Recording Hook
+
+```typescript
+// useAudioRecorder.ts - Lógica de gravação
+export const useAudioRecorder = () => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        setAudioBlob(event.data);
+      }
+    };
+    
+    recorder.start();
+    setMediaRecorder(recorder);
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+    }
+  };
+
+  return { isRecording, audioBlob, startRecording, stopRecording };
+};
+```
+
+### Backend Implementation
+
+#### 1. Audio Upload Route (Isolated)
+
+```typescript
+// server/routes/audio-voice-clean.ts
+router.post('/api/audio/voice-message/:conversationId', async (req, res) => {
+  try {
+    // 1. Upload do áudio para Supabase Storage
+    const fileBuffer = req.file.buffer;
+    const fileName = `voice_${Date.now()}_${req.file.originalname}`;
+    const filePath = `clinic-${clinicId}/conversation-${conversationId}/audio/${fileName}`;
+    
+    const { data: uploadData } = await supabase.storage
+      .from('conversation-attachments')
+      .upload(filePath, fileBuffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    // 2. Salvar mensagem no banco
+    const message = await db.insert(messages).values({
+      conversation_id: conversationId,
+      sender_type: 'professional',
+      content: 'Mensagem de voz',
+      ai_action: 'voice_upload',
+      message_type: 'audio_voice',
+      device_type: 'manual'
+    }).returning();
+
+    // 3. Salvar anexo
+    const attachment = await db.insert(messageAttachments).values({
+      message_id: message[0].id,
+      clinic_id: clinicId,
+      file_name: req.file.originalname,
+      file_type: req.file.mimetype,
+      file_size: req.file.size,
+      file_url: signedUrl
+    }).returning();
+
+    // 4. Conversão Base64 para Evolution API
+    const { data: fileData } = await supabase.storage
+      .from('conversation-attachments')
+      .download(filePath);
+    
+    const base64Audio = Buffer.from(await fileData.arrayBuffer()).toString('base64');
+
+    // 5. Enviar para WhatsApp via Evolution API
+    const whatsappResponse = await evolutionApiService.sendWhatsAppAudio({
+      number: contact.phone,
+      media: base64Audio,
+      filename: req.file.originalname,
+      caption: ''
+    });
+
+    // 6. Background: Transcrição + Memória IA
+    setImmediate(async () => {
+      try {
+        const transcribedText = await transcriptionService.transcribeAudio(fileBuffer);
+        await saveToN8NTable(conversationId, transcribedText, 'human');
+        console.log('🎯 TRANSCRIÇÃO: Áudio transcrito e salvo para IA:', transcribedText.substring(0, 100));
+      } catch (transcriptionError) {
+        console.error('❌ TRANSCRIÇÃO: Erro:', transcriptionError.message);
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { message: message[0], attachment: attachment[0] }
+    });
+
+  } catch (error) {
+    console.error('❌ ÁUDIO: Erro no upload:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+```
+
+#### 2. OpenAI Whisper Transcription Service
+
+```typescript
+// server/services/transcription.service.ts
+import OpenAI from 'openai';
+
+export class TranscriptionService {
+  private openai: OpenAI;
+
+  constructor() {
+    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    this.openai = new OpenAI({ 
+      apiKey: process.env.OPENAI_API_KEY 
+    });
+  }
+
+  async transcribeAudio(audioBuffer: Buffer): Promise<string> {
+    try {
+      console.log('🎤 WHISPER: Iniciando transcrição do áudio...');
+      
+      // Criar arquivo temporário em memória para Whisper
+      const audioFile = new File([audioBuffer], 'audio.webm', {
+        type: 'audio/webm'
+      });
+
+      // Usar OpenAI Whisper para transcrever
+      const transcription = await this.openai.audio.transcriptions.create({
+        file: audioFile as any,
+        model: 'whisper-1',
+        language: 'pt' // Português brasileiro
+      });
+
+      const transcribedText = transcription.text.trim();
+      console.log('✅ WHISPER: Transcrição concluída:', transcribedText.substring(0, 100));
+      
+      return transcribedText;
+
+    } catch (error) {
+      console.error('❌ WHISPER: Erro na transcrição:', error);
+      throw new Error(`Falha na transcrição: ${error.message}`);
+    }
+  }
+}
+```
+
+#### 3. N8N Integration for AI Memory
+
+```typescript
+// server/utils/n8n-integration.ts
+import { db } from '../storage.js';
+import { n8nChatMessages } from '../../shared/schema.js';
+
+export async function saveToN8NTable(
+  conversationId: string, 
+  content: string, 
+  type: 'human' | 'ai' = 'human'
+): Promise<void> {
+  try {
+    // 1. Buscar dados da conversa
+    const conversation = await db.query.conversations.findFirst({
+      where: eq(conversations.id, conversationId),
+      with: {
+        contacts: true,
+        whatsapp_numbers: true
+      }
+    });
+
+    if (!conversation) {
+      throw new Error(`Conversa não encontrada: ${conversationId}`);
+    }
+
+    // 2. Construir session_id no formato esperado
+    const contactPhone = conversation.contacts.phone.replace(/\D/g, '');
+    const clinicPhone = conversation.whatsapp_numbers?.phone?.replace(/\D/g, '') || '551150391104';
+    const sessionId = `${contactPhone}-${clinicPhone}`;
+
+    // 3. Salvar na tabela n8n_chat_messages
+    await db.insert(n8nChatMessages).values({
+      session_id: sessionId,
+      type: type,
+      content: content,
+      additional_kwargs: JSON.stringify({}),
+      response_metadata: JSON.stringify({})
+    });
+
+    console.log(`✅ N8N: Mensagem salva - Session: ${sessionId}, Type: ${type}, Content: ${content.substring(0, 50)}...`);
+
+  } catch (error) {
+    console.error('❌ N8N: Erro ao salvar mensagem:', error);
+    throw error;
+  }
+}
+```
+
+### Data Flow Architecture
+
+```mermaid
+sequenceDiagram
+    participant U as User (Professional)
+    participant F as Frontend
+    participant B as Backend
+    participant S as Supabase Storage
+    participant E as Evolution API
+    participant W as OpenAI Whisper
+    participant N as N8N Table
+    participant P as Patient WhatsApp
+
+    U->>F: Clica em gravar áudio
+    F->>F: useAudioRecorder hook ativa
+    U->>F: Grava áudio (WebRTC)
+    F->>F: MediaRecorder gera Blob
+    U->>F: Confirma envio
+    F->>B: POST /api/audio/voice-message/:id
+    
+    B->>S: Upload áudio (Supabase Storage)
+    S-->>B: URL do arquivo
+    B->>B: Salva mensagem (audio_voice)
+    B->>B: Salva attachment
+    
+    B->>S: Download para base64
+    S-->>B: Buffer do áudio
+    B->>E: sendWhatsAppAudio (base64)
+    E-->>P: Entrega mensagem de voz
+    E-->>B: MessageID + Status
+    
+    B->>F: Resposta (201 + dados)
+    F->>F: Atualiza timeline
+    
+    par Background Processing
+        B->>W: Transcreve áudio (Whisper)
+        W-->>B: Texto transcrito
+        B->>N: Salva na n8n_chat_messages
+        N-->>B: Confirmação
+    end
+```
+
+### Key Features
+
+#### 1. **Dual Delivery System**
+- **WhatsApp**: Áudio enviado como mensagem de voz via Evolution API
+- **AI Memory**: Texto transcrito salvo para contexto da IA
+
+#### 2. **Background Processing**
+```typescript
+// Processamento não-bloqueante
+setImmediate(async () => {
+  const transcribedText = await transcriptionService.transcribeAudio(fileBuffer);
+  await saveToN8NTable(conversationId, transcribedText, 'human');
+});
+```
+
+#### 3. **Session ID Format**
+```typescript
+// Formato: "TELEFONE_CONTATO-TELEFONE_CLINICA"
+const sessionId = `${contactPhone}-${clinicPhone}`;
+// Exemplo: "559887694034-551150391104"
+```
+
+#### 4. **Storage Organization**
+```
+supabase-storage/
+└── conversation-attachments/
+    └── clinic-1/
+        └── conversation-5511965860124551150391104/
+            └── audio/
+                └── voice_1751307883062_gravacao_1751307882083.webm
+```
+
+### Performance Optimizations
+
+#### 1. **Non-blocking Transcription**
+- Transcrição roda em background com `setImmediate()`
+- WhatsApp delivery não é afetado pela velocidade da IA
+- Falhas de transcrição não quebram o envio principal
+
+#### 2. **Base64 Conversion**
+- Solução para URLs do Supabase não acessíveis externamente
+- Evolution API recebe áudio em formato compatível
+- Processo otimizado para arquivos pequenos (< 10MB)
+
+#### 3. **Error Isolation**
+```typescript
+try {
+  // WhatsApp delivery (crítico)
+  await evolutionApiService.sendWhatsAppAudio(payload);
+} catch (error) {
+  // Falha crítica - retorna erro
+  throw error;
+}
+
+try {
+  // AI transcription (não-crítico)
+  await transcriptionService.transcribeAudio(buffer);
+} catch (error) {
+  // Falha não-crítica - apenas log
+  console.error('Transcrição falhou:', error);
+}
+```
+
+### Testing & Validation
+
+#### Manual Testing
+1. **Gravar áudio** no frontend
+2. **Verificar WhatsApp** - paciente recebe mensagem de voz
+3. **Verificar banco** - tabela `n8n_chat_messages` tem texto transcrito
+4. **Verificar IA** - contexto disponível para próximas conversas
+
+#### Database Verification
+```sql
+-- Verificar mensagens transcritas
+SELECT session_id, type, content, created_at 
+FROM n8n_chat_messages 
+WHERE session_id LIKE '%559887694034%' 
+ORDER BY created_at DESC;
+```
+
+### Production Status ✅
+
+- **WhatsApp Delivery**: ✅ Funcionando com Evolution API V2
+- **Audio Storage**: ✅ Supabase Storage com URLs assinadas
+- **AI Transcription**: ✅ OpenAI Whisper integration
+- **Memory Integration**: ✅ N8N table with correct session format
+- **Error Handling**: ✅ Isolated error boundaries
+- **Performance**: ✅ Background processing for transcription
+
+---
+
 ## Changelog
 
 ### v1.0.0 - Initial Implementation
