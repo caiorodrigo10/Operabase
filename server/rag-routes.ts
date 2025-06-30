@@ -489,15 +489,55 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: any, res: Response) =
 
     console.log(`📊 Found ${documents.length} documents to delete`);
 
-    // 1. Primeiro remover referências da tabela mara_professional_configs
-    console.log(`🔍 Removing Mara config references for knowledge base ID: ${knowledgeBase.id}`);
-    await db.execute(sql`
-      DELETE FROM mara_professional_configs 
-      WHERE knowledge_base_id = ${knowledgeBase.id}
-    `);
-    console.log(`✅ Mara config references removed`);
+    // 0. Verificar todas as referências existentes antes de deletar
+    console.log(`🔍 Checking all references to knowledge base ID: ${knowledgeBase.id}`);
+    
+    try {
+      // 1. Verificar e remover referências da tabela mara_professional_configs
+      console.log(`🔍 Checking Mara config references for knowledge base ID: ${knowledgeBase.id}`);
+      try {
+        const maraConfigs = await db.execute(sql`
+          SELECT professional_id, knowledge_base_id FROM mara_professional_configs 
+          WHERE knowledge_base_id = ${knowledgeBase.id}
+        `);
+        console.log(`📊 Found ${maraConfigs.rows.length} Mara config references:`, maraConfigs.rows);
+        
+        if (maraConfigs.rows.length > 0) {
+          const deleteResult = await db.execute(sql`
+            DELETE FROM mara_professional_configs 
+            WHERE knowledge_base_id = ${knowledgeBase.id}
+          `);
+          console.log(`✅ Deleted ${deleteResult.rowCount || 0} Mara config references`);
+        }
+      } catch (maraError) {
+        console.log(`⚠️ Warning: Could not check/clean Mara configs:`, maraError.message);
+      }
 
-    // 2. Deletar arquivos físicos se existirem
+      // 2. Verificar e remover referências do array connected_knowledge_base_ids na tabela livia_configurations
+      console.log(`🔍 Checking Livia config references for knowledge base ID: ${knowledgeBase.id}`);
+      try {
+        const liviaConfigs = await db.execute(sql`
+          SELECT id, clinic_id, connected_knowledge_base_ids FROM livia_configurations 
+          WHERE ${knowledgeBase.id} = ANY(connected_knowledge_base_ids)
+        `);
+        console.log(`📊 Found ${liviaConfigs.rows.length} Livia config references:`, liviaConfigs.rows);
+        
+        if (liviaConfigs.rows.length > 0) {
+          const updateResult = await db.execute(sql`
+            UPDATE livia_configurations 
+            SET connected_knowledge_base_ids = array_remove(connected_knowledge_base_ids, ${knowledgeBase.id})
+            WHERE ${knowledgeBase.id} = ANY(connected_knowledge_base_ids)
+          `);
+          console.log(`✅ Updated ${updateResult.rowCount || 0} Livia config references`);
+        }
+      } catch (liviaError) {
+        console.log(`⚠️ Warning: Could not check/clean Livia configs:`, liviaError.message);
+      }
+    } catch (cleanupError) {
+      console.log(`⚠️ Warning: Error during reference cleanup:`, cleanupError.message);
+    }
+
+    // 3. Deletar arquivos físicos se existirem
     for (const document of documents) {
       if (document.content_type === 'pdf' && document.file_path) {
         try {
@@ -511,14 +551,14 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: any, res: Response) =
       }
     }
 
-    // 3. Deletar todos os documentos encontrados
+    // 4. Deletar todos os documentos encontrados
     for (const document of documents) {
       await db
         .delete(rag_documents)
         .where(eq(rag_documents.id, document.id));
     }
 
-    // 4. Deletar a base de conhecimento
+    // 5. Deletar a base de conhecimento
     await db
       .delete(rag_knowledge_bases)
       .where(eq(rag_knowledge_bases.id, knowledgeBase.id));
