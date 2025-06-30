@@ -137,32 +137,24 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
         const phoneNumber = conversation.contact.phone.replace(/\D/g, '');
         
         console.log('📞 Phone number formatted:', phoneNumber);
-        console.log('🔄 Converting Supabase file to base64 for Evolution API access...');
+        console.log('🌐 NOVA ABORDAGEM: Enviando URL direta (sem base64) para Evolution API');
         
-        // SOLUÇÃO: Evolution API precisa de base64 SEM prefixo data:
+        // NOVA SOLUÇÃO: URL direta ao invés de base64 (mais eficiente)
         console.log('🔗 Signed URL:', storageResult.signed_url.substring(0, 100) + '...');
         
-        const audioResponse = await fetch(storageResult.signed_url);
-        console.log('📥 Fetch response status:', audioResponse.status, audioResponse.statusText);
-        
-        if (!audioResponse.ok) {
-          console.error('❌ Failed to fetch audio from Supabase:', audioResponse.status, audioResponse.statusText);
-          throw new Error(`Failed to fetch audio from Supabase: ${audioResponse.status}`);
+        // Verificar se URL é acessível
+        try {
+          const testResponse = await fetch(storageResult.signed_url, { method: 'HEAD' });
+          console.log('✅ URL accessibility test:', testResponse.status, testResponse.statusText);
+        } catch (testError) {
+          console.warn('⚠️ URL test failed:', testError.message);
         }
         
-        const audioBuffer = await audioResponse.arrayBuffer();
-        console.log('📊 Audio buffer size:', audioBuffer.byteLength, 'bytes');
-        
-        const base64Audio = Buffer.from(audioBuffer).toString('base64');
-        console.log('🔤 Base64 audio length:', base64Audio.length, 'characters');
-        
-        console.log('✅ Audio converted to base64, size:', base64Audio.length);
-        
-        // SOLUÇÃO: Usar /sendMedia que já funciona no sistema existente
+        // SOLUÇÃO: Usar URL direta do Supabase (mais simples e eficiente)
         const whatsappPayload = {
           number: phoneNumber,
-          media: base64Audio, // Campo 'media' como no sistema existente
-          mediatype: 'audio', // Especifica que é áudio
+          media: storageResult.signed_url, // URL direta (não base64)
+          mediatype: 'audio',
           delay: 1000
         };
         
