@@ -207,6 +207,16 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### June 30, 2025 - RAG Knowledge Base Creation Bug Fixed ✅
+- **Problem Resolved**: Knowledge bases created successfully but didn't appear in listing interface
+- **Root Cause**: Inconsistency between creation and listing endpoints regarding external_user_id field
+- **Creation Endpoint**: Was using user email ("cr@caiorodrigo.com.br") as external_user_id
+- **Listing Endpoint**: Was filtering by clinic_id ("1") as external_user_id
+- **Solution Applied**: Updated creation endpoint to use clinic_id consistently with listing endpoint
+- **Technical Fix**: Modified POST /api/rag/knowledge-bases to use `req.user.clinic_id` instead of email
+- **Validation**: Tested creation and listing - new knowledge bases now appear immediately after creation
+- **Status**: ✅ RESOLVED - RAG system creation/listing consistency restored
+
 ### June 29, 2025 - Modular Page Architecture Documentation Complete ✅
 - **Complete Documentation**: Created comprehensive guide for modular page architecture
 - **Two Systems Documented**: Contact details and configuration systems fully explained
