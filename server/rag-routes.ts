@@ -454,24 +454,29 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: any, res: Response) =
 
     console.log(`🗑️ Deleting knowledge base ID: ${knowledgeBaseId} for user: ${userId}`);
 
-    // Buscar a base de conhecimento
+    // Buscar a base de conhecimento usando clinic_id
+    const clinicId = parseInt(req.user.clinic_id);
+    console.log(`🔍 Delete Debug: Searching with clinic_id: ${clinicId}, knowledge_base_id: ${knowledgeBaseId}`);
+    
     const [knowledgeBase] = await db
       .select()
       .from(rag_knowledge_bases)
       .where(and(
-        eq(rag_knowledge_bases.external_user_id, userId),
+        eq(rag_knowledge_bases.external_user_id, clinicId.toString()),
         eq(rag_knowledge_bases.id, knowledgeBaseId)
       ));
+
+    console.log(`🔍 Delete Debug: Knowledge base found:`, knowledgeBase ? 'YES' : 'NO');
 
     if (!knowledgeBase) {
       return res.status(404).json({ error: 'Base de conhecimento não encontrada' });
     }
 
-    // Buscar todos os documentos da base de conhecimento
+    // Buscar todos os documentos da base de conhecimento usando clinic_id
     const allDocuments = await db
       .select()
       .from(rag_documents)
-      .where(eq(rag_documents.external_user_id, userId));
+      .where(eq(rag_documents.external_user_id, clinicId.toString()));
 
     // Filtrar documentos que pertencem à base de conhecimento
     const documents = allDocuments.filter(doc => {
