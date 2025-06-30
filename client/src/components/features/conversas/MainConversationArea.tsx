@@ -275,7 +275,7 @@ export function MainConversationArea({
       const formData = new FormData();
       formData.append('file', audioFile);
       
-      const response = await fetch(`/api/conversations/${selectedConversationId}/upload-voice`, {
+      const response = await fetch(`/api/audio/voice-message/${selectedConversationId}`, {
         method: 'POST',
         body: formData,
       });
