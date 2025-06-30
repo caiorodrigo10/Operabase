@@ -376,7 +376,7 @@ export const rag_chunks = pgTable("rag_chunks", {
 export const rag_embeddings = pgTable("rag_embeddings", {
   id: serial("id").primaryKey(),
   chunk_id: integer("chunk_id").notNull().references(() => rag_chunks.id, { onDelete: "cascade" }),
-  clinic_id: integer("clinic_id").notNull().references(() => clinics.id),
+  clinic_id: integer("clinic_id").notNull(),
   knowledge_base_id: integer("knowledge_base_id").references(() => rag_knowledge_bases.id),
   embedding: vector("embedding", { dimensions: 1536 }), // OpenAI text-embedding-3-small
   model_used: varchar("model_used", { length: 50 }).default("text-embedding-3-small"),
