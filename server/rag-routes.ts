@@ -594,19 +594,7 @@ router.delete('/documents/:id', ragAuth, async (req: any, res: Response) => {
     const documentId = parseInt(req.params.id);
     const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
 
-    console.log(`🗑️ Delete Document Debug - Document ID: ${documentId}, Clinic ID: ${clinicId}`);
-
-    // Primeiro, vamos buscar o documento sem filtro de clinic_id para debug
-    const [documentCheck] = await db
-      .select()
-      .from(rag_documents)
-      .where(eq(rag_documents.id, documentId));
-
-    console.log(`🔍 Document exists check:`, documentCheck ? {
-      id: documentCheck.id,
-      title: documentCheck.title,
-      external_user_id: documentCheck.external_user_id
-    } : 'NOT FOUND');
+    console.log(`🗑️ Deletando documento ID: ${documentId} para clinic: ${clinicId}`);
 
     // Buscar documento para verificar ownership e obter file_path
     const [document] = await db
