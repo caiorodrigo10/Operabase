@@ -819,6 +819,9 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
         const whatsappMediaId = req.headers['x-whatsapp-media-id'] || req.body.whatsappMediaId;
         const whatsappMediaUrl = req.headers['x-whatsapp-media-url'] || req.body.whatsappMediaUrl;
         const timestamp = req.headers['x-timestamp'] || req.body.timestamp;
+        
+        // 🤖 NOVO: Parâmetro para identificar mensagens da IA
+        const senderType = req.headers['x-sender-type'] || req.body.senderType;
 
         console.log('📋 N8N Upload parameters:', {
           filename,
@@ -828,7 +831,8 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           clinicId,
           caption: caption || 'No caption',
           whatsappMessageId: whatsappMessageId || 'Not provided',
-          timestamp: timestamp || 'Not provided'
+          timestamp: timestamp || 'Not provided',
+          senderType: senderType || 'patient (default)' // 🤖 Novo log para identificação da IA
         });
 
         // Validar arquivo
@@ -851,7 +855,8 @@ export function setupUploadRoutes(app: Express, storage: IStorage) {
           whatsappMessageId,
           whatsappMediaId,
           whatsappMediaUrl,
-          timestamp
+          timestamp,
+          senderType // 🤖 Novo parâmetro para identificar origem (patient/ai)
         };
 
         // Executar upload via método N8N (não envia via Evolution API)

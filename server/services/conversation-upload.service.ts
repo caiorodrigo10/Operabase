@@ -25,6 +25,7 @@ interface N8NUploadParams {
   whatsappMediaId?: string;
   whatsappMediaUrl?: string;
   timestamp?: string;
+  senderType?: string; // 🤖 Novo: Para identificar origem (patient/ai)
 }
 
 interface UploadResult {
@@ -1101,10 +1102,12 @@ export class ConversationUploadService {
       whatsappMessageId,
       whatsappMediaId,
       whatsappMediaUrl,
-      timestamp
+      timestamp,
+      senderType // 🤖 Novo: identificação da origem (patient/ai)
     } = params;
 
     console.log(`📥 N8N Upload: ${filename} (${mimeType}) for conversation ${conversationId}`);
+    console.log(`🤖 Sender Type: ${senderType || 'patient (default)'}`); // Log identificação da origem
 
     try {
       // 1. Validar arquivo
