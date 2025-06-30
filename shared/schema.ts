@@ -326,6 +326,19 @@ export type InsertMaraProfessionalConfig = z.infer<typeof insertMaraProfessional
 // RAG SYSTEM - OFICIAL LANGCHAIN/SUPABASE STRUCTURE
 // ================================================================
 
+// Tabela knowledge_bases para organização dos documentos
+export const knowledge_bases = pgTable("knowledge_bases", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+  created_by: text("created_by"),
+}, (table) => [
+  index("idx_knowledge_bases_clinic").on(table.clinic_id),
+]);
+
 // Tabela documents oficial LangChain/Supabase
 export const documents = pgTable("documents", {
   id: bigint("id", { mode: "bigint" }).primaryKey(),
@@ -333,6 +346,27 @@ export const documents = pgTable("documents", {
   metadata: jsonb("metadata"), // corresponds to Document.metadata (multi-tenant: clinic_id, knowledge_base_id, etc)
   embedding: vector("embedding", { dimensions: 1536 }), // 1536 works for OpenAI embeddings
 });
+
+// Zod schemas for knowledge_bases table
+export const insertKnowledgeBaseSchema = createInsertSchema(knowledge_bases).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  clinic_id: z.number().min(1, "clinic_id é obrigatório"),
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  created_by: z.string().optional(),
+});
+
+export const updateKnowledgeBaseSchema = insertKnowledgeBaseSchema.partial().extend({
+  clinic_id: z.number().min(1, "clinic_id é obrigatório"),
+});
+
+// Types for knowledge_bases table
+export type KnowledgeBase = typeof knowledge_bases.$inferSelect;
+export type InsertKnowledgeBase = z.infer<typeof insertKnowledgeBaseSchema>;
+export type UpdateKnowledgeBase = z.infer<typeof updateKnowledgeBaseSchema>;
 
 // Zod schemas for documents table
 export const insertDocumentSchema = createInsertSchema(documents).omit({

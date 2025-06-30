@@ -5,8 +5,8 @@
 
 import { Router, type Request, Response } from "express";
 import { db } from "./db";
-import { documents } from "../shared/schema";
-import { sql } from "drizzle-orm";
+import { documents, knowledge_bases, insertKnowledgeBaseSchema, updateKnowledgeBaseSchema } from "../shared/schema";
+import { sql, eq, desc, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -18,8 +18,219 @@ const ragAuth = (req: any, res: any, next: any) => {
     name: "Caio Rodrigo"
   };
   req.clinic_id = 1;
+  console.log('🔍 RAG Auth: Usuario autenticado:', req.user.email, 'Clinic:', req.clinic_id);
   next();
 };
+
+// ================================================================
+// KNOWLEDGE BASES ENDPOINTS
+// ================================================================
+
+/**
+ * GET /api/rag/knowledge-bases - Listar bases de conhecimento da clínica
+ */
+router.get('/knowledge-bases', ragAuth, async (req: Request, res: Response) => {
+  try {
+    const clinic_id = (req as any).clinic_id;
+    
+    console.log('📚 RAG: Listando knowledge bases para clínica:', clinic_id);
+    
+    // Buscar knowledge bases da clínica
+    const knowledgeBases = await db
+      .select()
+      .from(knowledge_bases)
+      .where(eq(knowledge_bases.clinic_id, clinic_id))
+      .orderBy(desc(knowledge_bases.created_at));
+    
+    // Contar documentos por knowledge base
+    const basesWithCounts = await Promise.all(
+      knowledgeBases.map(async (base) => {
+        const documentsCount = await db.execute(sql`
+          SELECT COUNT(*) as count 
+          FROM documents 
+          WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+            AND metadata->>'knowledge_base_id' = ${base.id.toString()}
+        `);
+        
+        const count = parseInt(documentsCount.rows[0]?.count || '0');
+        
+        return {
+          ...base,
+          documentCount: count,
+          documentsCount: count, // Para compatibilidade
+          lastUpdated: base.updated_at?.toISOString() || base.created_at?.toISOString()
+        };
+      })
+    );
+    
+    console.log('✅ RAG: Knowledge bases encontradas:', basesWithCounts.length);
+    res.json(basesWithCounts);
+    
+  } catch (error) {
+    console.error('❌ RAG: Erro ao listar knowledge bases:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
+ * POST /api/rag/knowledge-bases - Criar nova base de conhecimento
+ */
+router.post('/knowledge-bases', ragAuth, async (req: Request, res: Response) => {
+  try {
+    const clinic_id = (req as any).clinic_id;
+    const user = (req as any).user;
+    
+    console.log('📥 RAG: Criando knowledge base:', req.body);
+    
+    // Validar dados de entrada
+    const validation = insertKnowledgeBaseSchema.safeParse({
+      ...req.body,
+      clinic_id,
+      created_by: user.email
+    });
+    
+    if (!validation.success) {
+      console.log('❌ RAG: Validação falhou:', validation.error.errors);
+      return res.status(400).json({ 
+        success: false, 
+        error: validation.error.errors[0]?.message || 'Dados inválidos' 
+      });
+    }
+    
+    // Criar knowledge base
+    const [newKnowledgeBase] = await db
+      .insert(knowledge_bases)
+      .values(validation.data)
+      .returning();
+    
+    console.log('✅ RAG: Knowledge base criada:', newKnowledgeBase);
+    
+    res.json({
+      success: true,
+      message: 'Base de conhecimento criada com sucesso',
+      knowledgeBase: {
+        ...newKnowledgeBase,
+        documentCount: 0,
+        documentsCount: 0
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ RAG: Erro ao criar knowledge base:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
+ * PUT /api/rag/knowledge-bases/:id - Atualizar base de conhecimento
+ */
+router.put('/knowledge-bases/:id', ragAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const clinic_id = (req as any).clinic_id;
+    
+    console.log('📝 RAG: Atualizando knowledge base:', id, req.body);
+    
+    // Validar dados de entrada
+    const validation = updateKnowledgeBaseSchema.safeParse({
+      ...req.body,
+      clinic_id
+    });
+    
+    if (!validation.success) {
+      return res.status(400).json({ 
+        success: false, 
+        error: validation.error.errors[0]?.message || 'Dados inválidos' 
+      });
+    }
+    
+    // Atualizar knowledge base
+    const [updatedKnowledgeBase] = await db
+      .update(knowledge_bases)
+      .set({ 
+        ...validation.data, 
+        updated_at: new Date() 
+      })
+      .where(and(
+        eq(knowledge_bases.id, parseInt(id)),
+        eq(knowledge_bases.clinic_id, clinic_id)
+      ))
+      .returning();
+    
+    if (!updatedKnowledgeBase) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Base de conhecimento não encontrada' 
+      });
+    }
+    
+    console.log('✅ RAG: Knowledge base atualizada:', updatedKnowledgeBase);
+    res.json({ success: true, knowledgeBase: updatedKnowledgeBase });
+    
+  } catch (error) {
+    console.error('❌ RAG: Erro ao atualizar knowledge base:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
+ * DELETE /api/rag/knowledge-bases/:id - Deletar base de conhecimento
+ */
+router.delete('/knowledge-bases/:id', ragAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const clinic_id = (req as any).clinic_id;
+    
+    console.log('🗑️ RAG: Deletando knowledge base:', id);
+    
+    // Contar documentos que serão removidos
+    const documentsCount = await db.execute(sql`
+      SELECT COUNT(*) as count 
+      FROM documents 
+      WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+        AND metadata->>'knowledge_base_id' = ${id}
+    `);
+    
+    const deletedDocuments = parseInt(documentsCount.rows[0]?.count || '0');
+    
+    // Remover documentos relacionados
+    if (deletedDocuments > 0) {
+      await db.execute(sql`
+        DELETE FROM documents 
+        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+          AND metadata->>'knowledge_base_id' = ${id}
+      `);
+    }
+    
+    // Remover knowledge base
+    const [deletedKnowledgeBase] = await db
+      .delete(knowledge_bases)
+      .where(and(
+        eq(knowledge_bases.id, parseInt(id)),
+        eq(knowledge_bases.clinic_id, clinic_id)
+      ))
+      .returning();
+    
+    if (!deletedKnowledgeBase) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Base de conhecimento não encontrada' 
+      });
+    }
+    
+    console.log('✅ RAG: Knowledge base deletada:', deletedKnowledgeBase.name, 'Documentos removidos:', deletedDocuments);
+    
+    res.json({ 
+      success: true, 
+      message: 'Base de conhecimento deletada com sucesso',
+      deletedDocuments 
+    });
+    
+  } catch (error) {
+    console.error('❌ RAG: Erro ao deletar knowledge base:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
 
 /**
  * POST /api/rag/documents - Adicionar documento
