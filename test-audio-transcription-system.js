@@ -4,7 +4,7 @@
  * para memória da IA, usando o formato session_id correto
  */
 
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -58,13 +58,13 @@ async function testAudioTranscriptionSystem() {
     
     console.log('✅ Conversas disponíveis:');
     conversations.forEach((conv, index) => {
-      console.log(`  ${index + 1}. ID: ${conv.id} | Contato: ${(conv as any).contacts?.name} | Phone: ${(conv as any).contacts?.phone}`);
+      console.log(`  ${index + 1}. ID: ${conv.id} | Contato: ${conv.contacts?.name} | Phone: ${conv.contacts?.phone}`);
     });
     
     // 3. Selecionar conversa para teste
     const testConversation = conversations[0];
-    const contactPhone = (testConversation as any).contacts?.phone;
-    const contactName = (testConversation as any).contacts?.name;
+    const contactPhone = testConversation.contacts?.phone;
+    const contactName = testConversation.contacts?.name;
     
     console.log(`\n🎯 3. Usando conversa para teste:`, {
       conversationId: testConversation.id,
@@ -123,7 +123,7 @@ async function testAudioTranscriptionSystem() {
     // 7. Testar integração N8N diretamente (simular transcrição)
     console.log('\n🧪 7. Testando integração N8N com texto simulado:');
     
-    const { saveToN8NTable } = await import('./server/utils/n8n-integration.js');
+    const { saveToN8NTable } = await import('./server/utils/n8n-integration.ts');
     const testTranscription = `Teste de transcrição de áudio - ${new Date().toISOString()}`;
     
     console.log('📝 Texto de teste:', testTranscription);
