@@ -6,7 +6,7 @@
 import { Express, Request, Response } from 'express';
 import multer from 'multer';
 import { IStorage } from '../storage';
-import { SupabaseStorageService } from '../services/supabase-storage.service';
+// Usando cliente Supabase direto para evitar dependências problemáticas
 import { EvolutionAPIService } from '../services/evolution-api.service';
 
 const upload = multer({
@@ -47,25 +47,30 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
       const fileName = `voice_${timestamp}_${req.file.originalname}`;
       const filePath = `clinic-1/conversation-${conversationId}/audio/${fileName}`;
       
-      const storageService = new SupabaseStorageService();
-      const uploadResult = await storageService.uploadFile(
-        req.file.buffer,
-        filePath,
-        req.file.mimetype,
-        'conversation-attachments'
+      // Upload direto para Supabase Storage usando cliente direto
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('conversation-attachments')
+        .upload(filePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          duplex: 'half'
+        });
+      
+      if (uploadError) {
+        console.error('❌ ÁUDIO LIMPO: Erro no upload Supabase:', uploadError);
+        throw new Error('Falha no upload para Supabase Storage');
+      }
       
       console.log('✅ ÁUDIO LIMPO: Upload Supabase Storage concluído');
       console.log('📂 ÁUDIO LIMPO: Arquivo salvo:', filePath);
       
       // Criar URL PÚBLICA TEMPORÁRIA (1 hora)
       console.log('🔗 ÁUDIO LIMPO: Criando URL pública temporária...');
-      
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
       
       // URL pública temporária válida por 1 hora
       const { data: publicUrl, error: urlError } = await supabase.storage
