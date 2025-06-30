@@ -116,7 +116,7 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
         file_url: publicUrl.signedUrl, // URL pública temporária
       };
       
-      const attachment = await storage.createMessageAttachment(attachmentData);
+      const attachment = await storage.createAttachment(attachmentData);
       console.log('✅ ÁUDIO LIMPO: Anexo criado ID:', attachment.id);
       
       // Enviar para WhatsApp via Evolution API
