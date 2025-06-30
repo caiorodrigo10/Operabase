@@ -220,6 +220,7 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 - **Funcionalidade 100%**: Sistema encontra documentos relevantes automaticamente
 - **Queries Testadas**: "teste" encontra documento texto, "Amorafone" encontra PDF correspondente
 - **Status**: ✅ SISTEMA RAG TOTALMENTE OPERACIONAL - Busca semântica funcional com embeddings gerados
+- **Limpeza Confirmada**: Tabelas antigas já removidas automaticamente durante migração (old_system_removed: true)
 
 ### June 30, 2025 - RAG System Complete Migration to Official LangChain/Supabase Structure ✅
 - **Arquitetura Oficial**: Migração completa do sistema RAG personalizado para estrutura oficial LangChain/Supabase
