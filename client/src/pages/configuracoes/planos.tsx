@@ -128,6 +128,7 @@ export default function PlanosPage() {
   const [busca, setBusca] = useState('');
   const [planoNome, setPlanoNome] = useState('Plano Particular');
   const [pagoPorConvenio, setPagoPorConvenio] = useState(false);
+  const [planoPadrao, setPlanoPadrao] = useState(false);
 
   // Funções auxiliares para o popup de detalhes
   const especialidadesFiltradas = especialidades.map(esp => ({
@@ -443,18 +444,27 @@ export default function PlanosPage() {
                   </div>
                   
                   <div className="flex items-center justify-center">
-                    <div className="flex items-center space-x-4">
-                      <Switch
-                        checked={pagoPorConvenio}
-                        onCheckedChange={setPagoPorConvenio}
-                        className="data-[state=checked]:bg-teal-600"
-                      />
-                      <Label className={cn("text-sm", !pagoPorConvenio ? "text-slate-900" : "text-slate-500")}>
-                        Pago pelo convênio
-                      </Label>
-                      <Label className={cn("text-sm", pagoPorConvenio ? "text-teal-600" : "text-slate-500")}>
-                        Plano padrão
-                      </Label>
+                    <div className="flex items-center space-x-6">
+                      <div className="flex items-center space-x-2">
+                        <Label className={cn("text-sm", pagoPorConvenio ? "text-teal-600" : "text-slate-500")}>
+                          Pago pelo convênio
+                        </Label>
+                        <Switch
+                          checked={pagoPorConvenio}
+                          onCheckedChange={setPagoPorConvenio}
+                          className="data-[state=checked]:bg-teal-600"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label className={cn("text-sm", planoPadrao ? "text-teal-600" : "text-slate-500")}>
+                          Plano padrão
+                        </Label>
+                        <Switch
+                          checked={planoPadrao}
+                          onCheckedChange={setPlanoPadrao}
+                          className="data-[state=checked]:bg-teal-600"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
