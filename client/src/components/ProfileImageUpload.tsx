@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Camera, Upload, X, Loader2, Trash2 } from 'lucide-react';
+import { useRef } from 'react';
+import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,9 +11,6 @@ interface ProfileImageUploadProps {
 }
 
 export function ProfileImageUpload({ currentImageUrl, onImageChange }: ProfileImageUploadProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -50,11 +47,6 @@ export function ProfileImageUpload({ currentImageUrl, onImageChange }: ProfileIm
       if (onImageChange) {
         onImageChange(data.profilePictureUrl);
       }
-      
-      // Fechar modal e limpar estado
-      setIsModalOpen(false);
-      setSelectedFile(null);
-      setPreviewUrl(null);
     },
     onError: (error: Error) => {
       toast({
@@ -129,34 +121,12 @@ export function ProfileImageUpload({ currentImageUrl, onImageChange }: ProfileIm
       return;
     }
 
-    setSelectedFile(file);
-    
-    // Criar preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleUpload = () => {
-    if (selectedFile) {
-      uploadMutation.mutate(selectedFile);
-    }
+    // Upload automático após validação
+    uploadMutation.mutate(file);
   };
 
   const handleRemove = () => {
     removeMutation.mutate();
-  };
-
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedFile(null);
-    setPreviewUrl(null);
   };
 
   // Gerar iniciais do usuário para fallback
@@ -172,9 +142,13 @@ export function ProfileImageUpload({ currentImageUrl, onImageChange }: ProfileIm
 
   return (
     <>
-      {/* Avatar atual com botão de alterar */}
+      {/* Avatar atual com clique direto para seleção */}
       <div className="relative inline-block">
-        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-teal-600 flex items-center justify-center">
+        <div 
+          className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-teal-600 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => fileInputRef.current?.click()}
+          title="Clique para alterar foto de perfil"
+        >
           {currentImageUrl ? (
             <img
               src={currentImageUrl}
@@ -182,121 +156,58 @@ export function ProfileImageUpload({ currentImageUrl, onImageChange }: ProfileIm
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-2xl font-bold text-white">
-              {getUserInitials('Usuario')}
-            </span>
+            <div className="flex flex-col items-center justify-center text-white">
+              <Camera className="w-8 h-8 mb-2" />
+              <span className="text-xs">Adicionar foto</span>
+            </div>
           )}
         </div>
         
-        <Button
-          onClick={openModal}
-          size="sm"
-          className="absolute bottom-2 right-2 rounded-full w-8 h-8 p-0 bg-teal-600 hover:bg-teal-700"
-        >
-          <Camera className="w-4 h-4" />
-        </Button>
+        {/* Ícone indicativo de que é clicável */}
+        <div className="absolute bottom-2 right-2 bg-teal-600 rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
+          <Camera className="w-4 h-4 text-white" />
+        </div>
       </div>
 
-      {/* Modal de upload */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Alterar Foto de Perfil</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={closeModal}
-                className="p-0 w-8 h-8"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+      {/* Input de arquivo oculto */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
-            {/* Preview da imagem */}
-            <div className="mb-4 flex justify-center">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100 flex items-center justify-center">
-                {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : currentImageUrl ? (
-                  <img
-                    src={currentImageUrl}
-                    alt="Foto atual"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Camera className="w-8 h-8 text-gray-400" />
-                )}
-              </div>
-            </div>
+      {/* Botão de remover (apenas se houver imagem) */}
+      {currentImageUrl && (
+        <div className="mt-4 flex justify-center">
+          <Button
+            onClick={handleRemove}
+            disabled={removeMutation.isPending}
+            variant="outline"
+            size="sm"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            {removeMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Removendo...
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remover foto
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
-            {/* Input de arquivo */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            {/* Botões de ação */}
-            <div className="space-y-3">
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full"
-                variant="outline"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Selecionar Nova Imagem
-              </Button>
-
-              {selectedFile && (
-                <Button
-                  onClick={handleUpload}
-                  disabled={uploadMutation.isPending}
-                  className="w-full bg-teal-600 hover:bg-teal-700"
-                >
-                  {uploadMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    'Salvar Nova Imagem'
-                  )}
-                </Button>
-              )}
-
-              {currentImageUrl && (
-                <Button
-                  onClick={handleRemove}
-                  disabled={removeMutation.isPending}
-                  variant="destructive"
-                  className="w-full"
-                >
-                  {removeMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Removendo...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Remover Imagem
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-
-            <p className="text-xs text-gray-500 mt-3 text-center">
-              Formatos aceitos: JPEG, PNG, WebP. Máximo: 5MB.
-            </p>
-          </div>
+      {/* Indicador de loading durante upload */}
+      {uploadMutation.isPending && (
+        <div className="mt-3 flex items-center justify-center text-sm text-gray-600">
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          Enviando foto...
         </div>
       )}
     </>
