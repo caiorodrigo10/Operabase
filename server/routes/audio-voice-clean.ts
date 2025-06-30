@@ -119,6 +119,47 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
       const attachment = await storage.createAttachment(attachmentData);
       console.log('✅ ÁUDIO LIMPO: Anexo criado ID:', attachment.id);
       
+      // ========== NOVA SEÇÃO: TRANSCRIÇÃO + N8N INTEGRATION ==========
+      console.log('🔤 ÁUDIO LIMPO: Iniciando transcrição de áudio para memória da IA...');
+      
+      setImmediate(async () => {
+        try {
+          console.log('🔤 TRANSCRIPTION: Iniciando processo de transcrição em background...');
+          
+          // 1. Importar serviços
+          const TranscriptionService = (await import('../services/transcription.service.js')).default;
+          const { saveToN8NTable } = await import('../utils/n8n-integration.js');
+          
+          // 2. Transcrever áudio usando Whisper
+          const transcriptionService = new TranscriptionService();
+          const transcribedText = await transcriptionService.transcribeAudio(
+            req.file.buffer, 
+            req.file.originalname
+          );
+          
+          console.log('🔤 TRANSCRIPTION: Texto transcrito obtido:', {
+            length: transcribedText.length,
+            preview: transcribedText.substring(0, 100) + (transcribedText.length > 100 ? '...' : '')
+          });
+          
+          // 3. Salvar na n8n_chat_messages (tipo "human" = profissional enviando)
+          await saveToN8NTable(conversationId, transcribedText, 'human');
+          
+          console.log('✅ TRANSCRIPTION: Transcrição + N8N integration completa para conversa:', conversationId);
+          
+        } catch (transcriptionError: any) {
+          console.error('❌ TRANSCRIPTION: Erro na transcrição/N8N:', {
+            message: transcriptionError.message,
+            conversationId,
+            fileName: req.file?.originalname,
+            fileSize: req.file?.size
+          });
+          // Não afeta o fluxo principal do áudio WhatsApp
+        }
+      });
+      
+      // ========== CONTINUA FLUXO ATUAL (Evolution API + WhatsApp) ==========
+      
       // Enviar para WhatsApp via Evolution API usando MESMA LÓGICA das mensagens normais
       console.log('📱 ÁUDIO LIMPO: Enviando para WhatsApp via Evolution API...');
 
