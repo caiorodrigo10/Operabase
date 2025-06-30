@@ -239,8 +239,9 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: Request, res: Respons
  */
 router.post('/documents', ragAuth, async (req: Request, res: Response) => {
   try {
-    const { content, metadata } = req.body;
+    const { title, content, knowledge_base_id, source = 'text' } = req.body;
     const clinic_id = (req as any).clinic_id;
+    const user = (req as any).user;
     
     console.log('📥 RAG: Documento recebido para adicionar');
     
@@ -248,13 +249,62 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: "Content é obrigatório" });
     }
 
+    if (!knowledge_base_id) {
+      return res.status(400).json({ success: false, error: "knowledge_base_id é obrigatório" });
+    }
+
+    // Verificar se a base de conhecimento existe e pertence à clínica
+    const [knowledgeBase] = await db
+      .select()
+      .from(knowledge_bases)
+      .where(and(
+        eq(knowledge_bases.id, knowledge_base_id),
+        eq(knowledge_bases.clinic_id, clinic_id)
+      ));
+
+    if (!knowledgeBase) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Base de conhecimento não encontrada' 
+      });
+    }
+
+    // Inserir documento na estrutura oficial LangChain usando SQL direto
+    const documentMetadata = {
+      clinic_id: clinic_id.toString(),
+      knowledge_base_id: knowledge_base_id.toString(),
+      title: title || 'Documento sem título',
+      source: source,
+      created_by: user.email,
+      created_at: new Date().toISOString()
+    };
+
+    const result = await db.execute(sql`
+      INSERT INTO documents (content, metadata)
+      VALUES (${content}, ${JSON.stringify(documentMetadata)})
+      RETURNING id, content, metadata
+    `);
+
+    const newDocument = result.rows[0] as any;
+
+    console.log('✅ RAG: Documento adicionado ao sistema oficial LangChain:', {
+      id: newDocument.id,
+      clinic_id,
+      knowledge_base_id,
+      title
+    });
+
     res.json({
       success: true,
       data: {
+        id: newDocument.id,
+        title: title || 'Documento sem título',
         content: content,
-        metadata: { clinic_id, ...metadata },
-        message: "Sistema RAG oficial LangChain/Supabase implementado"
-      }
+        knowledge_base_id,
+        source,
+        created_at: newDocument.metadata.created_at
+      },
+      message: "Documento adicionado com sucesso à estrutura oficial LangChain"
     });
 
   } catch (error) {
@@ -295,13 +345,44 @@ router.post('/search', ragAuth, async (req: Request, res: Response) => {
 router.get('/documents', ragAuth, async (req: Request, res: Response) => {
   try {
     const clinic_id = (req as any).clinic_id;
+    const { knowledge_base_id } = req.query;
     
     console.log('📋 RAG: Listagem de documentos para clínica:', clinic_id);
 
+    // Construir query para buscar documentos na estrutura oficial LangChain
+    let whereCondition = `metadata->>'clinic_id' = '${clinic_id}'`;
+    
+    if (knowledge_base_id) {
+      whereCondition += ` AND metadata->>'knowledge_base_id' = '${knowledge_base_id}'`;
+    }
+
+    const documentsResult = await db.execute(sql`
+      SELECT 
+        id,
+        content,
+        metadata,
+        created_at
+      FROM documents 
+      WHERE ${sql.raw(whereCondition)}
+      ORDER BY id DESC
+    `);
+
+    const documentsList = documentsResult.rows.map((doc: any) => ({
+      id: doc.id,
+      title: doc.metadata?.title || 'Documento sem título',
+      content: doc.content,
+      knowledge_base_id: doc.metadata?.knowledge_base_id,
+      source: doc.metadata?.source || 'unknown',
+      created_by: doc.metadata?.created_by,
+      created_at: doc.metadata?.created_at || doc.created_at
+    }));
+
+    console.log('✅ RAG: Documentos encontrados:', documentsList.length);
+
     res.json({
       success: true,
-      data: [],
-      message: "Sistema de listagem RAG - estrutura oficial LangChain"
+      data: documentsList,
+      message: `${documentsList.length} documentos encontrados na estrutura oficial LangChain`
     });
 
   } catch (error) {
