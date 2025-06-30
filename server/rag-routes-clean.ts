@@ -318,19 +318,55 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
  */
 router.post('/search', ragAuth, async (req: Request, res: Response) => {
   try {
-    const { query, match_count = 5 } = req.body;
+    const { query, knowledge_base_id, match_count = 5 } = req.body;
     const clinic_id = (req as any).clinic_id;
     
-    console.log('🔍 RAG: Busca semântica executada:', { query, clinic_id });
+    console.log('🔍 RAG: Busca semântica executada:', { query, clinic_id, knowledge_base_id });
     
     if (!query) {
       return res.status(400).json({ success: false, error: "Query é obrigatória" });
     }
 
+    // Por enquanto, retornar os documentos diretamente já que ainda não temos embedding
+    // Este é um sistema de busca por texto simples até implementarmos embeddings
+    let searchResults;
+    
+    if (knowledge_base_id) {
+      searchResults = await db.execute(sql`
+        SELECT id, content, metadata
+        FROM documents 
+        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+          AND metadata->>'knowledge_base_id' = ${knowledge_base_id.toString()}
+          AND content ILIKE ${'%' + query + '%'}
+        ORDER BY id DESC
+        LIMIT ${match_count}
+      `);
+    } else {
+      searchResults = await db.execute(sql`
+        SELECT id, content, metadata
+        FROM documents 
+        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+          AND content ILIKE ${'%' + query + '%'}
+        ORDER BY id DESC
+        LIMIT ${match_count}
+      `);
+    }
+
+    const results = searchResults.rows.map((doc: any) => ({
+      id: doc.id,
+      content: doc.content,
+      metadata: doc.metadata,
+      title: doc.metadata?.title || 'Documento sem título',
+      source: doc.metadata?.source || 'unknown',
+      similarity: 0.8 // Placeholder - seria calculado com embedding real
+    }));
+
+    console.log('✅ RAG: Busca concluída:', results.length, 'resultados');
+
     res.json({
       success: true,
-      data: [],
-      message: "Busca semântica RAG - estrutura oficial LangChain implementada"
+      data: results,
+      message: `${results.length} resultados encontrados para "${query}"`
     });
 
   } catch (error) {
