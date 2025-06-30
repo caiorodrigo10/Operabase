@@ -105,9 +105,11 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
       });
       
       console.log('✅ Voice attachment created:', attachment.id);
+      console.log('🎤 CRITICAL: About to start WhatsApp section - Function is executing!');
       
       // 4. BYPASS COMPLETO - Direto para Evolution API sendWhatsAppAudio
       console.log('🎤 BYPASS: Enviando direto para /sendWhatsAppAudio');
+      console.log('🎤 CRITICAL DEBUG: Chegou na parte do WhatsApp - ANTES do try block');
       
       try {
         console.log('🔍 STEP 1: Buscando conversa:', conversationId);
