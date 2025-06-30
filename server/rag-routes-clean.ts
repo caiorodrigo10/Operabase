@@ -742,6 +742,110 @@ router.delete('/documents/:id', ragAuth, async (req: Request, res: Response) => 
 });
 
 /**
+ * DELETE /api/rag/cleanup-old-tables - Limpar tabelas antigas do RAG
+ */
+router.delete('/cleanup-old-tables', ragAuth, async (req: Request, res: Response) => {
+  try {
+    const clinic_id = (req as any).clinic_id;
+    
+    console.log('🧹 RAG: Iniciando limpeza de tabelas antigas...');
+    
+    // Lista de tabelas antigas do sistema RAG
+    const oldTables = [
+      'rag_documents',
+      'rag_chunks', 
+      'rag_embeddings',
+      'rag_queries',
+      'rag_knowledge_bases',
+      'document_chunks',
+      'embeddings',
+      'vector_store'
+    ];
+
+    let removedCount = 0;
+    let errors = 0;
+    const results = [];
+
+    for (const tableName of oldTables) {
+      try {
+        // Verificar se a tabela existe
+        const checkResult = await db.execute(sql`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = ${tableName}
+          );
+        `);
+        
+        const tableExists = (checkResult.rows[0] as any).exists;
+        
+        if (tableExists) {
+          console.log(`🗑️ RAG: Removendo tabela antiga: ${tableName}`);
+          
+          // Remover a tabela
+          await db.execute(sql.raw(`DROP TABLE IF EXISTS ${tableName} CASCADE;`));
+          
+          console.log(`✅ RAG: Tabela ${tableName} removida com sucesso`);
+          removedCount++;
+          results.push({ table: tableName, status: 'removed' });
+        } else {
+          console.log(`ℹ️ RAG: Tabela ${tableName} não existe`);
+          results.push({ table: tableName, status: 'not_found' });
+        }
+        
+      } catch (error) {
+        console.error(`❌ RAG: Erro ao remover tabela ${tableName}:`, error);
+        errors++;
+        results.push({ table: tableName, status: 'error', error: String(error) });
+      }
+    }
+
+    // Verificar e remover índices antigos
+    try {
+      const indexResult = await db.execute(sql`
+        SELECT indexname 
+        FROM pg_indexes 
+        WHERE schemaname = 'public' 
+        AND (indexname LIKE '%rag_%' OR indexname LIKE '%embedding_%')
+        AND indexname NOT LIKE '%documents_%';
+      `);
+      
+      for (const row of indexResult.rows) {
+        const indexName = (row as any).indexname;
+        try {
+          console.log(`🗑️ RAG: Removendo índice antigo: ${indexName}`);
+          await db.execute(sql.raw(`DROP INDEX IF EXISTS ${indexName};`));
+          console.log(`✅ RAG: Índice ${indexName} removido`);
+          results.push({ index: indexName, status: 'removed' });
+        } catch (error) {
+          console.error(`❌ RAG: Erro ao remover índice ${indexName}:`, error);
+          results.push({ index: indexName, status: 'error', error: String(error) });
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ RAG: Erro ao verificar índices:', error);
+    }
+
+    console.log(`📊 RAG: Limpeza concluída - ${removedCount} tabelas removidas, ${errors} erros`);
+
+    res.json({
+      success: true,
+      message: `Limpeza concluída: ${removedCount} tabelas removidas, ${errors} erros`,
+      data: {
+        removed_tables: removedCount,
+        errors: errors,
+        details: results
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ RAG: Erro na limpeza:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
  * GET /api/rag/status - Status do sistema RAG
  */
 router.get('/status', ragAuth, async (req: Request, res: Response) => {
