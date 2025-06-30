@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index, unique, uuid, vector, bigint } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index, unique, uuid, vector, bigint, bigserial } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -322,91 +323,48 @@ export type MaraProfessionalConfig = typeof mara_professional_configs.$inferSele
 export type InsertMaraProfessionalConfig = z.infer<typeof insertMaraProfessionalConfigSchema>;
 
 // ================================================================
-// RAG SYSTEM TABLES (ISOLATED MODULE)
+// RAG SYSTEM - OFICIAL LANGCHAIN/SUPABASE STRUCTURE
 // ================================================================
 
-// Bases de conhecimento RAG (separadas dos documentos)
-export const rag_knowledge_bases = pgTable("rag_knowledge_bases", {
-  id: serial("id").primaryKey(),
-  external_user_id: text("external_user_id").notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  created_by: text("created_by"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+// Tabela documents oficial LangChain/Supabase
+export const documents = pgTable("documents", {
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  content: text("content"), // corresponds to Document.pageContent
+  metadata: jsonb("metadata"), // corresponds to Document.metadata (multi-tenant: clinic_id, knowledge_base_id, etc)
+  embedding: vector("embedding", { dimensions: 1536 }), // 1536 works for OpenAI embeddings
 }, (table) => [
-  index("idx_rag_knowledge_bases_user").on(table.external_user_id),
-  unique("unique_knowledge_base_name_user").on(table.name, table.external_user_id),
+  // Índice vetorial HNSW para busca semântica (oficial LangChain)
+  index("idx_documents_embedding").on(table.embedding),
+  // Índices para metadata multi-tenant
+  index("idx_documents_clinic_id").on(sql`((metadata->>'clinic_id')::integer)`),
+  index("idx_documents_knowledge_base_id").on(sql`((metadata->>'knowledge_base_id')::integer)`),
+  // Índice GIN para metadata geral
+  index("idx_documents_metadata").on(table.metadata),
 ]);
 
-// Documentos RAG (isolado do sistema principal)
-export const rag_documents = pgTable("rag_documents", {
-  id: serial("id").primaryKey(),
-  external_user_id: text("external_user_id").notNull(), // ID do usuário (não FK)
-  title: text("title").notNull(),
-  content_type: varchar("content_type", { length: 10 }).notNull(), // 'pdf', 'url', 'text'
-  source_url: text("source_url"), // Para URLs
-  file_path: text("file_path"), // Para PDFs
-  original_content: text("original_content"), // Para texto direto
-  extracted_content: text("extracted_content"), // Texto processado
-  metadata: jsonb("metadata").default({}),
-  processing_status: varchar("processing_status", { length: 20 }).default("pending"),
-  error_message: text("error_message"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_rag_documents_user").on(table.external_user_id),
-  index("idx_rag_documents_status").on(table.processing_status),
-]);
-
-// Chunks de texto para embeddings
-export const rag_chunks = pgTable("rag_chunks", {
-  id: serial("id").primaryKey(),
-  document_id: integer("document_id").notNull().references(() => rag_documents.id, { onDelete: "cascade" }),
-  chunk_index: integer("chunk_index").notNull(),
-  content: text("content").notNull(),
-  token_count: integer("token_count"),
-  metadata: jsonb("metadata").default({}),
-  created_at: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_rag_chunks_document").on(table.document_id),
-]);
-
-// Embeddings vetoriais
-export const rag_embeddings = pgTable("rag_embeddings", {
-  id: serial("id").primaryKey(),
-  chunk_id: integer("chunk_id").notNull().references(() => rag_chunks.id, { onDelete: "cascade" }),
-  clinic_id: integer("clinic_id").notNull(),
-  knowledge_base_id: integer("knowledge_base_id").references(() => rag_knowledge_bases.id),
-  embedding: vector("embedding", { dimensions: 1536 }), // OpenAI text-embedding-3-small
-  model_used: varchar("model_used", { length: 50 }).default("text-embedding-3-small"),
-  created_at: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_rag_embeddings_chunk").on(table.chunk_id),
-  index("idx_rag_embeddings_clinic").on(table.clinic_id),
-  index("idx_rag_embeddings_knowledge_base").on(table.knowledge_base_id),
-  index("idx_rag_embeddings_clinic_kb").on(table.clinic_id, table.knowledge_base_id),
-]);
-
-// Consultas RAG para analytics
-export const rag_queries = pgTable("rag_queries", {
-  id: serial("id").primaryKey(),
-  external_user_id: text("external_user_id").notNull(),
-  query_text: text("query_text").notNull(),
-  results_count: integer("results_count"),
-  response_time_ms: integer("response_time_ms"),
-  created_at: timestamp("created_at").defaultNow(),
+// Zod schemas for documents table
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+}).extend({
+  content: z.string().min(1, "Content é obrigatório"),
+  metadata: z.object({
+    clinic_id: z.number().min(1, "clinic_id é obrigatório"),
+    knowledge_base_id: z.number().optional(),
+    document_title: z.string().optional(),
+    source: z.string().optional(),
+    chunk_index: z.number().optional(),
+  }).passthrough(), // Allow additional metadata fields
 });
 
-// Zod schemas for RAG tables
-export const insertRagKnowledgeBaseSchema = createInsertSchema(rag_knowledge_bases);
-export const insertRagDocumentSchema = createInsertSchema(rag_documents);
-export const insertRagChunkSchema = createInsertSchema(rag_chunks);
-export const insertRagEmbeddingSchema = createInsertSchema(rag_embeddings);
-export const insertRagQuerySchema = createInsertSchema(rag_queries);
+export const selectDocumentSchema = z.object({
+  id: z.bigint(),
+  content: z.string().nullable(),
+  metadata: z.record(z.any()).nullable(),
+  embedding: z.array(z.number()).nullable(),
+});
 
-// Types for RAG tables
-export type RagKnowledgeBase = typeof rag_knowledge_bases.$inferSelect;
+// Types for documents table
+export type Document = typeof documents.$inferSelect;
 export type InsertRagKnowledgeBase = z.infer<typeof insertRagKnowledgeBaseSchema>;
 
 export type RagDocument = typeof rag_documents.$inferSelect;
