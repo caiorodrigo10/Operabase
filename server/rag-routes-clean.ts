@@ -306,6 +306,34 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
       });
     }
 
+    // Gerar embedding para o conteúdo usando OpenAI
+    console.log('🤖 RAG: Gerando embedding para o documento...');
+    let embeddingVector = null;
+    
+    try {
+      const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          input: content.substring(0, 8000), // Limite de tokens
+          model: 'text-embedding-ada-002'
+        })
+      });
+
+      if (embeddingResponse.ok) {
+        const embeddingData = await embeddingResponse.json();
+        embeddingVector = embeddingData.data[0].embedding;
+        console.log('✅ RAG: Embedding gerado com sucesso:', embeddingVector.length, 'dimensões');
+      } else {
+        console.warn('⚠️ RAG: Falha ao gerar embedding, continuando sem ele');
+      }
+    } catch (error) {
+      console.warn('⚠️ RAG: Erro ao gerar embedding:', error);
+    }
+
     // Inserir documento na estrutura oficial LangChain usando SQL direto
     const documentMetadata = {
       clinic_id: clinic_id.toString(),
@@ -317,9 +345,9 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
     };
 
     const result = await db.execute(sql`
-      INSERT INTO documents (content, metadata)
-      VALUES (${content}, ${JSON.stringify(documentMetadata)})
-      RETURNING id, content, metadata
+      INSERT INTO documents (content, metadata, embedding)
+      VALUES (${content}, ${JSON.stringify(documentMetadata)}, ${embeddingVector ? JSON.stringify(embeddingVector) : null})
+      RETURNING id, content, metadata, embedding
     `);
 
     const newDocument = result.rows[0] as any;
@@ -408,12 +436,41 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
 
     // Usar título do arquivo se não fornecido
     const documentTitle = title || file.originalname.replace(/\.pdf$/i, '');
+    const documentContent = `PDF processado: ${documentTitle}`;
 
-    // Inserir documento na estrutura oficial LangChain
+    // Gerar embedding para o conteúdo do PDF
+    console.log('🤖 RAG: Gerando embedding para PDF...');
+    let embeddingVector = null;
+    
+    try {
+      const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          input: documentContent,
+          model: 'text-embedding-ada-002'
+        })
+      });
+
+      if (embeddingResponse.ok) {
+        const embeddingData = await embeddingResponse.json();
+        embeddingVector = embeddingData.data[0].embedding;
+        console.log('✅ RAG: Embedding gerado para PDF:', embeddingVector.length, 'dimensões');
+      } else {
+        console.warn('⚠️ RAG: Falha ao gerar embedding para PDF');
+      }
+    } catch (error) {
+      console.warn('⚠️ RAG: Erro ao gerar embedding para PDF:', error);
+    }
+
+    // Inserir documento na estrutura oficial LangChain com embedding
     const documentResult = await db.execute(sql`
-      INSERT INTO documents (content, metadata)
+      INSERT INTO documents (content, metadata, embedding)
       VALUES (
-        'PDF processado: ' || ${documentTitle},
+        ${documentContent},
         ${JSON.stringify({
           clinic_id: clinic_id.toString(),
           knowledge_base_id: knowledge_base_id.toString(),
@@ -424,8 +481,9 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
           file_size: file.size,
           created_by: (req as any).user.email,
           created_at: new Date().toISOString(),
-          processing_status: 'pending'
-        })}
+          processing_status: embeddingVector ? 'completed' : 'pending'
+        })},
+        ${embeddingVector ? JSON.stringify(embeddingVector) : null}
       )
       RETURNING id
     `);
@@ -574,6 +632,88 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('❌ RAG: Erro ao listar:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
+ * POST /api/rag/documents/process-embeddings - Processar embeddings dos documentos existentes
+ */
+router.post('/documents/process-embeddings', ragAuth, async (req: Request, res: Response) => {
+  try {
+    const clinic_id = (req as any).clinic_id;
+    
+    console.log('🔄 RAG: Processando embeddings para documentos existentes da clínica:', clinic_id);
+    
+    // Buscar documentos sem embeddings
+    const documentsWithoutEmbeddings = await db.execute(sql`
+      SELECT id, content, metadata
+      FROM documents 
+      WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+        AND embedding IS NULL
+    `);
+    
+    const documents = documentsWithoutEmbeddings.rows;
+    console.log(`📊 RAG: Encontrados ${documents.length} documentos sem embeddings`);
+    
+    let processedCount = 0;
+    let errorCount = 0;
+    
+    for (const doc of documents) {
+      try {
+        console.log(`🤖 RAG: Processando embedding para documento ${doc.id}...`);
+        
+        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            input: doc.content.substring(0, 8000),
+            model: 'text-embedding-ada-002'
+          })
+        });
+
+        if (embeddingResponse.ok) {
+          const embeddingData = await embeddingResponse.json();
+          const embeddingVector = embeddingData.data[0].embedding;
+          
+          // Atualizar documento com embedding
+          await db.execute(sql`
+            UPDATE documents 
+            SET embedding = ${JSON.stringify(embeddingVector)}
+            WHERE id = ${doc.id}
+          `);
+          
+          processedCount++;
+          console.log(`✅ RAG: Embedding processado para documento ${doc.id}`);
+        } else {
+          errorCount++;
+          console.warn(`⚠️ RAG: Falha ao processar embedding para documento ${doc.id}`);
+        }
+        
+        // Pequena pausa para não sobrecarregar a API
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        errorCount++;
+        console.error(`❌ RAG: Erro ao processar documento ${doc.id}:`, error);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Processamento concluído: ${processedCount} sucessos, ${errorCount} erros`,
+      data: {
+        total: documents.length,
+        processed: processedCount,
+        errors: errorCount
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ RAG: Erro no processamento de embeddings:', error);
     res.status(500).json({ success: false, error: String(error) });
   }
 });
