@@ -592,7 +592,21 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: any, res: Response) =
 router.delete('/documents/:id', ragAuth, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
+
+    console.log(`🗑️ Delete Document Debug - Document ID: ${documentId}, Clinic ID: ${clinicId}`);
+
+    // Primeiro, vamos buscar o documento sem filtro de clinic_id para debug
+    const [documentCheck] = await db
+      .select()
+      .from(rag_documents)
+      .where(eq(rag_documents.id, documentId));
+
+    console.log(`🔍 Document exists check:`, documentCheck ? {
+      id: documentCheck.id,
+      title: documentCheck.title,
+      external_user_id: documentCheck.external_user_id
+    } : 'NOT FOUND');
 
     // Buscar documento para verificar ownership e obter file_path
     const [document] = await db
@@ -600,7 +614,7 @@ router.delete('/documents/:id', ragAuth, async (req: any, res: Response) => {
       .from(rag_documents)
       .where(and(
         eq(rag_documents.id, documentId),
-        eq(rag_documents.external_user_id, userId)
+        eq(rag_documents.external_user_id, clinicId) // Usar clinic_id
       ));
 
     if (!document) {
@@ -634,7 +648,7 @@ router.delete('/documents/:id', ragAuth, async (req: any, res: Response) => {
 router.post('/documents/:id/reprocess', ragAuth, async (req: any, res: Response) => {
   try {
     const documentId = parseInt(req.params.id);
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
 
     // Verificar ownership do documento
     const [document] = await db
@@ -642,7 +656,7 @@ router.post('/documents/:id/reprocess', ragAuth, async (req: any, res: Response)
       .from(rag_documents)
       .where(and(
         eq(rag_documents.id, documentId),
-        eq(rag_documents.external_user_id, userId)
+        eq(rag_documents.external_user_id, clinicId) // Usar clinic_id
       ));
 
     if (!document) {
