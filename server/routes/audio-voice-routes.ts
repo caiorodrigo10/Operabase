@@ -110,18 +110,38 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
       console.log('🎤 BYPASS: Enviando direto para /sendWhatsAppAudio');
       
       try {
+        console.log('🔍 STEP 1: Buscando conversa:', conversationId);
+        
         // Buscar conversa para obter telefone
         const conversation = await storage.getConversationById(conversationId);
         if (!conversation) {
+          console.error('❌ STEP 1 FAILED: Conversa não encontrada');
           throw new Error('Conversa não encontrada');
         }
         
+        console.log('✅ STEP 1 SUCCESS: Conversa encontrada:', {
+          id: conversation.id,
+          phone: conversation.contact.phone
+        });
+        
+        console.log('🔍 STEP 2: Buscando instância WhatsApp da clínica 1');
+        
         // Buscar instância WhatsApp da clínica
         const instances = await storage.getWhatsAppNumbers(1);
+        console.log('🔍 STEP 2: Instâncias encontradas:', instances.length);
+        console.log('🔍 STEP 2: Status das instâncias:', instances.map(i => ({ id: i.id, status: i.status, instance_name: i.instance_name })));
+        
         const activeInstance = instances.find(i => i.status === 'open');
         if (!activeInstance) {
+          console.error('❌ STEP 2 FAILED: Nenhuma instância WhatsApp ativa');
           throw new Error('Nenhuma instância WhatsApp ativa');
         }
+        
+        console.log('✅ STEP 2 SUCCESS: Instância ativa encontrada:', {
+          id: activeInstance.id,
+          instance_name: activeInstance.instance_name,
+          status: activeInstance.status
+        });
         
         console.log('🎤 Enviando para WhatsApp:', {
           phone: conversation.contact.phone,
