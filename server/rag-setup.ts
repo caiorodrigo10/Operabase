@@ -29,16 +29,26 @@ export async function initializeRAGSystem() {
 }
 
 async function createRAGTables() {
-  // Bases de conhecimento RAG (separadas dos documentos)
+  // Knowledge Bases para organização (compatível com sistema oficial LangChain)
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS rag_knowledge_bases (
+    CREATE TABLE IF NOT EXISTS knowledge_bases (
       id SERIAL PRIMARY KEY,
-      external_user_id TEXT NOT NULL,
+      clinic_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       description TEXT,
-      created_by TEXT,
       created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
+      updated_at TIMESTAMP DEFAULT NOW(),
+      created_by TEXT
+    );
+  `);
+
+  // Tabela documents oficial LangChain/Supabase
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS documents (
+      id BIGSERIAL PRIMARY KEY,
+      content TEXT,
+      metadata JSONB,
+      embedding VECTOR(1536)
     );
   `);
 
@@ -101,18 +111,18 @@ async function createRAGTables() {
 }
 
 async function createVectorIndexes() {
-  // Índices para performance
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_knowledge_bases_user ON rag_knowledge_bases(external_user_id);`);
-  await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS unique_knowledge_base_name_user ON rag_knowledge_bases(name, external_user_id);`);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_documents_user ON rag_documents(external_user_id);`);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_documents_status ON rag_documents(processing_status);`);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_chunks_document ON rag_chunks(document_id);`);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_rag_embeddings_chunk ON rag_embeddings(chunk_id);`);
+  // Índices para knowledge_bases
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_knowledge_bases_clinic ON knowledge_bases(clinic_id);`);
+  
+  // Índices para documents (estrutura oficial LangChain)
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_documents_metadata_gin ON documents USING gin (metadata);`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_documents_clinic_id ON documents ((metadata->>'clinic_id'));`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_documents_knowledge_base_id ON documents ((metadata->>'knowledge_base_id'));`);
 
-  // Índice vetorial HNSW para busca semântica
+  // Índice vetorial HNSW para busca semântica (estrutura oficial)
   await db.execute(`
-    CREATE INDEX IF NOT EXISTS idx_rag_embeddings_vector 
-    ON rag_embeddings 
+    CREATE INDEX IF NOT EXISTS idx_documents_embedding_hnsw 
+    ON documents 
     USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
   `);

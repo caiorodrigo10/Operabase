@@ -52,7 +52,8 @@ router.get('/knowledge-bases', ragAuth, async (req: Request, res: Response) => {
             AND metadata->>'knowledge_base_id' = ${base.id.toString()}
         `);
         
-        const count = parseInt(documentsCount.rows[0]?.count || '0');
+        const countResult = documentsCount.rows[0] as any;
+        const count = parseInt(countResult?.count || '0');
         
         return {
           ...base,
@@ -191,7 +192,8 @@ router.delete('/knowledge-bases/:id', ragAuth, async (req: Request, res: Respons
         AND metadata->>'knowledge_base_id' = ${id}
     `);
     
-    const deletedDocuments = parseInt(documentsCount.rows[0]?.count || '0');
+    const deletedCountResult = documentsCount.rows[0] as any;
+    const deletedDocuments = parseInt(deletedCountResult?.count || '0');
     
     // Remover documentos relacionados
     if (deletedDocuments > 0) {
