@@ -106,12 +106,10 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
       
       console.log('✅ Voice attachment created:', attachment.id);
       
-      // 4. BYPASS COMPLETO - Direto para Evolution API sendWhatsAppAudio
-      console.log('🎤 BYPASS: Enviando direto para /sendWhatsAppAudio');
+      // 4. BYPASS COMPLETO - Direto para Evolution API sendMedia
+      console.log('🎤 BYPASS: Enviando direto para /sendMedia');
       
       try {
-        const evolutionAPI = new EvolutionAPIService();
-        
         // Buscar conversa para obter telefone
         const conversation = await storage.getConversationById(conversationId);
         if (!conversation) {
@@ -131,22 +129,24 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
           audioUrl: storageResult.signed_url
         });
         
-        // CHAMADA DIRETA para sendWhatsAppAudio (bypass completo)
+        // CHAMADA DIRETA para sendMedia (bypass completo)
         const evolutionUrl = process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
         const evolutionApiKey = process.env.EVOLUTION_API_KEY!;
         
         // Formatação correta do payload conforme documentação Evolution API
         const phoneNumber = conversation.contact.phone.replace(/\D/g, '');
+        // Usando endpoint /sendMedia que funciona para outros tipos de mídia
         const whatsappPayload = {
           number: phoneNumber,
-          audio: storageResult.signed_url, // Campo correto: 'audio' (não 'media')
+          media: storageResult.signed_url,
+          mediatype: "audio",
           delay: 1000
         };
         
-        console.log('🎤 BYPASS DIRETO - Payload /sendWhatsAppAudio:', whatsappPayload);
-        console.log('🎤 URL:', `${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`);
+        console.log('🎤 TESTANDO /sendMedia - Payload:', whatsappPayload);
+        console.log('🎤 URL:', `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`);
         
-        const response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`, {
+        const response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
