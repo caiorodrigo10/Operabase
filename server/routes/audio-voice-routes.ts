@@ -130,7 +130,7 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
         });
         
         // CHAMADA DIRETA para sendWhatsAppAudio (bypass completo)
-        const evolutionUrl = process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
+        const evolutionUrl = (process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host').replace(/\/$/, '');
         const evolutionApiKey = process.env.EVOLUTION_API_KEY!;
         
         // Formatação correta do payload conforme documentação Evolution API
@@ -141,6 +141,9 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
           audio: storageResult.signed_url,
           delay: 1000
         };
+        
+        console.log('📞 Phone number formatted:', phoneNumber);
+        console.log('🔗 Audio URL length:', storageResult.signed_url.length);
         
         console.log('🎤 USANDO /sendWhatsAppAudio - Payload:', whatsappPayload);
         console.log('🎤 URL:', `${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`);
