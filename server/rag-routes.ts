@@ -150,11 +150,12 @@ router.get('/documents', ragAuth, async (req: any, res: Response) => {
 // Criar nova base de conhecimento
 router.post('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.email || req.user?.id?.toString();
+    const clinicId = req.user?.clinic_id?.toString(); // Usar clinic_id consistente
     const { name, description } = req.body;
     
     console.log('🔍 Request body:', req.body);
     console.log('🔍 Name:', name, 'Description:', description);
+    console.log('🔍 Clinic ID:', clinicId);
     
     if (!name || !name.trim()) {
       console.log('❌ Validation failed - name is required');
@@ -168,12 +169,14 @@ router.post('/knowledge-bases', ragAuth, async (req: any, res: Response) => {
     const [newKnowledgeBase] = await db
       .insert(rag_knowledge_bases)
       .values({
-        external_user_id: userId,
+        external_user_id: clinicId, // Usar clinic_id para consistência
         name: name.trim(),
         description: finalDescription,
         created_by: req.user?.name || req.user?.email
       })
       .returning();
+
+    console.log('✅ Created knowledge base:', newKnowledgeBase);
 
     res.json({ 
       success: true, 
