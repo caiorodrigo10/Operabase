@@ -207,6 +207,7 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
           });
           console.log('✅ Voice message sent via WhatsApp!');
           
+          console.log('🎯 SENDING SUCCESS RESPONSE - WhatsApp worked!');
           res.json({
             success: true,
             data: {
@@ -236,6 +237,7 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
           status: 'failed'
         });
         
+        console.log('🎯 SENDING FAILURE RESPONSE - WhatsApp failed!');
         res.json({
           success: true,
           data: {
@@ -252,6 +254,7 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
       
     } catch (error) {
       console.error('❌ Voice upload error:', error);
+      console.log('🎯 SENDING ERROR RESPONSE - Caught exception!');
       
       res.status(500).json({
         success: false,
