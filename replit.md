@@ -207,6 +207,19 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### June 30, 2025 - WhatsApp Audio Recording System: Complete Isolated Workflow Implementation ✅
+- **Problem Resolved**: Fixed WhatsApp audio recording to use correct Evolution API `/sendWhatsAppAudio` endpoint
+- **Route Isolation**: Created dedicated `/api/conversations/:id/upload-voice` route separate from file upload system
+- **Duplicate Route Removed**: Eliminated conflicting route in `upload-routes.ts` causing function interference
+- **Direct Supabase Upload**: Bypassed SupabaseStorageService interface conflicts with direct Supabase client integration
+- **Correct API Payload**: Fixed Evolution API payload to use 'audio' field instead of 'media' field for voice messages
+- **Database Integration**: Messages correctly saved with `message_type: 'audio_voice'` and proper attachments
+- **Storage Organization**: Audio files stored in organized structure: `clinic-{id}/conversation-{id}/audio/voice_{timestamp}_{filename}`
+- **Complete Workflow**: Upload → Database → WhatsApp delivery chain functioning correctly
+- **Error Handling**: Robust error handling with proper status updates and fallback mechanisms
+- **Zero Impact**: File upload system preserved, audio workflow completely isolated
+- **Status**: ✅ FULLY IMPLEMENTED - Audio recordings use dedicated workflow with correct Evolution API integration
+
 ### June 30, 2025 - RAG System Complete Fix: Creation and Upload Consistency ✅
 - **Problem 1 Resolved**: Knowledge bases created successfully but didn't appear in listing interface
 - **Problem 2 Resolved**: PDF uploads processed but didn't appear in knowledge base document lists
