@@ -95,6 +95,11 @@ app.use((req, res, next) => {
   app.use('/api/user', profilePictureRoutes.default);
   console.log('📸 Profile picture routes registered');
   
+  // Setup audio voice routes
+  const { setupAudioVoiceRoutes } = await import('./routes/audio-voice-routes');
+  setupAudioVoiceRoutes(app, storage);
+  console.log('🎤 Audio voice routes registered');
+  
   // BYPASS TOTAL DE MIDDLEWARE PARA UPLOADS - SOLUÇÃO DEFINITIVA
   app.use('/api/conversations/:id/upload', (req: any, res: any, next: any) => {
     console.log('🔥 BYPASS MIDDLEWARE - Upload detectado, pulando TODA autenticação');
@@ -147,9 +152,7 @@ app.use((req, res, next) => {
   const apiRouter = createApiRouter(storage);
   app.use('/api', apiRouter);
   
-  // Setup isolated audio voice routes (bypass for recorded audio)
-  const { setupAudioVoiceRoutes } = await import('./routes/audio-voice-routes');
-  setupAudioVoiceRoutes(app, storage);
+
   
   // Supabase Storage schema already exists - no need to apply
   
