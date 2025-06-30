@@ -444,14 +444,14 @@ export default function PlanosPage() {
                   
                   <div className="flex items-center justify-center">
                     <div className="flex items-center space-x-4">
-                      <Label className={cn("text-sm", !pagoPorConvenio ? "text-slate-900" : "text-slate-500")}>
-                        Pago pelo convênio
-                      </Label>
                       <Switch
                         checked={pagoPorConvenio}
                         onCheckedChange={setPagoPorConvenio}
                         className="data-[state=checked]:bg-teal-600"
                       />
+                      <Label className={cn("text-sm", !pagoPorConvenio ? "text-slate-900" : "text-slate-500")}>
+                        Pago pelo convênio
+                      </Label>
                       <Label className={cn("text-sm", pagoPorConvenio ? "text-teal-600" : "text-slate-500")}>
                         Plano padrão
                       </Label>
