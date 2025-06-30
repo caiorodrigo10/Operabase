@@ -140,12 +140,21 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
         console.log('🔄 Converting Supabase file to base64 for Evolution API access...');
         
         // SOLUÇÃO: Evolution API precisa de base64 SEM prefixo data:
+        console.log('🔗 Signed URL:', storageResult.signed_url.substring(0, 100) + '...');
+        
         const audioResponse = await fetch(storageResult.signed_url);
+        console.log('📥 Fetch response status:', audioResponse.status, audioResponse.statusText);
+        
         if (!audioResponse.ok) {
+          console.error('❌ Failed to fetch audio from Supabase:', audioResponse.status, audioResponse.statusText);
           throw new Error(`Failed to fetch audio from Supabase: ${audioResponse.status}`);
         }
+        
         const audioBuffer = await audioResponse.arrayBuffer();
+        console.log('📊 Audio buffer size:', audioBuffer.byteLength, 'bytes');
+        
         const base64Audio = Buffer.from(audioBuffer).toString('base64');
+        console.log('🔤 Base64 audio length:', base64Audio.length, 'characters');
         
         console.log('✅ Audio converted to base64, size:', base64Audio.length);
         
@@ -202,6 +211,11 @@ export function setupAudioVoiceRoutes(app: Express, storage: IStorage) {
         
       } catch (whatsappError) {
         console.error('❌ WhatsApp sending failed:', whatsappError);
+        console.error('❌ WhatsApp Error details:', {
+          name: whatsappError.name,
+          message: whatsappError.message,
+          stack: whatsappError.stack
+        });
         
         // Manter arquivo salvo mesmo se WhatsApp falhar
         await storage.updateMessage(message.id, {
