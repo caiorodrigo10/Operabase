@@ -119,14 +119,28 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
       const attachment = await storage.createAttachment(attachmentData);
       console.log('✅ ÁUDIO LIMPO: Anexo criado ID:', attachment.id);
       
-      // Enviar para WhatsApp via Evolution API
+      // Enviar para WhatsApp via Evolution API usando MESMA LÓGICA das mensagens normais
       console.log('📱 ÁUDIO LIMPO: Enviando para WhatsApp via Evolution API...');
+
+      console.log('🔍 ÁUDIO LIMPO: Buscando instância WhatsApp ativa para clínica:', user.clinic_id);
       
-      const evolutionService = new EvolutionAPIService();
-      const conversationDetail = await storage.getConversationById(conversationId);
+      const { data: instanceArray, error: instanceError } = await supabase
+        .from('whatsapp_numbers')
+        .select('*')
+        .eq('clinic_id', user.clinic_id)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(1);
       
-      if (!conversationDetail?.whatsapp_number_id) {
-        console.log('⚠️ ÁUDIO LIMPO: Conversa sem WhatsApp configurado');
+      console.log('🔍 ÁUDIO LIMPO: Resultado query instância:', instanceArray);
+      console.log('🔍 ÁUDIO LIMPO: Erro query:', instanceError);
+      
+      const activeInstance = instanceArray?.[0];
+      
+      console.log('🔍 ÁUDIO LIMPO: Instância selecionada:', activeInstance?.instance_name);
+
+      if (instanceError) {
+        console.error('❌ ÁUDIO LIMPO: Erro ao buscar instância WhatsApp:', instanceError);
         await storage.updateMessage(message.id, { evolution_status: 'failed' });
         
         return res.json({
@@ -136,18 +150,15 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
             attachment,
             whatsapp: {
               sent: false,
-              error: 'Conversa não tem WhatsApp configurado'
+              error: 'Erro ao buscar instância WhatsApp ativa'
             }
           },
           message: 'Áudio salvo, mas não enviado para WhatsApp'
         });
       }
-      
-      // Buscar instância do WhatsApp
-      const whatsappInstance = await storage.getWhatsAppNumber(conversationDetail.whatsapp_number_id);
-      
-      if (!whatsappInstance || whatsappInstance.status !== 'open') {
-        console.log('⚠️ ÁUDIO LIMPO: Instância WhatsApp não disponível');
+
+      if (!activeInstance) {
+        console.error('❌ ÁUDIO LIMPO: Nenhuma instância WhatsApp ativa encontrada para clínica:', user.clinic_id);
         await storage.updateMessage(message.id, { evolution_status: 'failed' });
         
         return res.json({
@@ -157,7 +168,40 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
             attachment,
             whatsapp: {
               sent: false,
-              error: 'Instância WhatsApp não disponível'
+              error: 'Nenhuma instância WhatsApp ativa encontrada para esta clínica'
+            }
+          },
+          message: 'Áudio salvo, mas não enviado para WhatsApp'
+        });
+      }
+
+      console.log('✅ ÁUDIO LIMPO: Instância WhatsApp ativa encontrada:', {
+        instance_name: activeInstance.instance_name,
+        phone_number: activeInstance.phone_number,
+        status: activeInstance.status
+      });
+
+      // Buscar informações de contato
+      const conversationDetail = await storage.getConversationById(conversationId);
+
+      console.log('🔍 ÁUDIO LIMPO: Resultado busca conversa:', {
+        conversationId: conversationId,
+        found: !!conversationDetail,
+        phone: conversationDetail?.contact?.phone
+      });
+
+      if (!conversationDetail?.contact?.phone) {
+        console.error('❌ ÁUDIO LIMPO: Conversa não possui contato com telefone:', conversationId);
+        await storage.updateMessage(message.id, { evolution_status: 'failed' });
+        
+        return res.json({
+          success: true,
+          data: {
+            message,
+            attachment,
+            whatsapp: {
+              sent: false,
+              error: 'Conversa não possui contato com telefone'
             }
           },
           message: 'Áudio salvo, mas não enviado para WhatsApp'
@@ -169,9 +213,10 @@ export function setupAudioVoiceCleanRoutes(app: Express, storage: IStorage) {
       console.log('🌐 ÁUDIO LIMPO: URL para Evolution:', publicUrl.signedUrl);
       
       try {
+        const evolutionService = new EvolutionAPIService();
         const whatsappResult = await evolutionService.sendMedia({
-          instanceName: whatsappInstance.instance_name,
-          number: conversationDetail.phone_number,
+          instanceName: activeInstance.instance_name,
+          number: conversationDetail.contact.phone,
           media: publicUrl.signedUrl, // URL pública temporária acessível externamente
           mediatype: 'audio',
           caption: 'Mensagem de voz'
