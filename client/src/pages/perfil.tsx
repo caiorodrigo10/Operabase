@@ -145,33 +145,6 @@ export function Perfil() {
       </div>
 
       <div className="space-y-6">
-        {/* Foto de perfil */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Foto de Perfil
-            </CardTitle>
-            <CardDescription>
-              Adicione ou altere sua foto de perfil
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center">
-              <ProfileImageUpload 
-                currentImageUrl={user?.profile_picture}
-                onImageChange={(newUrl) => {
-                  // Atualizar cache local se necessário
-                  queryClient.setQueryData(["/api/user"], (old: any) => ({
-                    ...old,
-                    profile_picture: newUrl
-                  }));
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Informações pessoais */}
         <Card>
           <CardHeader>
@@ -184,6 +157,20 @@ export function Perfil() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Seção da foto de perfil */}
+            <div className="flex justify-center mb-6">
+              <ProfileImageUpload 
+                currentImageUrl={user?.profile_picture}
+                onImageChange={(newUrl) => {
+                  // Atualizar cache local se necessário
+                  queryClient.setQueryData(["/api/user"], (old: any) => ({
+                    ...old,
+                    profile_picture: newUrl
+                  }));
+                }}
+              />
+            </div>
+            
             <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
