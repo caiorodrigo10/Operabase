@@ -432,6 +432,223 @@ const isReceived = message.type === 'received';
 const isReceived = message.sender_type === 'patient';
 ```
 
+### Audio Voice Recording System
+
+**Complete WhatsApp Voice Message System (June 30, 2025) - PRODUCTION READY ✅**
+
+#### Technical Architecture
+
+```typescript
+// Frontend Implementation
+interface AudioRecorderProps {
+  selectedConversationId: string;
+}
+
+// State Management
+const [isRecording, setIsRecording] = useState(false);
+const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+const [recordingTime, setRecordingTime] = useState(0);
+
+// Audio Recording Flow
+const startRecording = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const recorder = new MediaRecorder(stream);
+  setMediaRecorder(recorder);
+  setIsRecording(true);
+  recorder.start();
+};
+
+const stopRecording = () => {
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    setIsRecording(false);
+  }
+};
+
+// Audio File Upload
+const handleAudioReady = async (audioFile: File) => {
+  console.log('🎤 Audio ready for upload:', {
+    name: audioFile.name,
+    size: audioFile.size,
+    type: audioFile.type,
+    selectedConversationId
+  });
+
+  const formData = new FormData();
+  formData.append('file', audioFile);
+
+  const response = await fetch(`/api/audio/voice-message/${selectedConversationId}`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (response.ok) {
+    console.log('✅ Audio upload via isolated route successful');
+    // Close recorder modal
+    setShowAudioRecorder(false);
+  }
+};
+```
+
+#### Backend Processing Pipeline
+
+```typescript
+// Dedicated Audio Route: /api/audio/voice-message/:conversationId
+app.post('/api/audio/voice-message/:conversationId', upload.single('file'), async (req, res) => {
+  
+  // 1. Supabase Storage Upload
+  const storageResult = await supabaseStorageService.uploadFile(
+    req.file.buffer,
+    `clinic-${clinicId}/conversation-${conversationId}/audio/voice_${timestamp}_${originalFilename}`,
+    req.file.mimetype,
+    'conversation-attachments'
+  );
+
+  // 2. Database Integration
+  const message = await storage.createMessage({
+    conversation_id: conversationId,
+    sender_type: 'professional',
+    content: 'Mensagem de voz',
+    ai_action: 'voice_upload',
+    device_type: 'manual',
+    message_type: 'audio_voice',
+    evolution_status: 'pending'
+  });
+
+  const attachment = await storage.createAttachment({
+    message_id: message.id,
+    clinic_id: clinicId,
+    file_name: originalFilename,
+    file_type: req.file.mimetype,
+    file_size: req.file.size,
+    file_url: storageResult.signedUrl
+  });
+
+  // 3. Base64 Conversion for Evolution API
+  const response = await fetch(storageResult.signedUrl);
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const base64Audio = buffer.toString('base64');
+
+  // 4. WhatsApp Voice Message Delivery
+  const audioPayload = {
+    number: conversationDetail.contact.phone,
+    audio: base64Audio, // Base64 encoded for Evolution API compatibility
+    delay: 1000
+  };
+
+  const whatsappResult = await evolutionService.sendWhatsAppAudio(
+    activeInstance.instance_name, 
+    audioPayload
+  );
+
+  // 5. Status Update
+  await storage.updateMessage(message.id, { 
+    evolution_status: 'sent',
+    evolution_message_id: whatsappResult.key?.id 
+  });
+});
+```
+
+#### Evolution API Integration
+
+```typescript
+// Evolution API Service - WhatsApp Audio Method
+class EvolutionAPIService {
+  async sendWhatsAppAudio(instanceId: string, payload: EvolutionAudioPayload): Promise<EvolutionResponse> {
+    const response = await fetch(`${this.baseUrl}/message/sendWhatsAppAudio/${instanceId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': this.apiKey
+      },
+      body: JSON.stringify(payload)
+    });
+
+    // Response Example:
+    // {
+    //   "key": { "id": "3EB0D62FB9289AA145A88ED80AAC9E100B3C5129" },
+    //   "message": { "audioMessage": { "ptt": true } },
+    //   "messageTimestamp": "1751304178",
+    //   "status": "PENDING"
+    // }
+
+    return response.json();
+  }
+}
+
+interface EvolutionAudioPayload {
+  number: string;        // Patient phone number
+  audio: string;         // Base64 encoded audio data
+  delay?: number;        // Optional delay in milliseconds
+  linkPreview?: boolean; // Optional link preview
+  mentionsEveryOne?: boolean; // Optional mention all
+  mentioned?: string[];  // Optional specific mentions
+  quoted?: object;       // Optional quoted message
+}
+```
+
+#### Complete Workflow
+
+```
+🎤 Frontend Recording
+    ↓
+📁 File Generation (WebM format)
+    ↓
+📤 Upload to /api/audio/voice-message/:conversationId
+    ↓
+☁️ Supabase Storage (clinic-{id}/conversation-{id}/audio/voice_{timestamp}_{filename})
+    ↓
+💾 Database Records (message + attachment)
+    ↓
+📥 Download & Base64 Conversion
+    ↓
+🔗 Evolution API /sendWhatsAppAudio
+    ↓
+📱 WhatsApp Voice Message Delivery
+    ↓
+✅ Status Update (evolution_status: 'sent')
+```
+
+#### Message Display
+
+```typescript
+// Audio messages render with special audio player component
+const isAudioVoice = message.message_type === 'audio_voice';
+
+return (
+  <div className={`message-bubble ${isReceived ? 'received' : 'sent'}`}>
+    {isAudioVoice ? (
+      <div className="audio-message">
+        <PlayIcon className="h-4 w-4" />
+        <span>Mensagem de voz</span>
+        <AudioPlayer src={attachment.file_url} />
+      </div>
+    ) : (
+      <div className="text-message">
+        {message.content}
+      </div>
+    )}
+  </div>
+);
+```
+
+#### Key Technical Features
+
+- **Isolated Route**: Dedicated `/api/audio/voice-message/:conversationId` endpoint
+- **Base64 Conversion**: Supabase Storage URLs converted to base64 for Evolution API compatibility
+- **Voice Message Format**: Uses `/sendWhatsAppAudio` endpoint (not `/sendMedia`) for proper voice messages
+- **Real-time Status**: Messages update from 'pending' to 'sent' automatically
+- **Storage Organization**: Structured file storage with clinic/conversation isolation
+- **Zero Impact**: Completely separate from file upload system, no interference
+
+#### Success Metrics
+
+- **Evolution API Response**: Valid messageId and PENDING status
+- **WhatsApp Delivery**: Audio appears as voice message (pressable play button)
+- **Database Integration**: Proper message_type: 'audio_voice' and attachments
+- **User Experience**: Recording → Upload → WhatsApp delivery in ~7 seconds
+
 ### Timeline Rendering
 
 The timeline combines messages and system events chronologically:
