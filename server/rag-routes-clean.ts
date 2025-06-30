@@ -302,7 +302,7 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
         content: content,
         knowledge_base_id,
         source,
-        created_at: newDocument.metadata.created_at
+        created_at: documentMetadata.created_at
       },
       message: "Documento adicionado com sucesso à estrutura oficial LangChain"
     });
@@ -349,32 +349,34 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
     
     console.log('📋 RAG: Listagem de documentos para clínica:', clinic_id);
 
-    // Construir query para buscar documentos na estrutura oficial LangChain
-    let whereCondition = `metadata->>'clinic_id' = '${clinic_id}'`;
+    // Buscar documentos na estrutura oficial LangChain usando SQL seguro
+    let documentsResult;
     
     if (knowledge_base_id) {
-      whereCondition += ` AND metadata->>'knowledge_base_id' = '${knowledge_base_id}'`;
+      documentsResult = await db.execute(sql`
+        SELECT id, content, metadata
+        FROM documents 
+        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+          AND metadata->>'knowledge_base_id' = ${knowledge_base_id.toString()}
+        ORDER BY id DESC
+      `);
+    } else {
+      documentsResult = await db.execute(sql`
+        SELECT id, content, metadata
+        FROM documents 
+        WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
+        ORDER BY id DESC
+      `);
     }
-
-    const documentsResult = await db.execute(sql`
-      SELECT 
-        id,
-        content,
-        metadata,
-        created_at
-      FROM documents 
-      WHERE ${sql.raw(whereCondition)}
-      ORDER BY id DESC
-    `);
 
     const documentsList = documentsResult.rows.map((doc: any) => ({
       id: doc.id,
       title: doc.metadata?.title || 'Documento sem título',
-      content: doc.content,
+      content: doc.content?.substring(0, 200) + (doc.content?.length > 200 ? '...' : ''),
       knowledge_base_id: doc.metadata?.knowledge_base_id,
       source: doc.metadata?.source || 'unknown',
       created_by: doc.metadata?.created_by,
-      created_at: doc.metadata?.created_at || doc.created_at
+      created_at: doc.metadata?.created_at
     }));
 
     console.log('✅ RAG: Documentos encontrados:', documentsList.length);
