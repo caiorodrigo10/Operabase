@@ -120,19 +120,41 @@ section {
   box-sizing: border-box;
 }
 
-/* Builder.io EXATO: Container de colunas (horizontal) */
+/* Builder.io EXATO: Container de colunas (horizontal) - SUPER FORÇA */
 .builder-columns {
   display: flex !important;
   flex-direction: row !important;
   height: 100%;
+  width: 100%;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+}
+
+/* FORÇA ESPECÍFICA para features-columns */
+#features-columns {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: stretch !important;
+  width: 100% !important;
 }
 
 /* Builder.io EXATO: Coluna individual (vertical para blocos internos) */
 .builder-column {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
   line-height: normal;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* FORÇA ESPECÍFICA para colunas features */
+#features-columns .builder-column {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
 }
 
 /* Builder.io EXATO: Builder blocks dentro da coluna */
