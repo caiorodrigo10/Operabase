@@ -161,7 +161,7 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
       id: block.id,
       ...block.component.options,
       className: '',
-      styles: componentStyles, // Usar estilos sem wrapper styles
+      styles: combinedStyles, // Builder.io pattern: estilos direto no componente
       responsiveStyles: block.responsiveStyles || {}
     };
 
