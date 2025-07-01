@@ -81,39 +81,37 @@ export const Columns: React.FC<ColumnsProps> = ({
     return `calc(${width}% - ${subtractWidth}px)`;
   };
 
-  // Combinar estilos exatamente como Builder.io
-  const combinedStyles = {
+  // Determinar se deve empilhar colunas baseado na largura da tela
+  const shouldStack = typeof window !== 'undefined' ? 
+    (stackColumnsAt === 'tablet' ? window.innerWidth <= 991 : window.innerWidth <= 640) : false;
+
+  // CSS-in-JS Builder.io: REMOVER todas as classes CSS
+  const inlineStyles: React.CSSProperties = {
     display: 'flex',
     height: '100%',
-    // NÃO usar gap - Builder.io usa margin-left
-    alignItems,
-    justifyContent,
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+    width: '100%',
+    // Remover qualquer gap - Builder.io usa margin-left
+    gap: 0,
     ...styles,
   };
 
-  // ✅ Builder.io breakpoints: 992px+ desktop, 641-991px tablet, 321-640px mobile
-  const getResponsiveStyles = () => {
-    if (typeof window === 'undefined') return combinedStyles;
+  // Aplicar responsividade inline
+  const finalStyles: React.CSSProperties = {
+    ...inlineStyles,
     
-    const width = window.innerWidth;
+    // Aplicar stacking quando necessário
+    ...(shouldStack && {
+      flexDirection: reverseColumnsWhenStacked ? 'column-reverse' : 'column',
+      gap: `${gutterSize}px`,
+    }),
     
-    // Builder.io desktop breakpoint: 992px+
-    if (width >= 992 && responsiveStyles.large) {
-      return { ...combinedStyles, ...responsiveStyles.large };
-    } 
-    // Builder.io tablet breakpoint: 641-991px
-    else if (width >= 641 && width <= 991 && responsiveStyles.medium) {
-      return { ...combinedStyles, ...responsiveStyles.medium };
-    } 
-    // Builder.io mobile breakpoint: <641px
-    else if (width < 641 && responsiveStyles.small) {
-      return { ...combinedStyles, ...responsiveStyles.small };
-    }
-    
-    return combinedStyles;
+    // Aplicar responsive styles se existirem
+    ...(typeof window !== 'undefined' && window.innerWidth >= 992 && responsiveStyles.large),
+    ...(typeof window !== 'undefined' && window.innerWidth >= 641 && window.innerWidth <= 991 && responsiveStyles.medium),
+    ...(typeof window !== 'undefined' && window.innerWidth < 641 && responsiveStyles.small),
   };
-
-  const finalStyles = getResponsiveStyles();
 
   // Debug para identificar problema com blocos null
   if (columns.length > 0) {
@@ -121,18 +119,16 @@ export const Columns: React.FC<ColumnsProps> = ({
   }
 
   // 🚨 DIAGNÓSTICO CRÍTICO: Debug estrutura completa
-  console.log('🚨 COLUMNS DEBUG FULL:', {
+  console.log('🚨 COLUMNS DEBUG CSS-IN-JS:', {
     id,
     columnsLength: columns.length,
     gutterSize,
     stackColumnsAt,
     windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
     isDesktop: typeof window !== 'undefined' ? window.innerWidth >= 992 : false,
-    combinedStyles,
+    inlineStyles,
     finalStyles,
-    getResponsiveClasses: getResponsiveClasses(),
-    className,
-    fullClassName: `${getResponsiveClasses()} ${className}`.trim(),
+    shouldStack: typeof window !== 'undefined' ? window.innerWidth <= 991 && stackColumnsAt === 'tablet' : false,
     firstColumnWidth: columns.length > 0 ? getColumnWidth(0) : 'none',
     firstColumnBlocks: columns.length > 0 ? columns[0].blocks?.length : 0
   });
@@ -140,7 +136,6 @@ export const Columns: React.FC<ColumnsProps> = ({
   return (
     <div
       id={id}
-      className={`${getResponsiveClasses()} ${className}`.trim()}
       style={finalStyles}
       {...props}
     >
