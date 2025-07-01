@@ -33,12 +33,16 @@ export const Columns: React.FC<ColumnsProps> = ({
   renderBlock,
   ...props
 }) => {
-  // Debug log para Columns
+  // Debug log para Columns com breakpoint detection
+  const currentWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
   console.log('📦 Columns component:', { 
     id, 
     columnsCount: columns.length,
     gutterSize,
     stackColumnsAt,
+    windowWidth: currentWidth,
+    isDesktop: currentWidth >= 992,
+    shouldStack: (stackColumnsAt === 'tablet' && currentWidth <= 991) || (stackColumnsAt === 'mobile' && currentWidth <= 640),
     styles: Object.keys(styles || {}),
     hasColumns: columns.length > 0,
     firstColumnBlocks: columns[0]?.blocks?.length || 0
@@ -76,16 +80,22 @@ export const Columns: React.FC<ColumnsProps> = ({
     ...styles,
   };
 
-  // Aplicar estilos responsivos
+  // ✅ Builder.io breakpoints: 992px+ desktop, 641-991px tablet, 321-640px mobile
   const getResponsiveStyles = () => {
     if (typeof window === 'undefined') return combinedStyles;
     
     const width = window.innerWidth;
-    if (width >= 1024 && responsiveStyles.large) {
+    
+    // Builder.io desktop breakpoint: 992px+
+    if (width >= 992 && responsiveStyles.large) {
       return { ...combinedStyles, ...responsiveStyles.large };
-    } else if (width >= 768 && responsiveStyles.medium) {
+    } 
+    // Builder.io tablet breakpoint: 641-991px
+    else if (width >= 641 && width <= 991 && responsiveStyles.medium) {
       return { ...combinedStyles, ...responsiveStyles.medium };
-    } else if (width < 768 && responsiveStyles.small) {
+    } 
+    // Builder.io mobile breakpoint: <641px
+    else if (width < 641 && responsiveStyles.small) {
       return { ...combinedStyles, ...responsiveStyles.small };
     }
     

@@ -270,6 +270,53 @@
   background-color: #f9fafb;
 }
 
+/* ✅ Builder.io Columns Pattern - Breakpoint CSS */
+.editor2-columns {
+  display: flex;
+  height: 100%;
+}
+
+/* Builder.io breakpoint: tablet (max-width: 991px) */
+@media (max-width: 991px) {
+  .editor2-columns.columns-stack-tablet {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  .editor2-columns.columns-stack-tablet > div {
+    margin-left: 0 !important;
+    margin-bottom: 20px;
+    flex: 1 1 auto !important;
+  }
+  
+  .editor2-columns.columns-stack-tablet > div:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Builder.io breakpoint: mobile (max-width: 640px) */
+@media (max-width: 640px) {
+  .editor2-columns.columns-stack-mobile {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  .editor2-columns.columns-stack-mobile > div {
+    margin-left: 0 !important;
+    margin-bottom: 20px;
+    flex: 1 1 auto !important;
+  }
+  
+  .editor2-columns.columns-stack-mobile > div:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Reverse quando empilhado */
+.editor2-columns.columns-reverse-stacked {
+  flex-direction: column-reverse !important;
+}
+
 /* Title Widget Toolbar Styles */
 .title-toolbar {
   background: #2d2d2d;
