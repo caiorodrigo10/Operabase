@@ -439,11 +439,19 @@ export const CanvasContainer: React.FC = () => {
               {/* Hero Section with Semantic ID */}
               <Element
                 canvas
-                is={HeroSection}
+                is={Container}
+                id="hero-section"
                 background={{ r: 37, g: 99, b: 235, a: 1 }}
+                padding={['60', '40', '60', '40']}
+                margin={['0', '0', '0', '0']}
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
                 custom={{ displayName: 'Hero Principal' }}
               >
-                <Text
+                <Element
+                  is={Text}
+                  id="hero-title"
                   fontSize="42"
                   textAlign="center"
                   fontWeight="700"
@@ -452,7 +460,9 @@ export const CanvasContainer: React.FC = () => {
                   text="Transforme Sua Clínica Digital"
                 />
                 
-                <Text
+                <Element
+                  is={Text}
+                  id="hero-description"
                   fontSize="18"
                   textAlign="center"
                   fontWeight="400"
@@ -461,7 +471,9 @@ export const CanvasContainer: React.FC = () => {
                   text="Crie sites profissionais para sua clínica médica em minutos, sem conhecimento técnico."
                 />
 
-                <CraftButton
+                <Element
+                  is={CraftButton}
+                  id="cta-button"
                   background={{ r: 34, g: 197, b: 94, a: 1 }}
                   color={{ r: 255, g: 255, b: 255, a: 1 }}
                   buttonStyle="full"
@@ -474,6 +486,7 @@ export const CanvasContainer: React.FC = () => {
               <Element
                 canvas
                 is={Container}
+                id="features-section"
                 flexDirection="row"
                 alignItems="flex-start"
                 justifyContent="center"
