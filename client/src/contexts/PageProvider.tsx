@@ -68,15 +68,11 @@ export function PageProvider({ children }: PageProviderProps) {
     console.log('🚀 PageProvider: Carregando página automaticamente...');
     
     try {
-      const savedJson = localStorage.getItem('editor2-page-json');
-      if (savedJson) {
-        const parsed = JSON.parse(savedJson);
-        setPageJson(parsed as PageJSON);
-        console.log('📄 PageProvider: Loaded from localStorage');
-      } else {
-        setPageJson(mockPageJson as PageJSON);
-        console.log('📄 PageProvider: Using default template');
-      }
+      // FORÇA USAR NOVO TEMPLATE: Ignora localStorage temporariamente para mostrar Box Widget Demo
+      console.log('🔄 PageProvider: FORÇANDO uso do novo template com Box Widget Demo');
+      localStorage.removeItem('editor2-page-json'); // Remove cache antigo
+      setPageJson(mockPageJson as PageJSON);
+      console.log('📄 PageProvider: Using UPDATED template with Box Widget Demo');
     } catch (error) {
       console.error('❌ PageProvider: Error loading from localStorage:', error);
       setPageJson(mockPageJson as PageJSON);
