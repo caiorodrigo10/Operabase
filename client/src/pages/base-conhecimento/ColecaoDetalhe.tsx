@@ -35,6 +35,9 @@ interface KnowledgeItem {
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
   error_message?: string;
   url?: string;
+  chunked?: boolean;
+  chunkCount?: number;
+  originalDocs?: RAGDocument[];
 }
 
 export default function ColecaoDetalhe() {
@@ -57,7 +60,6 @@ export default function ColecaoDetalhe() {
   const [isCrawling, setIsCrawling] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
 
 
   const queryClient = useQueryClient();
@@ -132,17 +134,62 @@ export default function ColecaoDetalhe() {
     documents: documents
   } : null;
 
-  // Converter documentos para o formato esperado pela interface
-  const knowledgeItems: KnowledgeItem[] = collectionData?.documents.map((doc: RAGDocument) => ({
-    id: doc.id,
-    type: doc.content_type,
-    title: doc.title,
-    preview: doc.original_content?.substring(0, 100) + (doc.original_content?.length > 100 ? '...' : ''),
-    date: new Date(doc.created_at).toLocaleDateString('pt-BR'),
-    processing_status: doc.processing_status,
-    error_message: doc.error_message,
-    url: doc.content_type === 'url' ? doc.original_content : undefined
-  })) || [];
+  // Converter documentos para o formato esperado pela interface, agrupando chunks de PDF
+  const knowledgeItems: KnowledgeItem[] = (() => {
+    if (!collectionData?.documents) return [];
+    
+    // Agrupar documentos por título base (removendo " - Parte X")
+    const groupedDocs = new Map<string, RAGDocument[]>();
+    
+    collectionData.documents.forEach((doc: RAGDocument) => {
+      // Detectar se é um chunk de PDF (título contém " - Parte")
+      const baseTitle = doc.title.replace(/ - Parte \d+$/, '');
+      
+      if (!groupedDocs.has(baseTitle)) {
+        groupedDocs.set(baseTitle, []);
+      }
+      groupedDocs.get(baseTitle)!.push(doc);
+    });
+    
+    // Converter grupos em itens da interface
+    return Array.from(groupedDocs.entries()).map(([baseTitle, docs]) => {
+      // Se há múltiplos docs com o mesmo título base, é um PDF chunked
+      const isChunkedPDF = docs.length > 1 && docs.some(d => d.title.includes(' - Parte'));
+      
+      if (isChunkedPDF) {
+        // Usar o primeiro chunk como representativo, mas mostrar título limpo
+        const firstDoc = docs[0];
+        const totalLength = docs.reduce((sum, doc) => sum + (doc.original_content?.length || 0), 0);
+        
+        return {
+          id: firstDoc.id,
+          type: 'pdf' as const,
+          title: baseTitle + '.pdf',
+          preview: `PDF com ${docs.length} partes (${totalLength} caracteres)`,
+          date: new Date(firstDoc.created_at).toLocaleDateString('pt-BR'),
+          processing_status: docs.every(d => d.processing_status === 'completed') ? 'completed' as const : 
+                           docs.some(d => d.processing_status === 'failed') ? 'failed' as const : 'processing' as const,
+          error_message: docs.find(d => d.error_message)?.error_message,
+          chunked: true,
+          chunkCount: docs.length,
+          originalDocs: docs // Manter referência aos documentos originais
+        };
+      } else {
+        // Documento regular (não chunked)
+        const doc = docs[0];
+        return {
+          id: doc.id,
+          type: doc.content_type,
+          title: doc.title,
+          preview: doc.original_content?.substring(0, 100) + (doc.original_content?.length > 100 ? '...' : ''),
+          date: new Date(doc.created_at).toLocaleDateString('pt-BR'),
+          processing_status: doc.processing_status,
+          error_message: doc.error_message,
+          url: doc.content_type === 'url' ? doc.original_content : undefined
+        };
+      }
+    });
+  })();
 
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
@@ -407,25 +454,52 @@ export default function ColecaoDetalhe() {
     }
   };
 
-  // Mutation para deletar documento individual
+  // Mutation para deletar documento individual ou chunks de PDF
   const deleteDocumentMutation = useMutation({
-    mutationFn: async (documentId: number) => {
-      const response = await fetch(`/api/rag/documents/${documentId}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Falha ao deletar documento');
+    mutationFn: async (item: KnowledgeItem) => {
+      // Se é um PDF chunked, deletar todos os chunks
+      if (item.chunked && item.originalDocs) {
+        const deletePromises = item.originalDocs.map(doc => 
+          fetch(`/api/rag/documents/${doc.id}`, {
+            method: 'DELETE'
+          })
+        );
+        
+        const responses = await Promise.all(deletePromises);
+        
+        // Verificar se todas as deleções foram bem-sucedidas
+        for (const response of responses) {
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Falha ao deletar parte do documento');
+          }
+        }
+        
+        return { deletedCount: responses.length };
+      } else {
+        // Deletar documento individual
+        const response = await fetch(`/api/rag/documents/${item.id}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Falha ao deletar documento');
+        }
+        return response.json();
       }
-      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, item) => {
       queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
       queryClient.invalidateQueries({ queryKey: ['/api/rag/knowledge-bases'] });
+      
+      const message = item.chunked 
+        ? `PDF e suas ${item.chunkCount} partes deletados com sucesso`
+        : "Documento deletado com sucesso";
+      
       toast({
         title: "Sucesso",
-        description: "Documento deletado com sucesso",
+        description: message,
       });
     },
     onError: (error) => {
@@ -437,16 +511,18 @@ export default function ColecaoDetalhe() {
     }
   });
 
-  const handleDeleteDocument = (documentId: number) => {
-    setDocumentToDelete(documentId);
+  const [itemToDelete, setItemToDelete] = useState<KnowledgeItem | null>(null);
+
+  const handleDeleteDocument = (item: KnowledgeItem) => {
+    setItemToDelete(item);
     setDeleteDialogOpen(true);
   };
 
   const confirmDeleteDocument = () => {
-    if (documentToDelete) {
-      deleteDocumentMutation.mutate(documentToDelete);
+    if (itemToDelete) {
+      deleteDocumentMutation.mutate(itemToDelete);
       setDeleteDialogOpen(false);
-      setDocumentToDelete(null);
+      setItemToDelete(null);
     }
   };
 
@@ -589,7 +665,7 @@ export default function ColecaoDetalhe() {
                     variant="ghost" 
                     size="sm" 
                     className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                    onClick={() => handleDeleteDocument(item.id)}
+                    onClick={() => handleDeleteDocument(item)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -935,9 +1011,14 @@ export default function ColecaoDetalhe() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deletar Documento</AlertDialogTitle>
+            <AlertDialogTitle>
+              {itemToDelete?.chunked ? 'Deletar PDF' : 'Deletar Documento'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja deletar este documento? Esta ação é irreversível e removerá o documento, seus chunks e embeddings associados.
+              {itemToDelete?.chunked 
+                ? `Tem certeza que deseja deletar o PDF "${itemToDelete.title}" e suas ${itemToDelete.chunkCount} partes? Esta ação é irreversível e removerá todas as partes do documento e seus embeddings associados.`
+                : `Tem certeza que deseja deletar o documento "${itemToDelete?.title}"? Esta ação é irreversível e removerá o documento e seus embeddings associados.`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -946,7 +1027,7 @@ export default function ColecaoDetalhe() {
               onClick={confirmDeleteDocument}
               className="bg-red-600 hover:bg-red-700"
             >
-              Deletar
+              {itemToDelete?.chunked ? `Deletar PDF (${itemToDelete.chunkCount} partes)` : 'Deletar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
