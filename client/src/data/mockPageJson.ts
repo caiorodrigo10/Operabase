@@ -104,10 +104,9 @@ export const mockPageJson = {
                 borderRadius: '8px',
                 border: 'none',
                 cursor: 'pointer',
-                display: 'inline-block',
+                display: 'block',
                 margin: '0 auto',
-                width: 'auto',
-                textAlign: 'center'
+                width: 'fit-content'
               }
             }
           ]

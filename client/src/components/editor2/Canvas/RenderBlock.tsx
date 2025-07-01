@@ -153,14 +153,6 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   const separateWrapperStyles = (styles: any) => {
     const { backgroundColor, padding, margin, ...componentStyles } = styles || {};
     
-    console.log('🎨 WrapperStyles Debug:', {
-      blockId: block.id,
-      componentName: block.component.name,
-      originalStyles: styles,
-      wrapperStyles: { backgroundColor, padding, margin },
-      componentStyles
-    });
-    
     return {
       wrapperStyles: { backgroundColor, padding, margin },
       componentStyles
