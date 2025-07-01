@@ -85,32 +85,22 @@ export const Columns: React.FC<ColumnsProps> = ({
   const shouldStack = typeof window !== 'undefined' ? 
     (stackColumnsAt === 'tablet' ? window.innerWidth <= 991 : window.innerWidth <= 640) : false;
 
-  // CSS-in-JS Builder.io: REMOVER todas as classes CSS
-  const inlineStyles: React.CSSProperties = {
+  // CSS-in-JS Builder.io EXATO: Apenas display e height
+  const containerStyles: React.CSSProperties = {
     display: 'flex',
     height: '100%',
-    alignItems: 'stretch',
-    justifyContent: 'flex-start',
-    width: '100%',
-    // Remover qualquer gap - Builder.io usa margin-left
-    gap: 0,
     ...styles,
   };
 
-  // Aplicar responsividade inline
-  const finalStyles: React.CSSProperties = {
-    ...inlineStyles,
+  // Aplicar responsividade Builder.io pattern
+  const finalContainerStyles: React.CSSProperties = {
+    ...containerStyles,
     
     // Aplicar stacking quando necessário
     ...(shouldStack && {
       flexDirection: reverseColumnsWhenStacked ? 'column-reverse' : 'column',
-      gap: `${gutterSize}px`,
+      alignItems: 'stretch',
     }),
-    
-    // Aplicar responsive styles se existirem
-    ...(typeof window !== 'undefined' && window.innerWidth >= 992 && responsiveStyles.large),
-    ...(typeof window !== 'undefined' && window.innerWidth >= 641 && window.innerWidth <= 991 && responsiveStyles.medium),
-    ...(typeof window !== 'undefined' && window.innerWidth < 641 && responsiveStyles.small),
   };
 
   // Debug para identificar problema com blocos null
@@ -119,16 +109,16 @@ export const Columns: React.FC<ColumnsProps> = ({
   }
 
   // 🚨 DIAGNÓSTICO CRÍTICO: Debug estrutura completa
-  console.log('🚨 COLUMNS DEBUG CSS-IN-JS:', {
+  console.log('🚨 COLUMNS DEBUG BUILDER.IO PATTERN:', {
     id,
     columnsLength: columns.length,
     gutterSize,
     stackColumnsAt,
     windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
     isDesktop: typeof window !== 'undefined' ? window.innerWidth >= 992 : false,
-    inlineStyles,
-    finalStyles,
-    shouldStack: typeof window !== 'undefined' ? window.innerWidth <= 991 && stackColumnsAt === 'tablet' : false,
+    containerStyles,
+    finalContainerStyles,
+    shouldStack,
     firstColumnWidth: columns.length > 0 ? getColumnWidth(0) : 'none',
     firstColumnBlocks: columns.length > 0 ? columns[0].blocks?.length : 0
   });
@@ -136,23 +126,33 @@ export const Columns: React.FC<ColumnsProps> = ({
   return (
     <div
       id={id}
-      style={finalStyles}
+      style={finalContainerStyles}
       {...props}
     >
       {columns.map((column, index) => {
         const columnWidth = getColumnWidth(index);
-        const columnStyles = {
-          flex: `0 0 ${columnWidth}`,
-          marginLeft: index === 0 ? 0 : `${gutterSize}px`,
+        
+        // Builder.io EXATO: width em vez de flex
+        const columnStyles: React.CSSProperties = {
           display: 'flex',
-          flexDirection: 'column' as const,
-          alignItems: 'stretch'
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          lineHeight: 'normal',
+          width: columnWidth,  // ← WIDTH, não flex
+          marginLeft: index === 0 ? 0 : gutterSize,  // ← NUMBER, não string
+          
+          // Responsive stacking
+          ...(shouldStack && {
+            width: '100%',
+            marginLeft: 0,
+          }),
         };
 
-        console.log(`🔹 Column ${index + 1}/${columns.length}:`, {
+        console.log(`🔹 Column ${index + 1}/${columns.length} (Builder.io pattern):`, {
           width: columnWidth,
           marginLeft: columnStyles.marginLeft,
-          flex: columnStyles.flex,
+          useWidth: true, // não flex
+          shouldStack,
           blocksCount: column.blocks?.length || 0
         });
 
