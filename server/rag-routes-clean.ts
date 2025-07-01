@@ -337,12 +337,14 @@ router.post('/documents', ragAuth, async (req: Request, res: Response) => {
       console.warn('⚠️ RAG: Erro ao gerar embedding:', error);
     }
 
-    // Inserir documento na estrutura oficial LangChain usando colunas diretas
+    // Inserir documento na estrutura oficial LangChain usando colunas diretas + metadata JSONB
     const documentMetadata = {
       title: title || 'Documento sem título',
       source: source,
       created_by: user.email,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      clinic_id: clinic_id.toString(), // Para compatibilidade LangChain
+      knowledge_base_id: knowledge_base_id.toString() // Para compatibilidade LangChain
     };
 
     const result = await db.execute(sql`
@@ -548,7 +550,9 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
                 created_by: (req as any).user.email,
                 created_at: new Date().toISOString(),
                 processing_status: chunkEmbeddingVector ? 'completed' : 'pending',
-                extraction_method: 'pdf-parse-chunked'
+                extraction_method: 'pdf-parse-chunked',
+                clinic_id: clinic_id.toString(), // Para compatibilidade LangChain
+                knowledge_base_id: knowledge_base_id.toString() // Para compatibilidade LangChain
               })},
               ${chunkEmbeddingVector ? JSON.stringify(chunkEmbeddingVector) : null},
               ${clinic_id},
@@ -587,7 +591,9 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
             created_by: (req as any).user.email,
             created_at: new Date().toISOString(),
             processing_status: embeddingVector ? 'completed' : 'pending',
-            extraction_method: 'pdf-parse'
+            extraction_method: 'pdf-parse',
+            clinic_id: clinic_id.toString(), // Para compatibilidade LangChain
+            knowledge_base_id: knowledge_base_id.toString() // Para compatibilidade LangChain
           })},
           ${embeddingVector ? JSON.stringify(embeddingVector) : null},
           ${clinic_id},
