@@ -126,10 +126,11 @@ export const mockPageJson = {
       id: 'features-section',
       component: {
         name: 'Section',
-        options: {
-          backgroundColor: '#f8fafc',
-          padding: '80px 0'
-        }
+        options: {}
+      },
+      styles: {
+        backgroundColor: '#f8fafc',
+        padding: '80px 0'
       },
       children: [
         {
