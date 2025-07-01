@@ -178,111 +178,202 @@ export const CanvasContainer: React.FC = () => {
           {/* Craft.js Frame - CLEAN PATTERN (like Editor Landing) */}
           <Frame data={initialJson || undefined}>
             <Element
-              is={Container}
               canvas
-              background="#ffffff"
-              padding="0px"
-              margin="0px"
-              borderRadius="0px"
+              is={Container}
+              width="800px"
+              height="auto"
+              background={{ r: 255, g: 255, b: 255, a: 1 }}
+              padding={['0', '0', '0', '0']}
+              margin={['0', '0', '0', '0']}
               flexDirection="column"
               alignItems="center"
               justifyContent="flex-start"
-              width="100%"
-              height="auto"
+              custom={{ displayName: 'Landing Page' }}
             >
-              {/* Hero Section */}
+              {/* Hero Section with Semantic ID */}
               <Element
-                is={Container}
                 canvas
-                background="#2563eb"
-                padding="60px 40px"
-                margin="0px"
-                minHeight="300px"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                width="100%"
+                is={HeroSection}
+                id="hero-section"
+                background={{ r: 37, g: 99, b: 235, a: 1 }}
+                custom={{ displayName: 'Hero Principal' }}
               >
-                {/* Hero Title */}
-                <Element
-                  is={Text}
-                  text="Transforme Sua Clínica Digital"
-                  fontSize="42px"
+                <Text
+                  id="hero-title"
+                  fontSize="42"
+                  textAlign="center"
                   fontWeight="700"
-                  color="#ffffff"
-                  textAlign="center"
-                  margin="0px 0px 20px 0px"
-                  tag="h1"
+                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  margin={['0', '0', '20', '0']}
+                  text="Transforme Sua Clínica Digital"
                 />
                 
-                <Element
-                  is={Text}
-                  text="Crie sites profissionais para sua clínica médica em minutos, sem conhecimento técnico."
-                  fontSize="18px"
+                <Text
+                  id="hero-subtitle"
+                  fontSize="18"
+                  textAlign="center"
                   fontWeight="400"
-                  color="#ffffff"
-                  textAlign="center"
-                  margin="0px 0px 30px 0px"
-                  tag="p"
+                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  margin={['0', '0', '30', '0']}
+                  text="Crie sites profissionais para sua clínica médica em minutos, sem conhecimento técnico."
                 />
-                
-                <Element
-                  is={Button}
+
+                <CraftButton
+                  id="hero-button"
+                  background={{ r: 34, g: 197, b: 94, a: 1 }}
+                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  buttonStyle="full"
                   text="Criar Meu Site Grátis"
-                  backgroundColor="#22c55e"
-                  color="#ffffff"
-                  padding="14px 28px"
-                  margin="10px auto"
-                  borderRadius="8px"
-                  fontSize="16px"
-                  fontWeight="500"
-                  width="auto"
+                  margin={['10', '0', '10', '0']}
                 />
               </Element>
-              
-              {/* Features Section */}
+
+              {/* Features Section with Semantic ID */}
               <Element
-                is={Container}
                 canvas
-                background="#f8fafc"
-                padding="40px 20px"
-                margin="0px"
+                is={Container}
+                id="features-section"
                 flexDirection="row"
                 alignItems="flex-start"
                 justifyContent="center"
+                padding={['60', '40', '60', '40']}
+                margin={['0', '0', '0', '0']}
+                background={{ r: 248, g: 250, b: 252, a: 1 }}
                 width="100%"
+                height="auto"
+                custom={{ displayName: 'Funcionalidades' }}
               >
                 <Element
-                  is={Container}
                   canvas
-                  background="#ffffff"
-                  padding="30px"
-                  margin="10px"
-                  borderRadius="8px"
-                  width="300px"
+                  is={LandingCard}
+                  id="feature-1"
+                  background={{ r: 255, g: 255, b: 255, a: 1 }}
+                  padding={30}
+                  custom={{ displayName: 'Feature 1' }}
                 >
-                  <Element
-                    is={Text}
-                    text="🚀 Criação Rápida"
-                    fontSize="20px"
-                    fontWeight="600"
-                    color="#2563eb"
+                  <Text
+                    id="feature-1-title"
+                    fontSize="20"
                     textAlign="center"
-                    margin="0px 0px 15px 0px"
-                    tag="h3"
+                    fontWeight="600"
+                    color={{ r: 37, g: 99, b: 235, a: 1 }}
+                    margin={['0', '0', '15', '0']}
+                    text="🚀 Criação Rápida"
                   />
                   
-                  <Element
-                    is={Text}
-                    text="Sites prontos em menos de 5 minutos com IA"
-                    fontSize="14px"
-                    fontWeight="400"
-                    color="#64748b"
+                  <Text
+                    id="feature-1-text"
+                    fontSize="14"
                     textAlign="center"
-                    margin="0px"
-                    tag="p"
+                    fontWeight="400"
+                    color={{ r: 75, g: 85, b: 99, a: 1 }}
+                    margin={['0', '0', '0', '0']}
+                    text="Sites prontos em menos de 5 minutos com IA"
                   />
                 </Element>
+
+                <Element
+                  canvas
+                  is={LandingCard}
+                  id="feature-2"
+                  background={{ r: 255, g: 255, b: 255, a: 1 }}
+                  padding={30}
+                  custom={{ displayName: 'Feature 2' }}
+                >
+                  <Text
+                    id="feature-2-title"
+                    fontSize="20"
+                    textAlign="center"
+                    fontWeight="600"
+                    color={{ r: 37, g: 99, b: 235, a: 1 }}
+                    margin={['0', '0', '15', '0']}
+                    text="📱 WhatsApp Integrado"
+                  />
+                  
+                  <Text
+                    id="feature-2-text"
+                    fontSize="14"
+                    textAlign="center"
+                    fontWeight="400"
+                    color={{ r: 75, g: 85, b: 99, a: 1 }}
+                    margin={['0', '0', '0', '0']}
+                    text="Agendamentos direto pelo WhatsApp automaticamente"
+                  />
+                </Element>
+
+                <Element
+                  canvas
+                  is={LandingCard}
+                  id="feature-3"
+                  background={{ r: 255, g: 255, b: 255, a: 1 }}
+                  padding={30}
+                  custom={{ displayName: 'Feature 3' }}
+                >
+                  <Text
+                    id="feature-3-title"
+                    fontSize="20"
+                    textAlign="center"
+                    fontWeight="600"
+                    color={{ r: 37, g: 99, b: 235, a: 1 }}
+                    margin={['0', '0', '15', '0']}
+                    text="🏥 Feito para Médicos"
+                  />
+                  
+                  <Text
+                    id="feature-3-text"
+                    fontSize="14"
+                    textAlign="center"
+                    fontWeight="400"
+                    color={{ r: 75, g: 85, b: 99, a: 1 }}
+                    margin={['0', '0', '0', '0']}
+                    text="Templates específicos para cada especialidade médica"
+                  />
+                </Element>
+              </Element>
+
+              {/* CTA Section with Semantic ID */}
+              <Element
+                canvas
+                is={Container}
+                id="cta-section"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                padding={['80', '40', '80', '40']}
+                margin={['0', '0', '0', '0']}
+                background={{ r: 17, g: 24, b: 39, a: 1 }}
+                width="100%"
+                height="auto"
+                custom={{ displayName: 'Call to Action' }}
+              >
+                <Text
+                  id="cta-title"
+                  fontSize="32"
+                  textAlign="center"
+                  fontWeight="700"
+                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  margin={['0', '0', '15', '0']}
+                  text="Pronto para começar?"
+                />
+                
+                <Text
+                  id="cta-subtitle"
+                  fontSize="16"
+                  textAlign="center"
+                  fontWeight="400"
+                  color={{ r: 203, g: 213, b: 225, a: 1 }}
+                  margin={['0', '0', '30', '0']}
+                  text="Junte-se a centenas de médicos que já transformaram sua presença digital"
+                />
+
+                <CraftButton
+                  id="cta-button"
+                  background={{ r: 34, g: 197, b: 94, a: 1 }}
+                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  buttonStyle="full"
+                  text="Começar Agora - É Grátis"
+                  margin={['10', '0', '10', '0']}
+                />
               </Element>
             </Element>
           </Frame>
