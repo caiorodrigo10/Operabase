@@ -38,7 +38,7 @@ const EditorExposer: React.FC = () => {
 // Store reference to current editor
 let currentCraftEditor: any = null;
 
-// Get default semantic JSON structure
+// Get default semantic JSON structure - Complete landing page template
 const getDefaultSemanticJson = () => {
   return {
     "ROOT": {
@@ -59,42 +59,416 @@ const getDefaultSemanticJson = () => {
         "height": "auto"
       },
       "displayName": "Container",
-      "custom": { "displayName": "Editor 2 - Galeria de Widgets" },
+      "custom": { "displayName": "Editor 2 - Landing Page Completa" },
       "parent": null,
       "hidden": false,
-      "nodes": ["simple-title", "simple-video"],
+      "nodes": ["hero-section", "video-section", "features-section", "cta-section"],
       "linkedNodes": {}
     },
-    "simple-title": {
+    "hero-section": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": ["60", "40", "60", "40"],
+        "margin": ["0", "0", "0", "0"],
+        "background": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "width": "100%",
+        "height": "auto"
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Hero Section" },
+      "parent": "ROOT",
+      "hidden": false,
+      "nodes": ["hero-title", "hero-subtitle", "hero-button"],
+      "linkedNodes": {}
+    },
+    "hero-title": {
       "type": { "resolvedName": "Text" },
       "isCanvas": false,
       "props": {
-        "fontSize": "32",
+        "fontSize": "48",
         "textAlign": "center",
         "fontWeight": "700",
-        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
-        "margin": ["40", "20", "40", "20"],
-        "shadow": 0,
-        "text": "🎬 Editor 2 - Template com Vídeo YouTube"
+        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "margin": ["0", "20", "20", "20"],
+        "text": "🚀 Operabase - Plataforma Completa"
       },
       "displayName": "Text",
-      "custom": { "displayName": "Título Principal" },
-      "parent": "ROOT",
+      "custom": { "displayName": "Título Hero" },
+      "parent": "hero-section",
       "hidden": false,
       "nodes": [],
       "linkedNodes": {}
     },
-    "simple-video": {
+    "hero-subtitle": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "20",
+        "textAlign": "center",
+        "fontWeight": "400",
+        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "margin": ["0", "20", "30", "20"],
+        "text": "Transforme sua clínica com IA, WhatsApp e gestão inteligente de pacientes"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Subtítulo Hero" },
+      "parent": "hero-section",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "hero-button": {
+      "type": { "resolvedName": "CraftButton" },
+      "isCanvas": false,
+      "props": {
+        "background": { "r": 34, "g": 197, "b": 94, "a": 1 },
+        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "buttonStyle": "full",
+        "text": "Começar Agora - Grátis",
+        "margin": ["10", "0", "10", "0"]
+      },
+      "displayName": "Button",
+      "custom": { "displayName": "Botão Hero" },
+      "parent": "hero-section",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "video-section": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": ["80", "40", "80", "40"],
+        "margin": ["0", "0", "0", "0"],
+        "background": { "r": 248, "g": 250, "b": 252, "a": 1 },
+        "width": "100%",
+        "height": "auto"
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Seção Vídeo" },
+      "parent": "ROOT",
+      "hidden": false,
+      "nodes": ["video-title", "demo-video"],
+      "linkedNodes": {}
+    },
+    "video-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "36",
+        "textAlign": "center",
+        "fontWeight": "700",
+        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "margin": ["0", "20", "40", "20"],
+        "text": "📹 Veja Como Funciona"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Título Vídeo" },
+      "parent": "video-section",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "demo-video": {
       "type": { "resolvedName": "Video" },
       "isCanvas": false,
       "props": {
         "videoId": "u7KQ4ityQeI",
-        "width": 560,
-        "height": 315
+        "width": 800,
+        "height": 450
       },
       "displayName": "Video",
-      "custom": { "displayName": "Vídeo YouTube" },
+      "custom": { "displayName": "Vídeo Demo" },
+      "parent": "video-section",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "features-section": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": ["80", "40", "80", "40"],
+        "margin": ["0", "0", "0", "0"],
+        "background": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "width": "100%",
+        "height": "auto"
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Seção Features" },
       "parent": "ROOT",
+      "hidden": false,
+      "nodes": ["features-title", "feature-1", "feature-2", "feature-3"],
+      "linkedNodes": {}
+    },
+    "features-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "36",
+        "textAlign": "center",
+        "fontWeight": "700",
+        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "margin": ["0", "20", "50", "20"],
+        "text": "✨ Recursos Principais"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Título Features" },
+      "parent": "features-section",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-1": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": ["40", "30", "40", "30"],
+        "margin": ["0", "20", "30", "20"],
+        "background": { "r": 229, "g": 231, "b": 235, "a": 1 },
+        "width": "100%",
+        "height": "auto",
+        "radius": 12
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Feature 1" },
+      "parent": "features-section",
+      "hidden": false,
+      "nodes": ["feature-1-title", "feature-1-desc"],
+      "linkedNodes": {}
+    },
+    "feature-1-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "24",
+        "textAlign": "center",
+        "fontWeight": "600",
+        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "🤖 Assistente IA Mara"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Feature 1 Título" },
+      "parent": "feature-1",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-1-desc": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "16",
+        "textAlign": "center",
+        "fontWeight": "400",
+        "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
+        "margin": ["0", "0", "0", "0"],
+        "text": "IA conversacional com RAG para atendimento inteligente e contextualizado"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Feature 1 Descrição" },
+      "parent": "feature-1",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-2": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": ["40", "30", "40", "30"],
+        "margin": ["0", "20", "30", "20"],
+        "background": { "r": 220, "g": 252, "b": 231, "a": 1 },
+        "width": "100%",
+        "height": "auto",
+        "radius": 12
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Feature 2" },
+      "parent": "features-section",
+      "hidden": false,
+      "nodes": ["feature-2-title", "feature-2-desc"],
+      "linkedNodes": {}
+    },
+    "feature-2-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "24",
+        "textAlign": "center",
+        "fontWeight": "600",
+        "color": { "r": 34, "g": 197, "b": 94, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "📱 WhatsApp Evolution API"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Feature 2 Título" },
+      "parent": "feature-2",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-2-desc": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "16",
+        "textAlign": "center",
+        "fontWeight": "400",
+        "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
+        "margin": ["0", "0", "0", "0"],
+        "text": "Integração completa com WhatsApp para comunicação automatizada e eficiente"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Feature 2 Descrição" },
+      "parent": "feature-2",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-3": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": ["40", "30", "40", "30"],
+        "margin": ["0", "20", "0", "20"],
+        "background": { "r": 254, "g": 240, "b": 138, "a": 1 },
+        "width": "100%",
+        "height": "auto",
+        "radius": 12
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Feature 3" },
+      "parent": "features-section",
+      "hidden": false,
+      "nodes": ["feature-3-title", "feature-3-desc"],
+      "linkedNodes": {}
+    },
+    "feature-3-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "24",
+        "textAlign": "center",
+        "fontWeight": "600",
+        "color": { "r": 180, "g": 83, "b": 9, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "📊 Multi-Tenant & Performance"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Feature 3 Título" },
+      "parent": "feature-3",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-3-desc": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "16",
+        "textAlign": "center",
+        "fontWeight": "400",
+        "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
+        "margin": ["0", "0", "0", "0"],
+        "text": "Arquitetura multi-tenant com cache Redis e performance sub-200ms"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "Feature 3 Descrição" },
+      "parent": "feature-3",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "cta-section": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": ["80", "40", "80", "40"],
+        "margin": ["0", "0", "0", "0"],
+        "background": { "r": 17, "g": 24, "b": 39, "a": 1 },
+        "width": "100%",
+        "height": "auto"
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Call to Action" },
+      "parent": "ROOT",
+      "hidden": false,
+      "nodes": ["cta-title", "cta-subtitle", "cta-button"],
+      "linkedNodes": {}
+    },
+    "cta-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "40",
+        "textAlign": "center",
+        "fontWeight": "700",
+        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "margin": ["0", "20", "20", "20"],
+        "text": "🎯 Pronto para Revolucionar sua Clínica?"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "CTA Título" },
+      "parent": "cta-section",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "cta-subtitle": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "18",
+        "textAlign": "center",
+        "fontWeight": "400",
+        "color": { "r": 229, "g": 231, "b": 235, "a": 1 },
+        "margin": ["0", "20", "40", "20"],
+        "text": "Junte-se a centenas de clínicas que já transformaram seu atendimento com nossa plataforma"
+      },
+      "displayName": "Text",
+      "custom": { "displayName": "CTA Subtítulo" },
+      "parent": "cta-section",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "cta-button": {
+      "type": { "resolvedName": "CraftButton" },
+      "isCanvas": false,
+      "props": {
+        "background": { "r": 34, "g": 197, "b": 94, "a": 1 },
+        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "buttonStyle": "full",
+        "text": "Iniciar Teste Gratuito",
+        "margin": ["10", "0", "10", "0"]
+      },
+      "displayName": "Button",
+      "custom": { "displayName": "Botão CTA" },
+      "parent": "cta-section",
       "hidden": false,
       "nodes": [],
       "linkedNodes": {}
@@ -140,8 +514,8 @@ export const CanvasContainer: React.FC = () => {
           console.log('📂 Editor2 loading from server');
           setInitialJson(result.data);
         } else {
-          // Always use the new template with video when no server data
-          console.log('📂 Editor2 using NEW default semantic structure with video');
+          // Always use the new complete template when no server data
+          console.log('📂 Editor2 using NEW complete landing page template');
           setInitialJson(JSON.stringify(getDefaultSemanticJson()));
         }
       } catch (error) {
@@ -184,7 +558,7 @@ export const CanvasContainer: React.FC = () => {
           className="min-h-full bg-gray-50 page-container"
           style={{ backgroundColor: '#f8f9fa' }}
         >
-          {/* Craft.js Frame - CLEAN PATTERN with FORCED Semantic IDs */}
+          {/* Craft.js Frame - Carrega JSON completo com landing page */}
           <Frame data={initialJson || JSON.stringify(getDefaultSemanticJson())}>
             <Element
               canvas
@@ -197,27 +571,8 @@ export const CanvasContainer: React.FC = () => {
               flexDirection="column"
               alignItems="center"
               justifyContent="flex-start"
-              custom={{ displayName: 'Landing Page' }}
-            >
-              {/* Simple Title */}
-              <Element
-                is={Text}
-                fontSize="32"
-                textAlign="center"
-                fontWeight="700"
-                color={{ r: 37, g: 99, b: 235, a: 1 }}
-                margin={['40', '20', '40', '20']}
-                text="🎬 Editor 2 - Template com Vídeo YouTube"
-              />
-              
-              {/* YouTube Video */}
-              <Element
-                is={Video}
-                videoId="u7KQ4ityQeI"
-                width={560}
-                height={315}
-              />
-            </Element>
+              custom={{ displayName: 'Landing Page Completa' }}
+            />
           </Frame>
         </div>
       </Editor>
