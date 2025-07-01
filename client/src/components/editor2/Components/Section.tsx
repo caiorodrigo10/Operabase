@@ -60,54 +60,31 @@ export const Section: React.FC<SectionProps> = ({
     };
   };
 
-  // Section aplica background diretamente conforme Builder.io - SEM MARGIN
+  // ✅ Builder.io pattern: Section apenas background/padding - SEM CENTRALIZAÇÃO
   const sectionStyles = {
     // Propriedades básicas Builder.io
     width: '100%', // Section ocupa toda largura
-    margin: 0, // ✅ SEM MARGIN - sections coladas
-    borderRadius,
-    boxShadow,
-    minHeight,
-    // Background
+    margin: 0, // Sections coladas
+    // Background e espaçamento
+    backgroundColor,
+    padding,
     backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
     backgroundSize: backgroundImage ? 'cover' : undefined,
     backgroundPosition: backgroundImage ? 'center' : undefined,
     backgroundRepeat: backgroundImage ? 'no-repeat' : undefined,
-    // Props padrão
-    backgroundColor,
-    padding,
+    // Propriedades visuais opcionais
+    borderRadius,
+    boxShadow,
+    minHeight,
     // Sobrescrever com styles e responsiveStyles
     ...styles,
     ...calculateResponsiveStyles()
   };
 
-  // Container interno apenas para centralizar conteúdo conforme Builder.io
-  const containerStyles = {
-    maxWidth,
-    margin,
-    width: '100%',
-    background: 'transparent' // Container transparente - não aplica padding
-  };
-
-  // Aplicar estilos responsivos para Section
-  const getResponsiveSectionStyles = () => {
-    if (typeof window === 'undefined') return sectionStyles;
-    
-    const width = window.innerWidth;
-    if (width >= 1024 && responsiveStyles.large) {
-      return { ...sectionStyles, ...responsiveStyles.large };
-    } else if (width >= 768 && responsiveStyles.medium) {
-      return { ...sectionStyles, ...responsiveStyles.medium };
-    } else if (width < 768 && responsiveStyles.small) {
-      return { ...sectionStyles, ...responsiveStyles.small };
-    }
-    
-    return sectionStyles;
-  };
-
   // ✅ Builder.io pattern: style do RenderBlock tem precedência máxima
   const finalStyles = {
-    ...getResponsiveSectionStyles(),
+    ...sectionStyles,
+    ...calculateResponsiveStyles(), // Responsividade calculada
     ...style // Style do RenderBlock sobrescreve tudo
   };
 
@@ -118,10 +95,8 @@ export const Section: React.FC<SectionProps> = ({
       style={finalStyles}
       {...props}
     >
-      {/* Container interno transparente para centralizar conteúdo */}
-      <div style={containerStyles}>
-        {children}
-      </div>
+      {/* ✅ Builder.io pattern: Container component faz toda centralização */}
+      {children}
     </section>
   );
 };
