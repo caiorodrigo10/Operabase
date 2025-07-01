@@ -44,6 +44,57 @@ export default function BasesConhecimento() {
   const [knowledgeBaseToDelete, setKnowledgeBaseToDelete] = useState<string | null>(null);
   const [knowledgeBaseIdToDelete, setKnowledgeBaseIdToDelete] = useState<number | null>(null);
 
+  // Função para agrupar documentos PDF chunks (mesma lógica do ColecaoDetalhe.tsx)
+  const groupDocuments = (documents: any[], knowledgeBaseId: number) => {
+    const filteredDocs = documents.filter(doc => 
+      parseInt(doc.knowledge_base_id) === knowledgeBaseId || 
+      doc.metadata?.knowledge_base_id === knowledgeBaseId
+    );
+    
+    // Agrupar documentos por base filename para PDFs chunked
+    const grouped = new Map();
+    
+    for (const doc of filteredDocs) {
+      if (doc.content_type === 'pdf_chunk') {
+        // Extrair nome base do título removendo " - Parte X"
+        const baseTitle = doc.title.replace(/ - Parte \d+$/, '');
+        
+        if (!grouped.has(baseTitle)) {
+          grouped.set(baseTitle, {
+            id: `grouped_${baseTitle}`,
+            title: baseTitle,
+            content_type: 'pdf',
+            chunked: true,
+            chunkCount: 0,
+            totalLength: 0,
+            processing_status: 'completed',
+            created_at: doc.created_at,
+            originalDocs: []
+          });
+        }
+        
+        const group = grouped.get(baseTitle);
+        group.chunkCount++;
+        group.totalLength += doc.content_full_length || 0;
+        group.originalDocs.push(doc);
+        
+        // Usar a data mais recente
+        if (new Date(doc.created_at) > new Date(group.created_at)) {
+          group.created_at = doc.created_at;
+        }
+      } else {
+        // Documento individual
+        grouped.set(doc.id, {
+          ...doc,
+          chunked: false,
+          chunkCount: 1
+        });
+      }
+    }
+    
+    return Array.from(grouped.values());
+  };
+
   // Query para buscar bases de conhecimento
   const { data: knowledgeBases = [], isLoading } = useQuery({
     queryKey: ['/api/rag/knowledge-bases'],
@@ -53,6 +104,19 @@ export default function BasesConhecimento() {
         throw new Error('Falha ao carregar bases de conhecimento');
       }
       return response.json();
+    }
+  });
+
+  // Query para buscar todos os documentos para calcular contadores
+  const { data: allDocuments = [] } = useQuery({
+    queryKey: ['/api/rag/documents'],
+    queryFn: async () => {
+      const response = await fetch('/api/rag/documents');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar documentos');
+      }
+      const result = await response.json();
+      return result.data || [];
     }
   });
 
@@ -128,14 +192,26 @@ export default function BasesConhecimento() {
   });
 
   // Transformar bases de conhecimento em collections para compatibilidade
-  const collections: Collection[] = knowledgeBases.map((base: any) => ({
-    id: base.id,
-    name: base.name,
-    description: base.description || `Base de conhecimento ${base.name}`,
-    itemCount: base.documentCount || 0,
-    lastUpdated: base.lastUpdated ? new Date(base.lastUpdated).toLocaleDateString('pt-BR') : "Sem dados",
-    documents: [] // Documents são carregados separadamente na página de detalhes
-  }));
+  const collections: Collection[] = knowledgeBases.map((base: any) => {
+    // Calcular contador de itens agrupados para esta base
+    const groupedItems = groupDocuments(allDocuments, base.id);
+    const itemCount = groupedItems.length;
+    
+    console.log(`🔍 Base ${base.id} (${base.name}): ${itemCount} itens agrupados de ${allDocuments.length} documentos totais`);
+    console.log('📄 Todos documentos:', allDocuments.map(doc => ({ id: doc.id, title: doc.title, kb_id: doc.knowledge_base_id })));
+    if (itemCount > 0) {
+      console.log('📄 Itens agrupados:', groupedItems.map(item => ({ title: item.title, type: item.content_type })));
+    }
+    
+    return {
+      id: base.id,
+      name: base.name,
+      description: base.description || `Base de conhecimento ${base.name}`,
+      itemCount: itemCount,
+      lastUpdated: base.lastUpdated ? new Date(base.lastUpdated).toLocaleDateString('pt-BR') : "Sem dados",
+      documents: [] // Documents são carregados separadamente na página de detalhes
+    };
+  });
 
   // Mutation para criar nova coleção (simulado por enquanto)
   const createCollectionMutation = useMutation({
@@ -165,8 +241,8 @@ export default function BasesConhecimento() {
     );
   }
 
-  // Remover coleções vazias
-  const visibleCollections = collections.filter(collection => collection.itemCount > 0 || collection.id <= 3);
+  // Mostrar todas as coleções (bases de conhecimento)
+  const visibleCollections = collections;
 
   const handleCreateCollection = () => {
     if (!newCollectionName.trim()) return;
