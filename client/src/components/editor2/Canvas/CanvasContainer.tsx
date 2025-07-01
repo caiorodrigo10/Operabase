@@ -1,8 +1,26 @@
-import React from 'react';
-import { Editor, Frame, Element } from '@craftjs/core';
+import React, { useEffect } from 'react';
+import { Editor, Frame, Element, useEditor } from '@craftjs/core';
 
 // Import simplified Craft.js components
 import { Container, Text, Button, Video } from '../../craft/simple';
+import { useEditor2Store } from '../../../stores/editor2Store';
+
+// Component to sync Craft.js with global store
+const CraftSyncProvider: React.FC = () => {
+  const { query, actions, enabled } = useEditor();
+  const { setCraftjsQuery, setCraftjsActions, craftjsQuery, craftjsActions: storedActions } = useEditor2Store();
+
+  useEffect(() => {
+    // Only update when query and actions are available and different from stored
+    if (query && actions && (query !== craftjsQuery || actions !== storedActions)) {
+      setCraftjsQuery(query);
+      setCraftjsActions(actions);
+      console.log('🔗 Craft.js synchronized with global store');
+    }
+  }, [query, actions, enabled]); // Removed store setters from dependencies to prevent loop
+
+  return null;
+};
 
 export const CanvasContainer: React.FC = () => {
   return (
@@ -17,6 +35,7 @@ export const CanvasContainer: React.FC = () => {
         }}
         enabled={true}
       >
+        <CraftSyncProvider />
         {/* Canvas Background */}
         <div 
           className="min-h-full bg-gray-50"
