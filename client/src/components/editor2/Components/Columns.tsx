@@ -135,6 +135,41 @@ export const Columns: React.FC<ColumnsProps> = ({
     windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0
   });
 
+  // DETECTIVE MODE: Inspecionar CSS computado após render
+  React.useEffect(() => {
+    const container = document.getElementById(id);
+    if (container) {
+      const computedStyles = window.getComputedStyle(container);
+      console.log('🕵️ CSS COMPUTADO REAL (DOM):', {
+        id,
+        className: container.className,
+        display: computedStyles.display,
+        flexDirection: computedStyles.flexDirection,
+        width: computedStyles.width,
+        height: computedStyles.height,
+        justifyContent: computedStyles.justifyContent,
+        alignItems: computedStyles.alignItems,
+        flexWrap: computedStyles.flexWrap
+      });
+      
+      // Verificar filhos (colunas)
+      const children = Array.from(container.children);
+      children.forEach((child, index) => {
+        const childStyles = window.getComputedStyle(child);
+        console.log(`🔍 COLUNA ${index + 1} CSS COMPUTADO:`, {
+          className: child.className,
+          display: childStyles.display,
+          flexDirection: childStyles.flexDirection,
+          width: childStyles.width,
+          marginLeft: childStyles.marginLeft,
+          flexShrink: childStyles.flexShrink,
+          float: childStyles.float,
+          position: childStyles.position
+        });
+      });
+    }
+  }, [id]);
+
   return (
     <div
       id={id}
