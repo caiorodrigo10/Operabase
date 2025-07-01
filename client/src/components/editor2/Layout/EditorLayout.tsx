@@ -15,18 +15,72 @@ export const EditorLayout: React.FC = () => {
     const testPageJson = {
       blocks: [
         {
-          id: 'test-block-1',
+          id: 'root-container',
           component: {
-            name: 'Text',
-            options: {
-              text: 'Teste do contexto funcionando!'
+            name: 'Container',
+            options: {}
+          },
+          responsiveStyles: {
+            large: {
+              maxWidth: '1200px',
+              margin: '0 auto',
+              paddingLeft: '40px',
+              paddingRight: '40px'
+            },
+            medium: {
+              maxWidth: '100%',
+              paddingLeft: '24px',
+              paddingRight: '24px'
+            },
+            small: {
+              maxWidth: '100%',
+              paddingLeft: '16px',
+              paddingRight: '16px'
             }
-          }
+          },
+          children: [
+            {
+              id: 'test-text-1',
+              component: {
+                name: 'Text',
+                options: {
+                  text: 'Bem-vindo ao Editor2!'
+                }
+              },
+              styles: {
+                fontSize: '24px',
+                fontWeight: 'bold',
+                marginBottom: '16px'
+              }
+            },
+            {
+              id: 'test-text-2',
+              component: {
+                name: 'Text',
+                options: {
+                  text: 'Sistema de renderização JSON funcionando com Container ROOT.'
+                }
+              },
+              styles: {
+                marginBottom: '24px'
+              }
+            },
+            {
+              id: 'test-button-1',
+              component: {
+                name: 'Button',
+                options: {
+                  text: 'Botão de Teste',
+                  variant: 'primary'
+                }
+              }
+            }
+          ]
         }
       ],
       meta: {
-        title: 'Página de Teste',
-        description: 'Testando o PageProvider'
+        title: 'Editor2 - Sistema de Renderização JSON',
+        description: 'Testando layout base com Container ROOT'
       }
     };
     setPageJson(testPageJson);

@@ -31,8 +31,8 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   block, 
   componentMap: customComponentMap 
 }) => {
-  // Usa componentMap customizado ou padrão
-  const activeComponentMap = customComponentMap || componentMap;
+  // Usa componentMap customizado ou interno
+  const activeComponentMap = customComponentMap || internalComponentMap;
   
   // Obter componente do mapeamento
   const Component = activeComponentMap[block.component.name];
