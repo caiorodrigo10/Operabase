@@ -345,6 +345,24 @@ export const EditorHeader: React.FC = () => {
         </button>
         
         <button 
+          className="header-button reset-button"
+          onClick={() => {
+            localStorage.removeItem('editor2_craft_state');
+            localStorage.removeItem('editor2_page_state');
+            window.location.reload();
+          }}
+          title="Reset Template - Carregar Template Padrão"
+          style={{ 
+            backgroundColor: '#f59e0b', 
+            color: 'white',
+            marginRight: '8px' 
+          }}
+        >
+          <Settings size={16} />
+          <span>Reset</span>
+        </button>
+        
+        <button 
           className="header-button preview-button"
           onClick={handlePreview}
           title="Visualizar Página Externa"

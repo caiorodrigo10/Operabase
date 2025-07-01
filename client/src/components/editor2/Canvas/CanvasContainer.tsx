@@ -529,7 +529,7 @@ const getDefaultSemanticJson = () => {
       "type": { "resolvedName": "Video" },
       "isCanvas": false,
       "props": {
-        "videoId": "dQw4w9WgXcQ",
+        "videoId": "u7KQ4ityQeI",
         "width": 560,
         "height": 315
       },
