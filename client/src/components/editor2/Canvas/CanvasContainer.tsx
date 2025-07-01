@@ -365,39 +365,36 @@ export const CanvasContainer: React.FC = () => {
   const [initialJson, setInitialJson] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load saved state from server (same pattern as Editor Landing)
+  // Load saved state from server BEFORE Frame renders (same pattern as Editor Landing)
   useEffect(() => {
     const loadPageData = async () => {
       try {
+        // First try to load from server
         const response = await fetch('/api/load-page-json/editor2');
         const result = await response.json();
         
         console.log('📂 Editor2 loading response:', result);
         
         if (result.success && result.data) {
-          console.log('📂 Editor2 page loaded from server');
+          console.log('📂 Editor2 loading from server');
           setInitialJson(result.data);
         } else {
-          const savedState = localStorage.getItem('editor2_state');
+          // Fallback to localStorage if not on server
+          const savedState = localStorage.getItem('editor2_craft_state');
           if (savedState) {
-            console.log('📂 Editor2 page loaded from localStorage');
+            console.log('📂 Editor2 loading from localStorage (fallback)');
             setInitialJson(savedState);
           } else {
-            // Use default semantic JSON if no saved state
             console.log('📂 Editor2 using default semantic structure');
-            setInitialJson(JSON.stringify(getDefaultSemanticJson()));
           }
         }
       } catch (error) {
-        console.error('Editor2 load error:', error);
-        const savedState = localStorage.getItem('editor2_state');
+        console.error('Error loading page data:', error);
+        // Fallback to localStorage on error
+        const savedState = localStorage.getItem('editor2_craft_state');
         if (savedState) {
-          console.log('📂 Editor2 page loaded from localStorage (fallback)');
+          console.log('📂 Editor2 loading from localStorage (error)');
           setInitialJson(savedState);
-        } else {
-          // Use default semantic JSON if no saved state
-          console.log('📂 Editor2 using default semantic structure (fallback)');
-          setInitialJson(JSON.stringify(getDefaultSemanticJson()));
         }
       } finally {
         setIsLoading(false);
@@ -437,7 +434,7 @@ export const CanvasContainer: React.FC = () => {
           style={{ backgroundColor: '#f8f9fa' }}
         >
           {/* Craft.js Frame - CLEAN PATTERN with FORCED Semantic IDs */}
-          <Frame>
+          <Frame data={initialJson || undefined}>
             <Element
               canvas
               is={Container}

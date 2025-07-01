@@ -31,16 +31,88 @@ export const EditorHeader: React.FC = () => {
   };
 
   const handleSave = async () => {
-    const success = await savePageToServer();
-    if (success) {
-      // Visual feedback
-      const button = document.querySelector('[data-save-button]') as HTMLElement;
-      if (button) {
-        const originalText = button.textContent;
-        button.textContent = 'Salvo!';
-        setTimeout(() => {
-          button.textContent = originalText;
-        }, 1500);
+    try {
+      // Get current Craft.js editor
+      const craftEditor = getCurrentCraftEditor();
+      
+      if (craftEditor && craftEditor.query && craftEditor.query.serialize) {
+        // Use Craft.js serialization (same as Editor Landing)
+        const craftJson = craftEditor.query.serialize();
+        
+        // Save to localStorage
+        localStorage.setItem('editor2_craft_state', craftJson);
+        console.log('💾 Editor2 state saved to localStorage');
+        
+        // Save to server (same pattern as Editor Landing)
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            import.meta.env.VITE_SUPABASE_URL!,
+            import.meta.env.VITE_SUPABASE_ANON_KEY!
+          );
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          const response = await fetch('/api/save-page-json', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+            body: JSON.stringify({
+              pageId: 'editor2',
+              jsonData: craftJson
+            })
+          });
+          
+          if (response.ok) {
+            console.log('✅ Editor2 JSON saved to server');
+            
+            // Visual feedback
+            const button = document.querySelector('[data-save-button]') as HTMLElement;
+            if (button) {
+              const originalText = button.textContent;
+              button.textContent = 'Salvo!';
+              setTimeout(() => {
+                button.textContent = originalText;
+              }, 1500);
+            }
+          } else {
+            console.error('❌ Error saving to server');
+            alert('Estado salvo localmente (erro no servidor)');
+          }
+        } catch (error) {
+          console.error('❌ Server save error:', error);
+          alert('Estado salvo localmente (erro no servidor)');
+        }
+      } else {
+        // Fallback to legacy system
+        const success = await savePageToServer();
+        if (success) {
+          // Visual feedback
+          const button = document.querySelector('[data-save-button]') as HTMLElement;
+          if (button) {
+            const originalText = button.textContent;
+            button.textContent = 'Salvo!';
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 1500);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error saving Editor2 state:', error);
+      // Fallback to legacy save
+      const success = await savePageToServer();
+      if (success) {
+        // Visual feedback
+        const button = document.querySelector('[data-save-button]') as HTMLElement;
+        if (button) {
+          const originalText = button.textContent;
+          button.textContent = 'Salvo!';
+          setTimeout(() => {
+            button.textContent = originalText;
+          }, 1500);
+        }
       }
     }
   };
@@ -79,45 +151,6 @@ export const EditorHeader: React.FC = () => {
         setJsonContent(formattedJson);
         
         console.log('📄 Craft.js JSON exported:', Object.keys(craftJson));
-        
-        // DEBUG: Log detailed structure
-        console.log('🔍 JSON Keys (should include semantic IDs):', Object.keys(craftJson));
-        
-        // DEBUG: Check for semantic IDs
-        const semanticIds = Object.keys(craftJson).filter(key => 
-          key.includes('hero') || key.includes('cta') || key.includes('feature') || key.includes('section')
-        );
-        console.log('🎯 Found semantic IDs:', semanticIds);
-        
-        // DEBUG: Check ROOT structure
-        if (craftJson.ROOT) {
-          console.log('🏠 ROOT node structure:', {
-            type: craftJson.ROOT.type,
-            props: Object.keys(craftJson.ROOT.props || {}),
-            nodes: craftJson.ROOT.nodes || [],
-            linkedNodes: craftJson.ROOT.linkedNodes || {}
-          });
-        }
-        
-        // DEBUG: Look for our custom IDs in the entire structure
-        Object.entries(craftJson).forEach(([key, value]) => {
-          if (value && typeof value === 'object' && value.custom?.displayName) {
-            console.log(`🏷️ Node ${key}:`, {
-              displayName: value.custom.displayName,
-              type: value.type?.resolvedName,
-              hasCustomId: !!value.props?.id,
-              actualId: value.props?.id
-            });
-          }
-        });
-        
-        // 🎯 TRANSFORM JSON: Replace random IDs with semantic IDs
-        const semanticJson = transformToSemanticJson(craftJson);
-        console.log('🎯 Transformed semantic JSON:', Object.keys(semanticJson));
-        
-        // Use semantic JSON instead of raw Craft.js JSON
-        const semanticFormattedJson = JSON.stringify(semanticJson, null, 2);
-        setJsonContent(semanticFormattedJson);
       } else {
         // Fallback to legacy system
         const pageJson = serializeToJSON();
