@@ -79,3 +79,13 @@ export interface ErrorState {
   message?: string;
   details?: any;
 }
+
+// Props base para componentes do Editor2
+export interface BlockComponentProps {
+  id: string;
+  children?: Block[];
+  className?: string;
+  responsiveStyles?: ResponsiveStyles;
+  styles?: React.CSSProperties;
+  [key: string]: any; // Para props específicas do componente
+}

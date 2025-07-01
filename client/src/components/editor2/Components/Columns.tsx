@@ -1,5 +1,6 @@
 import React from 'react';
 import { BlockComponentProps } from '../../../shared/editor2-types';
+import { RenderBlock } from '../Canvas/RenderBlock';
 
 interface ColumnConfig {
   blocks: any[];
@@ -213,33 +214,13 @@ export const Columns: React.FC<ColumnsProps> = ({
           >
             {/* Builder.io blocks wrapper */}
             <div className="builder-blocks" style={{ flexGrow: 1 }}>
-              {column.blocks.map((block, blockIndex) => {
-                // Debug para detectar blocos null
-                if (!block) {
-                  console.warn('❌ Columns: block is null at index', blockIndex, 'in column', index);
-                  return null;
-                }
-                
-                // Verificar se o bloco tem a estrutura correta
-                if (!block.component) {
-                  console.warn('❌ Columns: Invalid block in column:', block);
-                  return null;
-                }
-
-                console.log('🔄 Columns rendering block:', block.id, 'component:', block.component.name);
-                
-                // Usar renderBlock passado como prop ou fallback simples
-                if (renderBlock) {
-                  return renderBlock(block);
-                }
-                
-                // Fallback: renderização simples sem RenderBlock
-                return (
-                  <div key={block.id || `${index}-${blockIndex}`}>
-                    Component: {block.component.name}
-                  </div>
-                );
-              })}
+              {/* Renderizar children ao invés de column.blocks */}
+              {children && children[index] && (
+                <RenderBlock 
+                  key={children[index].id} 
+                  block={children[index]}
+                />
+              )}
             </div>
           </div>
         );
