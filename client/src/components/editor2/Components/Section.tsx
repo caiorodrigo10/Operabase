@@ -37,7 +37,7 @@ export const Section: React.FC<SectionProps> = ({
     styles: Object.keys(styles || {}),
     responsiveStyles: Object.keys(responsiveStyles || {})
   });
-  // Section aplica background diretamente conforme Builder.io
+  // Section aplica background diretamente conforme Builder.io 
   const sectionStyles = {
     backgroundColor,
     backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
@@ -49,16 +49,16 @@ export const Section: React.FC<SectionProps> = ({
     minHeight,
     width: '100%', // Section ocupa toda largura
     display: 'block',
+    padding, // Section aplica padding conforme Builder.io
     ...styles, // Aplicar estilos customizados por último
   };
 
-  // Container interno apenas para centralizar conteúdo
+  // Container interno apenas para centralizar conteúdo conforme Builder.io
   const containerStyles = {
     maxWidth,
     margin,
-    padding,
     width: '100%',
-    background: 'transparent' // Container transparente
+    background: 'transparent' // Container transparente - não aplica padding
   };
 
   // Aplicar estilos responsivos para Section

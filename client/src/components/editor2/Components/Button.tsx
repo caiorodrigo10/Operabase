@@ -4,52 +4,118 @@
  */
 
 import React from 'react';
+import { BlockComponentProps } from '../../../shared/editor2-types';
 
-interface ButtonProps {
+interface ButtonProps extends BlockComponentProps {
   text?: string;
-  children?: React.ReactNode;
-  style?: React.CSSProperties;
-  className?: string;
   variant?: 'primary' | 'secondary' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
+  backgroundColor?: string;
+  color?: string;
+  borderRadius?: string;
+  padding?: string;
+  border?: string;
   onClick?: () => void;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-  text = 'Botão',
+  id,
   children,
-  style,
   className = '',
+  responsiveStyles = {},
+  styles = {},
+  // Button-specific props from Builder.io
+  text = 'Botão',
   variant = 'primary',
-  size = 'md',
-  onClick
+  backgroundColor,
+  color,
+  borderRadius = '6px',
+  padding = '12px 24px',
+  border = 'none',
+  onClick,
+  ...props
 }) => {
-  // Classes base para variantes
-  const variantClasses = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700',
-    secondary: 'bg-gray-600 text-white hover:bg-gray-700',
-    outline: 'border-2 border-blue-600 text-blue-600 bg-transparent hover:bg-blue-600 hover:text-white'
+  // Debug logs para Button
+  console.log('🔘 Button component:', { 
+    id, 
+    text, 
+    variant,
+    backgroundColor,
+    color,
+    styles: Object.keys(styles || {})
+  });
+
+  // Estilos por variante conforme Builder.io
+  const getVariantStyles = () => {
+    switch (variant) {
+      case 'primary':
+        return {
+          backgroundColor: backgroundColor || '#0070f3',
+          color: color || '#ffffff',
+          border: 'none'
+        };
+      case 'secondary':
+        return {
+          backgroundColor: 'transparent',
+          color: color || '#0070f3',
+          border: `1px solid ${backgroundColor || '#0070f3'}`
+        };
+      case 'outline':
+        return {
+          backgroundColor: 'transparent',
+          color: color || '#333333',
+          border: '1px solid #cccccc'
+        };
+      default:
+        return {};
+    }
   };
 
-  // Classes base para tamanhos
-  const sizeClasses = {
-    sm: 'px-4 py-2 text-sm',
-    md: 'px-6 py-3 text-base',
-    lg: 'px-8 py-4 text-lg'
+  // Combinar estilos Builder.io
+  const buttonStyles = {
+    ...getVariantStyles(),
+    borderRadius,
+    padding,
+    cursor: 'pointer',
+    display: 'inline-block',
+    fontSize: '16px',
+    fontWeight: '500',
+    textAlign: 'center' as const,
+    textDecoration: 'none',
+    outline: 'none',
+    ...styles, // Builder.io styles têm precedência
+    ...props.style // style final do RenderBlock
   };
 
-  const combinedClassName = [
-    'editor2-button font-semibold rounded-lg transition-colors duration-200 cursor-pointer inline-block',
-    variantClasses[variant],
-    sizeClasses[size],
-    className
-  ].filter(Boolean).join(' ');
+  // Aplicar estilos responsivos se necessário
+  const getResponsiveStyles = () => {
+    if (typeof window === 'undefined') return buttonStyles;
+    
+    const width = window.innerWidth;
+    if (width >= 1024 && responsiveStyles.large) {
+      return { ...buttonStyles, ...responsiveStyles.large };
+    } else if (width >= 768 && responsiveStyles.medium) {
+      return { ...buttonStyles, ...responsiveStyles.medium };
+    } else if (width < 768 && responsiveStyles.small) {
+      return { ...buttonStyles, ...responsiveStyles.small };
+    }
+    
+    return buttonStyles;
+  };
+
+  const finalStyles = getResponsiveStyles();
+
+  // Remover propriedades undefined para DOM limpo
+  const cleanStyles = Object.fromEntries(
+    Object.entries(finalStyles).filter(([_, value]) => value !== undefined)
+  );
 
   return (
     <button 
-      className={combinedClassName}
-      style={style}
+      id={id}
+      className={`editor2-button ${className}`.trim()}
+      style={cleanStyles}
       onClick={onClick}
+      {...props}
     >
       {children || text}
     </button>
