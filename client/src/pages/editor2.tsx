@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { EditorLayout } from '../components/editor2';
 import { PageProvider } from '../contexts/PageProvider';
+import { EditorProvider } from '../contexts/EditorContext';
 import '../styles/editor2.css';
 
 export default function Editor2() {
@@ -36,7 +37,9 @@ export default function Editor2() {
   return (
     <div className="editor2-page">
       <PageProvider>
-        <EditorLayout />
+        <EditorProvider>
+          <EditorLayout />
+        </EditorProvider>
       </PageProvider>
     </div>
   );
