@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Builder.io Pattern: Global Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Builder.io Pattern: Body Scroll Natural */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: auto; /* scroll natural do body */
+  height: auto;
+}
+
 /* Builder.io Pattern: Page Container (sem restrições de altura) */
 .builder-page {
   min-height: 100vh;
@@ -16,7 +29,14 @@
   outline: none !important;
   padding: 0;
   margin: 0;
-  position: relative;
+  position: static; /* fluxo normal, não relative */
+}
+
+/* Builder.io Pattern: Seções com fluxo natural */
+section {
+  display: block; /* padrão HTML */
+  width: 100%;
+  position: static; /* fluxo normal */
 }
 
 /* Editor2 Canvas: Comportamento Visual Avançado (Doc 8) */
