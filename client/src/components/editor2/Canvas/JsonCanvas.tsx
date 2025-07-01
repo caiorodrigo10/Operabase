@@ -84,8 +84,13 @@ export const JsonCanvas: React.FC = () => {
     );
   }
 
-  // Estado vazio - sem dados
-  if (!pageJson || !pageJson.blocks || pageJson.blocks.length === 0) {
+  // Estado vazio - sem dados (suporte para estrutura ROOT ou blocks)
+  const hasContent = pageJson && (
+    (pageJson.ROOT && pageJson.ROOT.children && pageJson.ROOT.children.length > 0) ||
+    (pageJson.blocks && pageJson.blocks.length > 0)
+  );
+
+  if (!hasContent) {
     return (
       <div className="json-canvas h-full flex items-center justify-center bg-gray-50">
         <div className="text-center p-6 max-w-md">
@@ -106,6 +111,11 @@ export const JsonCanvas: React.FC = () => {
     );
   }
 
+  // Determina qual estrutura usar: ROOT ou blocks
+  const blocksToRender = pageJson.ROOT 
+    ? pageJson.ROOT.children || []
+    : pageJson.blocks || [];
+
   // Renderização principal - Builder.io EXATO pattern
   return (
     <div className={canvasClasses} style={{ overflow: 'visible' }}>
@@ -118,13 +128,21 @@ export const JsonCanvas: React.FC = () => {
           alignItems: 'stretch',
         }}
       >
-        {/* Renderização direta dos blocos no container flexbox */}
-        {pageJson.blocks.map((block) => (
+        {/* Se tem ROOT, renderiza o ROOT como container principal */}
+        {pageJson.ROOT ? (
           <RenderBlock 
-            key={block.id} 
-            block={block}
+            key={pageJson.ROOT.id} 
+            block={pageJson.ROOT}
           />
-        ))}
+        ) : (
+          /* Senão, renderiza blocos diretamente */
+          blocksToRender.map((block: any) => (
+            <RenderBlock 
+              key={block.id} 
+              block={block}
+            />
+          ))
+        )}
       </div>
     </div>
   );
