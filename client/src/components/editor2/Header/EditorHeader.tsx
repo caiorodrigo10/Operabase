@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Save, Code, Eye, ExternalLink } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useEditor2Store } from '../../../stores/editor2Store';
+import { getCurrentCraftEditor } from '../Canvas/CanvasContainer';
 
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
@@ -9,7 +10,7 @@ export const EditorHeader: React.FC = () => {
   const [showJsonModal, setShowJsonModal] = useState(false);
   const [jsonContent, setJsonContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const { serializeToJSON, deserializeFromJSON, savePageToServer, craftjsQuery, craftjsActions } = useEditor2Store();
+  const { serializeToJSON, deserializeFromJSON, savePageToServer } = useEditor2Store();
 
   const handleBackClick = () => {
     console.log('Navigating to funnels page');
@@ -68,18 +69,21 @@ export const EditorHeader: React.FC = () => {
 
   const handleViewJson = () => {
     try {
-      // Use Craft.js serialization if available
-      if (craftjsQuery && craftjsQuery.serialize) {
-        const craftJson = craftjsQuery.serialize();
+      // Get current Craft.js editor
+      const craftEditor = getCurrentCraftEditor();
+      
+      if (craftEditor && craftEditor.query && craftEditor.query.serialize) {
+        // Use Craft.js serialization
+        const craftJson = craftEditor.query.serialize();
         const formattedJson = JSON.stringify(craftJson, null, 2);
         setJsonContent(formattedJson);
-        console.log('📄 Craft.js JSON exported:', craftJson);
+        console.log('📄 Craft.js JSON exported:', Object.keys(craftJson));
       } else {
         // Fallback to legacy system
         const pageJson = serializeToJSON();
         const formattedJson = JSON.stringify(pageJson, null, 2);
         setJsonContent(formattedJson);
-        console.log('📄 Legacy JSON exported');
+        console.log('📄 Legacy JSON exported (Craft.js not available)');
       }
     } catch (error) {
       console.error('❌ Failed to serialize:', error);
@@ -96,14 +100,17 @@ export const EditorHeader: React.FC = () => {
     try {
       const parsedJson = JSON.parse(jsonContent);
       
-      if (craftjsActions && craftjsActions.deserialize) {
+      // Get current Craft.js editor
+      const craftEditor = getCurrentCraftEditor();
+      
+      if (craftEditor && craftEditor.actions && craftEditor.actions.deserialize) {
         // Use Craft.js deserialization
-        craftjsActions.deserialize(parsedJson);
+        craftEditor.actions.deserialize(parsedJson);
         console.log('✅ JSON applied to Craft.js Canvas');
       } else {
         // Fallback to legacy system
         deserializeFromJSON(parsedJson);
-        console.log('✅ JSON applied to Editor2');
+        console.log('✅ JSON applied to Editor2 (Craft.js not available)');
       }
       
       setShowJsonModal(false);
