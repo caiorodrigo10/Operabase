@@ -254,7 +254,8 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   // Renderizar componente com wrapper interativo para modo edição
   return (
     <div
-      className={interactiveClasses}
+      className={`builder-block ${interactiveClasses}`}
+      style={wrapperStyles}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
