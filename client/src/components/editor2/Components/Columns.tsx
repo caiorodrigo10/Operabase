@@ -47,27 +47,37 @@ export const Columns: React.FC<ColumnsProps> = ({
     hasColumns: columns.length > 0,
     firstColumnBlocks: columns[0]?.blocks?.length || 0
   });
-  // Gerar classes CSS baseado nas configurações
+  // Gerar classes CSS baseado nas configurações + detecção de tela
   const getResponsiveClasses = () => {
     const classes = ['editor2-columns'];
+    const currentWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
     
-    if (stackColumnsAt === 'tablet') {
+    // ✅ Builder.io Logic: Só aplicar classes de empilhamento quando necessário
+    if (stackColumnsAt === 'tablet' && currentWidth <= 991) {
       classes.push('columns-stack-tablet');
-    } else if (stackColumnsAt === 'mobile') {
+    } else if (stackColumnsAt === 'mobile' && currentWidth <= 640) {
       classes.push('columns-stack-mobile');
     }
     
-    if (reverseColumnsWhenStacked) {
+    // Só aplicar reverse se realmente empilhando
+    if (reverseColumnsWhenStacked && 
+        ((stackColumnsAt === 'tablet' && currentWidth <= 991) || 
+         (stackColumnsAt === 'mobile' && currentWidth <= 640))) {
       classes.push('columns-reverse-stacked');
     }
     
     return classes.join(' ');
   };
 
-  // Função para calcular largura das colunas (Builder.io style)
-  const getColumnWidth = (column: any) => {
-    // Use a largura específica da coluna ou distribua igualmente
-    return column.width ? `${column.width}%` : `${100 / columns.length}%`;
+  // Função para calcular largura das colunas (Builder.io oficial)
+  const getColumnWidth = (column: any, index: number) => {
+    // Largura base da coluna (33.33% para 3 colunas)
+    const baseWidth = column.width || (100 / columns.length);
+    
+    // Cálculo Builder.io: largura - (gutterSize * colunas-1 * percentual)
+    const subtractWidth = gutterSize * (columns.length - 1) * (baseWidth / 100);
+    
+    return `calc(${baseWidth}% - ${subtractWidth}px)`;
   };
 
   // Combinar estilos exatamente como Builder.io
@@ -122,7 +132,7 @@ export const Columns: React.FC<ColumnsProps> = ({
     getResponsiveClasses: getResponsiveClasses(),
     className,
     fullClassName: `${getResponsiveClasses()} ${className}`.trim(),
-    firstColumnWidth: columns.length > 0 ? getColumnWidth(columns[0]) : 'none',
+    firstColumnWidth: columns.length > 0 ? getColumnWidth(columns[0], 0) : 'none',
     firstColumnBlocks: columns.length > 0 ? columns[0].blocks?.length : 0
   });
 
@@ -134,8 +144,9 @@ export const Columns: React.FC<ColumnsProps> = ({
       {...props}
     >
       {columns.map((column, index) => {
+        const columnWidth = getColumnWidth(column, index);
         const columnStyles = {
-          flex: `0 0 ${getColumnWidth(column)}`,
+          flex: `0 0 ${columnWidth}`,
           marginLeft: index === 0 ? 0 : `${gutterSize}px`,
           display: 'flex',
           flexDirection: 'column' as const,
@@ -143,7 +154,7 @@ export const Columns: React.FC<ColumnsProps> = ({
         };
 
         console.log(`🔹 Column ${index + 1}/${columns.length}:`, {
-          width: getColumnWidth(column),
+          width: columnWidth,
           marginLeft: columnStyles.marginLeft,
           flex: columnStyles.flex,
           blocksCount: column.blocks?.length || 0
