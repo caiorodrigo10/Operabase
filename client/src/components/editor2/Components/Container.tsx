@@ -33,11 +33,12 @@ export const Container: React.FC<ContainerProps> = ({
     responsiveStyles: Object.keys(responsiveStyles || {})
   });
 
-  // Container aplica maxWidth + margin: 0 auto conforme Builder.io
+  // ✅ Builder.io pattern: Container centralização completa
   const containerStyles = {
-    maxWidth,
-    margin,
-    width: '100%',
+    maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth, // Garantir string
+    margin: margin || '0 auto', // Centralização horizontal padrão
+    width: '100%', // Ocupa largura disponível
+    textAlign: 'center', // Centralização do texto (herança para filhos)
     padding,
     ...styles, // Builder.io styles têm precedência
     ...props.style // style final do RenderBlock
