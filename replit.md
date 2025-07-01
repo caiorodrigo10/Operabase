@@ -212,6 +212,18 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 01, 2025 - Editor 2 Hybrid System: Clean JSON + Craft.js Engine Migration Complete ✅
+- **JSON Limpo Implementado**: Editor 2 agora usa estrutura semântica (hero-section, feature-1) igual ao Editor Landing
+- **Migração Completa**: Substituição dos componentes `/simple/` por componentes `/selectors/` limpos e estruturados
+- **Padrão Unificado**: Editor 2 agora usa mesmo resolver e pattern do Editor Landing que já funcionava
+- **IDs Semânticos**: Sistema força IDs descritivos (hero-title, cta-button) em vez de números aleatórios
+- **Props Estruturadas**: Convertidos de strings para formato RGBA objects e arrays padronizados
+- **Largura Corrigida**: Alterado width de "800px" para "100%" para ocupar tela inteira como antes
+- **Default JSON**: Implementado fallback com estrutura semântica limpa quando não há dados salvos
+- **Framework Híbrido**: Editor 2 mantém interface própria mas usa engine Craft.js para JSON compatível com IA
+- **Zero Impact**: Funcionalidades de edição preservadas, apenas otimização da estrutura JSON
+- **Status**: ✅ EDITOR 2 HÍBRIDO OPERACIONAL - JSON limpo + interface familiar para geração de landing pages via IA
+
 ### July 01, 2025 - RAG System Database Optimization: Direct Foreign Key Columns Complete ✅
 - **Performance Otimizada**: Migração completa de metadata JSONB para colunas diretas clinic_id e knowledge_base_id
 - **Database Schema**: Executada migração SQL adicionando colunas clinic_id INTEGER e knowledge_base_id INTEGER à tabela documents

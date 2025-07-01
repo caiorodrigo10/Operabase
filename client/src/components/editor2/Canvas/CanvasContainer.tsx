@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Editor, Frame, Element, useEditor } from '@craftjs/core';
 
-// Import CLEAN Landing components (not simple ones)
-import { Container } from '../../craft/selectors/landing';
-import { Text } from '../../craft/selectors/Text';
+// Import CLEAN Landing components (same as Editor Landing that works)
+import { Container, Text } from '../../craft/selectors';
 import { Button as CraftButton } from '../../craft/selectors/Button';
 import { Video } from '../../craft/selectors/Video';
 import { RenderNode } from '../../craft/editor/RenderNode';
@@ -423,7 +422,7 @@ export const CanvasContainer: React.FC = () => {
           style={{ backgroundColor: '#f8f9fa' }}
         >
           {/* Craft.js Frame - CLEAN PATTERN with FORCED Semantic IDs */}
-          <Frame data={initialJson || getDefaultSemanticJson()}>
+          <Frame>
             <Element
               canvas
               is={Container}
