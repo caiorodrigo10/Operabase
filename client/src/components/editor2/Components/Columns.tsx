@@ -38,7 +38,9 @@ export const Columns: React.FC<ColumnsProps> = ({
     columnsCount: columns.length,
     gutterSize,
     stackColumnsAt,
-    styles: Object.keys(styles || {})
+    styles: Object.keys(styles || {}),
+    hasColumns: columns.length > 0,
+    firstColumnBlocks: columns[0]?.blocks?.length || 0
   });
   // Gerar classes CSS baseado nas configurações
   const getResponsiveClasses = () => {
