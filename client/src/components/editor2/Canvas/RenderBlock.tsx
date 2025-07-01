@@ -135,8 +135,19 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     blockId: block.id,
     options: block.component.options,
     styles: block.styles,
-    responsiveStyles: Object.keys(block.responsiveStyles || {})
+    responsiveStyles: Object.keys(block.responsiveStyles || {}),
+    hasChildren: !!block.children?.length
   });
+
+  // Log específico para Columns
+  if (block.component.name === 'Columns') {
+    console.log('🏗️ COLUMNS DETECTED:', {
+      id: block.id,
+      columns: block.component.options?.columns?.length || 0,
+      gutterSize: block.component.options?.gutterSize,
+      firstColumnBlocks: block.component.options?.columns?.[0]?.blocks?.length || 0
+    });
+  }
 
   // Preparar props baseado no tipo de componente
   const componentProps = (() => {
