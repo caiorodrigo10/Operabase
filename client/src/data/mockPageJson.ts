@@ -356,6 +356,220 @@ export const mockPageJson = {
       ]
     },
 
+    // 🟦 SEÇÃO TESTE: RECURSOS PODEROSOS - AZUL (#2563eb)
+    {
+      id: 'recursos-section',
+      '@type': '@builder.io/sdk:Element',
+      component: {
+        name: 'Section',
+        options: {
+          maxWidth: 1200
+        }
+      },
+      responsiveStyles: {
+        large: {
+          backgroundColor: '#2563eb',
+          padding: '80px 0',
+          textAlign: 'center'
+        },
+        medium: {
+          padding: '60px 0'
+        },
+        small: {
+          padding: '40px 0'
+        }
+      },
+      children: [
+        {
+          id: 'recursos-container',
+          '@type': '@builder.io/sdk:Element',
+          component: {
+            name: 'Container',
+            options: {
+              maxWidth: 1000
+            }
+          },
+          responsiveStyles: {
+            large: {
+              margin: '0 auto',
+              padding: '0 20px'
+            }
+          },
+          children: [
+            // Título da seção
+            {
+              id: 'recursos-title',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Text',
+                options: {
+                  text: 'Recursos Poderosos',
+                  tag: 'h2'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  fontSize: '48px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  marginBottom: '60px',
+                  lineHeight: '1.2'
+                }
+              }
+            },
+            
+            // Colunas de recursos
+            {
+              id: 'recursos-columns',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Columns',
+                options: {
+                  columns: [
+                    {
+                      width: 33.33,
+                      blocks: [
+                        {
+                          id: 'recurso-1-title',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: '🚀 Velocidade',
+                              tag: 'h3'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '28px',
+                              fontWeight: '600',
+                              color: '#ffffff',
+                              marginBottom: '20px',
+                              textAlign: 'center'
+                            }
+                          }
+                        },
+                        {
+                          id: 'recurso-1-desc',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: 'Performance otimizada que garante carregamento instantâneo em qualquer dispositivo.',
+                              tag: 'p'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '16px',
+                              color: '#e5e7eb',
+                              lineHeight: '1.6',
+                              textAlign: 'center'
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      width: 33.33,
+                      blocks: [
+                        {
+                          id: 'recurso-2-title',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: '🔒 Confiabilidade',
+                              tag: 'h3'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '28px',
+                              fontWeight: '600',
+                              color: '#ffffff',
+                              marginBottom: '20px',
+                              textAlign: 'center'
+                            }
+                          }
+                        },
+                        {
+                          id: 'recurso-2-desc',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: 'Sistema robusto com 99.9% de uptime e backup automático de todos os dados.',
+                              tag: 'p'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '16px',
+                              color: '#e5e7eb',
+                              lineHeight: '1.6',
+                              textAlign: 'center'
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      width: 33.33,
+                      blocks: [
+                        {
+                          id: 'recurso-3-title',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: '⚡ Inovação',
+                              tag: 'h3'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '28px',
+                              fontWeight: '600',
+                              color: '#ffffff',
+                              marginBottom: '20px',
+                              textAlign: 'center'
+                            }
+                          }
+                        },
+                        {
+                          id: 'recurso-3-desc',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: 'Tecnologia de ponta com atualizações constantes e recursos exclusivos.',
+                              tag: 'p'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '16px',
+                              color: '#e5e7eb',
+                              lineHeight: '1.6',
+                              textAlign: 'center'
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  gutterSize: 40,
+                  stackColumnsAt: 'tablet',
+                  reverseColumnsWhenStacked: false
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+
     // 🟢 SEÇÃO 3: TESTIMONIAL - VERDE (#059669)
     {
       id: 'testimonial-section',
