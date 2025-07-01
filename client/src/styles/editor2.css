@@ -547,11 +547,21 @@
 /* Toolbar Area */
 .editor2-toolbar-area {
   grid-area: toolbar;
-  background-color: #2d2d2d;
+  background-color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
   border-right: 1px solid #404040;
+}
+
+/* Toolbar Elements Placeholder */
+.toolbar-elements {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
 }
 
 /* Center Area - Canvas Preview */
