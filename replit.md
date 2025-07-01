@@ -212,6 +212,16 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 01, 2025 - RAG Metadata Compatibility: LangChain Structure Enhanced ✅
+- **Compatibilidade LangChain Implementada**: Sistema RAG agora cria documentos com metadata JSONB contendo clinic_id e knowledge_base_id
+- **Estrutura Dupla**: Mantém colunas diretas (performance) + metadata JSONB (compatibilidade LangChain/Supabase)
+- **Endpoints Atualizados**: POST /api/rag/documents e POST /api/rag/documents/upload agora incluem campos no metadata
+- **Formato Compatível**: metadata inclui clinic_id e knowledge_base_id como strings para máxima compatibilidade
+- **Documentos Criados**: Sistema validado criando documentos com estrutura completa e embeddings funcionais
+- **Zero Impact**: Funcionalidades existentes preservadas, apenas melhoria da compatibilidade
+- **Teste Validado**: Documento ID 8 criado com sucesso contendo metadata completo para compatibilidade
+- **Status**: ✅ SISTEMA RAG TOTALMENTE COMPATÍVEL - Estrutura LangChain oficial + colunas otimizadas
+
 ### July 01, 2025 - RAG System Item Count Consistency: PDF Grouping + Duplicate Filtering Complete ✅
 - **Critical Issue Resolved**: Fixed inconsistent item counts between knowledge base overview and detail pages
 - **Root Cause Identified**: Overview was showing 3 items while detail page showed 2 due to duplicate documents not being filtered
