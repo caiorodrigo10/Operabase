@@ -492,48 +492,140 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
       console.warn('⚠️ RAG: Erro ao gerar embedding para PDF:', error);
     }
 
-    // Inserir documento na estrutura oficial LangChain com embedding
-    const documentResult = await db.execute(sql`
-      INSERT INTO documents (content, metadata, embedding, clinic_id, knowledge_base_id)
-      VALUES (
-        ${documentContent},
-        ${JSON.stringify({
-          title: documentTitle,
-          source: 'pdf',
-          file_path: file.path,
-          file_name: file.originalname,
-          file_size: file.size,
-          content_length: documentContent.length,
-          created_by: (req as any).user.email,
-          created_at: new Date().toISOString(),
-          processing_status: embeddingVector ? 'completed' : 'pending',
-          extraction_method: 'pdf-parse'
-        })},
-        ${embeddingVector ? JSON.stringify(embeddingVector) : null},
-        ${clinic_id},
-        ${parseInt(knowledge_base_id)}
-      )
-      RETURNING id
-    `);
+    // Processar documento: chunk ou documento único
+    let processedDocuments: any[] = [];
+    
+    if (shouldChunk) {
+      console.log('🔪 RAG: Iniciando processo de chunking...');
+      
+      try {
+        const chunks = await pdfProcessor.chunkContent(documentContent, 0); // documentId temporário
+        console.log(`✅ RAG: Documento dividido em ${chunks.length} chunks`);
+        
+        // Inserir cada chunk como documento separado
+        for (let i = 0; i < chunks.length; i++) {
+          const chunk = chunks[i];
+          
+          // Gerar embedding para o chunk
+          let chunkEmbeddingVector = null;
+          try {
+            const chunkEmbeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                input: chunk.content.substring(0, 8000),
+                model: 'text-embedding-ada-002'
+              })
+            });
 
-    const documentId = (documentResult.rows[0] as any).id;
+            if (chunkEmbeddingResponse.ok) {
+              const chunkEmbeddingData = await chunkEmbeddingResponse.json();
+              chunkEmbeddingVector = chunkEmbeddingData.data[0].embedding;
+            }
+          } catch (error) {
+            console.warn(`⚠️ RAG: Erro ao gerar embedding para chunk ${i + 1}:`, error);
+          }
+          
+          // Inserir chunk
+          const chunkResult = await db.execute(sql`
+            INSERT INTO documents (content, metadata, embedding, clinic_id, knowledge_base_id)
+            VALUES (
+              ${chunk.content},
+              ${JSON.stringify({
+                title: `${documentTitle} - Parte ${i + 1}`,
+                source: 'pdf_chunk',
+                file_path: file.path,
+                file_name: file.originalname,
+                file_size: file.size,
+                content_length: chunk.content.length,
+                chunk_index: i,
+                total_chunks: chunks.length,
+                created_by: (req as any).user.email,
+                created_at: new Date().toISOString(),
+                processing_status: chunkEmbeddingVector ? 'completed' : 'pending',
+                extraction_method: 'pdf-parse-chunked'
+              })},
+              ${chunkEmbeddingVector ? JSON.stringify(chunkEmbeddingVector) : null},
+              ${clinic_id},
+              ${parseInt(knowledge_base_id)}
+            )
+            RETURNING id
+          `);
+          
+          processedDocuments.push({
+            id: (chunkResult.rows[0] as any).id,
+            title: `${documentTitle} - Parte ${i + 1}`,
+            content_length: chunk.content.length,
+            chunk_index: i
+          });
+        }
+      } catch (error) {
+        console.error('❌ RAG: Erro no processo de chunking:', error);
+        return res.status(500).json({
+          success: false,
+          error: `Falha no chunking: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+        });
+      }
+    } else {
+      // Documento pequeno - inserir como único documento
+      const documentResult = await db.execute(sql`
+        INSERT INTO documents (content, metadata, embedding, clinic_id, knowledge_base_id)
+        VALUES (
+          ${documentContent},
+          ${JSON.stringify({
+            title: documentTitle,
+            source: 'pdf',
+            file_path: file.path,
+            file_name: file.originalname,
+            file_size: file.size,
+            content_length: documentContent.length,
+            created_by: (req as any).user.email,
+            created_at: new Date().toISOString(),
+            processing_status: embeddingVector ? 'completed' : 'pending',
+            extraction_method: 'pdf-parse'
+          })},
+          ${embeddingVector ? JSON.stringify(embeddingVector) : null},
+          ${clinic_id},
+          ${parseInt(knowledge_base_id)}
+        )
+        RETURNING id
+      `);
+
+      processedDocuments.push({
+        id: (documentResult.rows[0] as any).id,
+        title: documentTitle,
+        content_length: documentContent.length
+      });
+    }
 
     console.log('✅ RAG: PDF carregado na estrutura oficial LangChain:', {
-      documentId,
+      documentsCreated: processedDocuments.length,
       title: documentTitle,
       clinic_id,
       knowledge_base_id,
-      content_length: documentContent.length,
-      has_embedding: !!embeddingVector
+      original_content_length: documentContent.length,
+      chunked: shouldChunk,
+      processedDocuments: processedDocuments.map(doc => ({
+        id: doc.id,
+        title: doc.title,
+        content_length: doc.content_length
+      }))
     });
 
     res.json({
       success: true,
       data: {
-        id: documentId,
+        documents: processedDocuments,
         title: documentTitle,
         status: 'uploaded',
-        message: 'PDF carregado com sucesso na estrutura oficial LangChain'
+        chunked: shouldChunk,
+        total_content_length: documentContent.length,
+        message: shouldChunk 
+          ? `PDF processado e dividido em ${processedDocuments.length} partes para melhor busca semântica`
+          : 'PDF carregado com sucesso na estrutura oficial LangChain'
       }
     });
 
@@ -638,19 +730,22 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
       `);
     }
 
+    const { full_content } = req.query;
+    const showFullContent = full_content === 'true';
+    
     const documentsList = documentsResult.rows.map((doc: any) => ({
       id: doc.id,
       title: doc.metadata?.title || 'Documento sem título',
-      content: doc.content?.substring(0, 200) + (doc.content?.length > 200 ? '...' : ''),
+      content: showFullContent ? doc.content : (doc.content?.substring(0, 200) + (doc.content?.length > 200 ? '...' : '')),
+      content_full_length: doc.content?.length || 0,
       content_type: doc.metadata?.source || 'unknown',
       knowledge_base_id: doc.knowledge_base_id, // Usando coluna direta
       source: doc.metadata?.source || 'unknown',
       created_by: doc.metadata?.created_by,
       created_at: doc.metadata?.created_at,
-      embedding: doc.embedding,
+      embedding: !!doc.embedding,
       // Status de processamento: se tem conteúdo e embedding, está completo
-      processing_status: (doc.content && doc.content.length > 0) ? 'completed' : 'pending',
-      original_content: doc.content
+      processing_status: (doc.content && doc.content.length > 0) ? 'completed' : 'pending'
     }));
 
     console.log('✅ RAG: Documentos encontrados:', documentsList.length);
@@ -663,6 +758,62 @@ router.get('/documents', ragAuth, async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('❌ RAG: Erro ao listar:', error);
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+/**
+ * GET /api/rag/documents/:id - Visualizar documento específico com conteúdo completo
+ */
+router.get('/documents/:id', ragAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const clinic_id = (req as any).clinic_id;
+    
+    console.log('🔍 RAG: Visualizando documento ID:', id, 'para clínica:', clinic_id);
+    
+    // Buscar documento específico
+    const documentResult = await db.execute(sql`
+      SELECT id, content, metadata, embedding, clinic_id, knowledge_base_id
+      FROM documents 
+      WHERE id = ${parseInt(id)}
+        AND clinic_id = ${clinic_id}
+    `);
+    
+    if (!documentResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        error: 'Documento não encontrado'
+      });
+    }
+    
+    const doc = documentResult.rows[0] as any;
+    
+    console.log('✅ RAG: Documento encontrado:', {
+      id: doc.id,
+      title: doc.metadata?.title,
+      content_length: doc.content?.length || 0
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        id: doc.id,
+        title: doc.metadata?.title || 'Documento sem título',
+        content: doc.content,
+        content_length: doc.content?.length || 0,
+        knowledge_base_id: doc.knowledge_base_id,
+        source: doc.metadata?.source || 'unknown',
+        created_by: doc.metadata?.created_by,
+        created_at: doc.metadata?.created_at,
+        has_embedding: !!doc.embedding,
+        processing_status: (doc.content && doc.content.length > 0) ? 'completed' : 'pending',
+        metadata: doc.metadata
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ RAG: Erro ao visualizar documento:', error);
     res.status(500).json({ success: false, error: String(error) });
   }
 });
