@@ -1,12 +1,332 @@
 /**
- * Mock Page JSON - Builder.io Style Completo
- * 4 Seções com cores modernas e estrutura Builder.io oficial
+ * Mock Page JSON - Builder.io Style + Box Widget Test
+ * Demonstração completa do Box widget com exemplos práticos
  */
 
 export const mockPageJson = {
-  id: 'homepage-builder-example',
+  id: 'box-widget-test',
   blocks: [
-    // 🔵 SEÇÃO 1: HERO - AZUL ESCURO (#1e40af)
+    // 🎨 SEÇÃO DEMO: BOX WIDGET TEST
+    {
+      id: 'box-demo-section',
+      '@type': '@builder.io/sdk:Element',
+      component: {
+        name: 'Section',
+        options: {
+          maxWidth: 1200
+        }
+      },
+      responsiveStyles: {
+        large: {
+          backgroundColor: '#0f172a',
+          padding: '100px 0',
+          width: '100%'
+        }
+      },
+      children: [
+        {
+          id: 'box-demo-container',
+          '@type': '@builder.io/sdk:Element',
+          component: {
+            name: 'Container',
+            options: {
+              maxWidth: 1200
+            }
+          },
+          responsiveStyles: {
+            large: {
+              maxWidth: '1200px',
+              margin: '0 auto',
+              padding: '0 40px'
+            }
+          },
+          children: [
+            {
+              id: 'box-title',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Text',
+                options: {
+                  text: 'Box Widget Demo',
+                  tag: 'h1'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  fontSize: '48px',
+                  fontWeight: '900',
+                  color: '#ffffff',
+                  textAlign: 'center',
+                  marginBottom: '60px'
+                }
+              }
+            },
+            {
+              id: 'box-cards-container',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Box',
+                options: {
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  gap: 30
+                }
+              },
+              responsiveStyles: {
+                medium: {
+                  flexDirection: 'column'
+                },
+                small: {
+                  flexDirection: 'column',
+                  gap: '20px'
+                }
+              },
+              children: [
+                {
+                  id: 'box-card-1',
+                  '@type': '@builder.io/sdk:Element',
+                  component: {
+                    name: 'Box',
+                    options: {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: 16,
+                      paddingTop: 40,
+                      paddingBottom: 40,
+                      paddingLeft: 32,
+                      paddingRight: 32,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 20,
+                      width: '100%',
+                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }
+                  },
+                  children: [
+                    {
+                      id: 'card-badge-1',
+                      '@type': '@builder.io/sdk:Element',
+                      component: {
+                        name: 'Box',
+                        options: {
+                          backgroundColor: '#3b82f6',
+                          borderRadius: 20,
+                          paddingTop: 8,
+                          paddingBottom: 8,
+                          paddingLeft: 16,
+                          paddingRight: 16,
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }
+                      },
+                      children: [
+                        {
+                          id: 'badge-text-1',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: '✨ Flexível',
+                              tag: 'span'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              color: '#ffffff',
+                              fontSize: '14px',
+                              fontWeight: '600'
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      id: 'card-title-1',
+                      '@type': '@builder.io/sdk:Element',
+                      component: {
+                        name: 'Text',
+                        options: {
+                          text: 'Layout Flexível',
+                          tag: 'h3'
+                        }
+                      },
+                      responsiveStyles: {
+                        large: {
+                          fontSize: '24px',
+                          fontWeight: '700',
+                          color: '#ffffff',
+                          textAlign: 'center'
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  id: 'box-card-2',
+                  '@type': '@builder.io/sdk:Element',
+                  component: {
+                    name: 'Box',
+                    options: {
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      borderRadius: 16,
+                      paddingTop: 40,
+                      paddingBottom: 40,
+                      paddingLeft: 32,
+                      paddingRight: 32,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 20,
+                      width: '100%',
+                      border: '1px solid rgba(16, 185, 129, 0.3)'
+                    }
+                  },
+                  children: [
+                    {
+                      id: 'card-badge-2',
+                      '@type': '@builder.io/sdk:Element',
+                      component: {
+                        name: 'Box',
+                        options: {
+                          backgroundColor: '#10b981',
+                          borderRadius: 20,
+                          paddingTop: 8,
+                          paddingBottom: 8,
+                          paddingLeft: 16,
+                          paddingRight: 16,
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }
+                      },
+                      children: [
+                        {
+                          id: 'badge-text-2',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: '📱 Responsivo',
+                              tag: 'span'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              color: '#ffffff',
+                              fontSize: '14px',
+                              fontWeight: '600'
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      id: 'card-title-2',
+                      '@type': '@builder.io/sdk:Element',
+                      component: {
+                        name: 'Text',
+                        options: {
+                          text: 'Design Responsivo',
+                          tag: 'h3'
+                        }
+                      },
+                      responsiveStyles: {
+                        large: {
+                          fontSize: '24px',
+                          fontWeight: '700',
+                          color: '#ffffff',
+                          textAlign: 'center'
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  id: 'box-card-3',
+                  '@type': '@builder.io/sdk:Element',
+                  component: {
+                    name: 'Box',
+                    options: {
+                      backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                      borderRadius: 16,
+                      paddingTop: 40,
+                      paddingBottom: 40,
+                      paddingLeft: 32,
+                      paddingRight: 32,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 20,
+                      width: '100%',
+                      border: '1px solid rgba(245, 158, 11, 0.3)'
+                    }
+                  },
+                  children: [
+                    {
+                      id: 'card-badge-3',
+                      '@type': '@builder.io/sdk:Element',
+                      component: {
+                        name: 'Box',
+                        options: {
+                          backgroundColor: '#f59e0b',
+                          borderRadius: 20,
+                          paddingTop: 8,
+                          paddingBottom: 8,
+                          paddingLeft: 16,
+                          paddingRight: 16,
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }
+                      },
+                      children: [
+                        {
+                          id: 'badge-text-3',
+                          '@type': '@builder.io/sdk:Element',
+                          component: {
+                            name: 'Text',
+                            options: {
+                              text: '⚡ Rápido',
+                              tag: 'span'
+                            }
+                          },
+                          responsiveStyles: {
+                            large: {
+                              color: '#ffffff',
+                              fontSize: '14px',
+                              fontWeight: '600'
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      id: 'card-title-3',
+                      '@type': '@builder.io/sdk:Element',
+                      component: {
+                        name: 'Text',
+                        options: {
+                          text: 'Performance',
+                          tag: 'h3'
+                        }
+                      },
+                      responsiveStyles: {
+                        large: {
+                          fontSize: '24px',
+                          fontWeight: '700',
+                          color: '#ffffff',
+                          textAlign: 'center'
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    // 🔵 SEÇÃO 2: HERO ORIGINAL - AZUL ESCURO (#1e40af)
     {
       id: 'hero-section',
       '@type': '@builder.io/sdk:Element',

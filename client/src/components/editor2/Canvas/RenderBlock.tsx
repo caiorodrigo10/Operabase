@@ -18,6 +18,7 @@ import { Divider } from '../Components/Divider';
 import { Form } from '../Components/Form';
 import { Testimonial } from '../Components/Testimonial';
 import { DefaultComponent } from '../Components/DefaultComponent';
+import { Box } from '../Box';
 
 // Import do contexto de edição (opcional para não quebrar se não tiver)
 let useEditor: any = null;
@@ -42,6 +43,7 @@ const internalComponentMap: any = {
   Form,
   Testimonial,
   Divider,
+  Box,
   DefaultComponent
 };
 
