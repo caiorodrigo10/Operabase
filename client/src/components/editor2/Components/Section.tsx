@@ -42,7 +42,9 @@ export const Section: React.FC<SectionProps> = ({
     backgroundSize: backgroundImage ? 'cover' : undefined,
     backgroundPosition: backgroundImage ? 'center' : undefined,
     backgroundRepeat: backgroundImage ? 'no-repeat' : undefined,
-    ...styles,
+    width: '100%', // Garantir largura total
+    display: 'block', // Layout correto
+    ...styles, // Aplicar estilos customizados por último
   };
 
   // Aplicar estilos responsivos baseado no viewport

@@ -107,17 +107,30 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     ...(calculateResponsiveStyles(block.responsiveStyles))
   };
 
-  // Para componentes Container, passar responsiveStyles como prop separada
-  const componentProps = block.component.name === 'Container' 
-    ? { 
-        ...block.component.options,
-        responsiveStyles: block.responsiveStyles,
+  // Preparar props baseado no tipo de componente
+  const componentProps = (() => {
+    const baseProps = {
+      id: block.id,
+      ...block.component.options,
+      className: '',
+      styles: block.styles || {},
+      responsiveStyles: block.responsiveStyles || {}
+    };
+
+    // Para componentes específicos que precisam de tratamento especial
+    if (block.component.name === 'Container') {
+      return {
+        ...baseProps,
         style: block.styles
-      }
-    : {
-        ...block.component.options,
-        style: combinedStyles
       };
+    }
+    
+    // Para outros componentes, usar estilos combinados
+    return {
+      ...baseProps,
+      style: combinedStyles
+    };
+  })();
 
   // Renderizar children recursivamente
   const children = block.children?.map((child) => (

@@ -76,6 +76,11 @@ export const Columns: React.FC<ColumnsProps> = ({
 
   const finalStyles = getResponsiveStyles();
 
+  // Debug para identificar problema com blocos null
+  if (columns.length > 0) {
+    console.log('🏗️ Columns component received:', { id, columns: columns.length, firstColumn: columns[0] });
+  }
+
   return (
     <div
       id={id}
@@ -96,8 +101,14 @@ export const Columns: React.FC<ColumnsProps> = ({
             style={columnStyles}
           >
             {column.blocks.map((block, blockIndex) => {
+              // Debug para detectar blocos null
+              if (!block) {
+                console.warn('❌ Columns: block is null at index', blockIndex, 'in column', index);
+                return null;
+              }
+              
               // Verificar se o bloco tem a estrutura correta
-              if (!block || !block.component) {
+              if (!block.component) {
                 console.warn('Invalid block in column:', block);
                 return null;
               }
