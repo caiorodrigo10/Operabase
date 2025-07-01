@@ -212,6 +212,17 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 01, 2025 - Editor 2 Semantic JSON Transformation: AI-Ready Structure Complete ✅
+- **Transformação Semântica Implementada**: Sistema agora converte IDs aleatórios do Craft.js (QCaskKtAEe) para IDs semânticos (hero-section)
+- **JSON Limpo para IA**: Export/save/load agora usa estrutura semântica como chaves principais em vez de IDs aleatórios
+- **Função transformToSemanticJson**: Implementada transformação completa preservando relações parent/children/linkedNodes
+- **Sistema de Mapeamento**: IDs aleatórios mapeados para IDs semânticos definidos em props.id dos elementos
+- **Save/Load Unificado**: Tanto localStorage quanto servidor agora usam JSON semântico para consistência
+- **Logs Detalhados**: Sistema mostra mapeamento original → semântico para debugging
+- **Zero Impact**: Funcionalidades de edição preservadas, apenas otimização da estrutura JSON final
+- **Pronto para IA**: JSON exportado agora tem estrutura limpa (hero-section, cta-button) ideal para geração via prompts
+- **Status**: ✅ EDITOR 2 HÍBRIDO COMPLETO - Interface familiar + engine Craft.js + JSON semântico para IA
+
 ### July 01, 2025 - Editor 2 Hybrid System: Clean JSON + Craft.js Engine Migration Complete ✅
 - **JSON Limpo Implementado**: Editor 2 agora usa estrutura semântica (hero-section, feature-1) igual ao Editor Landing
 - **Migração Completa**: Substituição dos componentes `/simple/` por componentes `/selectors/` limpos e estruturados

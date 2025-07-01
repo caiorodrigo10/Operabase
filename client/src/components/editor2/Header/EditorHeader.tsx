@@ -4,6 +4,63 @@ import { useLocation } from 'wouter';
 import { useEditor2Store } from '../../../stores/editor2Store';
 import { getCurrentCraftEditor } from '../Canvas/CanvasContainer';
 
+// Function to transform Craft.js JSON to use semantic IDs as keys
+const transformToSemanticJson = (craftJson: any) => {
+  const transformed: any = {};
+  const idMapping: { [key: string]: string } = {};
+  
+  // First pass: create mapping of random IDs to semantic IDs
+  Object.entries(craftJson).forEach(([randomId, node]: [string, any]) => {
+    if (node?.props?.id) {
+      // Use semantic ID from props
+      idMapping[randomId] = node.props.id;
+    } else if (randomId === 'ROOT') {
+      // Keep ROOT as ROOT
+      idMapping[randomId] = 'ROOT';
+    } else {
+      // Keep random ID if no semantic ID
+      idMapping[randomId] = randomId;
+    }
+  });
+  
+  console.log('🔄 ID Mapping:', idMapping);
+  
+  // Second pass: transform the JSON structure
+  Object.entries(craftJson).forEach(([randomId, node]: [string, any]) => {
+    const semanticId = idMapping[randomId];
+    const transformedNode = { ...node };
+    
+    // Transform node references in 'nodes' array
+    if (transformedNode.nodes) {
+      transformedNode.nodes = transformedNode.nodes.map((childId: string) => 
+        idMapping[childId] || childId
+      );
+    }
+    
+    // Transform parent reference
+    if (transformedNode.parent && idMapping[transformedNode.parent]) {
+      transformedNode.parent = idMapping[transformedNode.parent];
+    }
+    
+    // Transform linkedNodes references
+    if (transformedNode.linkedNodes) {
+      const newLinkedNodes: any = {};
+      Object.entries(transformedNode.linkedNodes).forEach(([key, value]: [string, any]) => {
+        if (typeof value === 'string' && idMapping[value]) {
+          newLinkedNodes[key] = idMapping[value];
+        } else {
+          newLinkedNodes[key] = value;
+        }
+      });
+      transformedNode.linkedNodes = newLinkedNodes;
+    }
+    
+    transformed[semanticId] = transformedNode;
+  });
+  
+  return transformed;
+};
+
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [, setLocation] = useLocation();
@@ -39,9 +96,12 @@ export const EditorHeader: React.FC = () => {
         // Use Craft.js serialization (same as Editor Landing)
         const craftJson = craftEditor.query.serialize();
         
-        // Save to localStorage
-        localStorage.setItem('editor2_craft_state', craftJson);
-        console.log('💾 Editor2 state saved to localStorage');
+        // Transform to semantic JSON for storage
+        const semanticJson = transformToSemanticJson(craftJson);
+        
+        // Save semantic JSON to localStorage
+        localStorage.setItem('editor2_craft_state', JSON.stringify(semanticJson));
+        console.log('💾 Editor2 semantic state saved with keys:', Object.keys(semanticJson));
         
         // Save to server (same pattern as Editor Landing)
         try {
@@ -60,7 +120,7 @@ export const EditorHeader: React.FC = () => {
             },
             body: JSON.stringify({
               pageId: 'editor2',
-              jsonData: craftJson
+              jsonData: JSON.stringify(semanticJson)
             })
           });
           
@@ -147,10 +207,14 @@ export const EditorHeader: React.FC = () => {
       if (craftEditor && craftEditor.query && craftEditor.query.serialize) {
         // Use Craft.js serialization
         const craftJson = craftEditor.query.serialize();
-        const formattedJson = JSON.stringify(craftJson, null, 2);
+        
+        // Transform to semantic JSON
+        const semanticJson = transformToSemanticJson(craftJson);
+        const formattedJson = JSON.stringify(semanticJson, null, 2);
         setJsonContent(formattedJson);
         
-        console.log('📄 Craft.js JSON exported:', Object.keys(craftJson));
+        console.log('📄 Original Craft.js JSON keys:', Object.keys(craftJson));
+        console.log('🎯 Transformed semantic JSON keys:', Object.keys(semanticJson));
       } else {
         // Fallback to legacy system
         const pageJson = serializeToJSON();
