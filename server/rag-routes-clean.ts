@@ -86,12 +86,14 @@ router.get('/knowledge-bases', ragAuth, async (req: Request, res: Response) => {
         const documentsCount = await db.execute(sql`
           SELECT COUNT(*) as count 
           FROM documents 
-          WHERE metadata->>'clinic_id' = ${clinic_id.toString()}
-            AND metadata->>'knowledge_base_id' = ${base.id.toString()}
+          WHERE clinic_id = ${clinic_id}
+            AND knowledge_base_id = ${base.id}
         `);
         
         const countResult = documentsCount.rows[0] as any;
         const count = parseInt(countResult?.count || '0');
+        
+        console.log(`📊 RAG: Base "${base.name}" (ID: ${base.id}) - Contando documentos: ${count}`);
         
         return {
           ...base,
