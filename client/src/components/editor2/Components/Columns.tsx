@@ -69,15 +69,16 @@ export const Columns: React.FC<ColumnsProps> = ({
     return classes.join(' ');
   };
 
-  // Função para calcular largura das colunas (Builder.io oficial)
-  const getColumnWidth = (column: any, index: number) => {
-    // Largura base da coluna (33.33% para 3 colunas)
-    const baseWidth = column.width || (100 / columns.length);
+  // Método Builder.io EXATO (baseado no código real lines 77-88)
+  const getWidth = (index: number) => {
+    return (columns[index] && columns[index].width) || 100 / columns.length;
+  };
+
+  const getColumnWidth = (index: number) => {
+    const width = getWidth(index);
+    const subtractWidth = gutterSize * (columns.length - 1) * (width / 100);
     
-    // Cálculo Builder.io: largura - (gutterSize * colunas-1 * percentual)
-    const subtractWidth = gutterSize * (columns.length - 1) * (baseWidth / 100);
-    
-    return `calc(${baseWidth}% - ${subtractWidth}px)`;
+    return `calc(${width}% - ${subtractWidth}px)`;
   };
 
   // Combinar estilos exatamente como Builder.io
@@ -132,7 +133,7 @@ export const Columns: React.FC<ColumnsProps> = ({
     getResponsiveClasses: getResponsiveClasses(),
     className,
     fullClassName: `${getResponsiveClasses()} ${className}`.trim(),
-    firstColumnWidth: columns.length > 0 ? getColumnWidth(columns[0], 0) : 'none',
+    firstColumnWidth: columns.length > 0 ? getColumnWidth(0) : 'none',
     firstColumnBlocks: columns.length > 0 ? columns[0].blocks?.length : 0
   });
 
@@ -144,7 +145,7 @@ export const Columns: React.FC<ColumnsProps> = ({
       {...props}
     >
       {columns.map((column, index) => {
-        const columnWidth = getColumnWidth(column, index);
+        const columnWidth = getColumnWidth(index);
         const columnStyles = {
           flex: `0 0 ${columnWidth}`,
           marginLeft: index === 0 ? 0 : `${gutterSize}px`,
