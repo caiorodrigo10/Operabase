@@ -1133,3 +1133,195 @@ body.drag-active * {
   border: 2px solid rgba(15, 118, 110, 0.6);
   transform: scale(1.01);
 }
+
+/* JSON Editor Modal Styles - Builder.io Style */
+.json-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.json-editor-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1200px;
+  height: 90vh;
+  max-height: 800px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.json-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.json-editor-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.json-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toolbar-button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.toolbar-button.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.toolbar-button.primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.toolbar-button.secondary {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+
+.toolbar-button.secondary:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-button.saving {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.json-editor-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.json-editor-content {
+  flex: 1;
+  padding: 0;
+  overflow: hidden;
+}
+
+.json-textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 24px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  background: #fafafa;
+  color: #1f2937;
+}
+
+.json-textarea:focus {
+  background: white;
+}
+
+.json-editor-footer {
+  padding: 12px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.footer-info {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* Header button styles for code button */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-button.code-button {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.header-button.code-button:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+  color: #111827;
+}

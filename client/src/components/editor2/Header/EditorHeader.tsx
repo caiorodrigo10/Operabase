@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Code } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export const EditorHeader: React.FC = () => {
@@ -22,6 +22,11 @@ export const EditorHeader: React.FC = () => {
 
   const handleSettingsClick = () => {
     console.log('Opening settings menu');
+  };
+
+  const handleCodeClick = () => {
+    console.log('Opening JSON editor');
+    // Implement JSON modal/dialog functionality
   };
 
   return (
@@ -84,6 +89,13 @@ export const EditorHeader: React.FC = () => {
 
       {/* Right Section */}
       <div className="header-right">
+        <button 
+          className="header-button code-button"
+          onClick={handleCodeClick}
+          title="Editor JSON"
+        >
+          <Code size={18} />
+        </button>
         <button 
           className="header-button settings-button"
           onClick={handleSettingsClick}
