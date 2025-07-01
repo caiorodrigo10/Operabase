@@ -37,20 +37,47 @@ export const Section: React.FC<SectionProps> = ({
     styles: Object.keys(styles || {}),
     responsiveStyles: Object.keys(responsiveStyles || {})
   });
+  // Calcular estilos responsivos (Builder.io style)
+  const calculateResponsiveStyles = () => {
+    if (!responsiveStyles) return {};
+    
+    const getCurrentBreakpoint = () => {
+      if (typeof window === 'undefined') return 'large';
+      const width = window.innerWidth;
+      if (width >= 1024) return 'large';
+      if (width >= 768) return 'medium';
+      return 'small';
+    };
+    
+    const currentBreakpoint = getCurrentBreakpoint();
+    
+    return {
+      ...responsiveStyles.large,
+      ...(currentBreakpoint === 'medium' ? responsiveStyles.medium : {}),
+      ...(currentBreakpoint === 'small' ? responsiveStyles.small : {})
+    };
+  };
+
   // Section aplica background diretamente conforme Builder.io 
   const sectionStyles = {
-    backgroundColor,
+    // Propriedades básicas
+    width: '100%', // Section ocupa toda largura
+    borderRadius,
+    boxShadow,
+    minHeight,
+    // Background
     backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
     backgroundSize: backgroundImage ? 'cover' : undefined,
     backgroundPosition: backgroundImage ? 'center' : undefined,
     backgroundRepeat: backgroundImage ? 'no-repeat' : undefined,
-    borderRadius,
-    boxShadow,
-    minHeight,
-    width: '100%', // Section ocupa toda largura
-    display: 'block',
-    padding, // Section aplica padding conforme Builder.io
-    ...styles, // Aplicar estilos customizados por último
+    // Props padrão
+    backgroundColor,
+    padding,
+    margin,
+    maxWidth,
+    // Sobrescrever com styles e responsiveStyles
+    ...styles,
+    ...calculateResponsiveStyles()
   };
 
   // Container interno apenas para centralizar conteúdo conforme Builder.io

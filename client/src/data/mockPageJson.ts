@@ -1,260 +1,349 @@
 /**
- * Mock Page JSON - Builder.io Style
- * Template padrão carregado automaticamente no Editor2
+ * Mock Page JSON - Builder.io Style Completo
+ * 4 Seções com cores modernas e estrutura Builder.io oficial
  */
 
 export const mockPageJson = {
+  id: 'homepage-builder-example',
   blocks: [
+    // 🔵 SEÇÃO 1: HERO - AZUL ESCURO (#1e40af)
     {
-      id: 'root-section',
+      id: 'hero-section',
+      '@type': '@builder.io/sdk:Element',
       component: {
         name: 'Section',
         options: {
-          backgroundColor: '#1e40af',
-          padding: '80px 0'
+          maxWidth: 1200
         }
       },
       responsiveStyles: {
-        large: { width: '100%' },
-        medium: { width: '100%', padding: '60px 0' },
-        small: { width: '100%', padding: '40px 0' }
+        large: {
+          backgroundColor: '#1e40af',
+          padding: '100px 0',
+          width: '100%'
+        },
+        medium: {
+          backgroundColor: '#1e40af',
+          padding: '80px 0'
+        },
+        small: {
+          backgroundColor: '#1e40af',
+          padding: '60px 0'
+        }
       },
       children: [
         {
           id: 'hero-container',
+          '@type': '@builder.io/sdk:Element',
           component: {
             name: 'Container',
             options: {
-              maxWidth: '1200px'
+              maxWidth: 800
             }
           },
           responsiveStyles: {
             large: {
-              maxWidth: '1200px',
+              maxWidth: '800px',
               margin: '0 auto',
-              padding: '0 40px'
-            },
-            medium: {
-              maxWidth: '100%',
-              padding: '0 24px'
-            },
-            small: {
-              maxWidth: '100%',
-              padding: '0 16px'
+              textAlign: 'center'
             }
           },
           children: [
             {
               id: 'hero-title',
+              '@type': '@builder.io/sdk:Element',
               component: {
                 name: 'Text',
                 options: {
-                  text: '🚀 Builder.io Page Builder',
+                  text: 'Transforme Sua Ideia em Realidade',
                   tag: 'h1'
                 }
               },
-              styles: {
-                fontSize: '48px',
-                fontWeight: 'bold',
-                color: 'white',
-                textAlign: 'center',
-                marginBottom: '24px',
-                lineHeight: '1.2'
-              },
               responsiveStyles: {
-                medium: { fontSize: '36px' },
-                small: { fontSize: '28px' }
+                large: {
+                  fontSize: '48px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  marginBottom: '24px',
+                  lineHeight: '1.2'
+                },
+                medium: {
+                  fontSize: '36px',
+                  marginBottom: '20px'
+                },
+                small: {
+                  fontSize: '28px',
+                  marginBottom: '16px'
+                }
               }
             },
             {
-              id: 'hero-subtitle',
+              id: 'hero-description',
+              '@type': '@builder.io/sdk:Element',
               component: {
                 name: 'Text',
                 options: {
-                  text: 'Construa landing pages incríveis com componentes arrastar e soltar'
+                  text: 'Descubra como nossa plataforma inovadora pode acelerar seus projetos e maximizar seus resultados com tecnologia de ponta.',
+                  tag: 'p'
                 }
               },
-              styles: {
-                fontSize: '20px',
-                color: 'rgba(255,255,255,0.9)',
-                textAlign: 'center',
-                marginBottom: '32px',
-                lineHeight: '1.6'
-              },
               responsiveStyles: {
-                medium: { fontSize: '18px' },
-                small: { fontSize: '16px' }
+                large: {
+                  fontSize: '20px',
+                  color: '#e2e8f0',
+                  marginBottom: '40px',
+                  lineHeight: '1.6',
+                  maxWidth: '600px',
+                  margin: '0 auto 40px auto'
+                },
+                medium: {
+                  fontSize: '18px',
+                  marginBottom: '32px'
+                },
+                small: {
+                  fontSize: '16px',
+                  marginBottom: '24px'
+                }
               }
             },
             {
-              id: 'hero-cta',
+              id: 'hero-button',
+              '@type': '@builder.io/sdk:Element',
               component: {
                 name: 'Button',
                 options: {
                   text: 'Começar Agora',
-                  href: '/dashboard',
-                  variant: 'primary'
+                  href: '/signup'
                 }
               },
-              styles: {
-                backgroundColor: '#ffffff',
-                color: '#1f2937',
-                padding: '16px 32px',
-                fontSize: '18px',
-                fontWeight: '600',
-                borderRadius: '8px',
-                border: '2px solid #ffffff',
-                cursor: 'pointer',
-                display: 'block',
-                margin: '0 auto',
-                width: 'fit-content',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.2s ease'
+              responsiveStyles: {
+                large: {
+                  backgroundColor: '#f59e0b',
+                  color: '#ffffff',
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  display: 'inline-block'
+                }
               }
             }
           ]
         }
       ]
     },
-    {
-      id: 'spacer-section',
-      component: {
-        name: 'Spacer',
-        options: {
-          height: '60px'
-        }
-      }
-    },
+
+    // 🔘 SEÇÃO 2: FEATURES - CINZA CLARO (#f8fafc)
     {
       id: 'features-section',
+      '@type': '@builder.io/sdk:Element',
       component: {
         name: 'Section',
-        options: {}
+        options: {
+          maxWidth: 1200
+        }
       },
-      styles: {
-        backgroundColor: '#f8fafc',
-        padding: '80px 0'
+      responsiveStyles: {
+        large: {
+          backgroundColor: '#f8fafc',
+          padding: '100px 0',
+          width: '100%'
+        },
+        medium: {
+          backgroundColor: '#f8fafc',
+          padding: '80px 0'
+        },
+        small: {
+          backgroundColor: '#f8fafc',
+          padding: '60px 0'
+        }
       },
       children: [
         {
           id: 'features-container',
+          '@type': '@builder.io/sdk:Element',
           component: {
             name: 'Container',
             options: {
-              maxWidth: '1200px'
+              maxWidth: 1000
             }
           },
           responsiveStyles: {
             large: {
-              maxWidth: '1200px',
-              margin: '0 auto',
-              padding: '0 40px'
-            },
-            medium: { padding: '0 24px' },
-            small: { padding: '0 16px' }
+              maxWidth: '1000px',
+              margin: '0 auto'
+            }
           },
           children: [
             {
               id: 'features-title',
+              '@type': '@builder.io/sdk:Element',
               component: {
                 name: 'Text',
                 options: {
-                  text: 'Recursos Principais',
+                  text: 'Recursos Poderosos',
                   tag: 'h2'
                 }
               },
-              styles: {
-                fontSize: '36px',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                marginBottom: '48px',
-                color: '#1f2937'
-              },
               responsiveStyles: {
-                medium: { fontSize: '28px' },
-                small: { fontSize: '24px' }
+                large: {
+                  fontSize: '36px',
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  textAlign: 'center',
+                  marginBottom: '60px'
+                },
+                medium: {
+                  fontSize: '32px',
+                  marginBottom: '50px'
+                },
+                small: {
+                  fontSize: '28px',
+                  marginBottom: '40px'
+                }
               }
             },
             {
               id: 'features-columns',
+              '@type': '@builder.io/sdk:Element',
               component: {
                 name: 'Columns',
                 options: {
-                  gutterSize: 32,
+                  gutterSize: 40,
                   stackColumnsAt: 'tablet',
                   columns: [
                     {
+                      width: 33.33,
                       blocks: [
                         {
                           id: 'feature-1-title',
+                          '@type': '@builder.io/sdk:Element',
                           component: {
                             name: 'Text',
-                            options: { text: '⚡ Rápido', tag: 'h3' }
+                            options: {
+                              text: '🚀 Performance',
+                              tag: 'h3'
+                            }
                           },
-                          styles: {
-                            fontSize: '24px',
-                            fontWeight: 'bold',
-                            marginBottom: '16px',
-                            color: '#1e40af'
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '24px',
+                              fontWeight: '600',
+                              color: '#1e293b',
+                              marginBottom: '16px',
+                              textAlign: 'center'
+                            }
                           }
                         },
                         {
                           id: 'feature-1-desc',
+                          '@type': '@builder.io/sdk:Element',
                           component: {
                             name: 'Text',
-                            options: { text: 'Interface responsiva e otimizada para performance máxima.' }
+                            options: {
+                              text: 'Velocidade impressionante que mantém seus usuários engajados e satisfeitos com a experiência.',
+                              tag: 'p'
+                            }
                           },
-                          styles: { color: '#6b7280', lineHeight: '1.6' }
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '16px',
+                              color: '#64748b',
+                              lineHeight: '1.6',
+                              textAlign: 'center'
+                            }
+                          }
                         }
                       ]
                     },
                     {
+                      width: 33.33,
                       blocks: [
                         {
                           id: 'feature-2-title',
+                          '@type': '@builder.io/sdk:Element',
                           component: {
                             name: 'Text',
-                            options: { text: '🎨 Flexível', tag: 'h3' }
+                            options: {
+                              text: '🔒 Segurança',
+                              tag: 'h3'
+                            }
                           },
-                          styles: {
-                            fontSize: '24px',
-                            fontWeight: 'bold',
-                            marginBottom: '16px',
-                            color: '#1e40af'
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '24px',
+                              fontWeight: '600',
+                              color: '#1e293b',
+                              marginBottom: '16px',
+                              textAlign: 'center'
+                            }
                           }
                         },
                         {
                           id: 'feature-2-desc',
+                          '@type': '@builder.io/sdk:Element',
                           component: {
                             name: 'Text',
-                            options: { text: 'Componentes customizáveis com design system completo.' }
+                            options: {
+                              text: 'Proteção de dados de nível empresarial com criptografia avançada e monitoramento contínuo.',
+                              tag: 'p'
+                            }
                           },
-                          styles: { color: '#6b7280', lineHeight: '1.6' }
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '16px',
+                              color: '#64748b',
+                              lineHeight: '1.6',
+                              textAlign: 'center'
+                            }
+                          }
                         }
                       ]
                     },
                     {
+                      width: 33.33,
                       blocks: [
                         {
                           id: 'feature-3-title',
+                          '@type': '@builder.io/sdk:Element',
                           component: {
                             name: 'Text',
-                            options: { text: '🚀 Moderno', tag: 'h3' }
+                            options: {
+                              text: '⚡ Simplicidade',
+                              tag: 'h3'
+                            }
                           },
-                          styles: {
-                            fontSize: '24px',
-                            fontWeight: 'bold',
-                            marginBottom: '16px',
-                            color: '#1e40af'
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '24px',
+                              fontWeight: '600',
+                              color: '#1e293b',
+                              marginBottom: '16px',
+                              textAlign: 'center'
+                            }
                           }
                         },
                         {
                           id: 'feature-3-desc',
+                          '@type': '@builder.io/sdk:Element',
                           component: {
                             name: 'Text',
-                            options: { text: 'Tecnologia de ponta com React, TypeScript e Builder.io patterns.' }
+                            options: {
+                              text: 'Interface intuitiva que permite resultados profissionais sem curva de aprendizado complexa.',
+                              tag: 'p'
+                            }
                           },
-                          styles: { color: '#6b7280', lineHeight: '1.6' }
+                          responsiveStyles: {
+                            large: {
+                              fontSize: '16px',
+                              color: '#64748b',
+                              lineHeight: '1.6',
+                              textAlign: 'center'
+                            }
+                          }
                         }
                       ]
                     }
@@ -266,72 +355,267 @@ export const mockPageJson = {
         }
       ]
     },
-    {
-      id: 'divider-section',
-      component: {
-        name: 'Divider',
-        options: {
-          color: '#e5e7eb',
-          thickness: '1px',
-          margin: '60px 0'
-        }
-      }
-    },
+
+    // 🟢 SEÇÃO 3: TESTIMONIAL - VERDE (#059669)
     {
       id: 'testimonial-section',
+      '@type': '@builder.io/sdk:Element',
       component: {
         name: 'Section',
         options: {
-          backgroundColor: 'white',
+          maxWidth: 1200
+        }
+      },
+      responsiveStyles: {
+        large: {
+          backgroundColor: '#059669',
+          padding: '100px 0',
+          width: '100%'
+        },
+        medium: {
+          backgroundColor: '#059669',
           padding: '80px 0'
+        },
+        small: {
+          backgroundColor: '#059669',
+          padding: '60px 0'
         }
       },
       children: [
         {
           id: 'testimonial-container',
+          '@type': '@builder.io/sdk:Element',
           component: {
             name: 'Container',
             options: {
-              maxWidth: '800px'
+              maxWidth: 800
             }
           },
           responsiveStyles: {
             large: {
               maxWidth: '800px',
               margin: '0 auto',
-              padding: '0 40px'
-            },
-            medium: { padding: '0 24px' },
-            small: { padding: '0 16px' }
+              textAlign: 'center'
+            }
           },
           children: [
             {
-              id: 'testimonial-title',
+              id: 'testimonial-quote',
+              '@type': '@builder.io/sdk:Element',
               component: {
                 name: 'Text',
                 options: {
-                  text: 'O que nossos usuários dizem',
-                  tag: 'h2'
+                  text: '"Esta plataforma revolucionou nossa forma de trabalhar. Resultados incríveis em tempo recorde!"',
+                  tag: 'blockquote'
                 }
               },
-              styles: {
-                fontSize: '32px',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                marginBottom: '48px',
-                color: '#1f2937'
+              responsiveStyles: {
+                large: {
+                  fontSize: '32px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  lineHeight: '1.4',
+                  marginBottom: '32px',
+                  fontStyle: 'italic'
+                },
+                medium: {
+                  fontSize: '28px',
+                  marginBottom: '28px'
+                },
+                small: {
+                  fontSize: '24px',
+                  marginBottom: '24px'
+                }
               }
             },
             {
-              id: 'testimonial-card',
+              id: 'testimonial-author',
+              '@type': '@builder.io/sdk:Element',
               component: {
-                name: 'Testimonial',
+                name: 'Text',
                 options: {
-                  author: 'Maria Silva',
-                  text: 'O Editor2 transformou completamente nosso processo de criação de landing pages. Interface intuitiva e resultados profissionais.',
-                  rating: 5,
-                  position: 'CEO',
-                  company: 'TechStartup'
+                  text: 'Ana Carolina Silva',
+                  tag: 'p'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  marginBottom: '8px'
+                }
+              }
+            },
+            {
+              id: 'testimonial-position',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Text',
+                options: {
+                  text: 'CEO, TechStart Solutions',
+                  tag: 'p'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  fontSize: '16px',
+                  color: '#d1fae5',
+                  fontWeight: '400'
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    // ⚫ SEÇÃO 4: CTA - CINZA ESCURO (#1f2937)
+    {
+      id: 'cta-section',
+      '@type': '@builder.io/sdk:Element',
+      component: {
+        name: 'Section',
+        options: {
+          maxWidth: 1200
+        }
+      },
+      responsiveStyles: {
+        large: {
+          backgroundColor: '#1f2937',
+          padding: '100px 0',
+          width: '100%'
+        },
+        medium: {
+          backgroundColor: '#1f2937',
+          padding: '80px 0'
+        },
+        small: {
+          backgroundColor: '#1f2937',
+          padding: '60px 0'
+        }
+      },
+      children: [
+        {
+          id: 'cta-container',
+          '@type': '@builder.io/sdk:Element',
+          component: {
+            name: 'Container',
+            options: {
+              maxWidth: 600
+            }
+          },
+          responsiveStyles: {
+            large: {
+              maxWidth: '600px',
+              margin: '0 auto',
+              textAlign: 'center'
+            }
+          },
+          children: [
+            {
+              id: 'cta-title',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Text',
+                options: {
+                  text: 'Pronto para Começar?',
+                  tag: 'h2'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  fontSize: '40px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  marginBottom: '24px',
+                  lineHeight: '1.2'
+                },
+                medium: {
+                  fontSize: '34px',
+                  marginBottom: '20px'
+                },
+                small: {
+                  fontSize: '28px',
+                  marginBottom: '16px'
+                }
+              }
+            },
+            {
+              id: 'cta-description',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Text',
+                options: {
+                  text: 'Junte-se a milhares de empresas que já transformaram seus resultados. Comece sua jornada hoje mesmo.',
+                  tag: 'p'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  fontSize: '18px',
+                  color: '#d1d5db',
+                  marginBottom: '40px',
+                  lineHeight: '1.6'
+                },
+                medium: {
+                  fontSize: '16px',
+                  marginBottom: '32px'
+                },
+                small: {
+                  fontSize: '14px',
+                  marginBottom: '24px'
+                }
+              }
+            },
+            {
+              id: 'cta-button-primary',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Button',
+                options: {
+                  text: 'Começar Gratuitamente',
+                  href: '/signup'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  display: 'inline-block',
+                  marginRight: '16px'
+                }
+              }
+            },
+            {
+              id: 'cta-button-secondary',
+              '@type': '@builder.io/sdk:Element',
+              component: {
+                name: 'Button',
+                options: {
+                  text: 'Ver Demonstração',
+                  href: '/demo'
+                }
+              },
+              responsiveStyles: {
+                large: {
+                  backgroundColor: 'transparent',
+                  color: '#ffffff',
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  borderRadius: '8px',
+                  border: '2px solid #ffffff',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  display: 'inline-block'
                 }
               }
             }
@@ -339,10 +623,5 @@ export const mockPageJson = {
         }
       ]
     }
-  ],
-  meta: {
-    title: 'Builder.io Page Builder - Editor2',
-    description: 'Template padrão do Editor2 com componentes Builder.io',
-    viewport: 'width=device-width, initial-scale=1'
-  }
+  ]
 };

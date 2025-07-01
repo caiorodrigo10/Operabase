@@ -52,24 +52,27 @@ const BREAKPOINTS = {
   small: 0    // mobile
 };
 
-// Função para calcular estilos responsivos
+// Função para calcular estilos responsivos (Builder.io style)
 function calculateResponsiveStyles(responsiveStyles?: any): React.CSSProperties {
-  if (!responsiveStyles || typeof window === 'undefined') {
-    return {};
-  }
-
-  const width = window.innerWidth;
+  if (!responsiveStyles) return {};
   
-  // Determinar breakpoint atual (precedência: large > medium > small)
-  if (width >= BREAKPOINTS.large && responsiveStyles.large) {
-    return responsiveStyles.large;
-  } else if (width >= BREAKPOINTS.medium && responsiveStyles.medium) {
-    return responsiveStyles.medium;
-  } else if (width < BREAKPOINTS.medium && responsiveStyles.small) {
-    return responsiveStyles.small;
-  }
+  // Detectar breakpoint atual
+  const getCurrentBreakpoint = () => {
+    if (typeof window === 'undefined') return 'large';
+    const width = window.innerWidth;
+    if (width >= BREAKPOINTS.large) return 'large';
+    if (width >= BREAKPOINTS.medium) return 'medium';
+    return 'small';
+  };
   
-  return {};
+  const currentBreakpoint = getCurrentBreakpoint();
+  
+  // Combinar estilos: large como base, sobrescrever com medium/small conforme breakpoint
+  return {
+    ...responsiveStyles.large,
+    ...(currentBreakpoint === 'medium' ? responsiveStyles.medium : {}),
+    ...(currentBreakpoint === 'small' ? responsiveStyles.small : {})
+  };
 }
 
 export const RenderBlock: React.FC<RenderBlockProps> = ({ 

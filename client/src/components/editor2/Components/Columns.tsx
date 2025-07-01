@@ -61,10 +61,9 @@ export const Columns: React.FC<ColumnsProps> = ({
   };
 
   // Função para calcular largura das colunas (Builder.io style)
-  const getColumnWidth = (index: number) => {
-    const width = 100 / columns.length;
-    const subtractWidth = gutterSize * (columns.length - 1) * (width / 100);
-    return `calc(${width}% - ${subtractWidth}px)`;
+  const getColumnWidth = (column: any) => {
+    // Use a largura específica da coluna ou distribua igualmente
+    return column.width ? `${column.width}%` : `${100 / columns.length}%`;
   };
 
   // Combinar estilos exatamente como Builder.io
@@ -109,11 +108,11 @@ export const Columns: React.FC<ColumnsProps> = ({
     >
       {columns.map((column, index) => {
         const columnStyles = {
+          flex: `0 0 ${getColumnWidth(column)}`,
+          marginLeft: index === 0 ? 0 : `${gutterSize}px`,
           display: 'flex',
           flexDirection: 'column' as const,
-          alignItems: 'stretch',
-          width: getColumnWidth(index),
-          marginLeft: index === 0 ? 0 : gutterSize,
+          alignItems: 'stretch'
         };
 
         return (
