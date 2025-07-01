@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Code } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { JsonEditorModal } from '../Modal/JsonEditorModal';
+import { usePage } from '../../../contexts/PageProvider';
 
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const { pageJson, savePageJson } = usePage();
 
   const handleBackClick = () => {
     console.log('Navigating to funnels page');
@@ -32,9 +34,9 @@ export const EditorHeader: React.FC = () => {
   };
 
   const handleJsonSave = (json: any) => {
-    console.log('📄 JSON saved from modal:', json);
-    // Here we would typically trigger a page re-render or update context
-    // For now, we'll just log the successful save
+    console.log('📄 JSON saved from modal via PageProvider:', json);
+    // JSON is automatically saved through PageProvider
+    // This callback is for any additional UI actions if needed
   };
 
   return (

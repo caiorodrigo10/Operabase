@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Copy, Download, Upload } from 'lucide-react';
-import { mockPageJson } from '../../../data/mockPageJson';
+import { usePage } from '../../../contexts/PageProvider';
 
 interface JsonEditorModalProps {
   isOpen: boolean;
@@ -16,15 +16,17 @@ export const JsonEditorModal: React.FC<JsonEditorModalProps> = ({
   const [jsonContent, setJsonContent] = useState('');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Get page context
+  const { pageJson, savePageJson, resetToDefault } = usePage();
 
   useEffect(() => {
-    if (isOpen) {
-      // Load current page JSON (from localStorage or API)
-      const currentJson = localStorage.getItem('editor2-page-json') || JSON.stringify(mockPageJson, null, 2);
-      setJsonContent(currentJson);
+    if (isOpen && pageJson) {
+      // Load current page JSON from context
+      setJsonContent(JSON.stringify(pageJson, null, 2));
       setError('');
     }
-  }, [isOpen]);
+  }, [isOpen, pageJson]);
 
   const handleJsonChange = (value: string) => {
     setJsonContent(value);
@@ -43,14 +45,17 @@ export const JsonEditorModal: React.FC<JsonEditorModalProps> = ({
       setIsSaving(true);
       const parsedJson = JSON.parse(jsonContent);
       
-      // Save to localStorage (Builder.io style auto-save)
-      localStorage.setItem('editor2-page-json', JSON.stringify(parsedJson, null, 2));
+      // Save using PageProvider (Builder.io style auto-save)
+      const success = savePageJson(parsedJson);
       
-      // Call save callback
-      onSave(parsedJson);
-      
-      console.log('✅ JSON saved successfully');
-      onClose();
+      if (success) {
+        // Call save callback
+        onSave(parsedJson);
+        console.log('✅ JSON saved successfully via PageProvider');
+        onClose();
+      } else {
+        setError('Erro ao salvar JSON no PageProvider');
+      }
     } catch (e) {
       setError('Erro ao salvar: ' + (e as Error).message);
     } finally {
@@ -97,9 +102,12 @@ export const JsonEditorModal: React.FC<JsonEditorModalProps> = ({
   };
 
   const handleReset = () => {
-    setJsonContent(JSON.stringify(mockPageJson, null, 2));
+    resetToDefault();
+    if (pageJson) {
+      setJsonContent(JSON.stringify(pageJson, null, 2));
+    }
     setError('');
-    console.log('🔄 JSON reset to default template');
+    console.log('🔄 JSON reset to default template via PageProvider');
   };
 
   if (!isOpen) return null;
