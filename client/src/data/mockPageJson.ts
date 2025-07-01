@@ -711,6 +711,509 @@ export const mockPageJson = {
           ]
         }
       ]
+    },
+    // 📚 NOVA SEÇÃO: STACK WIDGET DEMO
+    {
+      "id": "stack-demo-section",
+      "@type": "@builder.io/sdk:Element",
+      "component": {
+        "name": "Section",
+        "options": {
+          "maxWidth": 1200
+        }
+      },
+      "responsiveStyles": {
+        "large": {
+          "backgroundColor": "#ffffff",
+          "padding": "80px 0",
+          "width": "100%"
+        }
+      },
+      "children": [
+        {
+          "id": "stack-demo-container",
+          "@type": "@builder.io/sdk:Element",
+          "component": {
+            "name": "Container",
+            "options": {
+              "maxWidth": 1200
+            }
+          },
+          "responsiveStyles": {
+            "large": {
+              "maxWidth": "1200px",
+              "margin": "0 auto",
+              "padding": "0 40px"
+            }
+          },
+          "children": [
+            {
+              "id": "stack-demo-title",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Text",
+                "options": {
+                  "text": "Stack Widget Demo",
+                  "tag": "h2"
+                }
+              },
+              "responsiveStyles": {
+                "large": {
+                  "fontSize": "36px",
+                  "fontWeight": "700",
+                  "color": "#1e293b",
+                  "textAlign": "center",
+                  "marginBottom": "16px"
+                }
+              }
+            },
+            {
+              "id": "stack-demo-subtitle",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Text",
+                "options": {
+                  "text": "Layout vertical e horizontal com controle flexível",
+                  "tag": "p"
+                }
+              },
+              "responsiveStyles": {
+                "large": {
+                  "fontSize": "18px",
+                  "color": "#64748b",
+                  "textAlign": "center",
+                  "marginBottom": "60px"
+                }
+              }
+            },
+            {
+              "id": "stack-horizontal-demo",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Stack",
+                "options": {
+                  "direction": "horizontal",
+                  "spacing": 24,
+                  "alignItems": "center",
+                  "justifyContent": "space-between"
+                }
+              },
+              "children": [
+                {
+                  "id": "stack-item-1",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Item Horizontal 1",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#3b82f6",
+                      "color": "#ffffff",
+                      "padding": "20px",
+                      "borderRadius": "8px",
+                      "textAlign": "center"
+                    }
+                  }
+                },
+                {
+                  "id": "stack-item-2",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Item Horizontal 2",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#10b981",
+                      "color": "#ffffff",
+                      "padding": "20px",
+                      "borderRadius": "8px",
+                      "textAlign": "center"
+                    }
+                  }
+                },
+                {
+                  "id": "stack-item-3",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Item Horizontal 3",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#f59e0b",
+                      "color": "#ffffff",
+                      "padding": "20px",
+                      "borderRadius": "8px",
+                      "textAlign": "center"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    // 🧱 NOVA SEÇÃO: MASONRY WIDGET DEMO
+    {
+      "id": "masonry-demo-section",
+      "@type": "@builder.io/sdk:Element",
+      "component": {
+        "name": "Section",
+        "options": {
+          "maxWidth": 1200
+        }
+      },
+      "responsiveStyles": {
+        "large": {
+          "backgroundColor": "#f8fafc",
+          "padding": "80px 0",
+          "width": "100%"
+        }
+      },
+      "children": [
+        {
+          "id": "masonry-demo-container",
+          "@type": "@builder.io/sdk:Element",
+          "component": {
+            "name": "Container",
+            "options": {
+              "maxWidth": 1200
+            }
+          },
+          "responsiveStyles": {
+            "large": {
+              "maxWidth": "1200px",
+              "margin": "0 auto",
+              "padding": "0 40px"
+            }
+          },
+          "children": [
+            {
+              "id": "masonry-demo-title",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Text",
+                "options": {
+                  "text": "Masonry Widget Demo",
+                  "tag": "h2"
+                }
+              },
+              "responsiveStyles": {
+                "large": {
+                  "fontSize": "36px",
+                  "fontWeight": "700",
+                  "color": "#1e293b",
+                  "textAlign": "center",
+                  "marginBottom": "16px"
+                }
+              }
+            },
+            {
+              "id": "masonry-demo-subtitle",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Text",
+                "options": {
+                  "text": "Layout masonry estilo Pinterest com adaptação automática",
+                  "tag": "p"
+                }
+              },
+              "responsiveStyles": {
+                "large": {
+                  "fontSize": "18px",
+                  "color": "#64748b",
+                  "textAlign": "center",
+                  "marginBottom": "60px"
+                }
+              }
+            },
+            {
+              "id": "masonry-grid-demo",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Masonry",
+                "options": {
+                  "columns": 3,
+                  "columnGap": 24,
+                  "rowGap": 24,
+                  "breakpoints": {
+                    "mobile": 1,
+                    "tablet": 2,
+                    "desktop": 3
+                  }
+                }
+              },
+              "children": [
+                {
+                  "id": "masonry-item-1",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Masonry Item 1 - Texto curto que demonstra o layout.",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#ffffff",
+                      "padding": "24px",
+                      "borderRadius": "12px",
+                      "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.1)",
+                      "border": "1px solid #e2e8f0"
+                    }
+                  }
+                },
+                {
+                  "id": "masonry-item-2",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Masonry Item 2 - Este é um texto mais longo que demonstra como o layout masonry organiza elementos de diferentes alturas de forma automática e fluida, criando um visual orgânico e interessante similar ao Pinterest.",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#ffffff",
+                      "padding": "24px",
+                      "borderRadius": "12px",
+                      "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.1)",
+                      "border": "1px solid #e2e8f0"
+                    }
+                  }
+                },
+                {
+                  "id": "masonry-item-3",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Item 3 - Médio",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#ffffff",
+                      "padding": "24px",
+                      "borderRadius": "12px",
+                      "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.1)",
+                      "border": "1px solid #e2e8f0"
+                    }
+                  }
+                },
+                {
+                  "id": "masonry-item-4",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Item 4 - Curto",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#ffffff",
+                      "padding": "24px",
+                      "borderRadius": "12px",
+                      "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.1)",
+                      "border": "1px solid #e2e8f0"
+                    }
+                  }
+                },
+                {
+                  "id": "masonry-item-5",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Masonry Item 5 - Outro exemplo de texto com tamanho variável para mostrar como o sistema organiza automaticamente os elementos mantendo a harmonia visual.",
+                      "tag": "div"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#ffffff",
+                      "padding": "24px",
+                      "borderRadius": "12px",
+                      "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.1)",
+                      "border": "1px solid #e2e8f0"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    // 👻 NOVA SEÇÃO: FRAGMENT WIDGET DEMO
+    {
+      "id": "fragment-demo-section",
+      "@type": "@builder.io/sdk:Element",
+      "component": {
+        "name": "Section",
+        "options": {
+          "maxWidth": 1200
+        }
+      },
+      "responsiveStyles": {
+        "large": {
+          "backgroundColor": "#1e293b",
+          "padding": "80px 0",
+          "width": "100%"
+        }
+      },
+      "children": [
+        {
+          "id": "fragment-demo-container",
+          "@type": "@builder.io/sdk:Element",
+          "component": {
+            "name": "Container",
+            "options": {
+              "maxWidth": 1200
+            }
+          },
+          "responsiveStyles": {
+            "large": {
+              "maxWidth": "1200px",
+              "margin": "0 auto",
+              "padding": "0 40px"
+            }
+          },
+          "children": [
+            {
+              "id": "fragment-demo-title",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Text",
+                "options": {
+                  "text": "Fragment Widget Demo",
+                  "tag": "h2"
+                }
+              },
+              "responsiveStyles": {
+                "large": {
+                  "fontSize": "36px",
+                  "fontWeight": "700",
+                  "color": "#ffffff",
+                  "textAlign": "center",
+                  "marginBottom": "16px"
+                }
+              }
+            },
+            {
+              "id": "fragment-demo-subtitle",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Text",
+                "options": {
+                  "text": "Wrapper invisível para agrupamento lógico sem impacto visual",
+                  "tag": "p"
+                }
+              },
+              "responsiveStyles": {
+                "large": {
+                  "fontSize": "18px",
+                  "color": "#94a3b8",
+                  "textAlign": "center",
+                  "marginBottom": "60px"
+                }
+              }
+            },
+            {
+              "id": "fragment-logical-group",
+              "@type": "@builder.io/sdk:Element",
+              "component": {
+                "name": "Fragment",
+                "options": {
+                  "logicalGroup": "call-to-action-group",
+                  "renderAs": "section",
+                  "ariaLabel": "Seção de chamadas para ação"
+                }
+              },
+              "children": [
+                {
+                  "id": "fragment-text-1",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Estes elementos estão agrupados logicamente",
+                      "tag": "p"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "color": "#ffffff",
+                      "fontSize": "18px",
+                      "textAlign": "center",
+                      "marginBottom": "24px"
+                    }
+                  }
+                },
+                {
+                  "id": "fragment-text-2",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Text",
+                    "options": {
+                      "text": "Fragment permite organização sem impacto visual",
+                      "tag": "p"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "color": "#94a3b8",
+                      "fontSize": "16px",
+                      "textAlign": "center",
+                      "marginBottom": "32px"
+                    }
+                  }
+                },
+                {
+                  "id": "fragment-button",
+                  "@type": "@builder.io/sdk:Element",
+                  "component": {
+                    "name": "Button",
+                    "options": {
+                      "text": "Botão dentro do Fragment",
+                      "href": "#"
+                    }
+                  },
+                  "responsiveStyles": {
+                    "large": {
+                      "backgroundColor": "#3b82f6",
+                      "color": "#ffffff",
+                      "padding": "12px 24px",
+                      "borderRadius": "6px",
+                      "textDecoration": "none",
+                      "display": "inline-block",
+                      "margin": "0 auto",
+                      "textAlign": "center"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 };
