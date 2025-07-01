@@ -11,6 +11,15 @@ import { Text } from '../Components/Text';
 import { Button } from '../Components/Button';
 import { DefaultComponent } from '../Components/DefaultComponent';
 
+// Import do contexto de edição (opcional para não quebrar se não tiver)
+let useEditor: any = null;
+try {
+  const editorModule = require('../../../contexts/EditorContext');
+  useEditor = editorModule.useEditor;
+} catch (e) {
+  // Context não disponível, continuar sem interatividade
+}
+
 // Mapeamento interno de componentes
 const internalComponentMap: any = {
   Container,
@@ -34,8 +43,16 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   // Usa componentMap customizado ou interno
   const activeComponentMap = customComponentMap || internalComponentMap;
   
+  // Tentar usar contexto de edição se disponível
+  const editor = useEditor ? useEditor() : null;
+  
   // Obter componente do mapeamento
   const Component = activeComponentMap[block.component.name];
+  
+  // Estados de interação (apenas se editor context disponível)
+  const isSelected = editor ? editor.selectedBlockId === block.id : false;
+  const isHovered = editor ? editor.hoveredBlockId === block.id : false;
+  const inEditMode = editor ? editor.mode === 'edit' : false;
   
   // Se componente não existe, usar DefaultComponent
   if (!Component) {
@@ -79,14 +96,68 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     />
   ));
 
-  // Renderizar componente com props combinadas
+  // Handlers de interação (apenas se editor context disponível)
+  const handleClick = (e: React.MouseEvent) => {
+    if (editor && inEditMode) {
+      e.stopPropagation();
+      editor.selectBlock(block.id);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (editor && inEditMode) {
+      editor.setHoveredBlock(block.id);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (editor && inEditMode) {
+      editor.setHoveredBlock(null);
+    }
+  };
+
+  // Classes CSS para interação
+  const interactiveClasses = inEditMode ? [
+    'editor2-block',
+    isSelected && 'selected',
+    isHovered && 'hovered'
+  ].filter(Boolean).join(' ') : '';
+
+  // Se não estiver em modo edição, renderizar componente simples
+  if (!inEditMode) {
+    return (
+      <Component 
+        {...componentProps}
+        key={block.id}
+      >
+        {children}
+      </Component>
+    );
+  }
+
+  // Renderizar componente com wrapper interativo para modo edição
   return (
-    <Component 
-      {...componentProps}
-      key={block.id}
+    <div
+      className={interactiveClasses}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      data-block-id={block.id}
+      data-block-type={block.component.name}
     >
-      {children}
-    </Component>
+      {/* Label do bloco (aparece quando selecionado/hover) */}
+      <div className="editor2-block-label">
+        {block.component.name}
+      </div>
+      
+      {/* Componente real */}
+      <Component 
+        {...componentProps}
+        key={block.id}
+      >
+        {children}
+      </Component>
+    </div>
   );
 };
 

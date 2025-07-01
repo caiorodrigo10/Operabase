@@ -72,6 +72,83 @@
   margin: 0 auto;
 }
 
+/* Editor2 Interactive: Seleção e hover (Doc 9) */
+.editor2-block {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.editor2-block:hover {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  outline: none;
+}
+
+.editor2-block.selected {
+  box-shadow: 0 0 0 2px rgb(59, 130, 246);
+  outline: none;
+}
+
+.editor2-block.hovered {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+}
+
+/* Overlay para modo edição */
+.editor2-block-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.editor2-block-overlay.selected {
+  border: 2px solid rgb(59, 130, 246);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.editor2-block-overlay.hovered {
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.02);
+}
+
+/* Canvas com padding extra para drop zones */
+.json-canvas.edit-mode {
+  padding-bottom: 300px;
+  min-height: calc(100vh + 300px);
+}
+
+/* Grid visual para modo edição */
+.json-canvas.show-grid {
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Block selection indicators */
+.editor2-block-label {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  background: rgb(59, 130, 246);
+  color: white;
+  padding: 2px 8px;
+  font-size: 12px;
+  border-radius: 4px 4px 0 0;
+  font-weight: 500;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.editor2-block.selected .editor2-block-label,
+.editor2-block.hovered .editor2-block-label {
+  opacity: 1;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(220, 14.3%, 4.1%);

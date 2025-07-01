@@ -7,8 +7,32 @@ import React from 'react';
 import { usePage } from '../../../contexts/PageProvider';
 import { RenderBlock } from './RenderBlock';
 
+// Import do contexto de edição (opcional)
+let useEditor: any = null;
+try {
+  const editorModule = require('../../../contexts/EditorContext');
+  useEditor = editorModule.useEditor;
+} catch (e) {
+  // Context não disponível, continuar sem interatividade
+}
+
 export const JsonCanvas: React.FC = () => {
   const { pageJson, isLoading, error } = usePage();
+  const editor = useEditor ? useEditor() : null;
+  
+  // Classes do Canvas baseado no modo
+  const canvasClasses = [
+    'json-canvas',
+    'h-full',
+    'overflow-x-auto',
+    'bg-gray-50',
+    'p-6',
+    'rounded-lg',
+    'min-h-screen',
+    'font-sans',
+    editor?.mode === 'edit' && 'edit-mode',
+    editor?.showGrid && 'show-grid'
+  ].filter(Boolean).join(' ');
 
   // Estado de loading
   if (isLoading) {
@@ -69,7 +93,7 @@ export const JsonCanvas: React.FC = () => {
 
   // Renderização principal dos blocos
   return (
-    <div className="json-canvas h-full overflow-x-auto bg-gray-50 p-6 rounded-lg min-h-screen font-sans">
+    <div className={canvasClasses}>
       {/* Meta informações (se existir) */}
       {pageJson.meta && (
         <div className="bg-blue-50 border-b border-blue-200 p-4">
