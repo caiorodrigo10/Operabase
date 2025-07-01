@@ -244,7 +244,7 @@ const getDefaultSemanticJson = () => {
         "background": { "r": 34, "g": 197, "b": 94, "a": 1 },
         "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
         "buttonStyle": "full",
-        "text": "Criar Meu Site Grátis",
+        "text": "Ver JSON Semântico",
         "margin": ["10", "0", "10", "0"]
       },
       "displayName": "Button",
@@ -297,7 +297,7 @@ const getDefaultSemanticJson = () => {
         "fontWeight": "600", 
         "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
         "margin": ["0", "0", "15", "0"],
-        "text": "🚀 Criação Rápida"
+        "text": "📝 Widget Text"
       },
       "displayName": "Text",
       "custom": {},
@@ -315,7 +315,7 @@ const getDefaultSemanticJson = () => {
         "fontWeight": "400",
         "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
         "margin": ["0", "0", "0", "0"],
-        "text": "Sites prontos em menos de 5 minutos com IA"
+        "text": "Componente Text com formatação completa: tamanhos, cores, alinhamento e peso personalizáveis para criar títulos, parágrafos e descrições."
       },
       "displayName": "Text",
       "custom": {},
@@ -324,75 +324,312 @@ const getDefaultSemanticJson = () => {
       "nodes": [],
       "linkedNodes": {}
     },
-    "cta-section": {
+    "feature-2": {
+      "type": { "resolvedName": "LandingCard" },
+      "isCanvas": true,
+      "props": {
+        "background": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "padding": 30
+      },
+      "displayName": "Card",
+      "custom": { "displayName": "Button Widget" },
+      "parent": "features-section",
+      "hidden": false,
+      "nodes": ["feature-2-title", "feature-2-text", "feature-2-button"],
+      "linkedNodes": {}
+    },
+    "feature-2-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "20",
+        "textAlign": "center",
+        "fontWeight": "600",
+        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "🔘 Widget Button"
+      },
+      "displayName": "Text",
+      "custom": {},
+      "parent": "feature-2",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-2-text": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "14",
+        "textAlign": "center",
+        "fontWeight": "400",
+        "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "Botões interativos com cores personalizáveis, diferentes estilos e textos configuráveis."
+      },
+      "displayName": "Text",
+      "custom": {},
+      "parent": "feature-2",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-2-button": {
+      "type": { "resolvedName": "CraftButton" },
+      "isCanvas": false,
+      "props": {
+        "background": { "r": 220, "g": 38, "b": 127, "a": 1 },
+        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "buttonStyle": "full",
+        "text": "Exemplo de Botão",
+        "margin": ["0", "0", "0", "0"]
+      },
+      "displayName": "Button",
+      "custom": {},
+      "parent": "feature-2",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-3": {
+      "type": { "resolvedName": "LandingCard" },
+      "isCanvas": true,
+      "props": {
+        "background": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "padding": 30
+      },
+      "displayName": "Card",
+      "custom": { "displayName": "Container Widget" },
+      "parent": "features-section",
+      "hidden": false,
+      "nodes": ["feature-3-title", "feature-3-text", "feature-3-container"],
+      "linkedNodes": {}
+    },
+    "feature-3-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "20",
+        "textAlign": "center",
+        "fontWeight": "600",
+        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "📦 Widget Container"
+      },
+      "displayName": "Text",
+      "custom": {},
+      "parent": "feature-3",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-3-text": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "14",
+        "textAlign": "center",
+        "fontWeight": "400",
+        "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "Containers flexíveis com layouts personalizáveis, backgrounds e spacing configurável."
+      },
+      "displayName": "Text",
+      "custom": {},
+      "parent": "feature-3",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "feature-3-container": {
       "type": { "resolvedName": "Container" },
       "isCanvas": true,
       "props": {
         "flexDirection": "column",
         "alignItems": "center",
         "justifyContent": "center",
-        "padding": ["80", "40", "80", "40"],
+        "fillSpace": "no",
+        "padding": ["20", "20", "20", "20"],
         "margin": ["0", "0", "0", "0"],
-        "background": { "r": 17, "g": 24, "b": 39, "a": 1 },
+        "background": { "r": 239, "g": 246, "b": 255, "a": 1 },
+        "color": { "r": 0, "g": 0, "b": 0, "a": 1 },
+        "shadow": 0,
+        "radius": 8,
         "width": "100%",
         "height": "auto"
       },
       "displayName": "Container",
-      "custom": { "displayName": "Call to Action" },
-      "parent": "ROOT",
+      "custom": { "displayName": "Exemplo Container" },
+      "parent": "feature-3",
       "hidden": false,
-      "nodes": ["cta-title", "cta-subtitle", "cta-button"],
+      "nodes": ["nested-text"],
       "linkedNodes": {}
     },
-    "cta-title": {
+    "nested-text": {
       "type": { "resolvedName": "Text" },
       "isCanvas": false,
       "props": {
-        "fontSize": "32",
+        "fontSize": "12",
         "textAlign": "center",
-        "fontWeight": "700",
-        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
-        "margin": ["0", "0", "15", "0"],
-        "text": "Pronto para começar?"
+        "fontWeight": "400",
+        "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
+        "margin": ["0", "0", "0", "0"],
+        "text": "Container aninhado com background azul"
       },
       "displayName": "Text",
       "custom": {},
-      "parent": "cta-section",
+      "parent": "feature-3-container",
       "hidden": false,
       "nodes": [],
       "linkedNodes": {}
     },
-    "cta-subtitle": {
+    "video-demo": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "fillSpace": "no",
+        "padding": ["60", "40", "60", "40"],
+        "margin": ["0", "0", "0", "0"],
+        "background": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "color": { "r": 0, "g": 0, "b": 0, "a": 1 },
+        "shadow": 0,
+        "radius": 0,
+        "width": "100%",
+        "height": "auto"
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Seção de Vídeo" },
+      "parent": "ROOT",
+      "hidden": false,
+      "nodes": ["video-title", "video-widget"],
+      "linkedNodes": {}
+    },
+    "video-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "28",
+        "textAlign": "center",
+        "fontWeight": "600",
+        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "margin": ["0", "0", "30", "0"],
+        "text": "🎥 Widget Video (YouTube)"
+      },
+      "displayName": "Text",
+      "custom": {},
+      "parent": "video-demo",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "video-widget": {
+      "type": { "resolvedName": "Video" },
+      "isCanvas": false,
+      "props": {
+        "videoId": "dQw4w9WgXcQ",
+        "width": 560,
+        "height": 315
+      },
+      "displayName": "Video",
+      "custom": { "displayName": "Exemplo de Vídeo" },
+      "parent": "video-demo",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "button-showcase": {
+      "type": { "resolvedName": "Container" },
+      "isCanvas": true,
+      "props": {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "fillSpace": "no",
+        "padding": ["60", "40", "60", "40"],
+        "margin": ["0", "0", "0", "0"],
+        "background": { "r": 248, "g": 250, "b": 252, "a": 1 },
+        "color": { "r": 0, "g": 0, "b": 0, "a": 1 },
+        "shadow": 0,
+        "radius": 0,
+        "width": "100%",
+        "height": "auto"
+      },
+      "displayName": "Container",
+      "custom": { "displayName": "Showcase de Botões" },
+      "parent": "ROOT",
+      "hidden": false,
+      "nodes": ["showcase-title", "showcase-text", "primary-button", "secondary-button"],
+      "linkedNodes": {}
+    },
+    "showcase-title": {
+      "type": { "resolvedName": "Text" },
+      "isCanvas": false,
+      "props": {
+        "fontSize": "28",
+        "textAlign": "center",
+        "fontWeight": "600",
+        "color": { "r": 17, "g": 24, "b": 39, "a": 1 },
+        "margin": ["0", "0", "15", "0"],
+        "text": "Botões com Diferentes Estilos"
+      },
+      "displayName": "Text",
+      "custom": {},
+      "parent": "button-showcase",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "showcase-text": {
       "type": { "resolvedName": "Text" },
       "isCanvas": false,
       "props": {
         "fontSize": "16",
         "textAlign": "center",
         "fontWeight": "400",
-        "color": { "r": 203, "g": 213, "b": 225, "a": 1 },
+        "color": { "r": 75, "g": 85, "b": 99, "a": 1 },
         "margin": ["0", "0", "30", "0"],
-        "text": "Junte-se a centenas de médicos que já transformaram sua presença digital"
+        "text": "Demonstração de botões com cores e estilos diferentes para CTAs e ações secundárias."
       },
       "displayName": "Text",
       "custom": {},
-      "parent": "cta-section",
+      "parent": "button-showcase",
       "hidden": false,
       "nodes": [],
       "linkedNodes": {}
     },
-    "cta-button": {
-      "type": { "resolvedName": "Button" },
+    "primary-button": {
+      "type": { "resolvedName": "CraftButton" },
       "isCanvas": false,
       "props": {
         "background": { "r": 34, "g": 197, "b": 94, "a": 1 },
         "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
         "buttonStyle": "full",
-        "text": "Começar Agora - É Grátis",
-        "margin": ["10", "0", "10", "0"]
+        "text": "Botão Primário",
+        "margin": ["10", "10", "10", "10"]
       },
       "displayName": "Button",
       "custom": {},
-      "parent": "cta-section",
+      "parent": "button-showcase",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "secondary-button": {
+      "type": { "resolvedName": "CraftButton" },
+      "isCanvas": false,
+      "props": {
+        "background": { "r": 107, "g": 114, "b": 128, "a": 1 },
+        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "buttonStyle": "full",
+        "text": "Botão Secundário",
+        "margin": ["10", "10", "10", "10"]
+      },
+      "displayName": "Button",
+      "custom": {},
+      "parent": "button-showcase",
       "hidden": false,
       "nodes": [],
       "linkedNodes": {}
