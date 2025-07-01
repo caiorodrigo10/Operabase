@@ -623,6 +623,27 @@ body.drag-active * {
   box-shadow: 0 0 0 2px hsl(var(--ring)) !important;
 }
 
+/* Craft.js Editor Hover Selection Effects */
+.component-selected {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.component-selected::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid #3b82f6;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 11;
+}
+
 /* 5-minute precision drag and drop enhancements */
 .time-slot-5min {
   border-top: 1px solid rgba(148, 163, 184, 0.15);
