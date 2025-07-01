@@ -91,6 +91,14 @@ export default function LiviaConfigurationPage() {
     }
   };
 
+  // Debug loading states
+  console.log('🔍 Loading states:', {
+    configLoading,
+    whatsappLoading,
+    professionalsLoading,
+    knowledgeBasesLoading
+  });
+
   const isLoading = configLoading || whatsappLoading || professionalsLoading || knowledgeBasesLoading;
   const isSaving = createMutation.isPending || updateMutation.isPending;
 

@@ -82,7 +82,7 @@ export function useProfessionals() {
 // Get knowledge bases for current clinic
 export function useKnowledgeBases() {
   return useQuery({
-    queryKey: ['/api/rag/knowledge-bases', Date.now()], // Force cache break with timestamp
+    queryKey: ['/api/rag/knowledge-bases'],
     queryFn: () => apiRequest('/api/rag/knowledge-bases').then(res => res.json()),
     staleTime: 0, // Force fresh data
     gcTime: 5 * 60 * 1000, // 5 minutes
