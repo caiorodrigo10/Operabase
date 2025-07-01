@@ -122,7 +122,8 @@ section {
 
 /* Builder.io EXATO: Container de colunas (horizontal) */
 .builder-columns {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   height: 100%;
 }
 

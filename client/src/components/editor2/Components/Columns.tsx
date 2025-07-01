@@ -126,6 +126,7 @@ export const Columns: React.FC<ColumnsProps> = ({
   return (
     <div
       id={id}
+      className="builder-columns"
       style={finalContainerStyles}
       {...props}
     >
