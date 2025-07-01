@@ -757,68 +757,26 @@ export const CanvasContainer: React.FC = () => {
               justifyContent="flex-start"
               custom={{ displayName: 'Landing Page' }}
             >
-              {/* Hero Section with Semantic ID */}
+              {/* Simple Title */}
               <Element
-                canvas
-                is={Container}
-                id="hero-section"
-                background={{ r: 37, g: 99, b: 235, a: 1 }}
-                padding={['60', '40', '60', '40']}
-                margin={['0', '0', '0', '0']}
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                custom={{ displayName: 'Hero Principal' }}
-              >
-                <Element
-                  is={Text}
-                  id="hero-title"
-                  fontSize="42"
-                  textAlign="center"
-                  fontWeight="700"
-                  color={{ r: 255, g: 255, b: 255, a: 1 }}
-                  margin={['0', '0', '20', '0']}
-                  text="Transforme Sua Clínica Digital"
-                  custom={{ displayName: 'Hero Title', semanticId: 'hero-title' }}
-                />
-                
-                <Element
-                  is={Text}
-                  id="hero-description"
-                  fontSize="18"
-                  textAlign="center"
-                  fontWeight="400"
-                  color={{ r: 255, g: 255, b: 255, a: 1 }}
-                  margin={['0', '0', '30', '0']}
-                  text="Crie sites profissionais para sua clínica médica em minutos, sem conhecimento técnico."
-                />
-
-                <Element
-                  is={CraftButton}
-                  id="cta-button"
-                  background={{ r: 34, g: 197, b: 94, a: 1 }}
-                  color={{ r: 255, g: 255, b: 255, a: 1 }}
-                  buttonStyle="full"
-                  text="Criar Meu Site Grátis"
-                  margin={['10', '0', '10', '0']}
-                />
-              </Element>
-
-              {/* Features Section with Semantic ID */}
+                is={Text}
+                fontSize="32"
+                textAlign="center"
+                fontWeight="700"
+                color={{ r: 37, g: 99, b: 235, a: 1 }}
+                margin={['40', '20', '40', '20']}
+                text="🎬 Editor 2 - Template com Vídeo YouTube"
+              />
+              
+              {/* YouTube Video */}
               <Element
-                canvas
-                is={Container}
-                id="features-section"
-                flexDirection="row"
-                alignItems="flex-start"
-                justifyContent="center"
-                padding={['60', '40', '60', '40']}
-                margin={['0', '0', '0', '0']}
-                background={{ r: 248, g: 250, b: 252, a: 1 }}
-                width="100%"
-                height="auto"
-                custom={{ displayName: 'Funcionalidades' }}
-              >
+                is={Video}
+                videoId="u7KQ4ityQeI"
+                width={560}
+                height={315}
+              />
+
+
                 <Element
                   canvas
                   is={LandingCard}
