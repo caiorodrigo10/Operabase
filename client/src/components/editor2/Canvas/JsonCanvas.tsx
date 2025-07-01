@@ -40,15 +40,10 @@ export const JsonCanvas: React.FC = () => {
     );
   }
   
-  // Classes do Canvas baseado no modo
+  // Classes do Canvas - Builder.io style (sem restrições de altura)
   const canvasClasses = [
-    'json-canvas',
-    'h-full',
-    'overflow-x-auto',
-    'bg-gray-50',
-    'p-6',
-    'rounded-lg',
-    'min-h-screen',
+    'builder-page',
+    'min-h-screen', // apenas altura mínima
     'font-sans',
     editor?.mode === 'edit' && 'edit-mode',
     editor?.showGrid && 'show-grid'
@@ -111,48 +106,16 @@ export const JsonCanvas: React.FC = () => {
     );
   }
 
-  // Renderização principal dos blocos
+  // Renderização principal - Builder.io style (sem wrappers desnecessários)
   return (
-    <div className={canvasClasses}>
-      {/* Meta informações (se existir) */}
-      {pageJson.meta && (
-        <div className="bg-blue-50 border-b border-blue-200 p-4">
-          <div className="max-w-4xl mx-auto">
-            {pageJson.meta.title && (
-              <h2 className="text-lg font-semibold text-blue-900 mb-1">
-                {pageJson.meta.title}
-              </h2>
-            )}
-            {pageJson.meta.description && (
-              <p className="text-blue-700 text-sm">
-                {pageJson.meta.description}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Área de renderização dos blocos */}
-      <div className="page-content">
-        {pageJson.blocks.map((block) => (
-          <RenderBlock 
-            key={block.id} 
-            block={block}
-          />
-        ))}
-      </div>
-
-      {/* Footer com informações de debug */}
-      <div className="bg-gray-100 border-t border-gray-200 p-4 text-center">
-        <div className="text-xs text-gray-500">
-          <p>
-            {pageJson.blocks.length} bloco{pageJson.blocks.length !== 1 ? 's' : ''} renderizado{pageJson.blocks.length !== 1 ? 's' : ''}
-          </p>
-          <p className="mt-1">
-            Editor2 - Sistema de renderização JSON
-          </p>
-        </div>
-      </div>
+    <div className={canvasClasses} style={{ overflow: 'visible' }}>
+      {/* Renderização direta dos blocos sem containers intermediários */}
+      {pageJson.blocks.map((block) => (
+        <RenderBlock 
+          key={block.id} 
+          block={block}
+        />
+      ))}
     </div>
   );
 };
