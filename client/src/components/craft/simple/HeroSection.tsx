@@ -1,38 +1,22 @@
 import React from 'react';
 import { useNode } from '@craftjs/core';
 
-export type ContainerProps = {
+export type HeroSectionProps = {
   background?: { r: number; g: number; b: number; a: number };
   padding?: string[];
   margin?: string[];
-  borderRadius?: number;
   minHeight?: string;
   children?: React.ReactNode;
-  flexDirection?: 'row' | 'column';
-  alignItems?: 'flex-start' | 'center' | 'flex-end';
-  justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between';
-  fillSpace?: 'no' | 'yes';
-  width?: string;
-  height?: string;
-  className?: string;
 };
 
-const defaultProps: ContainerProps = {
-  background: { r: 255, g: 255, b: 255, a: 1 },
-  padding: ['20', '20', '20', '20'],
+const defaultProps: HeroSectionProps = {
+  background: { r: 37, g: 99, b: 235, a: 1 },
+  padding: ['60', '40', '60', '40'],
   margin: ['0', '0', '0', '0'],
-  borderRadius: 0,
-  minHeight: 'auto',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  justifyContent: 'flex-start',
-  fillSpace: 'no',
-  width: '100%',
-  height: 'auto',
-  className: ''
+  minHeight: '300px'
 };
 
-export const Container = (props: ContainerProps) => {
+export const HeroSection = (props: HeroSectionProps) => {
   const finalProps = { ...defaultProps, ...props };
   const {
     connectors: { connect, drag }
@@ -42,34 +26,24 @@ export const Container = (props: ContainerProps) => {
     background,
     padding,
     margin,
-    borderRadius,
     minHeight,
-    flexDirection,
-    alignItems,
-    justifyContent,
-    fillSpace,
-    width,
-    height,
-    children,
-    className
+    children
   } = finalProps;
 
   return (
     <div
       ref={(ref) => connect(drag(ref))}
-      className={className}
       style={{
         background: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
         padding: `${padding[0]}px ${padding[1]}px ${padding[2]}px ${padding[3]}px`,
         margin: `${margin[0]}px ${margin[1]}px ${margin[2]}px ${margin[3]}px`,
-        borderRadius: `${borderRadius}px`,
         minHeight,
-        width,
-        height,
         display: 'flex',
-        flexDirection,
-        alignItems,
-        justifyContent,
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: 'white',
+        width: '100%',
         position: 'relative'
       }}
     >
@@ -78,8 +52,8 @@ export const Container = (props: ContainerProps) => {
   );
 };
 
-Container.craft = {
-  displayName: 'Container',
+HeroSection.craft = {
+  displayName: 'Hero Section',
   props: defaultProps,
   rules: {
     canDrag: () => true,
