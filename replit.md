@@ -212,6 +212,18 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 01, 2025 - RAG Document Deletion System: Complete Fix Implementation ✅
+- **Critical Issue Resolved**: Fixed document deletion system that was not actually removing documents from database
+- **Backend Deletion Logic**: Implemented real DELETE operations replacing mock "funcionalidade em desenvolvimento" response
+- **Smart PDF Handling**: System automatically detects and removes all chunks of chunked PDFs when deleting any part
+- **Simplified User Interface**: Removed technical complexity from user - no mention of "chunks" or "parts" in deletion dialogs
+- **Automatic Cache Invalidation**: System automatically refreshes document lists after deletion
+- **Intelligent Detection**: Backend detects pdf_chunk documents and removes all related chunks automatically
+- **User-Friendly Messages**: Clear deletion confirmation messages without exposing backend complexity
+- **Zero Technical Exposure**: Users simply see "delete document" regardless of chunking complexity
+- **Real-Time Updates**: Frontend immediately reflects deletions through React Query invalidation
+- **Status**: ✅ DOCUMENT DELETION FULLY FUNCTIONAL - Users can seamlessly delete any document type
+
 ### July 01, 2025 - RAG Metadata Compatibility: LangChain Structure Enhanced ✅
 - **Compatibilidade LangChain Implementada**: Sistema RAG agora cria documentos com metadata JSONB contendo clinic_id e knowledge_base_id
 - **Estrutura Dupla**: Mantém colunas diretas (performance) + metadata JSONB (compatibilidade LangChain/Supabase)
