@@ -61,32 +61,33 @@ export const Section: React.FC<SectionProps> = ({
     background: 'transparent' // Container transparente
   };
 
-  // Aplicar estilos responsivos baseado no viewport
-  const getResponsiveStyles = () => {
-    if (typeof window === 'undefined') return {};
+  // Aplicar estilos responsivos para Section
+  const getResponsiveSectionStyles = () => {
+    if (typeof window === 'undefined') return sectionStyles;
     
     const width = window.innerWidth;
     if (width >= 1024 && responsiveStyles.large) {
-      return { ...combinedStyles, ...responsiveStyles.large };
+      return { ...sectionStyles, ...responsiveStyles.large };
     } else if (width >= 768 && responsiveStyles.medium) {
-      return { ...combinedStyles, ...responsiveStyles.medium };
+      return { ...sectionStyles, ...responsiveStyles.medium };
     } else if (width < 768 && responsiveStyles.small) {
-      return { ...combinedStyles, ...responsiveStyles.small };
+      return { ...sectionStyles, ...responsiveStyles.small };
     }
     
-    return combinedStyles;
+    return sectionStyles;
   };
 
-  const finalStyles = getResponsiveStyles();
+  const finalSectionStyles = getResponsiveSectionStyles();
 
   return (
     <section
       id={id}
       className={`editor2-section ${className}`.trim()}
-      style={finalStyles}
+      style={finalSectionStyles}
       {...props}
     >
-      <div className="section-content">
+      {/* Container interno transparente para centralizar conteúdo */}
+      <div style={containerStyles}>
         {children}
       </div>
     </section>
