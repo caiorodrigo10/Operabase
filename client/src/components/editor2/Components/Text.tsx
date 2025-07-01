@@ -20,7 +20,7 @@ export const Text: React.FC<TextProps> = ({
 }) => {
   return (
     <p 
-      className={`text-base text-gray-700 ${className}`.trim()}
+      className={`editor2-text text-base text-gray-700 ${className}`.trim()}
       style={style}
     >
       {children || text}

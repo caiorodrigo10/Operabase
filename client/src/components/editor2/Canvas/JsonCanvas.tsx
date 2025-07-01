@@ -69,7 +69,7 @@ export const JsonCanvas: React.FC = () => {
 
   // Renderização principal dos blocos
   return (
-    <div className="json-canvas h-full overflow-auto bg-white">
+    <div className="json-canvas h-full overflow-x-auto bg-gray-50 p-6 rounded-lg min-h-screen font-sans">
       {/* Meta informações (se existir) */}
       {pageJson.meta && (
         <div className="bg-blue-50 border-b border-blue-200 p-4">

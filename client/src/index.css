@@ -2,6 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Editor2 Canvas: Comportamento Visual Avançado (Doc 8) */
+.json-canvas {
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow-x: auto;
+  background: #f8f8f8;
+  border-radius: 8px;
+  min-height: 100vh;
+}
+
+.json-canvas *,
+.json-canvas *::before,
+.json-canvas *::after {
+  box-sizing: border-box;
+}
+
+/* Editor2 Container: Layout responsivo baseado no Canvas Layout (Doc 7) */
+.editor2-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Editor2 Components: Estilos base para componentes */
+.editor2-text {
+  line-height: 1.6;
+  margin: 0;
+}
+
+.editor2-button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  font-family: inherit;
+}
+
+.editor2-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Editor2 Canvas: Comportamento visual de colunas e grid */
+.editor2-columns {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.editor2-column {
+  flex: 1;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Canvas responsivo - Grid visual opcional */
+.canvas-with-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Canvas fluido - máxima largura e scroll horizontal */
+.json-canvas {
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(220, 14.3%, 4.1%);

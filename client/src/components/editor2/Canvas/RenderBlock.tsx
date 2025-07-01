@@ -58,6 +58,18 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     ...(calculateResponsiveStyles(block.responsiveStyles))
   };
 
+  // Para componentes Container, passar responsiveStyles como prop separada
+  const componentProps = block.component.name === 'Container' 
+    ? { 
+        ...block.component.options,
+        responsiveStyles: block.responsiveStyles,
+        style: block.styles
+      }
+    : {
+        ...block.component.options,
+        style: combinedStyles
+      };
+
   // Renderizar children recursivamente
   const children = block.children?.map((child) => (
     <RenderBlock 
@@ -70,8 +82,7 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   // Renderizar componente com props combinadas
   return (
     <Component 
-      {...block.component.options} 
-      style={combinedStyles}
+      {...componentProps}
       key={block.id}
     >
       {children}

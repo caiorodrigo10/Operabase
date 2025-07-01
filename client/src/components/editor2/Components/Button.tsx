@@ -39,7 +39,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const combinedClassName = [
-    'font-semibold rounded-lg transition-colors duration-200 cursor-pointer inline-block',
+    'editor2-button font-semibold rounded-lg transition-colors duration-200 cursor-pointer inline-block',
     variantClasses[variant],
     sizeClasses[size],
     className
