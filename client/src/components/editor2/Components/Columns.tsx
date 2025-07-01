@@ -86,7 +86,7 @@ export const Columns: React.FC<ColumnsProps> = ({
     (stackColumnsAt === 'tablet' && window.innerWidth <= 991) || 
     (stackColumnsAt === 'mobile' && window.innerWidth <= 640) : false;
 
-  // BUILDER.IO EXATO: CSS-in-JS usando estilos inline (force override)
+  // BUILDER.IO EXATO: CSS-in-JS com !important inline (force override TOTAL)
   const finalContainerStyles: React.CSSProperties = {
     display: 'flex', // Força display flex SEMPRE
     height: '100%',
@@ -103,6 +103,12 @@ export const Columns: React.FC<ColumnsProps> = ({
       flexDirection: 'row',
     }),
   };
+
+  // SOLUÇÃO DEFINITIVA: CSS inline com !important via cssText
+  const forceFlexCSS = `
+    display: flex !important;
+    flex-direction: ${shouldStack ? (reverseColumnsWhenStacked ? 'column-reverse' : 'column') : 'row'} !important;
+  `;
 
   // Debug para identificar problema com blocos null
   if (columns.length > 0) {
@@ -134,7 +140,7 @@ export const Columns: React.FC<ColumnsProps> = ({
     windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0
   });
 
-  // DETECTIVE MODE: Inspecionar CSS computado após render
+  // DETECTIVE MODE + FORCE CSS: Inspecionar e corrigir CSS computado após render
   React.useEffect(() => {
     console.log('🔥 useEffect EXECUTADO para container:', id);
     
@@ -144,6 +150,11 @@ export const Columns: React.FC<ColumnsProps> = ({
       console.log('🔍 Container encontrado:', !!container, container);
       
       if (container) {
+        // FORÇA CSS com !important via DOM
+        container.style.setProperty('display', 'flex', 'important');
+        container.style.setProperty('flex-direction', shouldStack ? (reverseColumnsWhenStacked ? 'column-reverse' : 'column') : 'row', 'important');
+        console.log('🚀 FORCED CSS APPLIED:', id, 'display: flex !important, flex-direction:', shouldStack ? 'column' : 'row');
+        
         const computedStyles = window.getComputedStyle(container);
         console.log('🕵️ CSS COMPUTADO REAL (DOM):', {
           id,
