@@ -16,6 +16,7 @@ import { Video } from '../Components/Video';
 import { Spacer } from '../Components/Spacer';
 import { Divider } from '../Components/Divider';
 import { Form } from '../Components/Form';
+import { Testimonial } from '../Components/Testimonial';
 import { DefaultComponent } from '../Components/DefaultComponent';
 
 // Import do contexto de edição (opcional para não quebrar se não tiver)
@@ -38,6 +39,8 @@ const internalComponentMap: any = {
   Image,
   Video,
   Spacer,
+  Form,
+  Testimonial,
   Divider,
   DefaultComponent
 };
