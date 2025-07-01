@@ -115,30 +115,7 @@ export const Columns: React.FC<ColumnsProps> = ({
     console.log('🏗️ Columns component received:', { id, columns: columns.length, firstColumn: columns[0] });
   }
 
-  // 🚨 DIAGNÓSTICO CRÍTICO: Debug estrutura completa
-  console.log('🚨 COLUMNS DEBUG BUILDER.IO PATTERN:', {
-    id,
-    columnsLength: columns.length,
-    gutterSize,
-    stackColumnsAt,
-    windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
-    isDesktop: typeof window !== 'undefined' ? window.innerWidth >= 992 : false,
-    finalContainerStyles,
-    shouldStack,
-    firstColumnWidth: columns.length > 0 ? getColumnWidth(0) : 'none',
-    firstColumnBlocks: columns.length > 0 ? columns[0].blocks?.length : 0
-  });
-
-  // Debug DOM e CSS para detectar conflitos
-  console.log('🔍 CONTAINER STYLES DEBUG:', {
-    id,
-    className: 'builder-columns',
-    finalContainerStyles,
-    display: finalContainerStyles.display,
-    flexDirection: finalContainerStyles.flexDirection || 'row (default)',
-    shouldStack,
-    windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0
-  });
+  // Builder.io Pattern: Aplicar flex layout via DOM para override completo
 
   // DETECTIVE MODE + FORCE CSS: Inspecionar e corrigir CSS computado após render
   React.useEffect(() => {
