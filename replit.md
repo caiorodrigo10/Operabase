@@ -212,6 +212,19 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 01, 2025 - Editor 2 Craft.js Preview System: ETAPA 1 Implementada Completamente ✅
+- **Sistema de Preview Corrigido**: Implementado sistema completo de preview que renderiza JSON semântico do Craft.js
+- **Nova Página CraftPreviewPage**: Criada página `/preview/craft/editor2` específica para renderizar JSON do Craft.js
+- **Preview Limpo**: Interface sem elementos do editor (toolbox, sidebar), apenas conteúdo da landing page
+- **handlePreview() Corrigido**: Botão Preview agora usa serialização Craft.js + transformação semântica
+- **Compatibilidade Dupla**: Sistema salva tanto para localStorage quanto servidor para preview
+- **JSON Semântico**: Preview carrega e renderiza estrutura com IDs limpos (hero-section, cta-button)
+- **Renderização Real**: Preview mostra exatamente como landing page aparecerá (hero, vídeo, features, CTA)
+- **Controles de Preview**: Header fixo com botões Reload e Fechar para navegação
+- **Rota Configurada**: Nova rota `/preview/craft/editor2` adicionada ao App.tsx
+- **Fallback Inteligente**: Sistema detecta se Craft.js disponível, usa legacy preview como backup
+- **Status**: ✅ PREVIEW CRAFT.JS FUNCIONAL - Botão Preview abre nova aba renderizando landing page completa
+
 ### July 01, 2025 - Editor 2 Widget Gallery Template: Complete Demonstration Implemented ✅
 - **Template Melhorado**: Criado template de demonstração completa usando apenas widgets existentes
 - **Hero Section Atualizado**: Título e descrição focados na demonstração dos componentes disponíveis
