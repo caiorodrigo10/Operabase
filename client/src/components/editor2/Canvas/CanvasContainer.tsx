@@ -1,11 +1,8 @@
 import React from 'react';
 import { Editor, Frame, Element } from '@craftjs/core';
 
-// Import Craft.js components
-import { Container } from '../../craft/selectors/Container';
-import { Text } from '../../craft/selectors/Text';
-import { Button } from '../../craft/selectors/Button';
-import { Video } from '../../craft/selectors/Video';
+// Import simplified Craft.js components
+import { Container, Text, Button, Video } from '../../craft/simple';
 
 export const CanvasContainer: React.FC = () => {
   return (
@@ -40,27 +37,33 @@ export const CanvasContainer: React.FC = () => {
               <Element
                 is={Text}
                 text="Welcome to the Page Builder"
-                fontSize="24"
+                fontSize="28px"
                 fontWeight="600"
                 textAlign="center"
-                margin={[0, 0, 20, 0]}
+                margin="0px 0px 20px 0px"
+                tag="h1"
               />
               
               <Element
                 is={Text}
                 text="Start building your page by adding components from the widgets panel."
-                fontSize="16"
+                fontSize="16px"
                 textAlign="center"
-                margin={[0, 0, 30, 0]}
+                margin="0px 0px 30px 0px"
+                color="#666666"
               />
               
               <Element
                 is={Button}
                 text="Get Started"
-                buttonStyle="full"
-                background={{ r: 59, g: 130, b: 246, a: 1 }}
-                color={{ r: 255, g: 255, b: 255, a: 1 }}
-                margin={[10, 0, 10, 0]}
+                backgroundColor="#3b82f6"
+                color="#ffffff"
+                padding="14px 28px"
+                margin="10px auto"
+                borderRadius="8px"
+                fontSize="16px"
+                fontWeight="500"
+                width="auto"
               />
             </Element>
           </Frame>
