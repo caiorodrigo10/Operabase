@@ -29,22 +29,36 @@ export const Section: React.FC<SectionProps> = ({
   minHeight,
   ...props
 }) => {
-  // Combinar estilos base com responsivos
-  const combinedStyles = {
-    padding,
+  // Debug logs para Section
+  console.log('🎨 Section component:', { 
+    id, 
+    backgroundColor, 
+    padding, 
+    styles: Object.keys(styles || {}),
+    responsiveStyles: Object.keys(responsiveStyles || {})
+  });
+  // Section aplica background diretamente conforme Builder.io
+  const sectionStyles = {
     backgroundColor,
     backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-    maxWidth,
-    margin,
-    borderRadius,
-    boxShadow,
-    minHeight,
     backgroundSize: backgroundImage ? 'cover' : undefined,
     backgroundPosition: backgroundImage ? 'center' : undefined,
     backgroundRepeat: backgroundImage ? 'no-repeat' : undefined,
-    width: '100%', // Garantir largura total
-    display: 'block', // Layout correto
+    borderRadius,
+    boxShadow,
+    minHeight,
+    width: '100%', // Section ocupa toda largura
+    display: 'block',
     ...styles, // Aplicar estilos customizados por último
+  };
+
+  // Container interno apenas para centralizar conteúdo
+  const containerStyles = {
+    maxWidth,
+    margin,
+    padding,
+    width: '100%',
+    background: 'transparent' // Container transparente
   };
 
   // Aplicar estilos responsivos baseado no viewport

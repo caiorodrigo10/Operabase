@@ -129,6 +129,15 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     ...(calculateResponsiveStyles(block.responsiveStyles))
   };
 
+  // Debug para entender passagem de props
+  console.log('🔧 RenderBlock debug:', {
+    componentName: block.component.name,
+    blockId: block.id,
+    options: block.component.options,
+    styles: block.styles,
+    responsiveStyles: Object.keys(block.responsiveStyles || {})
+  });
+
   // Preparar props baseado no tipo de componente
   const componentProps = (() => {
     const baseProps = {
