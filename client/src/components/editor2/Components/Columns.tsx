@@ -86,21 +86,21 @@ export const Columns: React.FC<ColumnsProps> = ({
     (stackColumnsAt === 'tablet' && window.innerWidth <= 991) || 
     (stackColumnsAt === 'mobile' && window.innerWidth <= 640) : false;
 
-  // CSS-in-JS Builder.io EXATO: Apenas display e height
-  const containerStyles: React.CSSProperties = {
-    display: 'flex',
+  // BUILDER.IO EXATO: CSS-in-JS usando estilos inline (force override)
+  const finalContainerStyles: React.CSSProperties = {
+    display: 'flex', // Força display flex SEMPRE
     height: '100%',
     ...styles,
-  };
-
-  // Aplicar responsividade Builder.io pattern
-  const finalContainerStyles: React.CSSProperties = {
-    ...containerStyles,
     
-    // Aplicar stacking quando necessário
+    // Aplicar stacking quando necessário (Builder.io pattern)
     ...(shouldStack && {
       flexDirection: reverseColumnsWhenStacked ? 'column-reverse' : 'column',
       alignItems: 'stretch',
+    }),
+    
+    // FORÇA FINAL: Se não está stacking, força row
+    ...(!shouldStack && {
+      flexDirection: 'row',
     }),
   };
 
