@@ -41,48 +41,165 @@ export const EditorLayout: React.FC = () => {
             }
           },
           children: [
+            // Hero Section com Section component
             {
-              id: 'test-text-1',
+              id: 'hero-section',
               component: {
-                name: 'Text',
+                name: 'Section',
                 options: {
-                  text: 'Bem-vindo ao Editor2!'
+                  backgroundColor: '#1e40af',
+                  padding: '60px 0',
+                  margin: '0'
+                }
+              },
+              children: [
+                {
+                  id: 'hero-title',
+                  component: {
+                    name: 'Text',
+                    options: {
+                      text: '🚀 Editor2 Builder.io Components'
+                    }
+                  },
+                  styles: {
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    textAlign: 'center',
+                    marginBottom: '16px'
+                  }
+                },
+                {
+                  id: 'hero-subtitle',
+                  component: {
+                    name: 'Text',
+                    options: {
+                      text: 'Section, Columns, Image, Video, Spacer e Divider funcionando!'
+                    }
+                  },
+                  styles: {
+                    fontSize: '18px',
+                    color: 'rgba(255,255,255,0.9)',
+                    textAlign: 'center',
+                    marginBottom: '24px'
+                  }
+                }
+              ]
+            },
+            // Spacer
+            {
+              id: 'spacer-1',
+              component: {
+                name: 'Spacer',
+                options: {
+                  height: '40px'
+                }
+              }
+            },
+            // Columns Demo
+            {
+              id: 'columns-demo',
+              component: {
+                name: 'Columns',
+                options: {
+                  gutterSize: 24,
+                  stackColumnsAt: 'tablet',
+                  columns: [
+                    {
+                      blocks: [
+                        {
+                          id: 'col1-title',
+                          component: {
+                            name: 'Text',
+                            options: { text: 'Coluna 1' }
+                          },
+                          styles: { fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }
+                        },
+                        {
+                          id: 'col1-desc',
+                          component: {
+                            name: 'Text',
+                            options: { text: 'Componente Section' }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      blocks: [
+                        {
+                          id: 'col2-title',
+                          component: {
+                            name: 'Text',
+                            options: { text: 'Coluna 2' }
+                          },
+                          styles: { fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }
+                        },
+                        {
+                          id: 'col2-desc',
+                          component: {
+                            name: 'Text',
+                            options: { text: 'Sistema Columns' }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      blocks: [
+                        {
+                          id: 'col3-title',
+                          component: {
+                            name: 'Text',
+                            options: { text: 'Coluna 3' }
+                          },
+                          styles: { fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }
+                        },
+                        {
+                          id: 'col3-desc',
+                          component: {
+                            name: 'Text',
+                            options: { text: 'Video, Image, Spacer' }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            // Divider
+            {
+              id: 'divider-1',
+              component: {
+                name: 'Divider',
+                options: {
+                  color: '#e5e7eb',
+                  thickness: '2px',
+                  margin: '30px 0'
+                }
+              }
+            },
+            // Video Demo
+            {
+              id: 'video-demo',
+              component: {
+                name: 'Video',
+                options: {
+                  src: 'https://www.youtube.com/watch?v=u7KQ4ityQeI',
+                  type: 'youtube',
+                  aspectRatio: '16:9'
                 }
               },
               styles: {
-                fontSize: '24px',
-                fontWeight: 'bold',
-                marginBottom: '16px'
-              }
-            },
-            {
-              id: 'test-text-2',
-              component: {
-                name: 'Text',
-                options: {
-                  text: 'Sistema de renderização JSON funcionando com Container ROOT.'
-                }
-              },
-              styles: {
-                marginBottom: '24px'
-              }
-            },
-            {
-              id: 'test-button-1',
-              component: {
-                name: 'Button',
-                options: {
-                  text: 'Botão de Teste',
-                  variant: 'primary'
-                }
+                maxWidth: '600px',
+                margin: '0 auto'
               }
             }
           ]
         }
       ],
       meta: {
-        title: 'Editor2 - Sistema de Renderização JSON',
-        description: 'Testando layout base com Container ROOT'
+        title: 'Editor2 - Builder.io Components Demo',
+        description: 'Demonstração completa dos componentes Builder.io implementados'
       }
     };
     setPageJson(testPageJson);
