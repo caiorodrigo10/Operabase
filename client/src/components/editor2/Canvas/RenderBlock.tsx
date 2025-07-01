@@ -166,6 +166,21 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
         style: block.styles
       };
     }
+
+    // Para componente Columns, passar função renderBlock
+    if (block.component.name === 'Columns') {
+      return {
+        ...baseProps,
+        style: combinedStyles,
+        renderBlock: (childBlock: any) => (
+          <RenderBlock 
+            key={childBlock.id} 
+            block={childBlock} 
+            componentMap={activeComponentMap}
+          />
+        )
+      };
+    }
     
     // Para outros componentes, usar estilos combinados
     return {

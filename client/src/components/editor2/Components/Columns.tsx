@@ -1,6 +1,5 @@
 import React from 'react';
 import { BlockComponentProps } from '../../../shared/editor2-types';
-import { RenderBlock } from '../Canvas/RenderBlock';
 
 interface ColumnConfig {
   blocks: any[];
@@ -15,6 +14,7 @@ interface ColumnsProps extends BlockComponentProps {
   reverseColumnsWhenStacked?: boolean;
   alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
   justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
+  renderBlock?: (block: any) => React.ReactNode;
 }
 
 export const Columns: React.FC<ColumnsProps> = ({
@@ -30,6 +30,7 @@ export const Columns: React.FC<ColumnsProps> = ({
   reverseColumnsWhenStacked = false,
   alignItems = 'stretch',
   justifyContent = 'flex-start',
+  renderBlock,
   ...props
 }) => {
   // Debug log para Columns
@@ -119,15 +120,22 @@ export const Columns: React.FC<ColumnsProps> = ({
               
               // Verificar se o bloco tem a estrutura correta
               if (!block.component) {
-                console.warn('Invalid block in column:', block);
+                console.warn('❌ Columns: Invalid block in column:', block);
                 return null;
               }
+
+              console.log('🔄 Columns rendering block:', block.id, 'component:', block.component.name);
               
+              // Usar renderBlock passado como prop ou fallback simples
+              if (renderBlock) {
+                return renderBlock(block);
+              }
+              
+              // Fallback: renderização simples sem RenderBlock
               return (
-                <RenderBlock
-                  key={block.id || `${index}-${blockIndex}`}
-                  block={block}
-                />
+                <div key={block.id || `${index}-${blockIndex}`}>
+                  Component: {block.component.name}
+                </div>
               );
             })}
           </div>
