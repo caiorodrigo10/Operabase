@@ -196,21 +196,58 @@ export const EditorHeader: React.FC = () => {
 
   const handlePreview = async () => {
     try {
-      // Salva no localStorage primeiro (garantindo dados para preview)
-      const pageJson = serializeToJSON();
-      const jsonString = JSON.stringify(pageJson, null, 2);
-      localStorage.setItem('editor2_page_state', jsonString);
+      // Get current Craft.js editor
+      const craftEditor = getCurrentCraftEditor();
       
-      // Tenta salvar no servidor (mas não bloqueia se falhar)
-      try {
-        await savePageToServer();
-      } catch (error) {
-        console.warn('Could not save to server, using localStorage for preview:', error);
+      if (craftEditor && craftEditor.query && craftEditor.query.serialize) {
+        // Use Craft.js serialization (same as handleSave)
+        const craftJson = craftEditor.query.serialize();
+        
+        // Transform to semantic JSON for preview
+        const semanticJson = transformToSemanticJson(craftJson);
+        
+        // Save semantic JSON for preview
+        localStorage.setItem('editor2_craft_preview', JSON.stringify(semanticJson));
+        console.log('🎥 Preview: Semantic JSON saved with keys:', Object.keys(semanticJson));
+        
+        // Try to save to server (but don't block preview if it fails)
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            import.meta.env.VITE_SUPABASE_URL!,
+            import.meta.env.VITE_SUPABASE_ANON_KEY!
+          );
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          await fetch('/api/save-page-json', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+            body: JSON.stringify({
+              pageId: 'editor2',
+              jsonData: JSON.stringify(semanticJson)
+            })
+          });
+        } catch (error) {
+          console.warn('Could not save to server for preview:', error);
+        }
+        
+        // Open Craft.js preview in new tab
+        const previewUrl = `/preview/craft/editor2`;
+        window.open(previewUrl, '_blank');
+        console.log('🎥 Preview: Opening Craft.js preview');
+      } else {
+        // Fallback to legacy preview if Craft.js not available
+        console.warn('⚠️ Craft.js not available, using legacy preview');
+        const pageJson = serializeToJSON();
+        const jsonString = JSON.stringify(pageJson, null, 2);
+        localStorage.setItem('editor2_page_state', jsonString);
+        
+        const previewUrl = `/preview/editor2`;
+        window.open(previewUrl, '_blank');
       }
-      
-      // Abre a página de preview em nova aba
-      const previewUrl = `/preview/editor2`;
-      window.open(previewUrl, '_blank');
     } catch (error) {
       console.error('Error opening preview:', error);
     }

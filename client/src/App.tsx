@@ -60,6 +60,7 @@ import SystemLogs from "./pages/SystemLogs";
 import FunilEditorLanding from "./pages/funil-editor-landing";
 import Editor2 from "./pages/editor2";
 import { PreviewPage } from "./pages/preview";
+import CraftPreviewPage from "./pages/preview-craft";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -207,6 +208,7 @@ function Router() {
         <Route path="/editor-landing" component={FunilEditorLanding} />
         <Route path="/editor2" component={Editor2} />
         <Route path="/preview/editor2" component={() => <PreviewPage pageId="editor2" />} />
+        <Route path="/preview/craft/editor2" component={() => <CraftPreviewPage pageId="editor2" />} />
 
         <Route component={NotFound} />
       </Switch>
