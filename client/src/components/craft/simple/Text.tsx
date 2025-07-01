@@ -6,23 +6,21 @@ export type TextProps = {
   text?: string;
   fontSize?: string;
   fontWeight?: string;
-  color?: { r: number; g: number; b: number; a: number };
+  color?: string;
   textAlign?: 'left' | 'center' | 'right';
-  margin?: string[];
-  padding?: string[];
-  shadow?: number;
+  margin?: string;
+  padding?: string;
   tag?: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'span';
 };
 
 const defaultProps: TextProps = {
   text: 'Text',
-  fontSize: '16',
+  fontSize: '16px',
   fontWeight: '400',
-  color: { r: 51, g: 51, b: 51, a: 1 },
+  color: '#333333',
   textAlign: 'left',
-  margin: ['0', '0', '0', '0'],
-  padding: ['0', '0', '0', '0'],
-  shadow: 0,
+  margin: '0px',
+  padding: '0px',
   tag: 'p'
 };
 
@@ -45,7 +43,6 @@ export const Text = (props: TextProps) => {
     textAlign,
     margin,
     padding,
-    shadow,
     tag
   } = finalProps;
 
@@ -59,13 +56,12 @@ export const Text = (props: TextProps) => {
       }}
       tagName={tag}
       style={{
-        fontSize: `${fontSize}px`,
+        fontSize,
         fontWeight,
-        color: `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`,
+        color,
         textAlign,
-        margin: `${margin[0]}px ${margin[1]}px ${margin[2]}px ${margin[3]}px`,
-        padding: `${padding[0]}px ${padding[1]}px ${padding[2]}px ${padding[3]}px`,
-        textShadow: shadow > 0 ? `0 2px ${shadow}px rgba(0,0,0,0.1)` : 'none',
+        margin,
+        padding,
         outline: 'none',
         width: '100%',
         cursor: enabled ? 'text' : 'default'

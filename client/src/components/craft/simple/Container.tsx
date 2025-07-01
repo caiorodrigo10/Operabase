@@ -2,31 +2,29 @@ import React from 'react';
 import { useNode } from '@craftjs/core';
 
 export type ContainerProps = {
-  background?: { r: number; g: number; b: number; a: number };
-  padding?: string[];
-  margin?: string[];
-  borderRadius?: number;
+  background?: string;
+  padding?: string;
+  margin?: string;
+  borderRadius?: string;
   minHeight?: string;
   children?: React.ReactNode;
   flexDirection?: 'row' | 'column';
   alignItems?: 'flex-start' | 'center' | 'flex-end';
   justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between';
-  fillSpace?: 'no' | 'yes';
   width?: string;
   height?: string;
   className?: string;
 };
 
 const defaultProps: ContainerProps = {
-  background: { r: 255, g: 255, b: 255, a: 1 },
-  padding: ['20', '20', '20', '20'],
-  margin: ['0', '0', '0', '0'],
-  borderRadius: 0,
+  background: '#ffffff',
+  padding: '20px',
+  margin: '0px',
+  borderRadius: '0px',
   minHeight: 'auto',
   flexDirection: 'column',
   alignItems: 'flex-start',
   justifyContent: 'flex-start',
-  fillSpace: 'no',
   width: '100%',
   height: 'auto',
   className: ''
@@ -47,7 +45,6 @@ export const Container = (props: ContainerProps) => {
     flexDirection,
     alignItems,
     justifyContent,
-    fillSpace,
     width,
     height,
     children,
@@ -59,10 +56,10 @@ export const Container = (props: ContainerProps) => {
       ref={(ref) => connect(drag(ref))}
       className={className}
       style={{
-        background: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
-        padding: `${padding[0]}px ${padding[1]}px ${padding[2]}px ${padding[3]}px`,
-        margin: `${margin[0]}px ${margin[1]}px ${margin[2]}px ${margin[3]}px`,
-        borderRadius: `${borderRadius}px`,
+        backgroundColor: background,
+        padding,
+        margin,
+        borderRadius,
         minHeight,
         width,
         height,
@@ -70,7 +67,8 @@ export const Container = (props: ContainerProps) => {
         flexDirection,
         alignItems,
         justifyContent,
-        position: 'relative'
+        position: 'relative',
+        boxSizing: 'border-box'
       }}
     >
       {children}

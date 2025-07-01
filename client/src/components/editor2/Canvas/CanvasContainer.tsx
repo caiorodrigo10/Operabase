@@ -50,14 +50,12 @@ export const CanvasContainer: React.FC = () => {
           {/* Craft.js Frame - Editable Area */}
           <Frame>
             <Element
-              id="ROOT"
               is={Container}
-              custom={{ displayName: 'Landing Page' }}
               canvas
-              background={{ r: 255, g: 255, b: 255, a: 1 }}
-              padding={['0', '0', '0', '0']}
-              margin={['0', '0', '0', '0']}
-              borderRadius={0}
+              background="#ffffff"
+              padding="0px"
+              margin="0px"
+              borderRadius="0px"
               flexDirection="column"
               alignItems="center"
               justifyContent="flex-start"
@@ -66,78 +64,95 @@ export const CanvasContainer: React.FC = () => {
             >
               {/* Hero Section */}
               <Element
-                id="hero-section"
-                is={HeroSection}
-                custom={{ displayName: 'Hero Principal' }}
+                is={Container}
                 canvas
-                background={{ r: 37, g: 99, b: 235, a: 1 }}
-                padding={['60', '40', '60', '40']}
-                margin={['0', '0', '0', '0']}
+                background="#2563eb"
+                padding="60px 40px"
+                margin="0px"
                 minHeight="300px"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                width="100%"
               >
                 {/* Hero Title */}
                 <Element
-                  id="hero-title"
                   is={Text}
                   text="Transforme Sua Clínica Digital"
-                  fontSize="42"
+                  fontSize="42px"
                   fontWeight="700"
-                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  color="#ffffff"
                   textAlign="center"
-                  margin={['0', '0', '20', '0']}
-                  shadow={0}
+                  margin="0px 0px 20px 0px"
                   tag="h1"
                 />
                 
                 <Element
-                  id="hero-subtitle"
                   is={Text}
                   text="Crie sites profissionais para sua clínica médica em minutos, sem conhecimento técnico."
-                  fontSize="18"
+                  fontSize="18px"
                   fontWeight="400"
-                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  color="#ffffff"
                   textAlign="center"
-                  margin={['0', '0', '30', '0']}
-                  shadow={0}
+                  margin="0px 0px 30px 0px"
                   tag="p"
+                />
+                
+                <Element
+                  is={Button}
+                  text="Criar Meu Site Grátis"
+                  backgroundColor="#22c55e"
+                  color="#ffffff"
+                  padding="14px 28px"
+                  margin="10px auto"
+                  borderRadius="8px"
+                  fontSize="16px"
+                  fontWeight="500"
+                  width="auto"
                 />
               </Element>
               
               {/* Features Section */}
               <Element
-                id="features-section"
                 is={Container}
-                custom={{ displayName: 'Funcionalidades' }}
                 canvas
-                background={{ r: 248, g: 250, b: 252, a: 1 }}
-                padding={['40', '20', '40', '20']}
-                margin={['0', '0', '0', '0']}
+                background="#f8fafc"
+                padding="40px 20px"
+                margin="0px"
                 flexDirection="row"
                 alignItems="flex-start"
                 justifyContent="center"
                 width="100%"
               >
                 <Element
-                  id="feature-1"
-                  is={LandingCard}
-                  custom={{ displayName: 'Feature 1' }}
+                  is={Container}
                   canvas
-                  background={{ r: 255, g: 255, b: 255, a: 1 }}
-                  padding={30}
-                  margin={['10', '10', '10', '10']}
-                  borderRadius={8}
-                  shadow={2}
+                  background="#ffffff"
+                  padding="30px"
+                  margin="10px"
+                  borderRadius="8px"
+                  width="300px"
                 >
                   <Element
-                    id="feature-1-title"
                     is={Text}
                     text="🚀 Criação Rápida"
-                    fontSize="20"
+                    fontSize="20px"
                     fontWeight="600"
-                    color={{ r: 37, g: 99, b: 235, a: 1 }}
+                    color="#2563eb"
                     textAlign="center"
-                    margin={['0', '0', '15', '0']}
+                    margin="0px 0px 15px 0px"
                     tag="h3"
+                  />
+                  
+                  <Element
+                    is={Text}
+                    text="Sites prontos em menos de 5 minutos com IA"
+                    fontSize="14px"
+                    fontWeight="400"
+                    color="#64748b"
+                    textAlign="center"
+                    margin="0px"
+                    tag="p"
                   />
                 </Element>
               </Element>
