@@ -212,6 +212,17 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 01, 2025 - RAG System Item Count Consistency: PDF Grouping + Duplicate Filtering Complete ✅
+- **Critical Issue Resolved**: Fixed inconsistent item counts between knowledge base overview and detail pages
+- **Root Cause Identified**: Overview was showing 3 items while detail page showed 2 due to duplicate documents not being filtered
+- **PDF Chunk Grouping**: Implemented consistent grouping logic in both BasesConhecimento.tsx and ColecaoDetalhe.tsx
+- **Duplicate Detection**: Added intelligent duplicate filtering for documents with same title and content_type
+- **Consistent Counting**: Both overview and detail pages now show accurate count (e.g., "Oi" base shows 2 items consistently)
+- **Enhanced User Experience**: PDFs display as single grouped items with chunk information instead of separate parts
+- **Delete Functionality**: Enhanced delete system to handle grouped PDFs by removing all chunks at once
+- **Production Ready**: System now provides accurate item counts and consistent user interface
+- **Status**: ✅ ITEM COUNT CONSISTENCY ACHIEVED - Overview and detail pages display matching counts
+
 ### July 01, 2025 - RAG System PDF Content Extraction: Complete Fix Implemented ✅
 - **Critical Issue Resolved**: Fixed RAG system that was only storing PDF titles instead of full content in documents table
 - **Root Cause Identified**: Line 437 in rag-routes-clean.ts was using hardcoded string "PDF processado: ${documentTitle}" instead of extracting real PDF content
