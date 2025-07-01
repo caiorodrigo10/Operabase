@@ -10,6 +10,7 @@ interface SectionProps extends BlockComponentProps {
   borderRadius?: string;
   boxShadow?: string;
   minHeight?: string;
+  style?: React.CSSProperties; // ✅ Style do RenderBlock
 }
 
 export const Section: React.FC<SectionProps> = ({
@@ -18,6 +19,7 @@ export const Section: React.FC<SectionProps> = ({
   className = '',
   responsiveStyles = {},
   styles = {},
+  style = {}, // ✅ Aceitar style do RenderBlock
   // Section-specific props
   padding = '40px 0',
   backgroundColor,
@@ -58,10 +60,11 @@ export const Section: React.FC<SectionProps> = ({
     };
   };
 
-  // Section aplica background diretamente conforme Builder.io 
+  // Section aplica background diretamente conforme Builder.io - SEM MARGIN
   const sectionStyles = {
-    // Propriedades básicas
+    // Propriedades básicas Builder.io
     width: '100%', // Section ocupa toda largura
+    margin: 0, // ✅ SEM MARGIN - sections coladas
     borderRadius,
     boxShadow,
     minHeight,
@@ -73,8 +76,6 @@ export const Section: React.FC<SectionProps> = ({
     // Props padrão
     backgroundColor,
     padding,
-    margin,
-    maxWidth,
     // Sobrescrever com styles e responsiveStyles
     ...styles,
     ...calculateResponsiveStyles()
@@ -104,13 +105,17 @@ export const Section: React.FC<SectionProps> = ({
     return sectionStyles;
   };
 
-  const finalSectionStyles = getResponsiveSectionStyles();
+  // ✅ Builder.io pattern: style do RenderBlock tem precedência máxima
+  const finalStyles = {
+    ...getResponsiveSectionStyles(),
+    ...style // Style do RenderBlock sobrescreve tudo
+  };
 
   return (
     <section
       id={id}
       className={`editor2-section ${className}`.trim()}
-      style={finalSectionStyles}
+      style={finalStyles}
       {...props}
     >
       {/* Container interno transparente para centralizar conteúdo */}

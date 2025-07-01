@@ -240,8 +240,25 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     isHovered && 'hovered'
   ].filter(Boolean).join(' ') : '';
 
-  // Se não estiver em modo edição, renderizar componente com wrapper styles (Builder.io pattern)
+  // Componentes que aplicam styles direto (sem wrapper) - Builder.io pattern
+  const directStyleComponents = ['Section'];
+  
+  // Se não estiver em modo edição
   if (!inEditMode) {
+    // Para Section: aplicar styles direto no componente (sem wrapper)
+    if (directStyleComponents.includes(block.component.name)) {
+      return (
+        <Component 
+          {...componentProps}
+          style={combinedStyles} // Styles direto na Section
+          key={block.id}
+        >
+          {children}
+        </Component>
+      );
+    }
+    
+    // Para outros componentes: manter wrapper Builder.io
     return (
       <div className="builder-block" style={wrapperStyles}>
         <Component 
