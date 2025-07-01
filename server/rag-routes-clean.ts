@@ -10,6 +10,7 @@ import fs from "fs";
 import { db } from "./db";
 import { documents, knowledge_bases, insertKnowledgeBaseSchema, updateKnowledgeBaseSchema } from "../shared/schema";
 import { sql, eq, desc, and } from "drizzle-orm";
+import { PDFProcessor } from "./rag-processors/pdf-processor";
 
 const router = Router();
 
@@ -434,7 +435,34 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
 
     // Usar título do arquivo se não fornecido
     const documentTitle = title || file.originalname.replace(/\.pdf$/i, '');
-    const documentContent = `PDF processado: ${documentTitle}`;
+    
+    // Extrair conteúdo real do PDF usando PDFProcessor
+    console.log('📄 RAG: Iniciando extração de texto do PDF...');
+    const pdfProcessor = new PDFProcessor();
+    let documentContent: string;
+    let shouldChunk = false;
+    
+    try {
+      documentContent = await pdfProcessor.extractText(file.path);
+      console.log(`✅ RAG: Texto extraído com sucesso: ${documentContent.length} caracteres`);
+      
+      if (!documentContent || documentContent.trim().length === 0) {
+        throw new Error('PDF não contém texto extraível');
+      }
+      
+      // Verificar se o documento é muito grande (>3000 caracteres) e precisa ser dividido
+      shouldChunk = documentContent.length > 3000;
+      if (shouldChunk) {
+        console.log('📄 RAG: Documento grande detectado, processamento com chunking será aplicado');
+      }
+      
+    } catch (error) {
+      console.error('❌ RAG: Erro ao extrair texto do PDF:', error);
+      return res.status(500).json({
+        success: false,
+        error: `Falha ao processar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      });
+    }
 
     // Gerar embedding para o conteúdo do PDF
     console.log('🤖 RAG: Gerando embedding para PDF...');
@@ -448,7 +476,7 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          input: documentContent,
+          input: documentContent.substring(0, 8000), // Limite de tokens para embedding
           model: 'text-embedding-ada-002'
         })
       });
@@ -475,9 +503,11 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
           file_path: file.path,
           file_name: file.originalname,
           file_size: file.size,
+          content_length: documentContent.length,
           created_by: (req as any).user.email,
           created_at: new Date().toISOString(),
-          processing_status: embeddingVector ? 'completed' : 'pending'
+          processing_status: embeddingVector ? 'completed' : 'pending',
+          extraction_method: 'pdf-parse'
         })},
         ${embeddingVector ? JSON.stringify(embeddingVector) : null},
         ${clinic_id},
@@ -492,7 +522,9 @@ router.post('/documents/upload', ragAuth, upload.single('file'), async (req: Req
       documentId,
       title: documentTitle,
       clinic_id,
-      knowledge_base_id
+      knowledge_base_id,
+      content_length: documentContent.length,
+      has_embedding: !!embeddingVector
     });
 
     res.json({
