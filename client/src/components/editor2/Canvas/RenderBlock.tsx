@@ -15,6 +15,7 @@ import { Image } from '../Components/Image';
 import { Video } from '../Components/Video';
 import { Spacer } from '../Components/Spacer';
 import { Divider } from '../Components/Divider';
+import { Form } from '../Components/Form';
 import { DefaultComponent } from '../Components/DefaultComponent';
 
 // Import do contexto de edição (opcional para não quebrar se não tiver)
@@ -52,6 +53,22 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   block, 
   componentMap: customComponentMap 
 }) => {
+  // Verificação de segurança do bloco
+  if (!block) {
+    console.warn('RenderBlock: block is null or undefined');
+    return null;
+  }
+  
+  if (!block.component) {
+    console.warn('RenderBlock: block.component is null or undefined for block:', block);
+    return null;
+  }
+  
+  if (!block.component.name) {
+    console.warn('RenderBlock: block.component.name is null or undefined for block:', block);
+    return null;
+  }
+  
   // Usa componentMap customizado ou interno
   const activeComponentMap = customComponentMap || internalComponentMap;
   

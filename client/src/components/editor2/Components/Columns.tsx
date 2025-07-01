@@ -95,13 +95,21 @@ export const Columns: React.FC<ColumnsProps> = ({
             className="editor2-column"
             style={columnStyles}
           >
-            {column.blocks.map((block, blockIndex) => (
-              <RenderBlock
-                key={block.id || `${index}-${blockIndex}`}
-                blockId={block.id || `${index}-${blockIndex}`}
-                blockData={block}
-              />
-            ))}
+            {column.blocks.map((block, blockIndex) => {
+              // Verificar se o bloco tem a estrutura correta
+              if (!block || !block.component) {
+                console.warn('Invalid block in column:', block);
+                return null;
+              }
+              
+              return (
+                <RenderBlock
+                  key={block.id || `${index}-${blockIndex}`}
+                  blockId={block.id || `${index}-${blockIndex}`}
+                  blockData={block}
+                />
+              );
+            })}
           </div>
         );
       })}

@@ -220,16 +220,7 @@ export const EditorLayout: React.FC = () => {
       {/* Toolbar Area - Controles */}
       <div className="editor2-toolbar-area">
         <div className="toolbar-elements flex gap-3 items-center">
-          {/* Teste de contexto */}
-          <button 
-            onClick={handleTestContext}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-          >
-            Testar Contexto
-          </button>
-          
-          {/* Separador */}
-          <div className="w-px h-6 bg-gray-300"></div>
+
           
           {/* Toggle Mode */}
           <div className="flex items-center gap-2">
