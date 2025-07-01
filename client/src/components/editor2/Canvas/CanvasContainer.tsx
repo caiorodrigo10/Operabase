@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Editor, Frame, Element, useEditor } from '@craftjs/core';
-import { Container } from '../../craft/selectors/landing/Container';
-import { Text } from '../../craft/selectors/landing/Text';
-import { CraftButton } from '../../craft/selectors/Button';
+import { Container, Text } from '../../craft/selectors';
+import { Button as CraftButton } from '../../craft/selectors/Button';
 import { Video } from '../../craft/selectors/Video';
-import { Custom1, Custom2, Custom3 } from '../../craft/selectors/landing/Custom';
-// Import components without circular reference
-import { LandingCard } from '../../craft/selectors/landing/LandingCard';
-import { SpacerComponent } from '../../craft/selectors/landing/Spacer';
-import { RenderNode } from '../../craft/RenderNode';
+import { RenderNode } from '../../craft/editor/RenderNode';
 
 // EditorExposer component for accessing editor state
 const EditorExposer: React.FC = () => {
@@ -178,13 +173,7 @@ export const CanvasContainer: React.FC = () => {
           Container,
           Text,
           CraftButton,
-          Video,
-          Custom1,
-          Custom2,
-          Custom3,
-          HeroSection,
-          LandingCard,
-          SpacerComponent
+          Video
         }}
         enabled={true}
         onRender={RenderNode}
