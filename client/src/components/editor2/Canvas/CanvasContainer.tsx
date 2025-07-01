@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Editor, Frame, Element, useEditor } from '@craftjs/core';
 
-// Import CLEAN Landing components (same as Editor Landing that works)
-import { Container, Text } from '../../craft/selectors';
-import { Button as CraftButton } from '../../craft/selectors/Button';
-import { Video } from '../../craft/selectors/Video';
+// Import ALL Landing components for complete gallery demonstration
+import { Container, Text } from '../../craft/selectors/landing';
+import { Button as CraftButton } from '../../craft/selectors/landing/Button';
+import { Video } from '../../craft/selectors/landing/Video';
+import { Custom1, Custom2, Custom3 } from '../../craft/selectors/landing';
 import { RenderNode } from '../../craft/editor/RenderNode';
 
 // Custom Landing Components with semantic structure
@@ -87,6 +88,47 @@ LandingCard.craft = {
   },
 };
 
+// Spacer Component for spacing control
+interface SpacerProps {
+  height?: number;
+  background?: { r: number; g: number; b: number; a: number };
+}
+
+const SpacerComponent = ({ 
+  height = 50, 
+  background = { r: 0, g: 0, b: 0, a: 0 }
+}: SpacerProps) => {
+  return (
+    <div
+      style={{
+        height: `${height}px`,
+        width: '100%',
+        background: `rgba(${background.r}, ${background.g}, ${background.b}, ${background.a})`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#999',
+        fontSize: '12px',
+        borderTop: '1px dashed #ddd',
+        borderBottom: '1px dashed #ddd',
+      }}
+    >
+      Espaço ({height}px)
+    </div>
+  );
+};
+
+SpacerComponent.craft = {
+  displayName: 'Espaço',
+  props: {
+    height: 50,
+    background: { r: 0, g: 0, b: 0, a: 0 },
+  },
+  rules: {
+    canDrag: () => true,
+  },
+};
+
 // Global reference to current Craft.js editor
 let currentCraftEditor: any = null;
 
@@ -140,10 +182,10 @@ const getDefaultSemanticJson = () => {
         "height": "auto"
       },
       "displayName": "Container",
-      "custom": { "displayName": "Landing Page" },
+      "custom": { "displayName": "Editor 2 - Galeria de Widgets" },
       "parent": null,
       "hidden": false,
-      "nodes": ["hero-section", "features-section", "cta-section"],
+      "nodes": ["hero-section", "features-section", "video-demo", "button-showcase"],
       "linkedNodes": {}
     },
     "hero-section": {
@@ -168,7 +210,7 @@ const getDefaultSemanticJson = () => {
         "fontWeight": "700",
         "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
         "margin": ["0", "0", "20", "0"],
-        "text": "Transforme Sua Clínica Digital"
+        "text": "Editor 2: Demonstração Completa"
       },
       "displayName": "Text",
       "custom": {},
@@ -186,7 +228,7 @@ const getDefaultSemanticJson = () => {
         "fontWeight": "400",
         "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
         "margin": ["0", "0", "30", "0"],
-        "text": "Crie sites profissionais para sua clínica médica em minutos, sem conhecimento técnico."
+        "text": "Demonstração prática de todos os widgets disponíveis: Container, Text, Button, Video, Cards. Sistema com JSON semântico e IDs limpos para geração via IA."
       },
       "displayName": "Text",
       "custom": {},
@@ -421,8 +463,12 @@ export const CanvasContainer: React.FC = () => {
           Text,
           CraftButton,
           Video,
+          Custom1,
+          Custom2,
+          Custom3,
           HeroSection,
-          LandingCard
+          LandingCard,
+          SpacerComponent
         }}
         enabled={true}
         onRender={RenderNode}
