@@ -23,7 +23,7 @@ export const Columns: React.FC<ColumnsProps> = ({
   className = '',
   responsiveStyles = {},
   styles = {},
-  // Columns-specific props
+  // Builder.io options
   columns = [],
   gutterSize = 32,
   stackColumnsAt = 'tablet',
@@ -32,6 +32,14 @@ export const Columns: React.FC<ColumnsProps> = ({
   justifyContent = 'flex-start',
   ...props
 }) => {
+  // Debug log para Columns
+  console.log('📦 Columns component:', { 
+    id, 
+    columnsCount: columns.length,
+    gutterSize,
+    stackColumnsAt,
+    styles: Object.keys(styles || {})
+  });
   // Gerar classes CSS baseado nas configurações
   const getResponsiveClasses = () => {
     const classes = ['editor2-columns'];
