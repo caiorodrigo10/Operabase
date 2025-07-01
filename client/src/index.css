@@ -130,13 +130,20 @@ section {
   align-items: stretch !important;
 }
 
-/* FORÇA ESPECÍFICA para features-columns */
-#features-columns {
+/* FORÇA ESPECÍFICA para features-columns - MÁXIMA ESPECIFICIDADE */
+div#features-columns.builder-columns {
   display: flex !important;
   flex-direction: row !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   align-items: stretch !important;
   width: 100% !important;
+  flex-wrap: nowrap !important;
+}
+
+/* FORÇA GLOBAL para todos os containers de colunas */
+div.builder-columns {
+  display: flex !important;
+  flex-direction: row !important;
 }
 
 /* Builder.io EXATO: Coluna individual (vertical para blocos internos) */
