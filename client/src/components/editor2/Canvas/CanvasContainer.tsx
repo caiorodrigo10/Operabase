@@ -12,8 +12,11 @@ const EditorExposer: React.FC = () => {
   }));
 
   useEffect(() => {
-    if (enabled) {
+    if (enabled && query) {
       console.log('🔧 EditorExposer: Craft.js editor initialized');
+      
+      // Store reference globally for header access
+      currentCraftEditor = { actions, query };
       
       const nodes = query.getNodes();
       const nodeIds = Object.keys(nodes);
@@ -30,7 +33,7 @@ const EditorExposer: React.FC = () => {
         }
       });
     }
-  }, [enabled, query]);
+  }, [enabled, query, actions]);
 
   return null;
 };
