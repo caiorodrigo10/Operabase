@@ -81,9 +81,10 @@ export const Columns: React.FC<ColumnsProps> = ({
     return `calc(${width}% - ${subtractWidth}px)`;
   };
 
-  // Determinar se deve empilhar colunas baseado na largura da tela
+  // Determinar se deve empilhar colunas baseado na largura da tela (Builder.io pattern)
   const shouldStack = typeof window !== 'undefined' ? 
-    (stackColumnsAt === 'tablet' ? window.innerWidth <= 991 : window.innerWidth <= 640) : false;
+    (stackColumnsAt === 'tablet' && window.innerWidth <= 991) || 
+    (stackColumnsAt === 'mobile' && window.innerWidth <= 640) : false;
 
   // CSS-in-JS Builder.io EXATO: Apenas display e height
   const containerStyles: React.CSSProperties = {
