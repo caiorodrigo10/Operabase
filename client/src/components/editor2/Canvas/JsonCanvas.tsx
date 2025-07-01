@@ -19,6 +19,26 @@ try {
 export const JsonCanvas: React.FC = () => {
   const { pageJson, isLoading, error } = usePage();
   const editor = useEditor ? useEditor() : null;
+
+  // Loading state - evita página vazia ou flicker (Builder.io style)
+  if (!pageJson) {
+    return (
+      <div 
+        style={{ 
+          padding: '40px',
+          textAlign: 'center',
+          color: '#6b7280',
+          fontSize: '16px',
+          minHeight: '400px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        Carregando página...
+      </div>
+    );
+  }
   
   // Classes do Canvas baseado no modo
   const canvasClasses = [
