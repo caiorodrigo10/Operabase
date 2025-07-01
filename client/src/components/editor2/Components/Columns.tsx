@@ -117,7 +117,6 @@ export const Columns: React.FC<ColumnsProps> = ({
     stackColumnsAt,
     windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
     isDesktop: typeof window !== 'undefined' ? window.innerWidth >= 992 : false,
-    containerStyles,
     finalContainerStyles,
     shouldStack,
     firstColumnWidth: columns.length > 0 ? getColumnWidth(0) : 'none',
