@@ -9,6 +9,12 @@ import { Container } from '../Components/Container';
 import { HeroSection } from '../Components/HeroSection';
 import { Text } from '../Components/Text';
 import { Button } from '../Components/Button';
+import { Section } from '../Components/Section';
+import { Columns } from '../Components/Columns';
+import { Image } from '../Components/Image';
+import { Video } from '../Components/Video';
+import { Spacer } from '../Components/Spacer';
+import { Divider } from '../Components/Divider';
 import { DefaultComponent } from '../Components/DefaultComponent';
 
 // Import do contexto de edição (opcional para não quebrar se não tiver)
@@ -26,6 +32,12 @@ const internalComponentMap: any = {
   HeroSection,
   Text,
   Button,
+  Section,
+  Columns,
+  Image,
+  Video,
+  Spacer,
+  Divider,
   DefaultComponent
 };
 
