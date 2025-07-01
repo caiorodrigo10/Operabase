@@ -106,16 +106,26 @@ export const JsonCanvas: React.FC = () => {
     );
   }
 
-  // Renderização principal - Builder.io style (sem wrappers desnecessários)
+  // Renderização principal - Builder.io EXATO pattern
   return (
     <div className={canvasClasses} style={{ overflow: 'visible' }}>
-      {/* Renderização direta dos blocos sem containers intermediários */}
-      {pageJson.blocks.map((block) => (
-        <RenderBlock 
-          key={block.id} 
-          block={block}
-        />
-      ))}
+      {/* Builder.io container EXATO */}
+      <div 
+        className="builder-blocks"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+        }}
+      >
+        {/* Renderização direta dos blocos no container flexbox */}
+        {pageJson.blocks.map((block) => (
+          <RenderBlock 
+            key={block.id} 
+            block={block}
+          />
+        ))}
+      </div>
     </div>
   );
 };

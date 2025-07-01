@@ -152,17 +152,8 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     });
   }
 
-  // Separar estilos do wrapper (Builder.io pattern) dos estilos do componente
-  const separateWrapperStyles = (styles: any) => {
-    const { backgroundColor, padding, margin, ...componentStyles } = styles || {};
-    
-    return {
-      wrapperStyles: { backgroundColor, padding, margin },
-      componentStyles
-    };
-  };
-
-  const { wrapperStyles, componentStyles } = separateWrapperStyles(combinedStyles);
+  // Builder.io pattern: todos os styles vão direto no componente
+  // (não há mais separação de wrapper vs component styles)
 
   // Preparar props baseado no tipo de componente
   const componentProps = (() => {
@@ -243,31 +234,17 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   // Componentes que aplicam styles direto (sem wrapper) - Builder.io pattern
   const directStyleComponents = ['Section'];
   
-  // Se não estiver em modo edição
+  // Se não estiver em modo edição - Builder.io EXATO pattern
   if (!inEditMode) {
-    // Para Section: aplicar styles direto no componente (sem wrapper)
-    if (directStyleComponents.includes(block.component.name)) {
-      return (
-        <Component 
-          {...componentProps}
-          style={combinedStyles} // Styles direto na Section
-          key={block.id}
-        >
-          {children}
-        </Component>
-      );
-    }
-    
-    // Para outros componentes: manter wrapper Builder.io
+    // Builder.io: TODOS os componentes rendem direto (sem wrapper)
     return (
-      <div className="builder-block" style={wrapperStyles}>
-        <Component 
-          {...componentProps}
-          key={block.id}
-        >
-          {children}
-        </Component>
-      </div>
+      <Component 
+        {...componentProps}
+        style={combinedStyles} // Styles direto no componente
+        key={block.id}
+      >
+        {children}
+      </Component>
     );
   }
 
