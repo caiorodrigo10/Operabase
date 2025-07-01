@@ -148,7 +148,18 @@ export default function ColecaoDetalhe() {
       if (!groupedDocs.has(baseTitle)) {
         groupedDocs.set(baseTitle, []);
       }
-      groupedDocs.get(baseTitle)!.push(doc);
+      
+      // Para documentos não-PDF, verificar se já existe um com mesmo título e tipo
+      const existingDocs = groupedDocs.get(baseTitle)!;
+      const isDuplicate = existingDocs.some(existingDoc => 
+        existingDoc.title === doc.title && 
+        existingDoc.content_type === doc.content_type &&
+        !doc.title.includes(' - Parte') // Não aplicar para chunks de PDF
+      );
+      
+      if (!isDuplicate) {
+        groupedDocs.get(baseTitle)!.push(doc);
+      }
     });
     
     // Converter grupos em itens da interface

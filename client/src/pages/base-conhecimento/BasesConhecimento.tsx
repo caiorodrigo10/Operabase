@@ -83,12 +83,18 @@ export default function BasesConhecimento() {
           group.created_at = doc.created_at;
         }
       } else {
-        // Documento individual
-        grouped.set(doc.id, {
-          ...doc,
-          chunked: false,
-          chunkCount: 1
-        });
+        // Documento individual - agrupar por título para evitar duplicados
+        const existingDoc = Array.from(grouped.values()).find(item => 
+          item.title === doc.title && item.content_type === doc.content_type
+        );
+        
+        if (!existingDoc) {
+          grouped.set(doc.id, {
+            ...doc,
+            chunked: false,
+            chunkCount: 1
+          });
+        }
       }
     }
     
@@ -197,11 +203,7 @@ export default function BasesConhecimento() {
     const groupedItems = groupDocuments(allDocuments, base.id);
     const itemCount = groupedItems.length;
     
-    console.log(`🔍 Base ${base.id} (${base.name}): ${itemCount} itens agrupados de ${allDocuments.length} documentos totais`);
-    console.log('📄 Todos documentos:', allDocuments.map(doc => ({ id: doc.id, title: doc.title, kb_id: doc.knowledge_base_id })));
-    if (itemCount > 0) {
-      console.log('📄 Itens agrupados:', groupedItems.map(item => ({ title: item.title, type: item.content_type })));
-    }
+
     
     return {
       id: base.id,
