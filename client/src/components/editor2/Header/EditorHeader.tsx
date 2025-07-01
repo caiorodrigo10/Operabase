@@ -77,7 +77,47 @@ export const EditorHeader: React.FC = () => {
         const craftJson = craftEditor.query.serialize();
         const formattedJson = JSON.stringify(craftJson, null, 2);
         setJsonContent(formattedJson);
+        
         console.log('📄 Craft.js JSON exported:', Object.keys(craftJson));
+        
+        // DEBUG: Log detailed structure
+        console.log('🔍 JSON Keys (should include semantic IDs):', Object.keys(craftJson));
+        
+        // DEBUG: Check for semantic IDs
+        const semanticIds = Object.keys(craftJson).filter(key => 
+          key.includes('hero') || key.includes('cta') || key.includes('feature') || key.includes('section')
+        );
+        console.log('🎯 Found semantic IDs:', semanticIds);
+        
+        // DEBUG: Check ROOT structure
+        if (craftJson.ROOT) {
+          console.log('🏠 ROOT node structure:', {
+            type: craftJson.ROOT.type,
+            props: Object.keys(craftJson.ROOT.props || {}),
+            nodes: craftJson.ROOT.nodes || [],
+            linkedNodes: craftJson.ROOT.linkedNodes || {}
+          });
+        }
+        
+        // DEBUG: Look for our custom IDs in the entire structure
+        Object.entries(craftJson).forEach(([key, value]) => {
+          if (value && typeof value === 'object' && value.custom?.displayName) {
+            console.log(`🏷️ Node ${key}:`, {
+              displayName: value.custom.displayName,
+              type: value.type?.resolvedName,
+              hasCustomId: !!value.props?.id,
+              actualId: value.props?.id
+            });
+          }
+        });
+        
+        // 🎯 TRANSFORM JSON: Replace random IDs with semantic IDs
+        const semanticJson = transformToSemanticJson(craftJson);
+        console.log('🎯 Transformed semantic JSON:', Object.keys(semanticJson));
+        
+        // Use semantic JSON instead of raw Craft.js JSON
+        const semanticFormattedJson = JSON.stringify(semanticJson, null, 2);
+        setJsonContent(semanticFormattedJson);
       } else {
         // Fallback to legacy system
         const pageJson = serializeToJSON();

@@ -96,6 +96,21 @@ const EditorExposer: React.FC = () => {
   
   useEffect(() => {
     currentCraftEditor = editor;
+    console.log('🔧 EditorExposer: Craft.js editor initialized');
+    
+    // DEBUG: Log current nodes when editor is ready
+    if (editor && editor.query) {
+      const nodes = editor.query.getNodes();
+      console.log('🔧 EditorExposer: Current nodes at init:', Object.keys(nodes));
+      
+      // Look for elements with our semantic IDs
+      Object.entries(nodes).forEach(([nodeId, node]) => {
+        if (node.data?.props?.id) {
+          console.log(`🏷️ EditorExposer: Found element with custom ID: ${nodeId} -> ${node.data.props.id}`);
+        }
+      });
+    }
+    
     return () => {
       currentCraftEditor = null;
     };
@@ -458,6 +473,7 @@ export const CanvasContainer: React.FC = () => {
                   color={{ r: 255, g: 255, b: 255, a: 1 }}
                   margin={['0', '0', '20', '0']}
                   text="Transforme Sua Clínica Digital"
+                  custom={{ displayName: 'Hero Title', semanticId: 'hero-title' }}
                 />
                 
                 <Element
