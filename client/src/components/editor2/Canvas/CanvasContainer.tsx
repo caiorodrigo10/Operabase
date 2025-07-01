@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { Editor, Frame, Element, useEditor } from '@craftjs/core';
 
 // Import simplified Craft.js components
-import { Container, Text, Button, Video } from '../../craft/simple';
+import { Container, Text, Button, Video, HeroSection, LandingCard } from '../../craft/simple';
+import { RenderNode } from '../../craft/editor/RenderNode';
 
 // Global reference to current Craft.js editor
 let currentCraftEditor: any = null;
@@ -33,59 +34,113 @@ export const CanvasContainer: React.FC = () => {
           Container,
           Text,
           Button,
-          Video
+          Video,
+          HeroSection,
+          LandingCard
         }}
         enabled={true}
+        onRender={RenderNode}
       >
         <EditorExposer />
         {/* Canvas Background */}
         <div 
-          className="min-h-full bg-gray-50"
+          className="min-h-full bg-gray-50 page-container"
           style={{ backgroundColor: '#f8f9fa' }}
         >
           {/* Craft.js Frame - Editable Area */}
           <Frame>
             <Element
+              id="ROOT"
               is={Container}
-              custom={{ displayName: 'App' }}
+              custom={{ displayName: 'Landing Page' }}
               canvas
-              style={{
-                minHeight: '400px',
-                padding: '20px'
-              }}
+              background={{ r: 255, g: 255, b: 255, a: 1 }}
+              padding={['0', '0', '0', '0']}
+              margin={['0', '0', '0', '0']}
+              borderRadius={0}
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="flex-start"
+              width="100%"
+              height="auto"
             >
-              {/* Initial Content */}
+              {/* Hero Section */}
               <Element
-                is={Text}
-                text="Welcome to the Page Builder"
-                fontSize="28px"
-                fontWeight="600"
-                textAlign="center"
-                margin="0px 0px 20px 0px"
-                tag="h1"
-              />
+                id="hero-section"
+                is={HeroSection}
+                custom={{ displayName: 'Hero Principal' }}
+                canvas
+                background={{ r: 37, g: 99, b: 235, a: 1 }}
+                padding={['60', '40', '60', '40']}
+                margin={['0', '0', '0', '0']}
+                minHeight="300px"
+              >
+                {/* Hero Title */}
+                <Element
+                  id="hero-title"
+                  is={Text}
+                  text="Transforme Sua Clínica Digital"
+                  fontSize="42"
+                  fontWeight="700"
+                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  textAlign="center"
+                  margin={['0', '0', '20', '0']}
+                  shadow={0}
+                  tag="h1"
+                />
+                
+                <Element
+                  id="hero-subtitle"
+                  is={Text}
+                  text="Crie sites profissionais para sua clínica médica em minutos, sem conhecimento técnico."
+                  fontSize="18"
+                  fontWeight="400"
+                  color={{ r: 255, g: 255, b: 255, a: 1 }}
+                  textAlign="center"
+                  margin={['0', '0', '30', '0']}
+                  shadow={0}
+                  tag="p"
+                />
+              </Element>
               
+              {/* Features Section */}
               <Element
-                is={Text}
-                text="Start building your page by adding components from the widgets panel."
-                fontSize="16px"
-                textAlign="center"
-                margin="0px 0px 30px 0px"
-                color="#666666"
-              />
-              
-              <Element
-                is={Button}
-                text="Get Started"
-                backgroundColor="#3b82f6"
-                color="#ffffff"
-                padding="14px 28px"
-                margin="10px auto"
-                borderRadius="8px"
-                fontSize="16px"
-                fontWeight="500"
-                width="auto"
-              />
+                id="features-section"
+                is={Container}
+                custom={{ displayName: 'Funcionalidades' }}
+                canvas
+                background={{ r: 248, g: 250, b: 252, a: 1 }}
+                padding={['40', '20', '40', '20']}
+                margin={['0', '0', '0', '0']}
+                flexDirection="row"
+                alignItems="flex-start"
+                justifyContent="center"
+                width="100%"
+              >
+                <Element
+                  id="feature-1"
+                  is={LandingCard}
+                  custom={{ displayName: 'Feature 1' }}
+                  canvas
+                  background={{ r: 255, g: 255, b: 255, a: 1 }}
+                  padding={30}
+                  margin={['10', '10', '10', '10']}
+                  borderRadius={8}
+                  shadow={2}
+                >
+                  <Element
+                    id="feature-1-title"
+                    is={Text}
+                    text="🚀 Criação Rápida"
+                    fontSize="20"
+                    fontWeight="600"
+                    color={{ r: 37, g: 99, b: 235, a: 1 }}
+                    textAlign="center"
+                    margin={['0', '0', '15', '0']}
+                    tag="h3"
+                  />
+                </Element>
+              </Element>
             </Element>
           </Frame>
         </div>
