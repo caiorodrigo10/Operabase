@@ -109,6 +109,23 @@ export const Columns: React.FC<ColumnsProps> = ({
     console.log('🏗️ Columns component received:', { id, columns: columns.length, firstColumn: columns[0] });
   }
 
+  // 🚨 DIAGNÓSTICO CRÍTICO: Debug estrutura completa
+  console.log('🚨 COLUMNS DEBUG FULL:', {
+    id,
+    columnsLength: columns.length,
+    gutterSize,
+    stackColumnsAt,
+    windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
+    isDesktop: typeof window !== 'undefined' ? window.innerWidth >= 992 : false,
+    combinedStyles,
+    finalStyles,
+    getResponsiveClasses: getResponsiveClasses(),
+    className,
+    fullClassName: `${getResponsiveClasses()} ${className}`.trim(),
+    firstColumnWidth: columns.length > 0 ? getColumnWidth(columns[0]) : 'none',
+    firstColumnBlocks: columns.length > 0 ? columns[0].blocks?.length : 0
+  });
+
   return (
     <div
       id={id}
@@ -124,6 +141,13 @@ export const Columns: React.FC<ColumnsProps> = ({
           flexDirection: 'column' as const,
           alignItems: 'stretch'
         };
+
+        console.log(`🔹 Column ${index + 1}/${columns.length}:`, {
+          width: getColumnWidth(column),
+          marginLeft: columnStyles.marginLeft,
+          flex: columnStyles.flex,
+          blocksCount: column.blocks?.length || 0
+        });
 
         return (
           <div
