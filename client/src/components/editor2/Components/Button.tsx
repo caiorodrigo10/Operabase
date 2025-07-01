@@ -78,6 +78,7 @@ export const Button: React.FC<ButtonProps> = ({
     cursor: 'pointer',
     display: 'inline-block',
     fontSize: '16px',
+    width: 'auto', // Builder.io default - NÃO ocupar largura total
     fontWeight: '500',
     textAlign: 'center' as const,
     textDecoration: 'none',
