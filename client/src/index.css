@@ -82,19 +82,8 @@ section {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Editor2 Canvas: Comportamento visual de colunas e grid */
-.editor2-columns {
-  display: flex;
-  gap: 24px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.editor2-column {
-  flex: 1;
-  box-sizing: border-box;
-  overflow: hidden;
-}
+/* Editor2 Canvas: Comportamento visual de colunas e grid - REMOVIDO CONFLITO COM BUILDER.IO */
+/* Estilos movidos para editor2.css para precedência correta */
 
 /* Canvas responsivo - Grid visual opcional */
 .canvas-with-grid {
