@@ -40,16 +40,56 @@ export function PageProvider({ children }: PageProviderProps) {
     setError(newError);
   };
 
-  // Efeito para carregar JSON padrão automaticamente (Builder.io style)
+  // Função para salvar JSON no localStorage (Builder.io style auto-save)
+  const savePageJson = (newPageJson: PageJSON) => {
+    try {
+      localStorage.setItem('editor2-page-json', JSON.stringify(newPageJson, null, 2));
+      setPageJson(newPageJson);
+      setError(null);
+      console.log('✅ PageProvider: JSON saved to localStorage');
+      return true;
+    } catch (error) {
+      console.error('❌ PageProvider: Error saving JSON:', error);
+      setError('Erro ao salvar JSON');
+      return false;
+    }
+  };
+
+  // Função para resetar ao template padrão
+  const resetToDefault = () => {
+    localStorage.removeItem('editor2-page-json');
+    setPageJson(mockPageJson as PageJSON);
+    setError(null);
+    console.log('🔄 PageProvider: Reset to default template');
+  };
+
+  // Efeito para carregar JSON do localStorage ou usar padrão (Builder.io style)
   useEffect(() => {
     console.log('🚀 PageProvider: Carregando página automaticamente...');
-    setPageJson(mockPageJson as PageJSON);
+    
+    try {
+      const savedJson = localStorage.getItem('editor2-page-json');
+      if (savedJson) {
+        const parsed = JSON.parse(savedJson);
+        setPageJson(parsed as PageJSON);
+        console.log('📄 PageProvider: Loaded from localStorage');
+      } else {
+        setPageJson(mockPageJson as PageJSON);
+        console.log('📄 PageProvider: Using default template');
+      }
+    } catch (error) {
+      console.error('❌ PageProvider: Error loading from localStorage:', error);
+      setPageJson(mockPageJson as PageJSON);
+      setError('Erro ao carregar JSON');
+    }
   }, []);
 
   // Valor do contexto
   const contextValue: PageContextType = {
     pageJson,
     setPageJson: handleSetPageJson,
+    savePageJson,
+    resetToDefault,
     isLoading,
     setIsLoading,
     error,

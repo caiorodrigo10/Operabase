@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Code } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { JsonEditorModal } from '../Modal/JsonEditorModal';
 
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [, setLocation] = useLocation();
 
   const handleBackClick = () => {
@@ -26,7 +28,13 @@ export const EditorHeader: React.FC = () => {
 
   const handleCodeClick = () => {
     console.log('Opening JSON editor');
-    // Implement JSON modal/dialog functionality
+    setIsJsonModalOpen(true);
+  };
+
+  const handleJsonSave = (json: any) => {
+    console.log('📄 JSON saved from modal:', json);
+    // Here we would typically trigger a page re-render or update context
+    // For now, we'll just log the successful save
   };
 
   return (
@@ -104,6 +112,13 @@ export const EditorHeader: React.FC = () => {
           <Settings size={18} />
         </button>
       </div>
+
+      {/* JSON Editor Modal */}
+      <JsonEditorModal
+        isOpen={isJsonModalOpen}
+        onClose={() => setIsJsonModalOpen(false)}
+        onSave={handleJsonSave}
+      />
     </div>
   );
 };

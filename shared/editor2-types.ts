@@ -41,6 +41,8 @@ export interface PageJSON {
 export interface PageContextType {
   pageJson: PageJSON | null;
   setPageJson: (pageJson: PageJSON | null) => void;
+  savePageJson: (pageJson: PageJSON) => boolean;
+  resetToDefault: () => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   error: string | null;
