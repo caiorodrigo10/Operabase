@@ -347,9 +347,14 @@ export const EditorHeader: React.FC = () => {
         <button 
           className="header-button reset-button"
           onClick={() => {
+            // Clear all possible localStorage keys
             localStorage.removeItem('editor2_craft_state');
             localStorage.removeItem('editor2_page_state');
-            window.location.reload();
+            localStorage.removeItem('craft-state');
+            localStorage.clear();
+            
+            // Force reload with cache bypass
+            window.location.href = window.location.href;
           }}
           title="Reset Template - Carregar Template Padrão"
           style={{ 

@@ -643,11 +643,28 @@ export const getCurrentCraftEditor = () => currentCraftEditor;
 export const CanvasContainer: React.FC = () => {
   const [initialJson, setInitialJson] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [forceTemplate, setForceTemplate] = useState(false);
+
+  // Check if force template is requested via URL or local flag
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('force') === 'true' || window.location.hash === '#force') {
+      setForceTemplate(true);
+    }
+  }, []);
 
   // Load saved state from server BEFORE Frame renders (same pattern as Editor Landing)
   useEffect(() => {
     const loadPageData = async () => {
       try {
+        // If force template is requested, skip server load completely
+        if (forceTemplate) {
+          console.log('📂 Editor2 FORCE MODE: Using new template with video');
+          setInitialJson(JSON.stringify(getDefaultSemanticJson()));
+          setIsLoading(false);
+          return;
+        }
+
         // First try to load from server
         const response = await fetch('/api/load-page-json/editor2');
         const result = await response.json();
@@ -658,30 +675,22 @@ export const CanvasContainer: React.FC = () => {
           console.log('📂 Editor2 loading from server');
           setInitialJson(result.data);
         } else {
-          // Fallback to localStorage if not on server
-          const savedState = localStorage.getItem('editor2_craft_state');
-          if (savedState) {
-            console.log('📂 Editor2 loading from localStorage (fallback)');
-            setInitialJson(savedState);
-          } else {
-            console.log('📂 Editor2 using default semantic structure');
-          }
+          // Always use the new template with video when no server data
+          console.log('📂 Editor2 using NEW default semantic structure with video');
+          setInitialJson(JSON.stringify(getDefaultSemanticJson()));
         }
       } catch (error) {
         console.error('Error loading page data:', error);
-        // Fallback to localStorage on error
-        const savedState = localStorage.getItem('editor2_craft_state');
-        if (savedState) {
-          console.log('📂 Editor2 loading from localStorage (error)');
-          setInitialJson(savedState);
-        }
+        // Force new template on error
+        console.log('📂 Editor2 using NEW default template (error fallback)');
+        setInitialJson(JSON.stringify(getDefaultSemanticJson()));
       } finally {
         setIsLoading(false);
       }
     };
     
     loadPageData();
-  }, []);
+  }, [forceTemplate]);
 
   if (isLoading) {
     return (
@@ -717,7 +726,7 @@ export const CanvasContainer: React.FC = () => {
           style={{ backgroundColor: '#f8f9fa' }}
         >
           {/* Craft.js Frame - CLEAN PATTERN with FORCED Semantic IDs */}
-          <Frame data={initialJson || undefined}>
+          <Frame data={initialJson || JSON.stringify(getDefaultSemanticJson())}>
             <Element
               canvas
               is={Container}
