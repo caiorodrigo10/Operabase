@@ -92,21 +92,24 @@ export const mockPageJson = {
                 name: 'Button',
                 options: {
                   text: 'Começar Agora',
-                  href: '/dashboard'
+                  href: '/dashboard',
+                  variant: 'primary'
                 }
               },
               styles: {
-                backgroundColor: '#10b981',
-                color: 'white',
+                backgroundColor: '#ffffff',
+                color: '#1f2937',
                 padding: '16px 32px',
                 fontSize: '18px',
                 fontWeight: '600',
                 borderRadius: '8px',
-                border: 'none',
+                border: '2px solid #ffffff',
                 cursor: 'pointer',
                 display: 'block',
                 margin: '0 auto',
-                width: 'fit-content'
+                width: 'fit-content',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s ease'
               }
             }
           ]
