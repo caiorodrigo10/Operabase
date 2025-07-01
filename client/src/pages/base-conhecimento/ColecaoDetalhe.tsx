@@ -465,52 +465,27 @@ export default function ColecaoDetalhe() {
     }
   };
 
-  // Mutation para deletar documento individual ou chunks de PDF
+  // Mutation para deletar documento (backend automaticamente lida com chunks de PDF)
   const deleteDocumentMutation = useMutation({
     mutationFn: async (item: KnowledgeItem) => {
-      // Se é um PDF chunked, deletar todos os chunks
-      if (item.chunked && item.originalDocs) {
-        const deletePromises = item.originalDocs.map(doc => 
-          fetch(`/api/rag/documents/${doc.id}`, {
-            method: 'DELETE'
-          })
-        );
-        
-        const responses = await Promise.all(deletePromises);
-        
-        // Verificar se todas as deleções foram bem-sucedidas
-        for (const response of responses) {
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Falha ao deletar parte do documento');
-          }
-        }
-        
-        return { deletedCount: responses.length };
-      } else {
-        // Deletar documento individual
-        const response = await fetch(`/api/rag/documents/${item.id}`, {
-          method: 'DELETE'
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Falha ao deletar documento');
-        }
-        return response.json();
+      const response = await fetch(`/api/rag/documents/${item.id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao deletar documento');
       }
+      
+      return response.json();
     },
-    onSuccess: (data, item) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/rag/documents'] });
       queryClient.invalidateQueries({ queryKey: ['/api/rag/knowledge-bases'] });
       
-      const message = item.chunked 
-        ? `PDF e suas ${item.chunkCount} partes deletados com sucesso`
-        : "Documento deletado com sucesso";
-      
       toast({
         title: "Sucesso",
-        description: message,
+        description: data.message || "Documento removido com sucesso",
       });
     },
     onError: (error) => {
@@ -1022,14 +997,9 @@ export default function ColecaoDetalhe() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {itemToDelete?.chunked ? 'Deletar PDF' : 'Deletar Documento'}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              {itemToDelete?.chunked 
-                ? `Tem certeza que deseja deletar o PDF "${itemToDelete.title}" e suas ${itemToDelete.chunkCount} partes? Esta ação é irreversível e removerá todas as partes do documento e seus embeddings associados.`
-                : `Tem certeza que deseja deletar o documento "${itemToDelete?.title}"? Esta ação é irreversível e removerá o documento e seus embeddings associados.`
-              }
+              Tem certeza que deseja deletar "{itemToDelete?.title}"? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1038,7 +1008,7 @@ export default function ColecaoDetalhe() {
               onClick={confirmDeleteDocument}
               className="bg-red-600 hover:bg-red-700"
             >
-              {itemToDelete?.chunked ? `Deletar PDF (${itemToDelete.chunkCount} partes)` : 'Deletar'}
+              Deletar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

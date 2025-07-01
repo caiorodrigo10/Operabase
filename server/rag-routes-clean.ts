@@ -919,10 +919,95 @@ router.delete('/documents/:id', ragAuth, async (req: Request, res: Response) => 
     
     console.log('🗑️ RAG: Remoção solicitada:', { id, clinic_id });
 
-    res.json({
-      success: true,
-      message: "Funcionalidade de remoção RAG - estrutura oficial LangChain"
+    // Verificar se o documento existe e pertence à clínica
+    const documentResult = await db.execute(sql`
+      SELECT id, metadata, content
+      FROM documents 
+      WHERE id = ${parseInt(id)}
+        AND clinic_id = ${clinic_id}
+    `);
+
+    if (!documentResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        error: 'Documento não encontrado'
+      });
+    }
+
+    const doc = documentResult.rows[0] as any;
+    const metadata = doc.metadata || {};
+    const isChunkedPdf = metadata.source === 'pdf_chunk';
+    
+    console.log('📄 RAG: Documento encontrado:', {
+      id: doc.id,
+      title: metadata.title,
+      source: metadata.source,
+      isChunkedPdf
     });
+
+    // Se for um chunk de PDF, remover todos os chunks do mesmo PDF
+    if (isChunkedPdf) {
+      // Extrair o título base do PDF removendo " - Parte X"
+      const pdfBaseTitle = metadata.title.replace(/ - Parte \d+$/, '');
+      console.log('🗂️ RAG: Removendo PDF completo:', pdfBaseTitle);
+      
+      // Buscar todos os chunks do mesmo PDF usando o título base
+      const chunksResult = await db.execute(sql`
+        SELECT id, metadata
+        FROM documents 
+        WHERE clinic_id = ${clinic_id}
+          AND metadata->>'source' = 'pdf_chunk'
+          AND (metadata->>'title' LIKE ${pdfBaseTitle + ' - Parte %'} OR metadata->>'title' = ${pdfBaseTitle})
+      `);
+
+      const chunkIds = chunksResult.rows.map((row: any) => parseInt(row.id));
+      console.log('📋 RAG: Chunks encontrados para remoção:', chunkIds);
+
+      // Remover todos os chunks
+      for (const chunkId of chunkIds) {
+        await db.execute(sql`
+          DELETE FROM documents 
+          WHERE id = ${chunkId}
+            AND clinic_id = ${clinic_id}
+        `);
+      }
+
+      console.log('✅ RAG: PDF completo removido:', {
+        pdf_base_title: pdfBaseTitle,
+        chunks_removed: chunkIds.length
+      });
+
+      res.json({
+        success: true,
+        message: `PDF "${pdfBaseTitle}" removido com sucesso`,
+        data: {
+          removed_items: chunkIds.length,
+          type: 'pdf_complete'
+        }
+      });
+
+    } else {
+      // Remover documento único
+      await db.execute(sql`
+        DELETE FROM documents 
+        WHERE id = ${parseInt(id)}
+          AND clinic_id = ${clinic_id}
+      `);
+
+      console.log('✅ RAG: Documento único removido:', {
+        id: doc.id,
+        title: metadata.title
+      });
+
+      res.json({
+        success: true,
+        message: `Documento "${metadata.title || 'Sem título'}" removido com sucesso`,
+        data: {
+          removed_items: 1,
+          type: 'single_document'
+        }
+      });
+    }
 
   } catch (error) {
     console.error('❌ RAG: Erro ao remover:', error);
