@@ -124,6 +124,17 @@ export const Columns: React.FC<ColumnsProps> = ({
     firstColumnBlocks: columns.length > 0 ? columns[0].blocks?.length : 0
   });
 
+  // Debug DOM e CSS para detectar conflitos
+  console.log('🔍 CONTAINER STYLES DEBUG:', {
+    id,
+    className: 'builder-columns',
+    finalContainerStyles,
+    display: finalContainerStyles.display,
+    flexDirection: finalContainerStyles.flexDirection || 'row (default)',
+    shouldStack,
+    windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0
+  });
+
   return (
     <div
       id={id}
