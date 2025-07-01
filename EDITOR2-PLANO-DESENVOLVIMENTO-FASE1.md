@@ -16,13 +16,13 @@ Transformar o Editor2 atual em um sistema capaz de gerar landing pages automatic
 
 ### Estado Atual do Sistema
 - ✅ Interface Editor2 com layout em grid (header, sidebar, toolbar, canvas)
-- ✅ Sistema Craft.js híbrido implementado
-- ✅ Preview funcional com JSON semântico
-- ✅ Componentes base existentes (Container, Text, Button, Video, etc.)
-- ❌ **Falta**: Sistema de renderização por JSON puro (sem Craft.js)
+- ✅ Estrutura básica de arquivos e CSS
+- ❌ **Falta**: Sistema de renderização por JSON puro (estrutura completamente nova)
 - ❌ **Falta**: PageProvider com Context API
 - ❌ **Falta**: RenderBlock recursivo
 - ❌ **Falta**: componentMap para mapeamento
+- ❌ **Falta**: Componentes base para renderização JSON
+- ❌ **Falta**: Sistema de preview baseado em JSON
 
 ---
 
@@ -99,12 +99,12 @@ export const componentMap = {
 };
 ```
 
-#### 4. **Canvas Atualizado**
+#### 4. **Canvas Completamente Novo**
 - **Função**: Área de preview que lê `pageJson` e renderiza via `RenderBlock`
-- **Modificação**: `client/src/components/editor2/Canvas/CanvasArea.tsx`
+- **Criação**: `client/src/components/editor2/Canvas/JsonCanvas.tsx` (NOVO)
 
 ```tsx
-function Canvas() {
+function JsonCanvas() {
   const { pageJson } = usePage();
   
   if (!pageJson) {
@@ -207,17 +207,18 @@ function Canvas() {
 4. Implementar renderização de children com keys corretas
 5. Testar renderização aninhada
 
-### **ETAPA 4: Atualização do Canvas**
+### **ETAPA 4: Criação do Canvas JSON**
 **Tempo estimado**: 1-2 horas
-**Arquivos a modificar**:
-- 🔧 `client/src/components/editor2/Canvas/CanvasArea.tsx`
+**Arquivos a criar**:
+- ✨ `client/src/components/editor2/Canvas/JsonCanvas.tsx` (NOVO)
 
 **Tarefas**:
-1. Remover dependência atual do Craft.js temporariamente
+1. Criar componente JsonCanvas completamente novo
 2. Integrar com usePage() hook
 3. Renderizar RenderBlock quando pageJson disponível
 4. Implementar estado vazio elegante
 5. Adicionar loading states
+6. Substituir canvas atual no EditorLayout
 
 ### **ETAPA 5: JSON Mock e Testes**
 **Tempo estimado**: 1-2 horas
@@ -297,10 +298,10 @@ function Canvas() {
 
 ## ⚠️ Considerações Técnicas
 
-### Compatibilidade
-- Manter sistema Craft.js atual em paralelo
-- Não quebrar preview existente
-- Transição gradual para novo sistema
+### Arquitetura Completamente Nova
+- Sistema independente baseado puramente em JSON
+- Não há dependência do sistema Craft.js existente
+- Estrutura de componentes criada do zero
 
 ### Performance
 - React.memo nos componentes base
@@ -308,9 +309,9 @@ function Canvas() {
 - Debounce em atualizações de JSON
 
 ### Arquitetura
-- Separação clara entre renderização JSON e Craft.js
+- Sistema puro de renderização JSON
 - Interfaces TypeScript bem definidas
-- Sistema de fallback robusto
+- Sistema de fallback robusto para componentes não encontrados
 
 ---
 
