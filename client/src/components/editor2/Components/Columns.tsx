@@ -116,8 +116,7 @@ export const Columns: React.FC<ColumnsProps> = ({
               return (
                 <RenderBlock
                   key={block.id || `${index}-${blockIndex}`}
-                  blockId={block.id || `${index}-${blockIndex}`}
-                  blockData={block}
+                  block={block}
                 />
               );
             })}

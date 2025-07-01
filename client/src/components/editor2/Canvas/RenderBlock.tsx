@@ -45,10 +45,30 @@ const internalComponentMap: any = {
   DefaultComponent
 };
 
-// Função auxiliar para calcular estilos responsivos (placeholder por enquanto)
+// Sistema de breakpoints Builder.io style
+const BREAKPOINTS = {
+  large: 1024, // desktop
+  medium: 768, // tablet  
+  small: 0    // mobile
+};
+
+// Função para calcular estilos responsivos
 function calculateResponsiveStyles(responsiveStyles?: any): React.CSSProperties {
-  // Por enquanto retorna vazio, será implementado futuramente
-  // TODO: Implementar lógica de breakpoints mobile/tablet/desktop
+  if (!responsiveStyles || typeof window === 'undefined') {
+    return {};
+  }
+
+  const width = window.innerWidth;
+  
+  // Determinar breakpoint atual (precedência: large > medium > small)
+  if (width >= BREAKPOINTS.large && responsiveStyles.large) {
+    return responsiveStyles.large;
+  } else if (width >= BREAKPOINTS.medium && responsiveStyles.medium) {
+    return responsiveStyles.medium;
+  } else if (width < BREAKPOINTS.medium && responsiveStyles.small) {
+    return responsiveStyles.small;
+  }
+  
   return {};
 }
 
@@ -101,9 +121,11 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     );
   }
 
-  // Combinar estilos conforme sugestão do GPT
+  // Sistema de precedência Builder.io: responsiveStyles > styles > options
   const combinedStyles: React.CSSProperties = {
+    // 1. Estilos base do bloco (menor precedência)
     ...(block.styles || {}),
+    // 2. Estilos responsivos (maior precedência)
     ...(calculateResponsiveStyles(block.responsiveStyles))
   };
 
