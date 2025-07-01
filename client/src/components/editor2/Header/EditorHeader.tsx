@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Settings, Save, Code, Eye, ExternalLink } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useEditor2Store } from '../../../stores/editor2Store';
+import { useEditor } from '@craftjs/core';
 
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
@@ -66,15 +67,17 @@ export const EditorHeader: React.FC = () => {
     }
   };
 
-  const { craftjsQuery } = useEditor2Store();
+  const { enabled, query, actions } = useEditor();
 
   const handleViewJson = () => {
-    if (craftjsQuery) {
-      // Use Craft.js serialization
-      const craftJson = craftjsQuery.serialize();
+    try {
+      // Use Craft.js serialization directly
+      const craftJson = query.serialize();
       const formattedJson = JSON.stringify(craftJson, null, 2);
       setJsonContent(formattedJson);
-    } else {
+      console.log('📄 Craft.js JSON exported:', craftJson);
+    } catch (error) {
+      console.error('❌ Failed to serialize Craft.js:', error);
       // Fallback to legacy system
       const pageJson = serializeToJSON();
       const formattedJson = JSON.stringify(pageJson, null, 2);
@@ -88,9 +91,9 @@ export const EditorHeader: React.FC = () => {
     try {
       const parsedJson = JSON.parse(jsonContent);
       
-      if (craftjsQuery && craftjsQuery.deserialize) {
-        // Use Craft.js deserialization
-        craftjsQuery.deserialize(parsedJson);
+      if (enabled && actions) {
+        // Use Craft.js deserialization directly
+        actions.deserialize(parsedJson);
         console.log('✅ JSON applied to Craft.js Canvas');
       } else {
         // Fallback to legacy system
