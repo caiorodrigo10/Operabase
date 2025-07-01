@@ -376,6 +376,7 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
   metadata: z.object({
     clinic_id: z.number().min(1, "clinic_id é obrigatório"),
     knowledge_base_id: z.number().optional(),
+    livia_configuration_id: z.number().optional(), // ID da configuração da Livia
     document_title: z.string().optional(),
     source: z.string().optional(),
     chunk_index: z.number().optional(),

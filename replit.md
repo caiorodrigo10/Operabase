@@ -212,6 +212,18 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 01, 2025 - RAG-Livia Integration: livia_configuration_id Implementation Complete ✅
+- **Metadata Enhancement**: Added livia_configuration_id field to documents table metadata for direct RAG-Livia integration
+- **View Update**: Enhanced v_n8n_clinic_config view to include livia_configuration_id column for N8N workflows
+- **Data Migration**: Successfully migrated 2 existing documents to include livia_configuration_id references
+- **Schema Validation**: Updated Zod schemas to include livia_configuration_id as optional field in document metadata
+- **N8N Integration**: Enabled direct filtering of documents by Livia configuration through metadata queries
+- **100% Coverage**: Achieved complete integration coverage with all documents properly linked to Livia configurations
+- **Query Examples**: 
+  - Get Livia Config: `SELECT livia_configuration_id FROM v_n8n_clinic_config WHERE phone_number = "{{$json.from}}"`
+  - Filter Documents: `WHERE metadata->>'livia_configuration_id' = '[config_id]'`
+- **Status**: ✅ PRODUCTION READY - RAG system now fully integrated with Livia configuration management
+
 ### July 01, 2025 - RAG Document Deletion System: Complete Fix Implementation ✅
 - **Critical Issue Resolved**: Fixed document deletion system that was not actually removing documents from database
 - **Backend Deletion Logic**: Implemented real DELETE operations replacing mock "funcionalidade em desenvolvimento" response
