@@ -122,6 +122,12 @@ interface EditorState {
   deserializeFromJSON: (json: Editor2PageJSON) => void;
   loadPageFromServer: () => Promise<boolean>;
   savePageToServer: () => Promise<boolean>;
+  
+  // Craft.js Integration
+  craftjsQuery: any;
+  craftjsActions: any;
+  setCraftjsQuery: (query: any) => void;
+  setCraftjsActions: (actions: any) => void;
 }
 
 export const useEditor2Store = create<EditorState>((set, get) => ({
@@ -702,5 +708,18 @@ export const useEditor2Store = create<EditorState>((set, get) => ({
       console.error('Error saving Editor2 page:', error);
       return false;
     }
+  },
+
+  // Craft.js Integration state
+  craftjsQuery: null,
+  craftjsActions: null,
+
+  // Craft.js Integration functions
+  setCraftjsQuery: (query: any) => {
+    set({ craftjsQuery: query });
+  },
+
+  setCraftjsActions: (actions: any) => {
+    set({ craftjsActions: actions });
   },
 }));

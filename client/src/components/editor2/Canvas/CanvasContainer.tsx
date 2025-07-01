@@ -17,6 +17,7 @@ export const CanvasContainer: React.FC = () => {
         }}
         enabled={true}
       >
+        <EditorConnector />
         {/* Canvas Background */}
         <div 
           className="min-h-full bg-gray-50"

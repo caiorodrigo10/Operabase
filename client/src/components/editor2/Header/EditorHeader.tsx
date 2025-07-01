@@ -66,10 +66,20 @@ export const EditorHeader: React.FC = () => {
     }
   };
 
+  const { craftjsQuery } = useEditor2Store();
+
   const handleViewJson = () => {
-    const pageJson = serializeToJSON();
-    const formattedJson = JSON.stringify(pageJson, null, 2);
-    setJsonContent(formattedJson);
+    if (craftjsQuery) {
+      // Use Craft.js serialization
+      const craftJson = craftjsQuery.serialize();
+      const formattedJson = JSON.stringify(craftJson, null, 2);
+      setJsonContent(formattedJson);
+    } else {
+      // Fallback to legacy system
+      const pageJson = serializeToJSON();
+      const formattedJson = JSON.stringify(pageJson, null, 2);
+      setJsonContent(formattedJson);
+    }
     setIsEditing(false);
     setShowJsonModal(true);
   };
@@ -77,9 +87,18 @@ export const EditorHeader: React.FC = () => {
   const handleSaveJson = () => {
     try {
       const parsedJson = JSON.parse(jsonContent);
-      deserializeFromJSON(parsedJson);
+      
+      if (craftjsQuery && craftjsQuery.deserialize) {
+        // Use Craft.js deserialization
+        craftjsQuery.deserialize(parsedJson);
+        console.log('✅ JSON applied to Craft.js Canvas');
+      } else {
+        // Fallback to legacy system
+        deserializeFromJSON(parsedJson);
+        console.log('✅ JSON applied to Editor2');
+      }
+      
       setShowJsonModal(false);
-      console.log('✅ JSON applied to Editor2');
     } catch (error) {
       console.error('❌ Invalid JSON:', error);
       alert('Erro: JSON inválido. Verifique a sintaxe.');
