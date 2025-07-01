@@ -120,6 +120,26 @@ section {
   box-sizing: border-box;
 }
 
+/* Builder.io EXATO: Container de colunas (horizontal) */
+.builder-columns {
+  display: flex;
+  height: 100%;
+}
+
+/* Builder.io EXATO: Coluna individual (vertical para blocos internos) */
+.builder-column {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  line-height: normal;
+}
+
+/* Builder.io EXATO: Builder blocks dentro da coluna */
+.builder-column > .builder-blocks {
+  flex-grow: 1;
+}
+
+/* Legacy: manter compatibilidade */
 .editor2-column {
   display: flex;
   flex-direction: column;
