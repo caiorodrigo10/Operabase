@@ -203,7 +203,7 @@ export const Columns: React.FC<ColumnsProps> = ({
           marginLeft: columnStyles.marginLeft,
           useWidth: true, // não flex
           shouldStack,
-          blocksCount: column.blocks?.length || 0
+          childrenAvailable: children?.length || 0
         });
 
         return (
@@ -214,7 +214,7 @@ export const Columns: React.FC<ColumnsProps> = ({
           >
             {/* Builder.io blocks wrapper */}
             <div className="builder-blocks" style={{ flexGrow: 1 }}>
-              {/* Renderizar children ao invés de column.blocks */}
+              {/* Renderizar child específico para esta coluna */}
               {children && children[index] && (
                 <RenderBlock 
                   key={children[index].id} 
