@@ -351,10 +351,9 @@ export const EditorHeader: React.FC = () => {
             localStorage.removeItem('editor2_craft_state');
             localStorage.removeItem('editor2_page_state');
             localStorage.removeItem('craft-state');
-            localStorage.clear();
             
-            // Force reload with cache bypass
-            window.location.href = window.location.href;
+            // Force template reload with URL parameter
+            window.location.href = '/editor2?force=true';
           }}
           title="Reset Template - Carregar Template Padrão"
           style={{ 

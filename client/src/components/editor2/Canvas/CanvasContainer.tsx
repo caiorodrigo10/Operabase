@@ -185,11 +185,11 @@ const getDefaultSemanticJson = () => {
       "custom": { "displayName": "Editor 2 - Galeria de Widgets" },
       "parent": null,
       "hidden": false,
-      "nodes": ["hero-section", "features-section", "video-demo", "button-showcase"],
+      "nodes": ["simple-title", "simple-video"],
       "linkedNodes": {}
     },
     "hero-section": {
-      "type": { "resolvedName": "HeroSection" },
+      "type": { "resolvedName": "Container" },
       "isCanvas": true,
       "props": {
         "background": { "r": 37, "g": 99, "b": 235, "a": 1 }
@@ -617,19 +617,36 @@ const getDefaultSemanticJson = () => {
       "nodes": [],
       "linkedNodes": {}
     },
-    "secondary-button": {
-      "type": { "resolvedName": "CraftButton" },
+    "simple-title": {
+      "type": { "resolvedName": "Text" },
       "isCanvas": false,
       "props": {
-        "background": { "r": 107, "g": 114, "b": 128, "a": 1 },
-        "color": { "r": 255, "g": 255, "b": 255, "a": 1 },
-        "buttonStyle": "full",
-        "text": "Botão Secundário",
-        "margin": ["10", "10", "10", "10"]
+        "fontSize": "32",
+        "textAlign": "center",
+        "fontWeight": "700",
+        "color": { "r": 37, "g": 99, "b": 235, "a": 1 },
+        "margin": ["40", "20", "40", "20"],
+        "shadow": 0,
+        "text": "🎬 Editor 2 - Template com Vídeo YouTube"
       },
-      "displayName": "Button",
-      "custom": {},
-      "parent": "button-showcase",
+      "displayName": "Text",
+      "custom": { "displayName": "Título Principal" },
+      "parent": "ROOT",
+      "hidden": false,
+      "nodes": [],
+      "linkedNodes": {}
+    },
+    "simple-video": {
+      "type": { "resolvedName": "Video" },
+      "isCanvas": false,
+      "props": {
+        "videoId": "u7KQ4ityQeI",
+        "width": 560,
+        "height": 315
+      },
+      "displayName": "Video",
+      "custom": { "displayName": "Vídeo YouTube" },
+      "parent": "ROOT",
       "hidden": false,
       "nodes": [],
       "linkedNodes": {}
@@ -726,7 +743,7 @@ export const CanvasContainer: React.FC = () => {
           style={{ backgroundColor: '#f8f9fa' }}
         >
           {/* Craft.js Frame - CLEAN PATTERN with FORCED Semantic IDs */}
-          <Frame data={initialJson || JSON.stringify(getDefaultSemanticJson())}>
+          <Frame data={undefined}>
             <Element
               canvas
               is={Container}
