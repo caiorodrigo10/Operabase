@@ -60,10 +60,18 @@ export const Columns: React.FC<ColumnsProps> = ({
     return classes.join(' ');
   };
 
-  // Combinar estilos
+  // Função para calcular largura das colunas (Builder.io style)
+  const getColumnWidth = (index: number) => {
+    const width = 100 / columns.length;
+    const subtractWidth = gutterSize * (columns.length - 1) * (width / 100);
+    return `calc(${width}% - ${subtractWidth}px)`;
+  };
+
+  // Combinar estilos exatamente como Builder.io
   const combinedStyles = {
     display: 'flex',
-    gap: `${gutterSize}px`,
+    height: '100%',
+    // NÃO usar gap - Builder.io usa margin-left
     alignItems,
     justifyContent,
     ...styles,
@@ -101,14 +109,17 @@ export const Columns: React.FC<ColumnsProps> = ({
     >
       {columns.map((column, index) => {
         const columnStyles = {
-          flex: column.flex || '1',
-          width: column.width || 'auto',
+          display: 'flex',
+          flexDirection: 'column' as const,
+          alignItems: 'stretch',
+          width: getColumnWidth(index),
+          marginLeft: index === 0 ? 0 : gutterSize,
         };
 
         return (
           <div
             key={index}
-            className="editor2-column"
+            className="builder-column"
             style={columnStyles}
           >
             {column.blocks.map((block, blockIndex) => {

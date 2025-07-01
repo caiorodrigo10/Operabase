@@ -149,13 +149,25 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     });
   }
 
+  // Separar estilos do wrapper (Builder.io pattern) dos estilos do componente
+  const separateWrapperStyles = (styles: any) => {
+    const { backgroundColor, padding, margin, ...componentStyles } = styles || {};
+    
+    return {
+      wrapperStyles: { backgroundColor, padding, margin },
+      componentStyles
+    };
+  };
+
+  const { wrapperStyles, componentStyles } = separateWrapperStyles(combinedStyles);
+
   // Preparar props baseado no tipo de componente
   const componentProps = (() => {
     const baseProps = {
       id: block.id,
       ...block.component.options,
       className: '',
-      styles: block.styles || {},
+      styles: componentStyles, // Usar estilos sem wrapper styles
       responsiveStyles: block.responsiveStyles || {}
     };
 
@@ -225,15 +237,17 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     isHovered && 'hovered'
   ].filter(Boolean).join(' ') : '';
 
-  // Se não estiver em modo edição, renderizar componente simples
+  // Se não estiver em modo edição, renderizar componente com wrapper styles (Builder.io pattern)
   if (!inEditMode) {
     return (
-      <Component 
-        {...componentProps}
-        key={block.id}
-      >
-        {children}
-      </Component>
+      <div className="builder-block" style={wrapperStyles}>
+        <Component 
+          {...componentProps}
+          key={block.id}
+        >
+          {children}
+        </Component>
+      </div>
     );
   }
 
