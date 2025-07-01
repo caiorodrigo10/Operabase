@@ -4,8 +4,24 @@ import { useLocation } from 'wouter';
 import { useEditor2Store } from '../../../stores/editor2Store';
 import { getCurrentCraftEditor } from '../Canvas/CanvasContainer';
 
-// Function to transform Craft.js JSON to use semantic IDs as keys
+// Function to transform Craft.js JSON to use semantic IDs as keys (SIMPLIFIED)
 const transformToSemanticJson = (craftJson: any) => {
+  // Check if input is already a proper object
+  if (typeof craftJson === 'string') {
+    try {
+      craftJson = JSON.parse(craftJson);
+    } catch (e) {
+      console.error('❌ Failed to parse craftJson string:', e);
+      return craftJson;
+    }
+  }
+  
+  // Check if craftJson is a valid object with node structure
+  if (!craftJson || typeof craftJson !== 'object' || Array.isArray(craftJson)) {
+    console.error('❌ Invalid craftJson format:', typeof craftJson);
+    return craftJson;
+  }
+  
   const transformed: any = {};
   const idMapping: { [key: string]: string } = {};
   
@@ -31,7 +47,7 @@ const transformToSemanticJson = (craftJson: any) => {
     const transformedNode = { ...node };
     
     // Transform node references in 'nodes' array
-    if (transformedNode.nodes) {
+    if (transformedNode.nodes && Array.isArray(transformedNode.nodes)) {
       transformedNode.nodes = transformedNode.nodes.map((childId: string) => 
         idMapping[childId] || childId
       );
@@ -43,7 +59,7 @@ const transformToSemanticJson = (craftJson: any) => {
     }
     
     // Transform linkedNodes references
-    if (transformedNode.linkedNodes) {
+    if (transformedNode.linkedNodes && typeof transformedNode.linkedNodes === 'object') {
       const newLinkedNodes: any = {};
       Object.entries(transformedNode.linkedNodes).forEach(([key, value]: [string, any]) => {
         if (typeof value === 'string' && idMapping[value]) {
@@ -58,6 +74,7 @@ const transformToSemanticJson = (craftJson: any) => {
     transformed[semanticId] = transformedNode;
   });
   
+  console.log('🎯 Transformed keys:', Object.keys(transformed));
   return transformed;
 };
 
