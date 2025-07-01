@@ -4,6 +4,7 @@
  */
 
 import { ComponentMap } from '@/../shared/editor2-types';
+import { Container } from '../Components/Container';
 import { HeroSection } from '../Components/HeroSection';
 import { Text } from '../Components/Text';
 import { Button } from '../Components/Button';
@@ -11,6 +12,9 @@ import { DefaultComponent } from '../Components/DefaultComponent';
 
 // Mapeamento principal de componentes
 export const componentMap: ComponentMap = {
+  // Layout básico
+  Container,
+  
   // Seções
   HeroSection,
   

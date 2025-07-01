@@ -5,8 +5,20 @@
 
 import React from 'react';
 import { RenderBlockProps, Block } from '@/../shared/editor2-types';
-import { componentMap } from './componentMap';
+import { Container } from '../Components/Container';
+import { HeroSection } from '../Components/HeroSection';
+import { Text } from '../Components/Text';
+import { Button } from '../Components/Button';
 import { DefaultComponent } from '../Components/DefaultComponent';
+
+// Mapeamento interno de componentes
+const internalComponentMap: any = {
+  Container,
+  HeroSection,
+  Text,
+  Button,
+  DefaultComponent
+};
 
 // Função auxiliar para calcular estilos responsivos (placeholder por enquanto)
 function calculateResponsiveStyles(responsiveStyles?: any): React.CSSProperties {

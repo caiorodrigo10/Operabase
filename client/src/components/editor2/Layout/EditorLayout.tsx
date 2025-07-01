@@ -2,6 +2,7 @@ import React from 'react';
 import { AICodeChat } from '../Chat/AICodeChat';
 import { EditorHeader } from '../Header/EditorHeader';
 import { usePage } from '../../../contexts/PageProvider';
+import { JsonCanvas } from '../Canvas/JsonCanvas';
 
 export const EditorLayout: React.FC = () => {
   const [isChatMinimized, setIsChatMinimized] = React.useState(true);
@@ -55,34 +56,9 @@ export const EditorLayout: React.FC = () => {
         </div>
       </div>
       
-      {/* Center Area - Canvas com teste do contexto */}
+      {/* Center Area - JSON Canvas */}
       <div className="editor2-center-area">
-        <div className="editor2-blank-canvas p-4">
-          <h3 className="text-lg font-bold mb-4">Status do PageProvider:</h3>
-          
-          {/* Estados */}
-          <div className="mb-4">
-            <p><strong>Loading:</strong> {isLoading ? 'Sim' : 'Não'}</p>
-            <p><strong>Erro:</strong> {error || 'Nenhum'}</p>
-            <p><strong>Dados:</strong> {pageJson ? 'Carregados' : 'Vazio'}</p>
-          </div>
-          
-          {/* Dados do JSON */}
-          {pageJson && (
-            <div className="bg-gray-100 p-4 rounded">
-              <h4 className="font-semibold mb-2">PageJSON:</h4>
-              <pre className="text-sm overflow-auto">
-                {JSON.stringify(pageJson, null, 2)}
-              </pre>
-            </div>
-          )}
-          
-          {!pageJson && (
-            <div className="bg-yellow-100 p-4 rounded">
-              <p>Nenhum dados carregados. Clique em "Testar Contexto" para carregar dados de teste.</p>
-            </div>
-          )}
-        </div>
+        <JsonCanvas />
       </div>
     </div>
   );
