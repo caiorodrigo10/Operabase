@@ -26,6 +26,36 @@ Transformar o Editor2 atual em um sistema capaz de gerar landing pages automatic
 
 ---
 
+## 🚀 Melhorias GPT Integradas
+
+O GPT analisou o plano e sugeriu **3 melhorias pontuais** que foram incorporadas:
+
+### ✅ 1. Aplicar styles e responsiveStyles no RenderBlock
+Renderização aplica estilos do bloco além das options do componente:
+```tsx
+const combinedStyles = {
+  ...(block.styles || {}),
+  ...(calculateResponsiveStyles(block.responsiveStyles))
+};
+```
+
+### ✅ 2. Interfaces Block e PageJSON em shared/types.ts
+Tipagem padronizada entre RenderBlock, PageProvider, componentMap e outros componentes.
+
+### ✅ 3. DefaultComponent com visual de fallback elegante
+Componente de erro visual quando componente não é encontrado no mapeamento:
+```tsx
+export function DefaultComponent({ name }) {
+  return (
+    <div style={{ padding: 20, border: '1px dashed red', background: '#ffecec' }}>
+      ⚠️ Componente <strong>{name}</strong> não encontrado.
+    </div>
+  );
+}
+```
+
+---
+
 ## 🏗️ Arquitetura Técnica - Fase 1
 
 ### Componentes-Chave a Implementar
@@ -170,15 +200,33 @@ function JsonCanvas() {
 ### **ETAPA 1: Criação do PageProvider**
 **Tempo estimado**: 1-2 horas
 **Arquivos a criar/modificar**:
+- ✨ `shared/types/editor2.ts` (NOVO) - **[GPT]** Interfaces Block e PageJSON compartilhadas
 - ✨ `client/src/contexts/PageProvider.tsx` (NOVO)
 - 🔧 `client/src/pages/editor2.tsx` (modificar - adicionar Provider)
 
 **Tarefas**:
-1. Criar Context API com TypeScript
-2. Implementar hook `usePage()`
-3. Definir interface `PageJSON` em `shared/types.ts`
+1. **[GPT]** Criar interfaces Block e PageJSON em shared/types/editor2.ts para padronização
+2. Criar Context API com TypeScript
+3. Implementar hook `usePage()`
 4. Envolver Editor2 com PageProvider
 5. Testar contexto básico
+
+**Estrutura de Tipos** (Sugestão GPT):
+```typescript
+// shared/types/editor2.ts
+export interface Block {
+  id: string;
+  component: Component;
+  children?: Block[];
+  styles?: React.CSSProperties;
+  responsiveStyles?: ResponsiveStyles;
+}
+
+export interface PageJSON {
+  blocks: Block[];
+  meta?: { title?: string; description?: string; };
+}
+```
 
 ### **ETAPA 2: Componentes Base Simplificados**
 **Tempo estimado**: 2-3 horas
@@ -193,19 +241,47 @@ function JsonCanvas() {
 2. Criar Text com prop `text`
 3. Criar Button com prop `text`
 4. Implementar componentMap básico
-5. Adicionar componente DefaultComponent para casos não mapeados
+5. **[GPT]** Criar DefaultComponent com visual de fallback elegante
+
+**DefaultComponent** (Sugestão GPT):
+```tsx
+export function DefaultComponent({ name }) {
+  return (
+    <div style={{ padding: 20, border: '1px dashed red', background: '#ffecec' }}>
+      ⚠️ Componente <strong>{name}</strong> não encontrado.
+    </div>
+  );
+}
+```
 
 ### **ETAPA 3: Sistema RenderBlock**
 **Tempo estimado**: 2-3 horas
 **Arquivos a criar**:
 - ✨ `client/src/components/editor2/Canvas/RenderBlock.tsx`
+- ✨ `client/src/components/editor2/Canvas/DefaultComponent.tsx` (NOVO)
 
 **Tarefas**:
 1. Implementar lógica recursiva de renderização
 2. Integrar com componentMap
-3. Adicionar tratamento de erro para componentes não encontrados
-4. Implementar renderização de children com keys corretas
-5. Testar renderização aninhada
+3. **[GPT]** Aplicar styles e responsiveStyles do bloco na renderização
+4. **[GPT]** Criar DefaultComponent com visual de fallback elegante
+5. Adicionar tratamento de erro para componentes não encontrados
+6. Implementar renderização de children com keys corretas
+7. Testar renderização aninhada
+
+**Implementação de Estilos** (Sugestão GPT):
+```tsx
+const combinedStyles = {
+  ...(block.styles || {}),
+  ...(calculateResponsiveStyles(block.responsiveStyles))
+};
+
+return (
+  <Component {...component.options} style={combinedStyles}>
+    {children}
+  </Component>
+);
+```
 
 ### **ETAPA 4: Criação do Canvas JSON**
 **Tempo estimado**: 1-2 horas
