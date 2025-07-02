@@ -13,6 +13,7 @@ import { setupOptimizedRoutes } from "./optimized-routes.js";
 import { performanceOptimizer } from "./performance-optimizer.js";
 import { initGoogleCalendarAuth, handleGoogleCalendarCallback } from './calendar-routes';
 import { initSystemLogsTable } from './init-system-logs';
+import { initPasswordResetTable } from './init-password-reset';
 import { systemLogsService } from './services/system-logs.service';
 import { WebSocketServer } from './websocket-server';
 import { redisCacheService } from './services/redis-cache.service';
@@ -465,6 +466,14 @@ app.use((req, res, next) => {
     console.log('✅ System Logs initialized');
   } catch (error) {
     console.error('❌ Error initializing System Logs:', error);
+  }
+
+  // Initialize Password Reset table
+  try {
+    await initPasswordResetTable();
+    console.log('✅ Password Reset system initialized');
+  } catch (error) {
+    console.error('❌ Error initializing Password Reset system:', error);
   }
 
   // Initialize WhatsApp table
