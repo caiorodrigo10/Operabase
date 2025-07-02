@@ -425,6 +425,16 @@ app.use((req, res, next) => {
   const { clinicsRoutes } = await import('./domains/clinics/clinics.routes');
   app.use('/api/clinics', clinicsRoutes);
   
+  // Add Permissions routes (clinic users management)
+  const { 
+    getClinicUsersForManagement, 
+    updateUserProfessionalStatus, 
+    getProfessionalStatusAudit 
+  } = await import('./permissions-routes');
+  app.get('/api/clinic/:clinicId/users/management', isAuthenticated, getClinicUsersForManagement);
+  app.put('/api/clinic/:clinicId/users/:userId/professional-status', isAuthenticated, updateUserProfessionalStatus);
+  app.get('/api/clinic/:clinicId/users/:userId/professional-status-audit', isAuthenticated, getProfessionalStatusAudit);
+  
   // Add Conversations routes
   const { setupConversationsRoutes } = await import('./conversations-routes');
   setupConversationsRoutes(app, storage);
