@@ -533,11 +533,6 @@ export function Consultas() {
   // Fetch users with optimized caching
   const { data: clinicUsers = [] } = useQuery({
     queryKey: ['/api/clinic/1/users/management'],
-    queryFn: async () => {
-      const response = await fetch('/api/clinic/1/users/management');
-      if (!response.ok) throw new Error('Failed to fetch clinic users');
-      return response.json();
-    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
@@ -594,11 +589,6 @@ export function Consultas() {
   // Fetch clinic configuration for working hours validation
   const { data: clinicConfig } = useQuery({
     queryKey: ["/api/clinic/1/config"],
-    queryFn: async () => {
-      const response = await fetch('/api/clinic/1/config');
-      if (!response.ok) throw new Error('Failed to fetch clinic config');
-      return response.json();
-    },
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false,
