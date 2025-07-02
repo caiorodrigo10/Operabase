@@ -39,6 +39,9 @@ export const clinics = pgTable("clinics", {
   website: text("website"),
   description: text("description"),
   
+  // Clinic status for admin management
+  status: varchar("status", { length: 50 }).notNull().default("active"), // pending, active, inactive
+  
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
