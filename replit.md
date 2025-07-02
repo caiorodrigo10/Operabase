@@ -212,6 +212,16 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 02, 2025 - Sistema de Calendário: Horários Disponíveis e Profissionais CORRIGIDO ✅
+- **Endpoint /api/clinic/:clinicId/config**: Implementado endpoint crítico que estava faltando para configuração da clínica
+- **Validação de Horários**: Sistema agora carrega corretamente working_days, work_start, work_end, lunch_break da clínica
+- **Horários Cinza**: Calendário mostra corretamente horários indisponíveis em cinza baseado na configuração real
+- **Dropdown de Profissionais**: Corrigido carregamento de profissionais no modal de agendamento
+- **Configuração Funcional**: Sistema respeita horário de trabalho (08:00-18:00) e horário de almoço (12:00-13:00)
+- **Performance**: Endpoint responde em <200ms com dados completos da clínica incluindo timezone e especialidades
+- **Multi-Tenant**: Sistema mantém isolamento por clínica com validação de acesso
+- **Status**: ✅ CALENDÁRIO FUNCIONAL - Horários disponíveis e dropdown de profissionais operacionais
+
 ### July 02, 2025 - Sistema de Gestão de Clínicas: Convites Completos Implementados ✅
 - **Sistema de Convites Funcional**: Implementação completa do sistema de convites para criação de novas clínicas
 - **Arquitetura Completa**: Controller, Service, Routes, Schema e Email Service integrados funcionalmente
@@ -222,11 +232,22 @@ The Operabase platform implements a sophisticated **modular page architecture** 
   - `POST /api/clinics/invitations/:token/accept` - Aceitar convite (público)
   - `GET /api/clinics/invitations` - Listar convites (super_admin)
   - `DELETE /api/clinics/invitations/:id` - Cancelar convite (super_admin)
+- **Fluxo Completo do Convite**:
+  1. Super admin preenche formulário com dados da nova clínica (nome, email admin, nome admin)
+  2. Sistema gera token único e cria registro na tabela clinic_invitations
+  3. Email profissional é enviado via Supabase com link de ativação personalizado
+  4. Novo admin recebe email e clica no link de convite
+  5. Sistema valida token (não expirado, não usado) e mostra formulário de cadastro
+  6. Novo admin define senha e aceita convite
+  7. Sistema cria automaticamente: nova clínica, usuário admin, relacionamento clinic_user
+  8. Convite é marcado como aceito e novo admin pode fazer login
 - **Email Templates Profissionais**: Template HTML completo com branding Operabase e instruções detalhadas
 - **Validação Zod**: Schemas robustos para validação de dados de entrada
 - **Segurança Avançada**: Tokens únicos, expiração em 7 dias, validação de roles, isolamento multi-tenant
 - **Testing Validado**: Sistema testado com script automatizado confirmando funcionamento dos endpoints
 - **SupabaseEmailService**: Integração para envio de emails de convite com fallback para logs em desenvolvimento
+- **Interface de Gestão**: Super admins podem listar, criar e cancelar convites através da interface administrativa
+- **Automação Completa**: Criação de clínica, usuário e permissões totalmente automatizada sem intervenção manual
 - **Inicialização Automática**: Script init-clinic-invitations.ts integrado ao startup do servidor
 - **Multi-Tenant Ready**: Sistema preserva isolamento por clínica mantendo segurança healthcare-grade
 - **Production Ready**: Sistema completamente funcional aguardando apenas autenticação para testes completos
@@ -247,9 +268,17 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 - **Testing Validado**: Sistema testado e funcionando em produção com emails reais via Supabase
 - **Zero Impact**: Preservação total do sistema de autenticação existente, apenas adição de funcionalidade
 - **Production Ready**: Sistema completo pronto para uso em produção com 500+ usuários validados
+- **Fluxo de Recuperação**:
+  1. Usuário insere email no formulário de login
+  2. Sistema gera token único e salva no banco com expiração de 1 hora
+  3. Supabase envia email com link de recuperação personalizado
+  4. Usuário clica no link e é redirecionado para página de redefinição
+  5. Nova senha é definida e criptografada com bcrypt
+  6. Token é marcado como usado para prevenir reutilização
 - **Endpoints Funcionais**:
   - `POST /api/auth/request-password-reset` - Solicita recuperação via email
   - `POST /api/auth/reset-password` - Redefine senha com token válido
+- **Interface de Usuário**: Formulários integrados na página de login com feedback visual e validação
 - **Logs Detalhados**: Sistema de logs completo para auditoria e debugging
 - **Status**: ✅ SISTEMA DE RECUPERAÇÃO OPERACIONAL - Usuários podem recuperar senhas automaticamente via email
 
