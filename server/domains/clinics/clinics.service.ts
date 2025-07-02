@@ -2,7 +2,7 @@
 import { db } from "../../db";
 import { clinics, clinic_invitations, clinic_users } from "./clinics.schema";
 import { users } from "../auth/auth.schema";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 import { SupabaseEmailService } from "../../services/email.service";
 import { AuthService } from "../auth/auth.service";
 import crypto from "crypto";
@@ -208,39 +208,52 @@ export class ClinicsService {
 
   async listInvitations(filters: { status?: string; page: number; limit: number }) {
     try {
-      // Simple direct query to avoid Drizzle issues
-      const query = `
-        SELECT 
-          ci.*,
-          u.name as creator_name
-        FROM clinic_invitations ci
-        LEFT JOIN users u ON ci.created_by_user_id = u.id
-        ${filters.status ? `WHERE ci.status = $1` : ''}
-        ORDER BY ci.created_at DESC
-        LIMIT $${filters.status ? '2' : '1'} OFFSET $${filters.status ? '3' : '2'}
-      `;
+      // Build query with Drizzle
+      let baseQuery = db.select({
+        id: clinic_invitations.id,
+        clinic_id: clinic_invitations.clinic_id,
+        email: clinic_invitations.email,
+        role: clinic_invitations.role,
+        admin_email: clinic_invitations.admin_email,
+        admin_name: clinic_invitations.admin_name,
+        clinic_name: clinic_invitations.clinic_name,
+        token: clinic_invitations.token,
+        expires_at: clinic_invitations.expires_at,
+        status: clinic_invitations.status,
+        created_at: clinic_invitations.created_at,
+        completed_at: clinic_invitations.completed_at,
+        created_by_user_id: clinic_invitations.created_by_user_id,
+        creator_name: users.name
+      })
+      .from(clinic_invitations)
+      .leftJoin(users, eq(clinic_invitations.created_by_user_id, users.id));
       
-      const params = filters.status 
-        ? [filters.status, filters.limit, (filters.page - 1) * filters.limit]
-        : [filters.limit, (filters.page - 1) * filters.limit];
-
-      const { rows: invitations } = await (db as any)._client.query(query, params);
+      // Apply status filter if provided
+      if (filters.status) {
+        baseQuery = baseQuery.where(eq(clinic_invitations.status, filters.status));
+      }
+      
+      // Apply pagination
+      const invitations = await baseQuery
+        .orderBy(desc(clinic_invitations.created_at))
+        .limit(filters.limit)
+        .offset((filters.page - 1) * filters.limit);
 
       // Get total count
-      const countQuery = `
-        SELECT COUNT(*) as total 
-        FROM clinic_invitations 
-        ${filters.status ? `WHERE status = $1` : ''}
-      `;
-      const countParams = filters.status ? [filters.status] : [];
-      const { rows: countResult } = await (db as any)._client.query(countQuery, countParams);
+      let countQuery = db.select({ count: sql<number>`count(*)` }).from(clinic_invitations);
+      if (filters.status) {
+        countQuery = countQuery.where(eq(clinic_invitations.status, filters.status));
+      }
+      
+      const countResult = await countQuery;
+      const total = Number(countResult[0]?.count || 0);
 
       return {
         invitations,
-        total: parseInt(countResult[0].total),
+        total,
         page: filters.page,
         limit: filters.limit,
-        totalPages: Math.ceil(parseInt(countResult[0].total) / filters.limit)
+        totalPages: Math.ceil(total / filters.limit)
       };
     } catch (error) {
       console.error('Error listing invitations:', error);

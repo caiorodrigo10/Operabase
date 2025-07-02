@@ -60,8 +60,8 @@ function CreateInvitationDialog({ onSubmit }: { onSubmit: (data: CreateInvitatio
     }
   });
 
-  const handleSubmit = (data: CreateInvitationForm) => {
-    onSubmit(data);
+  const handleSubmit = async (data: CreateInvitationForm) => {
+    await onSubmit(data);
     setOpen(false);
     form.reset();
   };
@@ -135,10 +135,90 @@ function CreateInvitationDialog({ onSubmit }: { onSubmit: (data: CreateInvitatio
   );
 }
 
+// Modal para exibir link do convite
+function InvitationLinkDialog({ 
+  open, 
+  onOpenChange, 
+  invitationLink 
+}: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void; 
+  invitationLink: string;
+}) {
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(invitationLink);
+      setCopied(true);
+      toast({
+        title: "Link copiado!",
+        description: "O link foi copiado para sua área de transferência.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o link.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Convite Criado com Sucesso!</DialogTitle>
+          <DialogDescription>
+            Compartilhe este link com o administrador da nova clínica para que ele possa criar sua conta.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-2">
+              <label htmlFor="link" className="text-sm font-medium">
+                Link do Convite
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="link"
+                  defaultValue={invitationLink}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={copyToClipboard}
+                >
+                  {copied ? "Copiado!" : "Copiar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <Alert>
+            <AlertDescription>
+              Este link é válido por 7 dias. Após esse período, será necessário criar um novo convite.
+            </AlertDescription>
+          </Alert>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Componente principal
 export function ClinicsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [invitationLink, setInvitationLink] = useState('');
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
 
   // Query para listar clínicas
   const { data: clinicsData, isLoading: clinicsLoading, error: clinicsError } = useQuery({
@@ -181,7 +261,13 @@ export function ClinicsManagement() {
       const res = await apiRequest('/api/clinics/invitations', 'POST', payload);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Construir o link do convite
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/convite-clinica/${data.token}`;
+      setInvitationLink(link);
+      setShowLinkDialog(true);
+      
       toast({
         title: "Convite criado com sucesso",
         description: "O email foi enviado para o administrador da nova clínica.",
@@ -428,6 +514,13 @@ export function ClinicsManagement() {
           )}
         </CardContent>
       </Card>
+      
+      {/* Modal para exibir link do convite */}
+      <InvitationLinkDialog 
+        open={showLinkDialog}
+        onOpenChange={setShowLinkDialog}
+        invitationLink={invitationLink}
+      />
     </div>
   );
 }
