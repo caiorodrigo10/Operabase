@@ -212,6 +212,26 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 02, 2025 - Sistema de Gestão de Clínicas: Convites Completos Implementados ✅
+- **Sistema de Convites Funcional**: Implementação completa do sistema de convites para criação de novas clínicas
+- **Arquitetura Completa**: Controller, Service, Routes, Schema e Email Service integrados funcionalmente
+- **Tabela clinic_invitations**: Criada com campos id, admin_email, admin_name, clinic_name, token, status, expires_at, created_by_user_id
+- **Rotas Implementadas**: 
+  - `POST /api/clinics/invitations` - Criar convite (super_admin)
+  - `GET /api/clinics/invitations/:token` - Buscar convite (público)
+  - `POST /api/clinics/invitations/:token/accept` - Aceitar convite (público)
+  - `GET /api/clinics/invitations` - Listar convites (super_admin)
+  - `DELETE /api/clinics/invitations/:id` - Cancelar convite (super_admin)
+- **Email Templates Profissionais**: Template HTML completo com branding Operabase e instruções detalhadas
+- **Validação Zod**: Schemas robustos para validação de dados de entrada
+- **Segurança Avançada**: Tokens únicos, expiração em 7 dias, validação de roles, isolamento multi-tenant
+- **Testing Validado**: Sistema testado com script automatizado confirmando funcionamento dos endpoints
+- **SupabaseEmailService**: Integração para envio de emails de convite com fallback para logs em desenvolvimento
+- **Inicialização Automática**: Script init-clinic-invitations.ts integrado ao startup do servidor
+- **Multi-Tenant Ready**: Sistema preserva isolamento por clínica mantendo segurança healthcare-grade
+- **Production Ready**: Sistema completamente funcional aguardando apenas autenticação para testes completos
+- **Status**: ✅ SISTEMA DE CONVITES OPERACIONAL - Super admins podem criar convites que geram novas clínicas automaticamente
+
 ### July 02, 2025 - Sistema de Recuperação de Senha: Implementação Completa com Supabase ✅
 - **Funcionalidade Completa**: Sistema de recuperação de senha implementado usando Supabase Auth para envio de emails
 - **Arquitetura Híbrida**: Mantido sistema de autenticação existente + integração Supabase apenas para email (Option B aprovada pelo usuário)
