@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { RenderBlockProps, Block } from '@/../shared/editor2-types';
+import { useComponentMapSafe } from '../../../contexts/ComponentMapContext';
 import { Container } from '../Components/Container';
 import { HeroSection } from '../Components/HeroSection';
 import { Text } from '../Components/Text';

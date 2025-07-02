@@ -6,6 +6,8 @@
 import React from 'react';
 import { usePage } from '../../../contexts/PageProvider';
 import { RenderBlock } from './RenderBlock';
+import { ComponentMapProvider } from '../../../contexts/ComponentMapContext';
+import { componentMap } from './componentMap';
 
 // Import do contexto de edição (opcional)
 let useEditor: any = null;
@@ -118,24 +120,26 @@ export const JsonCanvas: React.FC = () => {
 
   // Renderização principal - Builder.io EXATO pattern
   return (
-    <div className={canvasClasses} style={{ overflow: 'visible' }}>
-      {/* Builder.io container EXATO */}
-      <div 
-        className="builder-blocks"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-        }}
-      >
-        {/* Renderiza children dos blocos */}
-        {blocksToRender.map((block: any) => (
-          <RenderBlock 
-            key={block.id} 
-            block={block}
-          />
-        ))}
+    <ComponentMapProvider componentMap={componentMap}>
+      <div className={canvasClasses} style={{ overflow: 'visible' }}>
+        {/* Builder.io container EXATO */}
+        <div 
+          className="builder-blocks"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+          }}
+        >
+          {/* Renderiza children dos blocos */}
+          {blocksToRender.map((block: any) => (
+            <RenderBlock 
+              key={block.id} 
+              block={block}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </ComponentMapProvider>
   );
 };
