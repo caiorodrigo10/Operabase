@@ -939,6 +939,158 @@
         ]
       },
       {
+        "id": "stack-demo-section",
+        "@type": "@builder.io/sdk:Element",
+        "component": {
+          "name": "Section",
+          "options": {
+            "maxWidth": 1200
+          }
+        },
+        "responsiveStyles": {
+          "large": {
+            "backgroundColor": "#ffffff",
+            "padding": "80px 0",
+            "width": "100%"
+          }
+        },
+        "children": [
+          {
+            "id": "stack-demo-container",
+            "@type": "@builder.io/sdk:Element",
+            "component": {
+              "name": "Container",
+              "options": {
+                "maxWidth": 1200
+              }
+            },
+            "responsiveStyles": {
+              "large": {
+                "maxWidth": "1200px",
+                "margin": "0 auto",
+                "padding": "0 40px"
+              }
+            },
+            "children": [
+              {
+                "id": "stack-demo-title",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Stack Widget Demo",
+                    "tag": "h2"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "36px",
+                    "fontWeight": "700",
+                    "color": "#1e293b",
+                    "textAlign": "center",
+                    "marginBottom": "16px"
+                  }
+                }
+              },
+              {
+                "id": "stack-demo-subtitle",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Layout vertical e horizontal com controle flexível",
+                    "tag": "p"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "18px",
+                    "color": "#64748b",
+                    "textAlign": "center",
+                    "marginBottom": "60px"
+                  }
+                }
+              },
+              {
+                "id": "stack-horizontal-demo",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Stack",
+                  "options": {
+                    "direction": "horizontal",
+                    "spacing": 24,
+                    "alignItems": "center",
+                    "justifyContent": "space-between"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "stack-item-1",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "Item Horizontal 1",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#3b82f6",
+                        "color": "#ffffff",
+                        "padding": "20px",
+                        "borderRadius": "8px",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "id": "stack-item-2",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "Item Horizontal 2",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#10b981",
+                        "color": "#ffffff",
+                        "padding": "20px",
+                        "borderRadius": "8px",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "id": "stack-item-3",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "Item Horizontal 3",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#f59e0b",
+                        "color": "#ffffff",
+                        "padding": "20px",
+                        "borderRadius": "8px",
+                        "textAlign": "center"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
         "id": "fragment-demo-section",
         "@type": "@builder.io/sdk:Element",
         "component": {
