@@ -90,18 +90,20 @@ export const professional_status_audit = pgTable("professional_status_audit", {
 // Clinic invitations for onboarding new team members
 export const clinic_invitations = pgTable("clinic_invitations", {
   id: serial("id").primaryKey(),
-  clinic_id: integer("clinic_id").notNull(),
   email: varchar("email").notNull(),
-  role: varchar("role").notNull(),
-  permissions: jsonb("permissions"),
+  admin_name: varchar("admin_name").notNull(),
+  clinic_name: varchar("clinic_name").notNull(),
   token: varchar("token").notNull().unique(),
-  invited_by: integer("invited_by").notNull(),
+  status: varchar("status").notNull().default("pending"),
   expires_at: timestamp("expires_at").notNull(),
-  accepted_at: timestamp("accepted_at"),
+  created_by_user_id: integer("created_by_user_id").notNull(),
+  clinic_id: integer("clinic_id"), // nullable until accepted
   created_at: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_invitations_email").on(table.email),
   index("idx_invitations_token").on(table.token),
+  index("idx_invitations_status").on(table.status),
+  index("idx_invitations_expires_at").on(table.expires_at),
 ]);
 
 export const insertClinicSchema = createInsertSchema(clinics);
