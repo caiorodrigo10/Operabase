@@ -178,7 +178,7 @@ export function ClinicsManagement() {
         admin_name: data.adminName,
         clinic_name: data.clinicName
       };
-      const res = await apiRequest('/api/clinics/invitations', 'POST', payload);
+      const res = await apiRequest('POST', '/api/clinics/invitations', payload);
       return res.json();
     },
     onSuccess: () => {

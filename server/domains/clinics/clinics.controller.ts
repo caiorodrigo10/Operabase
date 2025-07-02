@@ -67,11 +67,21 @@ export class ClinicsController {
   // Create clinic invitation
   createInvitation = async (req: Request, res: Response) => {
     try {
+      console.log('📨 Creating invitation with body:', req.body);
       const { admin_email, admin_name, clinic_name } = req.body;
       const createdByUserId = req.user?.id;
 
+      console.log('📧 Parsed values:', { admin_email, admin_name, clinic_name, createdByUserId });
+
       if (!createdByUserId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      // Validate required fields
+      if (!admin_email || !admin_name || !clinic_name) {
+        return res.status(400).json({ 
+          error: "Campos obrigatórios: admin_email, admin_name, clinic_name" 
+        });
       }
 
       // Check if user already exists
