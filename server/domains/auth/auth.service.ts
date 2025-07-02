@@ -111,20 +111,36 @@ export class AuthService {
         used: false
       });
 
-      // In development, return token for testing
-      const response: PasswordResetResponse = {
-        message: 'Se o email estiver registrado, você receberá as instruções'
-      };
+      // Send email via Supabase
+      const { emailService } = await import('../../services/email.service');
+      try {
+        const emailResult = await emailService.sendPasswordResetEmail({
+          to: data.email,
+          token,
+          userName: user.name
+        });
 
+        if (emailResult.success) {
+          console.log(`✅ Email de recuperação enviado com sucesso para: ${data.email}`);
+        } else {
+          console.error(`❌ Falha ao enviar email: ${emailResult.message}`);
+        }
+      } catch (emailError) {
+        console.error('Email service error:', emailError);
+        // Continue execution - token is still valid even if email fails
+      }
+
+      // In development, also log token for testing
       if (process.env.NODE_ENV === 'development') {
-        response.token = token;
-        console.log(`\n🔑 TOKEN DE RECUPERAÇÃO DE SENHA:`);
+        console.log(`\n🔑 TOKEN DE RECUPERAÇÃO DE SENHA (DEV):`);
         console.log(`Email: ${data.email}`);
         console.log(`Token: ${token}`);
         console.log(`Expira em: ${expiresAt.toLocaleString('pt-BR')}\n`);
       }
 
-      return response;
+      return {
+        message: 'Se o email estiver registrado, você receberá as instruções'
+      };
     } catch (error) {
       console.error('Error requesting password reset:', error);
       throw new Error('Erro ao solicitar reset de senha');
