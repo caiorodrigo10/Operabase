@@ -254,7 +254,7 @@ export function ClinicsManagement() {
   const createInvitationMutation = useMutation({
     mutationFn: async (data: CreateInvitationForm) => {
       const payload = {
-        admin_email: data.email,
+        admin_email: data.email, // backend expects admin_email but maps to email field
         admin_name: data.adminName,
         clinic_name: data.clinicName
       };
@@ -467,7 +467,7 @@ export function ClinicsManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Email do Admin</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Nome do Admin</TableHead>
                   <TableHead>Nome da Clínica</TableHead>
                   <TableHead>Status</TableHead>
@@ -479,7 +479,7 @@ export function ClinicsManagement() {
               <TableBody>
                 {invitations?.map((invitation) => (
                   <TableRow key={invitation.id}>
-                    <TableCell>{invitation.admin_email}</TableCell>
+                    <TableCell>{invitation.email}</TableCell>
                     <TableCell>{invitation.admin_name}</TableCell>
                     <TableCell className="font-medium">{invitation.clinic_name}</TableCell>
                     <TableCell>

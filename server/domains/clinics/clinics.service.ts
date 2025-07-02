@@ -78,7 +78,7 @@ export class ClinicsService {
     const [invitation] = await db
       .insert(clinic_invitations)
       .values({
-        admin_email: data.admin_email,
+        email: data.admin_email,
         admin_name: data.admin_name,
         clinic_name: data.clinic_name,
         token,

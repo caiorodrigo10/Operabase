@@ -869,7 +869,7 @@ export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 // Other essential types for storage interface
 export const clinic_invitations = pgTable("clinic_invitations", {
   id: serial("id").primaryKey(),
-  admin_email: varchar("admin_email").notNull(),
+  email: varchar("email").notNull(),
   admin_name: varchar("admin_name").notNull(),
   clinic_name: varchar("clinic_name").notNull(),
   token: varchar("token").notNull().unique(),
