@@ -178,7 +178,7 @@ export function ClinicsManagement() {
         admin_name: data.adminName,
         clinic_name: data.clinicName
       };
-      const res = await apiRequest('POST', '/api/clinics/invitations', payload);
+      const res = await apiRequest('/api/clinics/invitations', 'POST', payload);
       return res.json();
     },
     onSuccess: () => {
@@ -200,7 +200,7 @@ export function ClinicsManagement() {
   // Mutation para cancelar convite
   const cancelInvitationMutation = useMutation({
     mutationFn: async (invitationId: number) => {
-      const res = await apiRequest('DELETE', `/api/clinics/invitations/${invitationId}`);
+      const res = await apiRequest(`/api/clinics/invitations/${invitationId}`, 'DELETE');
       return res.json();
     },
     onSuccess: () => {

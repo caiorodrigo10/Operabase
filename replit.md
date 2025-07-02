@@ -221,7 +221,8 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 - **Validação Backend**: Adicionada validação de campos obrigatórios com mensagens de erro claras
 - **Debug Logging**: Implementados logs detalhados para rastreamento de dados recebidos
 - **Database Migration**: Script fix-clinic-invitations-nullable.ts executado com sucesso no Supabase
-- **Status**: ✅ SISTEMA DE CONVITES OPERACIONAL - Erro 500 resolvido, aguardando teste de criação de convite
+- **Frontend Request Fix**: Corrigida ordem de parâmetros em apiRequest (url, method, data) em ambas mutations
+- **Status**: ✅ SISTEMA DE CONVITES OPERACIONAL - Erro 500 resolvido e erro de fetch corrigido
 
 ### July 02, 2025 - Sistema de Calendário: Horários Disponíveis e Profissionais CORRIGIDO ✅
 - **Endpoint /api/clinic/:clinicId/config**: Implementado endpoint crítico que estava faltando para configuração da clínica
