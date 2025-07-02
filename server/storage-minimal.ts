@@ -135,7 +135,8 @@ export class MinimalStorage implements IStorage {
         ...item,
         name: item.users.name,
         email: item.users.email,
-        user_created_at: item.users.created_at
+        user_created_at: item.users.created_at,
+        is_professional: item.is_professional // ✅ CRITICAL FIX: Preserve professional status
       })) || [];
     } catch (error) {
       console.error('Error getting clinic users:', error);
