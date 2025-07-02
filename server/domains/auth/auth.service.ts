@@ -1,7 +1,7 @@
 
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-import type { Storage } from '../../storage';
+import type { IStorage } from '../../storage';
 import type {
   LoginRequest,
   LoginResponse,
@@ -16,7 +16,7 @@ import type {
 } from './auth.types';
 
 export class AuthService {
-  constructor(private storage: Storage) {}
+  constructor(private storage: IStorage) {}
 
   async login(data: LoginRequest): Promise<{ success: boolean; user?: UserProfile; error?: string }> {
     try {
