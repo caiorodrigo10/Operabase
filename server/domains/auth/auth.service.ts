@@ -1,6 +1,7 @@
 
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
+import crypto from 'crypto';
 import type { IStorage } from '../../storage';
 import type {
   LoginRequest,
@@ -100,7 +101,6 @@ export class AuthService {
         return { message: 'Se o email estiver registrado, você receberá as instruções' };
       }
 
-      const crypto = require('crypto');
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
