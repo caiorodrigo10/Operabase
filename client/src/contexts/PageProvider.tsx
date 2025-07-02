@@ -70,10 +70,16 @@ export function PageProvider({ children }: PageProviderProps) {
     try {
       // Tentar carregar do localStorage primeiro
       const savedJson = localStorage.getItem('editor2-page-json');
+      console.log('🔍 PageProvider DEBUG:', {
+        savedJsonExists: !!savedJson,
+        savedJsonLength: savedJson?.length || 0,
+        savedJsonPreview: savedJson?.substring(0, 100) + '...'
+      });
+      
       if (savedJson) {
         const parsedJson = JSON.parse(savedJson);
         setPageJson(parsedJson);
-        console.log('📄 PageProvider: Loaded from localStorage');
+        console.log('📄 PageProvider: Loaded from localStorage', parsedJson);
       } else {
         // Se não tem JSON salvo, usar template padrão
         setPageJson(mockPageJson as PageJSON);
