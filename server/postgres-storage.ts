@@ -3,7 +3,9 @@ import { db, pool } from "./db";
 
 // Import from domain schemas
 import { 
-  users, type User, type InsertUser 
+  users, password_reset_tokens, 
+  type User, type InsertUser,
+  type PasswordResetToken, type InsertPasswordResetToken
 } from "./domains/auth/auth.schema";
 
 import { 
