@@ -33,7 +33,14 @@ export function useComponentMap(): ComponentMapContextType {
   return context;
 }
 
-// Hook seguro que retorna null se não estiver dentro do provider
-export function useComponentMapSafe(): ComponentMapContextType | null {
-  return useContext(ComponentMapContext);
+// Hook seguro que retorna componentMap vazio se não estiver dentro do provider
+export function useComponentMapSafe() {
+  const context = useContext(ComponentMapContext);
+  
+  if (!context) {
+    console.warn('useComponentMapSafe: No ComponentMapProvider found, returning empty componentMap');
+    return {};
+  }
+  
+  return context.componentMap || {};
 }

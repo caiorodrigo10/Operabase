@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { usePage } from '../../../contexts/PageProvider';
-import { RenderBlock } from './RenderBlock';
+import { BuilderBlock } from './BuilderBlock';
 import { ComponentMapProvider } from '../../../contexts/ComponentMapContext';
 import { componentMap } from './componentMap';
 
@@ -133,7 +133,7 @@ export const JsonCanvas: React.FC = () => {
         >
           {/* Renderiza children dos blocos */}
           {blocksToRender.map((block: any) => (
-            <RenderBlock 
+            <BuilderBlock 
               key={block.id} 
               block={block}
             />
