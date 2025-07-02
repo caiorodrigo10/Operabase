@@ -74,23 +74,21 @@ export class ClinicsService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Create invitation - need to populate both old and new columns
+    // Create invitation for admin user
     const [invitation] = await db
       .insert(clinic_invitations)
       .values({
-        // New columns
+        email: data.admin_email,
+        role: 'admin', // admin role for the clinic
+        invited_by: data.created_by_user_id,
+        token,
+        expires_at: expiresAt,
+        status: 'pending',
+        // Store additional data in the new columns
         admin_email: data.admin_email,
         admin_name: data.admin_name,
         clinic_name: data.clinic_name,
-        created_by_user_id: data.created_by_user_id,
-        // Old columns (to satisfy NOT NULL constraints)
-        email: data.admin_email,
-        role: 'admin',
-        invited_by: data.created_by_user_id,
-        // Common columns
-        token,
-        expires_at: expiresAt,
-        status: 'pending'
+        created_by_user_id: data.created_by_user_id
       })
       .returning();
 
