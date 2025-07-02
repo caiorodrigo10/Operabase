@@ -112,6 +112,17 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   // Obter componente do mapeamento
   const Component = activeComponentMap[block.component.name];
   
+  // Debug específico para Stack e Masonry
+  if (block.component.name === 'Stack' || block.component.name === 'Masonry') {
+    console.log(`🚨 COMPONENT MAP DEBUG ${block.component.name}:`, {
+      componentName: block.component.name,
+      componentFound: !!Component,
+      availableComponents: Object.keys(activeComponentMap),
+      stackAvailable: !!activeComponentMap.Stack,
+      masonryAvailable: !!activeComponentMap.Masonry
+    });
+  }
+  
   // Estados de interação (apenas se editor context disponível)
   const isSelected = editor ? editor.selectedBlockId === block.id : false;
   const isHovered = editor ? editor.hoveredBlockId === block.id : false;
@@ -119,6 +130,10 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   
   // Se componente não existe, usar DefaultComponent
   if (!Component) {
+    console.error(`❌ COMPONENT NOT FOUND: ${block.component.name}`, {
+      availableComponents: Object.keys(activeComponentMap),
+      blockId: block.id
+    });
     return (
       <DefaultComponent name={block.component.name}>
         {block.children?.map((child) => (
