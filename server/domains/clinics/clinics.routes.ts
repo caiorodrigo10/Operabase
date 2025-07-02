@@ -51,14 +51,15 @@ const acceptInvitationSchema = z.object({
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres")
 });
 
-// Get clinic by ID (authenticated)
-router.get('/:id', isAuthenticated, clinicsController.getClinicById);
-
-// Update clinic (admin only)
-router.patch('/:id', isAuthenticated, requireRole(['admin', 'super_admin']), clinicsController.updateClinic);
-
 // List all clinics (super admin only)
 router.get('/', isAuthenticated, requireRole(['super_admin']), clinicsController.listClinics);
+
+// List invitations (super admin only) - MUST come before /:id route
+router.get('/invitations', 
+  isAuthenticated, 
+  requireRole(['super_admin']), 
+  clinicsController.listInvitations
+);
 
 // Create clinic invitation (super admin only)
 router.post('/invitations', 
@@ -77,18 +78,17 @@ router.post('/invitations/:token/accept',
   clinicsController.acceptInvitation
 );
 
-// List invitations (super admin only)
-router.get('/invitations', 
-  isAuthenticated, 
-  requireRole(['super_admin']), 
-  clinicsController.listInvitations
-);
-
 // Cancel invitation (super admin only)
 router.delete('/invitations/:id', 
   isAuthenticated, 
   requireRole(['super_admin']), 
   clinicsController.cancelInvitation
 );
+
+// Get clinic by ID (authenticated) - MUST come after specific routes
+router.get('/:id', isAuthenticated, clinicsController.getClinicById);
+
+// Update clinic (admin only)
+router.patch('/:id', isAuthenticated, requireRole(['admin', 'super_admin']), clinicsController.updateClinic);
 
 export { router as clinicsRoutes };

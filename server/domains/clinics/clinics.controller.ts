@@ -1,12 +1,10 @@
 import { Request, Response } from "express";
 import { ClinicsService } from "./clinics.service";
-import { AuthService } from "../auth/auth.service";
 import { createClinicInvitationSchema } from "./clinics.schema";
 import { z } from "zod";
 
 export class ClinicsController {
   private clinicsService = new ClinicsService();
-  private authService = new AuthService();
 
   // Get clinic by ID
   getClinicById = async (req: Request, res: Response) => {
@@ -77,7 +75,8 @@ export class ClinicsController {
       }
 
       // Check if user already exists
-      const existingUser = await this.authService.getUserByEmail(admin_email);
+      const storage = req.app.get('storage');
+      const existingUser = await storage.getUserByEmail(admin_email);
       if (existingUser) {
         return res.status(400).json({ 
           error: "Este email já está sendo usado por outro usuário" 

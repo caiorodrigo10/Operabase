@@ -141,23 +141,31 @@ export function ClinicsManagement() {
   const queryClient = useQueryClient();
 
   // Query para listar clínicas
-  const { data: clinicsData, isLoading: clinicsLoading } = useQuery({
+  const { data: clinicsData, isLoading: clinicsLoading, error: clinicsError } = useQuery({
     queryKey: ['/api/clinics'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/clinics?limit=100');
+      const res = await apiRequest('/api/clinics?limit=100', 'GET');
+      if (!res.ok) {
+        throw new Error(`Failed to fetch clinics: ${res.status}`);
+      }
       return res.json();
-    }
+    },
+    retry: 1
   });
 
   const clinics = clinicsData?.clinics || [];
 
   // Query para listar convites
-  const { data: invitationsData, isLoading: invitationsLoading } = useQuery({
+  const { data: invitationsData, isLoading: invitationsLoading, error: invitationsError } = useQuery({
     queryKey: ['/api/clinics/invitations'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/clinics/invitations?limit=100');
+      const res = await apiRequest('/api/clinics/invitations?limit=100', 'GET');
+      if (!res.ok) {
+        throw new Error(`Failed to fetch invitations: ${res.status}`);
+      }
       return res.json();
-    }
+    },
+    retry: 1
   });
 
   const invitations = invitationsData?.invitations || [];
@@ -170,7 +178,7 @@ export function ClinicsManagement() {
         admin_name: data.adminName,
         clinic_name: data.clinicName
       };
-      const res = await apiRequest('POST', '/api/clinics/invitations', payload);
+      const res = await apiRequest('/api/clinics/invitations', 'POST', payload);
       return res.json();
     },
     onSuccess: () => {
