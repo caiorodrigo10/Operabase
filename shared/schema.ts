@@ -3,6 +3,75 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Users table - MUST use serial ID for compatibility with appointments
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email").notNull().unique(),
+  password: varchar("password").notNull(),
+  name: varchar("name").notNull(),
+  role: varchar("role").notNull().default("admin"),
+  is_active: boolean("is_active").notNull().default(true),
+  last_login: timestamp("last_login"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Clinic-User relationship table
+export const clinic_users = pgTable("clinic_users", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  user_id: integer("user_id").notNull(), // MUST match users.id type
+  role: varchar("role").notNull().default("usuario"),
+  is_professional: boolean("is_professional").notNull().default(false),
+  permissions: jsonb("permissions"),
+  is_active: boolean("is_active").notNull().default(true),
+  invited_by: integer("invited_by"),
+  invited_at: timestamp("invited_at"),
+  joined_at: timestamp("joined_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  unique().on(table.clinic_id, table.user_id),
+  index("idx_clinic_users_clinic").on(table.clinic_id),
+  index("idx_clinic_users_user").on(table.user_id),
+  index("idx_clinic_users_professional").on(table.is_professional),
+]);
+
+// Clinics table
+export const clinics = pgTable("clinics", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  responsible: text("responsible").notNull(),
+  phone: text("phone"),
+  phone_country_code: text("phone_country_code").default("+55"),
+  celular: text("celular").notNull(),
+  celular_country_code: text("celular_country_code").default("+55"),
+  email: text("email"),
+  specialties: text("specialties").array(),
+  address_street: text("address_street"),
+  address_number: text("address_number"),
+  address_complement: text("address_complement"),
+  address_neighborhood: text("address_neighborhood"),
+  address_city: text("address_city"),
+  address_state: text("address_state"),
+  address_zip: text("address_zip"),
+  address_country: text("address_country").default("BR"),
+  total_professionals: integer("total_professionals").default(1),
+  working_days: text("working_days").array().default(['monday','tuesday','wednesday','thursday','friday']),
+  work_start: text("work_start").default("08:00"),
+  work_end: text("work_end").default("18:00"),
+  has_lunch_break: boolean("has_lunch_break").default(true),
+  lunch_start: text("lunch_start").default("12:00"),
+  lunch_end: text("lunch_end").default("13:00"),
+  timezone: text("timezone").default("America/Sao_Paulo"),
+  cnpj: text("cnpj"),
+  website: text("website"),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Session storage table for Replit Auth
 export const sessions = pgTable(
   "sessions",
@@ -750,3 +819,99 @@ export const updateLiviaConfigurationSchema = insertLiviaConfigurationSchema.par
 export type LiviaConfiguration = typeof livia_configurations.$inferSelect;
 export type InsertLiviaConfiguration = z.infer<typeof insertLiviaConfigurationSchema>;
 export type UpdateLiviaConfiguration = z.infer<typeof updateLiviaConfigurationSchema>;
+
+// User schemas and types
+export const insertUserSchema = createInsertSchema(users);
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+// Clinic User schemas and types
+export const insertClinicUserSchema = createInsertSchema(clinic_users);
+export type ClinicUser = typeof clinic_users.$inferSelect;
+export type InsertClinicUser = z.infer<typeof insertClinicUserSchema>;
+
+// Clinic schemas and types (minimal for fix)
+export const insertClinicSchema = createInsertSchema(clinics);
+export type Clinic = typeof clinics.$inferSelect;
+export type InsertClinic = z.infer<typeof insertClinicSchema>;
+
+// Contacts table (minimal definition)
+export const contacts = pgTable("contacts", {
+  id: serial("id").primaryKey(),
+  clinic_id: integer("clinic_id").notNull(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const insertContactSchema = createInsertSchema(contacts);
+export type Contact = typeof contacts.$inferSelect;
+export type InsertContact = z.infer<typeof insertContactSchema>;
+
+// Appointments table (minimal definition)
+export const appointments = pgTable("appointments", {
+  id: serial("id").primaryKey(),
+  contact_id: integer("contact_id").notNull(),
+  clinic_id: integer("clinic_id").notNull(),
+  user_id: integer("user_id").notNull(), // CRITICAL: Must be integer to match users.id
+  scheduled_date: timestamp("scheduled_date"),
+  status: text("status").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAppointmentSchema = createInsertSchema(appointments);
+export type Appointment = typeof appointments.$inferSelect;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+
+// Other essential types for storage interface
+export const clinic_invitations = pgTable("clinic_invitations", {
+  id: serial("id").primaryKey(),
+  admin_email: varchar("admin_email").notNull(),
+  admin_name: varchar("admin_name").notNull(),
+  clinic_name: varchar("clinic_name").notNull(),
+  token: varchar("token").notNull().unique(),
+  status: varchar("status").notNull().default("pending"),
+  expires_at: timestamp("expires_at").notNull(),
+  created_by_user_id: integer("created_by_user_id").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const insertClinicInvitationSchema = createInsertSchema(clinic_invitations);
+export type ClinicInvitation = typeof clinic_invitations.$inferSelect;
+export type InsertClinicInvitation = z.infer<typeof insertClinicInvitationSchema>;
+
+export const password_reset_tokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").notNull(),
+  token: varchar("token").notNull().unique(),
+  expires_at: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const insertPasswordResetTokenSchema = createInsertSchema(password_reset_tokens);
+export type PasswordResetToken = typeof password_reset_tokens.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+
+// Types for existing tables
+export type AnalyticsMetric = typeof analytics_metrics.$inferSelect;
+export type InsertAnalyticsMetric = any;
+export type ClinicSetting = typeof clinic_settings.$inferSelect;
+export type InsertClinicSetting = any;
+export type AiTemplate = typeof ai_templates.$inferSelect;
+export type InsertAiTemplate = any;
+export type PipelineStage = typeof pipeline_stages.$inferSelect;
+export type InsertPipelineStage = any;
+export type PipelineOpportunity = typeof pipeline_opportunities.$inferSelect;
+export type InsertPipelineOpportunity = any;
+export type PipelineHistory = typeof pipeline_history.$inferSelect;
+export type InsertPipelineHistory = any;
+export type PipelineActivity = typeof pipeline_activities.$inferSelect;
+export type InsertPipelineActivity = any;
+export type CalendarIntegration = typeof calendar_integrations.$inferSelect;
+export type InsertCalendarIntegration = any;
+export type MedicalRecord = typeof medical_records.$inferSelect;
+export type InsertMedicalRecord = any;
