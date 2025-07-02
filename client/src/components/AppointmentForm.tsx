@@ -108,7 +108,7 @@ export function AppointmentForm({
   });
 
   // Debug logging
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('📊 API Response - All users:', clinicUsers);
     console.log('🔍 Professional users:', clinicUsers.filter((u: any) => u.is_professional));
     if (usersError) {

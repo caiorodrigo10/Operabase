@@ -800,15 +800,24 @@ export function Consultas() {
   };
 
   const getCalendarCellBackgroundClass = (date: Date, hour?: number): string => {
-    if (!clinicConfig) return "bg-white";
+    if (!clinicConfig) {
+      console.log('⚠️ No clinicConfig available');
+      return "bg-white";
+    }
     
     // For monthly view - check if entire day is unavailable
     if (hour === undefined) {
-      return isUnavailableDay(date) ? "bg-gray-100" : "bg-white";
+      const unavailable = isUnavailableDay(date);
+      console.log(`📅 Day ${date.toDateString()} - unavailable: ${unavailable}`);
+      return unavailable ? "bg-gray-100" : "bg-white";
     }
     
     // For weekly/daily view - check both day and hour
-    if (isUnavailableDay(date) || isUnavailableHour(hour)) {
+    const dayUnavailable = isUnavailableDay(date);
+    const hourUnavailable = isUnavailableHour(hour);
+    console.log(`🕐 Hour ${hour}:00 on ${date.toDateString()} - day unavailable: ${dayUnavailable}, hour unavailable: ${hourUnavailable}`);
+    
+    if (dayUnavailable || hourUnavailable) {
       return "bg-gray-100";
     }
     
