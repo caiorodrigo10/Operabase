@@ -16,6 +16,9 @@ import { Building2, Mail, Calendar, CheckCircle, AlertCircle } from 'lucide-reac
 
 // Schema de validação
 const acceptInvitationSchema = z.object({
+  name: z.string().min(2, 'Nome é obrigatório'),
+  email: z.string().email('Email inválido'),
+  clinicName: z.string().min(2, 'Nome da clínica é obrigatório'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   confirmPassword: z.string().min(6, 'Confirmação de senha é obrigatória')
 }).refine((data) => data.password === data.confirmPassword, {
@@ -44,6 +47,9 @@ export function ConviteClinica() {
   const form = useForm<AcceptInvitationForm>({
     resolver: zodResolver(acceptInvitationSchema),
     defaultValues: {
+      name: '',
+      email: '',
+      clinicName: '',
       password: '',
       confirmPassword: ''
     }
@@ -70,7 +76,9 @@ export function ConviteClinica() {
   const acceptInvitationMutation = useMutation({
     mutationFn: async (data: AcceptInvitationForm) => {
       const payload = {
-        token,
+        name: data.name,
+        email: data.email,
+        clinicName: data.clinicName,
         password: data.password
       };
       const res = await fetch(`/api/clinics/invitations/${token}/accept`, {
@@ -194,29 +202,75 @@ export function ConviteClinica() {
         
         <CardContent className="space-y-6">
           {/* Informações do convite */}
-          <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-teal-600" />
-              <span className="font-medium">Clínica:</span>
-              <span>{invitation.clinic_name}</span>
-            </div>
-            
+          <div className="space-y-2 p-3 bg-gray-50 rounded-lg text-sm">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-teal-600" />
-              <span className="font-medium">Seu email:</span>
-              <span>{invitation.admin_email}</span>
+              <span className="font-medium">Convidado originalmente:</span>
+              <span className="text-gray-600">{invitation.admin_email}</span>
             </div>
             
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-teal-600" />
               <span className="font-medium">Válido até:</span>
-              <span>{format(new Date(invitation.expires_at), "dd/MM/yyyy HH:mm")}</span>
+              <span className="text-gray-600">{format(new Date(invitation.expires_at), "dd/MM/yyyy HH:mm")}</span>
             </div>
           </div>
 
           {/* Formulário */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Seu Nome</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Digite seu nome completo"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Seu Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Digite seu email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="clinicName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome da Clínica</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Digite o nome da sua clínica"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="password"

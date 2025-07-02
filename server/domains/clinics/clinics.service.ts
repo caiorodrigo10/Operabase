@@ -78,16 +78,12 @@ export class ClinicsService {
     const [invitation] = await db
       .insert(clinic_invitations)
       .values({
-        email: data.admin_email,
-        role: 'admin', // admin role for the clinic
-        invited_by: data.created_by_user_id,
-        token,
-        expires_at: expiresAt,
-        status: 'pending',
-        // Store additional data in the new columns
         admin_email: data.admin_email,
         admin_name: data.admin_name,
         clinic_name: data.clinic_name,
+        token,
+        expires_at: expiresAt,
+        status: 'pending',
         created_by_user_id: data.created_by_user_id
       })
       .returning();
@@ -124,7 +120,12 @@ export class ClinicsService {
     return invitation;
   }
 
-  async acceptInvitation(token: string, password: string) {
+  async acceptInvitation(token: string, formData: {
+    name: string;
+    email: string;
+    clinicName: string;
+    password: string;
+  }) {
     // Get invitation
     const invitation = await this.getInvitationByToken(token);
     
@@ -136,33 +137,29 @@ export class ClinicsService {
       throw new Error('Este convite já foi aceito');
     }
 
-    // Check if user already exists
-    const existingUser = await this.authService.getUserByEmail(invitation.admin_email);
-    if (existingUser) {
-      throw new Error('Este email já está sendo usado por outro usuário');
-    }
+    // Note: We do NOT check if email already exists - allowing any email
 
     try {
       // Start transaction-like operations
       
-      // 1. Create clinic
+      // 1. Create clinic with form data
       const [newClinic] = await db
         .insert(clinics)
         .values({
-          name: invitation.clinic_name,
-          responsible: invitation.admin_name,
+          name: formData.clinicName,
+          responsible: formData.name,
           status: 'active'
         })
         .returning();
 
-      // 2. Create user
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // 2. Create user with form data
+      const hashedPassword = await bcrypt.hash(formData.password, 10);
       
       const [newUser] = await db
         .insert(users)
         .values({
-          name: invitation.admin_name,
-          email: invitation.admin_email,
+          name: formData.name,
+          email: formData.email,
           password: hashedPassword,
           role: 'admin'
         })
@@ -184,8 +181,7 @@ export class ClinicsService {
         .update(clinic_invitations)
         .set({
           status: 'accepted',
-          clinic_id: newClinic.id,
-          completed_at: new Date()
+          clinic_id: newClinic.id
         })
         .where(eq(clinic_invitations.id, invitation.id));
 

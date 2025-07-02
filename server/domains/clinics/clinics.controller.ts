@@ -132,9 +132,14 @@ export class ClinicsController {
   acceptInvitation = async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
-      const { password } = req.body;
+      const { name, email, clinicName, password } = req.body;
       
-      const result = await this.clinicsService.acceptInvitation(token, password);
+      const result = await this.clinicsService.acceptInvitation(token, {
+        name,
+        email,
+        clinicName,
+        password
+      });
       
       return res.json(result);
     } catch (error) {
