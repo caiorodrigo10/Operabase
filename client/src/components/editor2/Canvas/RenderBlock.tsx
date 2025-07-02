@@ -119,7 +119,21 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
       componentFound: !!Component,
       availableComponents: Object.keys(activeComponentMap),
       stackAvailable: !!activeComponentMap.Stack,
-      masonryAvailable: !!activeComponentMap.Masonry
+      masonryAvailable: !!activeComponentMap.Masonry,
+      blockId: block.id,
+      blockHasChildren: !!block.children?.length
+    });
+  }
+
+  // Debug GERAL para todos os componentes Stack
+  if (block.component.name === 'Stack') {
+    console.log('🎯 STACK ESPECÍFICO DEBUG:', {
+      blockId: block.id,
+      componentExists: !!Component,
+      stackImported: !!Stack,
+      stackInMap: !!activeComponentMap.Stack,
+      willRenderStack: !!Component,
+      blockStructure: block
     });
   }
   
