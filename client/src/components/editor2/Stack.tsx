@@ -104,11 +104,13 @@ export function Stack({
           childId: child?.id,
           componentName: child?.component?.name,
           hasComponent: !!child?.component,
-          childValid: !!(child?.id && child?.component)
+          childValid: !!(child?.id && child?.component),
+          fullChild: child
         });
         
-        if (!child?.id || !child?.component) {
-          console.error(`❌ INVALID CHILD ${index}:`, child);
+        // Validação mais permissiva - só precisa ter id
+        if (!child?.id) {
+          console.error(`❌ INVALID CHILD ${index} - missing id:`, child);
           return <div key={`invalid-${index}`} style={{ background: 'red', color: 'white', padding: '10px' }}>Invalid Child {index}</div>;
         }
         
