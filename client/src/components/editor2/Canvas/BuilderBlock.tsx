@@ -74,18 +74,55 @@ export function BuilderBlock({ block, context }: BuilderBlockProps) {
     );
   }
 
-  // Tratamento especial para Columns e Box
-  if (SPECIAL_COMPONENTS.includes(block.component.name)) {
-    console.log(`🔧 Rendering special component: ${block.component.name}`, {
+  // Tratamento especial para Columns (seguindo padrão Builder.io oficial)
+  if (block.component.name === 'Columns') {
+    console.log(`🏗️ Rendering Columns with Builder.io pattern:`, {
       childrenCount: block.children?.length || 0,
-      children: block.children?.map(child => ({ id: child.id, component: child.component.name }))
+      hasColumnsConfig: !!block.component.options.columns,
+      columnsConfig: block.component.options.columns
+    });
+    
+    // Converter children em estrutura columns[].blocks conforme Builder.io
+    const columnsConfig = block.component.options.columns || [];
+    const columnsData = columnsConfig.map((colConfig: any, index: number) => ({
+      ...colConfig,
+      blocks: block.children?.filter((child: any, childIndex: number) => {
+        // Distribuir children entre as colunas baseado no índice
+        return childIndex % columnsConfig.length === index;
+      }) || []
+    }));
+    
+    console.log(`📊 Columns data conversion:`, {
+      originalChildren: block.children?.length || 0,
+      columnsCount: columnsData.length,
+      columnsData: columnsData.map((col: any) => ({ 
+        width: col.width, 
+        blocksCount: col.blocks.length 
+      }))
     });
     
     return (
       <Component
         {...block.component.options}
         id={block.id}
-        blocks={block.children || []} // Passar children como blocks para compatibilidade
+        columns={columnsData} // ✅ Estrutura Builder.io oficial: columns[].blocks
+        context={context}
+      />
+    );
+  }
+
+  // Tratamento especial para Box
+  if (block.component.name === 'Box') {
+    console.log(`📦 Rendering Box component:`, {
+      childrenCount: block.children?.length || 0,
+      children: block.children?.map((child: any) => ({ id: child.id, component: child.component.name }))
+    });
+    
+    return (
+      <Component
+        {...block.component.options}
+        id={block.id}
+        blocks={block.children || []} // Box suporta blocks
         context={context}
       />
     );
@@ -93,15 +130,25 @@ export function BuilderBlock({ block, context }: BuilderBlockProps) {
 
   // Componentes tradicionais que usam children React (Section, Container, etc.)
   console.log(`⚛️ Rendering React children component: ${block.component.name}`, {
-    childrenCount: block.children?.length || 0
+    childrenCount: block.children?.length || 0,
+    hasResponsiveStyles: !!block.responsiveStyles?.large
   });
 
-  // Aplicar responsiveStyles se disponível
+  // APLICAR PADRÃO STACK: Responsive styles + component options
   const responsiveStyles = block.responsiveStyles?.large || {};
-  const finalStyle = {
+  const componentStyle = block.component.options.style || {};
+  
+  // Seguir padrão Stack Widget que funciona
+  const finalStyle: React.CSSProperties = {
     ...responsiveStyles,
-    ...block.component.options.style
+    ...componentStyle
   };
+
+  console.log(`🎨 Applying styles for ${block.component.name}:`, {
+    responsiveStyles,
+    componentStyle,
+    finalStyle
+  });
 
   return (
     <Component 
@@ -110,7 +157,7 @@ export function BuilderBlock({ block, context }: BuilderBlockProps) {
       style={finalStyle}
       context={context}
     >
-      {block.children?.map(child => (
+      {block.children?.map((child: any) => (
         <BuilderBlock 
           key={child.id} 
           block={child} 

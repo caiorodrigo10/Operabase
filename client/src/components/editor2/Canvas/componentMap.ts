@@ -9,7 +9,7 @@ import { HeroSection } from '../Components/HeroSection';
 import { Text } from '../Components/Text';
 import { Button } from '../Components/Button';
 import { Section } from '../Components/Section';
-import { Columns } from '../Components/Columns';
+import { Columns } from '../ColumnsFixed';
 import { Image } from '../Components/Image';
 import { Video } from '../Components/Video';
 import { Spacer } from '../Components/Spacer';
