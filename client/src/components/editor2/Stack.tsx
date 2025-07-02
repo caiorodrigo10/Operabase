@@ -63,15 +63,24 @@ export function Stack({
     stylesApplied: finalStyles
   });
 
+  // Debug específico Stack
+  console.log('🎯 STACK FINAL RENDER:', {
+    id,
+    hasChildren: !!children?.length,
+    childrenArray: children,
+    willRenderChildren: children?.length > 0
+  });
+
   return (
     <div 
       id={id}
       className="builder-stack"
       style={finalStyles}
     >
-      {children?.map((child, index) => (
-        <RenderBlock key={child.id || `stack-child-${index}`} block={child} />
-      ))}
+      {children?.map((child, index) => {
+        console.log(`🔗 Stack rendering child ${index}:`, child?.id, child?.component?.name);
+        return <RenderBlock key={child.id || `stack-child-${index}`} block={child} />;
+      })}
     </div>
   );
 }

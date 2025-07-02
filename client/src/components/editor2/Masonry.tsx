@@ -34,14 +34,14 @@ export function Masonry({
   responsiveStyles = {}
 }: MasonryProps) {
   
-  // Gera estilos CSS Grid masonry
+  // Gera estilos CSS Grid (removendo masonry para compatibilidade)
   const baseStyles: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns: `repeat(${columns}, 1fr)`,
     gap: `${rowGap}px ${columnGap}px`,
     width: '100%',
-    // CSS Grid masonry support (future)
-    gridTemplateRows: 'masonry'
+    gridAutoRows: 'min-content', // Permite altura automática dos items
+    alignItems: 'start' // Alinha items no topo para efeito masonry simples
   };
 
   // CSS responsivo para breakpoints
