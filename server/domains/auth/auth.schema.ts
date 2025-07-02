@@ -1,11 +1,11 @@
 
-import { pgTable, text, varchar, boolean, timestamp, index, unique, uuid, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, timestamp, index, unique, uuid, serial, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enhanced users table for email/password authentication
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey(),
+  id: serial("id").primaryKey(),
   email: varchar("email").notNull().unique(),
   password: varchar("password").notNull(),
   name: varchar("name").notNull(),
@@ -20,7 +20,7 @@ export const users = pgTable("users", {
 // Password reset tokens table
 export const password_reset_tokens = pgTable("password_reset_tokens", {
   id: text("id").primaryKey(),
-  user_id: uuid("user_id").notNull(),
+  user_id: integer("user_id").notNull(),
   token: varchar("token", { length: 255 }).notNull().unique(),
   expires_at: timestamp("expires_at").notNull(),
   used: boolean("used").notNull().default(false),
