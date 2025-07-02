@@ -13,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
-import { Plus, Building2, Users, Mail, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Building2, Users, Mail, Trash2, Clock, CheckCircle, XCircle, Copy } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Schemas de validação
@@ -471,44 +471,69 @@ export function ClinicsManagement() {
                   <TableHead>Nome do Admin</TableHead>
                   <TableHead>Nome da Clínica</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Link do Convite</TableHead>
                   <TableHead>Expira em</TableHead>
                   <TableHead>Enviado em</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invitations?.map((invitation) => (
-                  <TableRow key={invitation.id}>
-                    <TableCell>{invitation.email}</TableCell>
-                    <TableCell>{invitation.admin_name}</TableCell>
-                    <TableCell className="font-medium">{invitation.clinic_name}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(invitation.status)} className="flex items-center gap-1 w-fit">
-                        {getStatusIcon(invitation.status)}
-                        {getStatusText(invitation.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(invitation.expires_at), "dd/MM/yyyy HH:mm")}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(invitation.created_at), "dd/MM/yyyy HH:mm")}
-                    </TableCell>
-                    <TableCell>
-                      {invitation.status === 'pending' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => cancelInvitationMutation.mutate(invitation.id)}
-                          disabled={cancelInvitationMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Cancelar
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {invitations?.map((invitation) => {
+                  const inviteLink = `${window.location.origin}/convite-clinica/${invitation.token}`;
+                  
+                  return (
+                    <TableRow key={invitation.id}>
+                      <TableCell>{invitation.email}</TableCell>
+                      <TableCell>{invitation.admin_name}</TableCell>
+                      <TableCell className="font-medium">{invitation.clinic_name}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(invitation.status)} className="flex items-center gap-1 w-fit">
+                          {getStatusIcon(invitation.status)}
+                          {getStatusText(invitation.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground max-w-[200px] truncate">
+                            {inviteLink}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(inviteLink);
+                              toast({
+                                title: "Link copiado!",
+                                description: "O link do convite foi copiado para a área de transferência."
+                              });
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(invitation.expires_at), "dd/MM/yyyy HH:mm")}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(invitation.created_at), "dd/MM/yyyy HH:mm")}
+                      </TableCell>
+                      <TableCell>
+                        {invitation.status === 'pending' && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => cancelInvitationMutation.mutate(invitation.id)}
+                            disabled={cancelInvitationMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Cancelar
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
