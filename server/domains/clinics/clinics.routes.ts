@@ -1,40 +1,63 @@
+import { Router } from "express";
+import { ClinicsController } from "./clinics.controller";
+import { z } from "zod";
+import { isAuthenticated } from "../../auth.js";
+import { validateRequest } from "../../middleware/validation";
 
-import { Router } from 'express';
-import { ClinicsController } from './clinics.controller';
-import { supabaseAuth } from '../../supabase-auth';
-import { getClinicUsersForManagement } from '../../permissions-routes';
-import type { IStorage } from '../../storage';
+const router = Router();
+const clinicsController = new ClinicsController();
 
-export function createClinicsRoutes(storage: IStorage): Router {
-  const router = Router();
-  const controller = new ClinicsController(storage);
+// Schema for creating clinic invitation
+const createInvitationSchema = z.object({
+  admin_email: z.string().email("Email inválido"),
+  admin_name: z.string().min(1, "Nome é obrigatório"),
+  clinic_name: z.string().min(1, "Nome da clínica é obrigatório")
+});
 
-  // Get clinic by ID
-  router.get('/clinics/:id', controller.getClinicById.bind(controller));
+// Schema for accepting clinic invitation
+const acceptInvitationSchema = z.object({
+  token: z.string().min(1, "Token é obrigatório"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres")
+});
 
-  // Create clinic
-  router.post('/clinics', controller.createClinic.bind(controller));
+// Get clinic by ID (authenticated)
+router.get('/:id', isAuthenticated, clinicsController.getClinicById);
 
-  // Update clinic
-  router.put('/clinics/:id', controller.updateClinic.bind(controller));
+// Update clinic (admin only)
+router.patch('/:id', isAuthenticated, requireRole(['admin', 'super_admin']), clinicsController.updateClinic);
 
-  // Get clinic users
-  router.get('/clinic/:id/users', controller.getClinicUsers.bind(controller));
+// List all clinics (super admin only)
+router.get('/', isAuthenticated, requireRole(['super_admin']), clinicsController.listClinics);
 
-  // Get clinic users for management (with detailed info)
-  router.get('/clinic/:clinicId/users/management', getClinicUsersForManagement as any);
+// Create clinic invitation (super admin only)
+router.post('/invitations', 
+  isAuthenticated, 
+  requireRole(['super_admin']), 
+  validateRequest(createInvitationSchema),
+  clinicsController.createInvitation
+);
 
-  // Create new user in clinic
-  router.post('/clinic/:clinicId/users', supabaseAuth as any, controller.createUserInClinic.bind(controller));
+// Get invitation by token (public)
+router.get('/invitations/:token', clinicsController.getInvitationByToken);
 
-  // Delete user from clinic
-  router.delete('/clinic/:clinicId/users/:userId', supabaseAuth as any, controller.removeUserFromClinic.bind(controller));
+// Accept invitation (public)
+router.post('/invitations/:token/accept', 
+  validateRequest(acceptInvitationSchema),
+  clinicsController.acceptInvitation
+);
 
-  // Get clinic configuration (alias for clinic by ID)
-  router.get('/clinic/:id/config', controller.getClinicById.bind(controller));
+// List invitations (super admin only)
+router.get('/invitations', 
+  isAuthenticated, 
+  requireRole(['super_admin']), 
+  clinicsController.listInvitations
+);
 
-  // Update clinic configuration (alias for update clinic)
-  router.put('/clinic/:id/config', controller.updateClinic.bind(controller));
+// Cancel invitation (super admin only)
+router.delete('/invitations/:id', 
+  isAuthenticated, 
+  requireRole(['super_admin']), 
+  clinicsController.cancelInvitation
+);
 
-  return router;
-}
+export { router as clinicsRoutes };

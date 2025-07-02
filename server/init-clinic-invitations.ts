@@ -5,14 +5,7 @@ export async function initClinicInvitationsSystem() {
   try {
     console.log('🏥 Initializing Clinic Invitations system...');
     
-    // First, add status column to clinics table if it doesn't exist
-    console.log('🔧 Adding status column to clinics table...');
-    await db.execute(sql`
-      ALTER TABLE clinics 
-      ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'active';
-    `);
-    
-    // Create clinic_invitations table
+    // Create clinic_invitations table (clinic status column already exists)
     console.log('🔧 Creating clinic_invitations table...');
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS clinic_invitations (
@@ -30,11 +23,8 @@ export async function initClinicInvitationsSystem() {
       );
     `);
 
-    // Create indexes for performance
-    console.log('🔧 Creating indexes...');
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_clinic_invitations_token ON clinic_invitations(token);`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_clinic_invitations_status ON clinic_invitations(status);`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_clinic_invitations_created_by ON clinic_invitations(created_by_user_id);`);
+    // Skip indexes for initial setup to avoid conflicts
+    console.log('🔧 Skipping indexes for initial setup...');
 
     console.log('✅ Clinic Invitations system initialized successfully');
     
