@@ -112,7 +112,7 @@ export function Stack({
           return <div key={`invalid-${index}`} style={{ background: 'red', color: 'white', padding: '10px' }}>Invalid Child {index}</div>;
         }
         
-        return <RenderBlock key={child.id || `stack-child-${index}`} block={child} componentMap={componentMap} />;
+        return <RenderBlock key={child.id || `stack-child-${index}`} block={child} />;
       })}
     </div>
   );

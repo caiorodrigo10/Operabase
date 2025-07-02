@@ -3,24 +3,60 @@
  * Mapeia nomes de componentes para seus componentes React correspondentes
  */
 
-import { ComponentMap } from '@/../shared/editor2-types';
+// Import de componentes
 import { Container } from '../Components/Container';
 import { HeroSection } from '../Components/HeroSection';
 import { Text } from '../Components/Text';
 import { Button } from '../Components/Button';
+import { Section } from '../Components/Section';
+import { Columns } from '../Components/Columns';
+import { Image } from '../Components/Image';
+import { Video } from '../Components/Video';
+import { Spacer } from '../Components/Spacer';
+import { Divider } from '../Components/Divider';
+import { Form } from '../Components/Form';
+import { Testimonial } from '../Components/Testimonial';
 import { DefaultComponent } from '../Components/DefaultComponent';
+import { Box } from '../Box';
+import { Stack } from '../Stack';
+import { Masonry } from '../Masonry';
+import { Fragment } from '../Fragment';
 
 // Mapeamento principal de componentes
-export const componentMap: ComponentMap = {
+export const componentMap = {
   // Layout básico
   Container,
   
   // Seções
   HeroSection,
+  Section,
   
   // Elementos básicos
   Text,
   Button,
+  
+  // Layout avançado
+  Columns,
+  
+  // Mídia
+  Image,
+  Video,
+  
+  // Utilitários
+  Spacer,
+  Divider,
+  
+  // Formulários
+  Form,
+  
+  // Testimonial
+  Testimonial,
+  
+  // Widgets Builder.io
+  Box,
+  Stack,
+  Masonry,
+  Fragment,
   
   // Fallback para componentes não encontrados
   DefaultComponent

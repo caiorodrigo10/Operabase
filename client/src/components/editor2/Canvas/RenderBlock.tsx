@@ -160,8 +160,7 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
         {block.children?.map((child) => (
           <RenderBlock 
             key={child.id} 
-            block={child} 
-            componentMap={activeComponentMap}
+            block={child}
           />
         ))}
       </DefaultComponent>
@@ -225,8 +224,7 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
         renderBlock: (childBlock: any) => (
           <RenderBlock 
             key={childBlock.id} 
-            block={childBlock} 
-            componentMap={activeComponentMap}
+            block={childBlock}
           />
         )
       };
@@ -277,8 +275,7 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
   const children = block.children?.map((child) => (
     <RenderBlock 
       key={child.id} 
-      block={child} 
-      componentMap={activeComponentMap}
+      block={child}
     />
   ));
 
@@ -354,25 +351,23 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
 };
 
 // Hook auxiliar para renderizar múltiplos blocos
-export function useRenderBlocks(blocks: Block[], customComponentMap?: any) {
+export function useRenderBlocks(blocks: any[]) {
   return React.useMemo(() => {
     return blocks.map((block) => (
       <RenderBlock 
         key={block.id} 
-        block={block} 
-        componentMap={customComponentMap}
+        block={block}
       />
     ));
-  }, [blocks, customComponentMap]);
+  }, [blocks]);
 }
 
 // Função auxiliar para renderizar array de blocos
-export function renderBlocks(blocks: Block[], customComponentMap?: any) {
+export function renderBlocks(blocks: any[]) {
   return blocks.map((block) => (
     <RenderBlock 
       key={block.id} 
-      block={block} 
-      componentMap={customComponentMap}
+      block={block}
     />
   ));
 }
