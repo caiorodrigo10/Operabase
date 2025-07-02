@@ -101,7 +101,32 @@ export const EditorHeader: React.FC = () => {
           >
             <ChevronLeft size={16} />
           </button>
-          <span className="step-text">Página: Homepage</span>
+          <select
+            className="page-select-dropdown"
+            onChange={(e) => {
+              const selectedTemplate = pageTemplates.find(t => t.id === e.target.value);
+              if (selectedTemplate) {
+                handlePageChange(selectedTemplate.data);
+              }
+            }}
+            style={{
+              backgroundColor: '#2d2d2d',
+              color: '#ffffff',
+              border: '1px solid #404040',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              fontSize: '12px',
+              minWidth: '140px'
+            }}
+            defaultValue=""
+          >
+            <option value="" disabled>Escolher Template</option>
+            {pageTemplates.map(template => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
+          </select>
           <button 
             className="step-arrow"
             onClick={() => handleStepNavigation('next')}
