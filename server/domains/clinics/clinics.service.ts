@@ -208,36 +208,24 @@ export class ClinicsService {
 
   async listInvitations(filters: { status?: string; page: number; limit: number }) {
     try {
-      // Build query with Drizzle
-      let baseQuery = db.select({
-        id: clinic_invitations.id,
-        clinic_id: clinic_invitations.clinic_id,
-        email: clinic_invitations.email,
-        role: clinic_invitations.role,
-        admin_email: clinic_invitations.admin_email,
-        admin_name: clinic_invitations.admin_name,
-        clinic_name: clinic_invitations.clinic_name,
-        token: clinic_invitations.token,
-        expires_at: clinic_invitations.expires_at,
-        status: clinic_invitations.status,
-        created_at: clinic_invitations.created_at,
-        completed_at: clinic_invitations.completed_at,
-        created_by_user_id: clinic_invitations.created_by_user_id,
-        creator_name: users.name
-      })
-      .from(clinic_invitations)
-      .leftJoin(users, eq(clinic_invitations.created_by_user_id, users.id));
+      console.log('🔍 Listing invitations with filters:', filters);
+      
+      // Simple select all from clinic_invitations
+      let baseQuery = db.select().from(clinic_invitations);
       
       // Apply status filter if provided
       if (filters.status) {
         baseQuery = baseQuery.where(eq(clinic_invitations.status, filters.status));
       }
       
-      // Apply pagination
+      // Apply pagination and ordering
       const invitations = await baseQuery
         .orderBy(desc(clinic_invitations.created_at))
         .limit(filters.limit)
         .offset((filters.page - 1) * filters.limit);
+
+      console.log('📋 Found invitations:', invitations.length);
+      console.log('📋 Sample invitation:', invitations[0]);
 
       // Get total count
       let countQuery = db.select({ count: sql<number>`count(*)` }).from(clinic_invitations);
@@ -248,6 +236,8 @@ export class ClinicsService {
       const countResult = await countQuery;
       const total = Number(countResult[0]?.count || 0);
 
+      console.log('📊 Total invitations:', total);
+
       return {
         invitations,
         total,
@@ -256,7 +246,8 @@ export class ClinicsService {
         totalPages: Math.ceil(total / filters.limit)
       };
     } catch (error) {
-      console.error('Error listing invitations:', error);
+      console.error('❌ Error listing invitations:', error);
+      console.error('❌ Error stack:', error.stack);
       // Return empty result on error
       return {
         invitations: [],

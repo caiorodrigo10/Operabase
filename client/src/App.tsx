@@ -44,6 +44,7 @@ import MCPTestPage from "./pages/mcp-test";
 import ApiKeysPage from "./pages/api-keys";
 import { AdminDashboard } from "./pages/admin/dashboard";
 import { ClinicsManagement } from "./pages/admin/clinics";
+import { ConviteClinica } from "./pages/ConviteClinica";
 import AnamnesisPublica from "./pages/anamnese-publica";
 import PreencherAnamnese from "./pages/preencher-anamnese";
 import AnamnesisTemplatesPage from "./pages/anamneses";
@@ -75,6 +76,11 @@ function Router() {
   // Handle public routes first, completely outside auth system
   if (location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/')) {
     return <AnamnesisPublica />;
+  }
+
+  // Handle clinic invitation route (public access)
+  if (location.startsWith('/convite-clinica/')) {
+    return <ConviteClinica />;
   }
 
   // Handle preview routes (public access)
