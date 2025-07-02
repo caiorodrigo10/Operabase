@@ -83,10 +83,17 @@ function calculateResponsiveStyles(responsiveStyles?: any): React.CSSProperties 
   };
 }
 
+// Definindo interface simplificada aqui mesmo
+interface RenderBlockProps {
+  block: any;
+}
+
 export const RenderBlock: React.FC<RenderBlockProps> = ({ 
-  block, 
-  componentMap: customComponentMap 
+  block
 }) => {
+  // Usar ComponentMapContext (Builder.io pattern)
+  const contextComponentMap = useComponentMapSafe();
+  
   // Verificação de segurança do bloco
   if (!block) {
     console.warn('RenderBlock: block is null or undefined');
@@ -103,8 +110,8 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     return null;
   }
   
-  // Usa componentMap customizado ou interno
-  const activeComponentMap = customComponentMap || internalComponentMap;
+  // Usar componentMap do contexto ou fallback para o interno
+  const activeComponentMap = contextComponentMap || internalComponentMap;
   
   // Tentar usar contexto de edição se disponível
   const editor = useEditor ? useEditor() : null;
