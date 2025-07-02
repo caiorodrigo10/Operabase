@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { BuilderElement } from '@/../shared/editor2-types';
-import { useComponentMapSafe } from '@/contexts/ComponentMapContext';
+import { BuilderElement } from '../../../../shared/editor2-types';
+import { componentMap } from './componentMap';
 
 export interface BuilderBlockProps {
   block: BuilderElement;
@@ -17,7 +17,6 @@ export interface BuilderBlockProps {
  * Renderiza elementos Builder.io com suporte a components que processam blocks vs children
  */
 export function BuilderBlock({ block, context }: BuilderBlockProps) {
-  const componentMap = useComponentMapSafe();
   
   console.log(`🔧 BuilderBlock rendering:`, {
     componentName: block.component.name,

@@ -3,6 +3,8 @@
  * Based on Builder.io SDK structure and patterns
  */
 
+import React from 'react';
+
 export interface BuilderElement {
   "@type": "@builder.io/sdk:Element";
   id: string;
@@ -39,7 +41,6 @@ export interface BuilderBlock {
   };
 }
 
-// Component Props Interfaces for Builder.io Pattern
 export interface BuilderComponentProps {
   id: string;
   blocks?: BuilderElement[];
@@ -48,7 +49,6 @@ export interface BuilderComponentProps {
   className?: string;
 }
 
-// Stack Component - Builder.io Pattern
 export interface StackProps extends BuilderComponentProps {
   blocks: BuilderElement[];
   direction?: 'horizontal' | 'vertical';
@@ -59,7 +59,6 @@ export interface StackProps extends BuilderComponentProps {
   reverseOrder?: boolean;
 }
 
-// Masonry Component - Builder.io Pattern  
 export interface MasonryProps extends BuilderComponentProps {
   blocks: BuilderElement[];
   columns?: number;
@@ -72,7 +71,6 @@ export interface MasonryProps extends BuilderComponentProps {
   };
 }
 
-// Fragment Component - Builder.io Pattern
 export interface FragmentProps extends BuilderComponentProps {
   blocks: BuilderElement[];
   logicalGroup?: string;
@@ -81,7 +79,6 @@ export interface FragmentProps extends BuilderComponentProps {
   conditionalRender?: boolean;
 }
 
-// Columns Component - Builder.io Pattern
 export interface ColumnsProps extends BuilderComponentProps {
   blocks: BuilderElement[];
   columns?: number;
@@ -91,7 +88,6 @@ export interface ColumnsProps extends BuilderComponentProps {
   reverseColumnsWhenStacked?: boolean;
 }
 
-// Box Component - Builder.io Pattern
 export interface BoxProps extends BuilderComponentProps {
   blocks?: BuilderElement[];
   backgroundImage?: string;
@@ -104,7 +100,6 @@ export interface BoxProps extends BuilderComponentProps {
   maxWidth?: string;
 }
 
-// Traditional React Children Components
 export interface TextProps {
   id?: string;
   text: string;
@@ -158,12 +153,10 @@ export interface ImageProps {
   aspectRatio?: number;
 }
 
-// Component Map Type
 export interface ComponentMap {
   [key: string]: React.ComponentType<any>;
 }
 
-// Context Types
 export interface ComponentMapContextType {
   componentMap: ComponentMap;
 }
@@ -174,7 +167,6 @@ export interface PageContextType {
   isLoading: boolean;
 }
 
-// Editor Context Types
 export interface EditorContextType {
   selectedElementId: string | null;
   hoveredElementId: string | null;
@@ -186,7 +178,6 @@ export interface EditorContextType {
   setShowGrid: (show: boolean) => void;
 }
 
-// Utility Types
 export type ResponsiveValue<T> = {
   large?: T;
   medium?: T;
