@@ -53,7 +53,10 @@ export function BuilderBlock({ block, context }: BuilderBlockProps) {
   }
 
   // Componentes que processam children como blocks data (padrão Builder.io)
-  const BLOCKS_COMPONENTS = ['Stack', 'Masonry', 'Fragment', 'Columns', 'Box'];
+  const BLOCKS_COMPONENTS = ['Stack', 'Masonry', 'Fragment'];
+  
+  // Componentes especiais que precisam de tratamento diferente
+  const SPECIAL_COMPONENTS = ['Columns', 'Box'];
   
   if (BLOCKS_COMPONENTS.includes(block.component.name)) {
     console.log(`📦 Rendering blocks component: ${block.component.name}`, {
@@ -66,6 +69,23 @@ export function BuilderBlock({ block, context }: BuilderBlockProps) {
         {...block.component.options}
         id={block.id}
         blocks={block.children || []} // ✅ Passar como blocks data
+        context={context}
+      />
+    );
+  }
+
+  // Tratamento especial para Columns e Box
+  if (SPECIAL_COMPONENTS.includes(block.component.name)) {
+    console.log(`🔧 Rendering special component: ${block.component.name}`, {
+      childrenCount: block.children?.length || 0,
+      children: block.children?.map(child => ({ id: child.id, component: child.component.name }))
+    });
+    
+    return (
+      <Component
+        {...block.component.options}
+        id={block.id}
+        blocks={block.children || []} // Passar children como blocks para compatibilidade
         context={context}
       />
     );

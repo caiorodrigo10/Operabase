@@ -1,4 +1,6 @@
 import React from 'react';
+import { BuilderElement } from '../../shared/editor2-types';
+import { BuilderBlock } from './Canvas/BuilderBlock';
 
 export interface BoxProps {
   // Layout Properties
@@ -41,10 +43,13 @@ export interface BoxProps {
   
   // Content
   children?: React.ReactNode;
+  blocks?: BuilderElement[]; // ✅ Suporte para blocks do Builder.io
+  id?: string;
   
   // Builder.io Integration
   builderBlock?: any;
   attributes?: any;
+  context?: any;
 }
 
 export const Box: React.FC<BoxProps> = (props) => {
