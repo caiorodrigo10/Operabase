@@ -31,6 +31,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useToast } from "@/hooks/use-toast";
 import { useAvailabilityCheck, formatConflictMessage, createTimeSlots } from "@/hooks/useAvailability";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabase";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
 import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfDay, endOfDay, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -594,9 +595,18 @@ export function Consultas() {
     refetchOnWindowFocus: false,
     queryFn: async () => {
       console.log('🚀 Fetching clinic config...');
+      
+      // Get auth headers
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch('/api/clinic/1/config', {
         credentials: 'include',
-        headers: await getAuthHeaders()
+        headers
       });
       console.log('📡 Response status:', response.status);
       const data = await response.json();
@@ -620,21 +630,20 @@ export function Consultas() {
     }
   });
 
-  // Helper function to get auth headers
-  async function getAuthHeaders() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const headers: Record<string, string> = {};
-    
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-    
-    return headers;
-  }
+
 
   // Debug clinic config loading state
   useEffect(() => {
-    console.log('🏥 Clinic config loading state:', { isLoading: clinicConfigLoading, data: clinicConfig, error: clinicConfigError });
+    console.log('🏥 Clinic config loading state:', { 
+      isLoading: clinicConfigLoading, 
+      data: clinicConfig, 
+      error: clinicConfigError,
+      errorDetails: clinicConfigError ? {
+        message: (clinicConfigError as any)?.message,
+        status: (clinicConfigError as any)?.status,
+        stack: (clinicConfigError as any)?.stack
+      } : null
+    });
   }, [clinicConfigLoading, clinicConfig, clinicConfigError]);
 
   // Debug clinic config error
