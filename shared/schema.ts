@@ -876,6 +876,8 @@ export const clinic_invitations = pgTable("clinic_invitations", {
   status: varchar("status").notNull().default("pending"),
   expires_at: timestamp("expires_at").notNull(),
   created_by_user_id: integer("created_by_user_id").notNull(),
+  clinic_id: integer("clinic_id"), // Will be set after clinic is created
+  completed_at: timestamp("completed_at"), // Set when invitation is accepted
   created_at: timestamp("created_at").defaultNow(),
 });
 

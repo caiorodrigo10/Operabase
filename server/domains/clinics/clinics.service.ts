@@ -202,49 +202,52 @@ export class ClinicsService {
   }
 
   async listInvitations(filters: { status?: string; page: number; limit: number }) {
-    const { status, page, limit } = filters;
-    const offset = (page - 1) * limit;
+    try {
+      // Simple direct query to avoid Drizzle issues
+      const query = `
+        SELECT 
+          ci.*,
+          u.name as creator_name
+        FROM clinic_invitations ci
+        LEFT JOIN users u ON ci.created_by_user_id = u.id
+        ${filters.status ? `WHERE ci.status = $1` : ''}
+        ORDER BY ci.created_at DESC
+        LIMIT $${filters.status ? '2' : '1'} OFFSET $${filters.status ? '3' : '2'}
+      `;
+      
+      const params = filters.status 
+        ? [filters.status, filters.limit, (filters.page - 1) * filters.limit]
+        : [filters.limit, (filters.page - 1) * filters.limit];
 
-    // Build query conditions
-    const conditions = [];
-    if (status) {
-      conditions.push(eq(clinic_invitations.status, status));
+      const { rows: invitations } = await (db as any)._client.query(query, params);
+
+      // Get total count
+      const countQuery = `
+        SELECT COUNT(*) as total 
+        FROM clinic_invitations 
+        ${filters.status ? `WHERE status = $1` : ''}
+      `;
+      const countParams = filters.status ? [filters.status] : [];
+      const { rows: countResult } = await (db as any)._client.query(countQuery, countParams);
+
+      return {
+        invitations,
+        total: parseInt(countResult[0].total),
+        page: filters.page,
+        limit: filters.limit,
+        totalPages: Math.ceil(parseInt(countResult[0].total) / filters.limit)
+      };
+    } catch (error) {
+      console.error('Error listing invitations:', error);
+      // Return empty result on error
+      return {
+        invitations: [],
+        total: 0,
+        page: filters.page,
+        limit: filters.limit,
+        totalPages: 0
+      };
     }
-
-    // Get total count
-    const [totalResult] = await db
-      .select({ count: count() })
-      .from(clinic_invitations)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-    // Get invitations with pagination
-    const invitationsList = await db
-      .select({
-        id: clinic_invitations.id,
-        admin_email: clinic_invitations.admin_email,
-        admin_name: clinic_invitations.admin_name,
-        clinic_name: clinic_invitations.clinic_name,
-        status: clinic_invitations.status,
-        clinic_id: clinic_invitations.clinic_id,
-        expires_at: clinic_invitations.expires_at,
-        completed_at: clinic_invitations.completed_at,
-        created_at: clinic_invitations.created_at,
-        creator_name: users.name
-      })
-      .from(clinic_invitations)
-      .leftJoin(users, eq(clinic_invitations.created_by_user_id, users.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(clinic_invitations.created_at))
-      .limit(limit)
-      .offset(offset);
-
-    return {
-      invitations: invitationsList,
-      total: totalResult.count,
-      page,
-      limit,
-      totalPages: Math.ceil(totalResult.count / limit)
-    };
   }
 
   async cancelInvitation(invitationId: string) {
