@@ -44,6 +44,11 @@ export function ConviteClinica() {
   const { toast } = useToast();
   const [acceptanceCompleted, setAcceptanceCompleted] = useState(false);
 
+  console.log('🚀 ConviteClinica component mounted');
+  console.log('🎫 Token from useParams:', token);
+  console.log('🎫 Token type:', typeof token);
+  console.log('🎫 Token length:', token?.length);
+
   const form = useForm<AcceptInvitationForm>({
     resolver: zodResolver(acceptInvitationSchema),
     defaultValues: {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
@@ -80,7 +80,11 @@ function Router() {
 
   // Handle clinic invitation route (public access)
   if (location.startsWith('/convite-clinica/')) {
-    return <ConviteClinica />;
+    return (
+      <WouterRouter>
+        <Route path="/convite-clinica/:token" component={ConviteClinica} />
+      </WouterRouter>
+    );
   }
 
   // Handle preview routes (public access)
