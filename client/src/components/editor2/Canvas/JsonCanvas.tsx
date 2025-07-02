@@ -128,21 +128,13 @@ export const JsonCanvas: React.FC = () => {
           alignItems: 'stretch',
         }}
       >
-        {/* Se tem ROOT, renderiza o ROOT como container principal */}
-        {pageJson.ROOT ? (
+        {/* Renderiza children dos blocos */}
+        {blocksToRender.map((block: any) => (
           <RenderBlock 
-            key={pageJson.ROOT.id} 
-            block={pageJson.ROOT}
+            key={block.id} 
+            block={block}
           />
-        ) : (
-          /* Senão, renderiza blocos diretamente */
-          blocksToRender.map((block: any) => (
-            <RenderBlock 
-              key={block.id} 
-              block={block}
-            />
-          ))
-        )}
+        ))}
       </div>
     </div>
   );
