@@ -43,6 +43,7 @@ import ChatDeTeste from "./pages/chat-de-teste";
 import MCPTestPage from "./pages/mcp-test";
 import ApiKeysPage from "./pages/api-keys";
 import { AdminDashboard } from "./pages/admin/dashboard";
+import { ClinicsManagement } from "./pages/admin/clinics";
 import AnamnesisPublica from "./pages/anamnese-publica";
 import PreencherAnamnese from "./pages/preencher-anamnese";
 import AnamnesisTemplatesPage from "./pages/anamneses";
@@ -129,10 +130,7 @@ function Router() {
           )} />
           <Route path="/admin/clinics" component={() => (
             <AdminRouteGuard>
-              <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">Gestão de Clínicas</h1>
-                <p className="text-gray-600">Página em desenvolvimento...</p>
-              </div>
+              <ClinicsManagement />
             </AdminRouteGuard>
           )} />
           <Route path="/admin/users" component={() => (
