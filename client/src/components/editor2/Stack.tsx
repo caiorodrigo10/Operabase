@@ -75,7 +75,7 @@ export function Stack({
 
   // Verificar se children existe e é array
   if (!children) {
-    console.error('❌ STACK ERROR: No children received!', { id, props });
+    console.error('❌ STACK ERROR: No children received!', { id, direction, spacing });
     return <div style={{ padding: '20px', background: 'red', color: 'white' }}>Stack {id}: NO CHILDREN</div>;
   }
 

@@ -195,6 +195,15 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
         )
       };
     }
+
+    // Para Stack e Masonry, passar children processados como prop
+    if (block.component.name === 'Stack' || block.component.name === 'Masonry') {
+      return {
+        ...baseProps,
+        style: combinedStyles,
+        children: block.children || [] // ⭐ CORREÇÃO CRÍTICA: passar children para Stack/Masonry
+      };
+    }
     
     // Para outros componentes, usar estilos combinados
     return {
