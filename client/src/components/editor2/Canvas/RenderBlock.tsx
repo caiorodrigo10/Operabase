@@ -213,6 +213,15 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
 
     // Para Stack e Masonry, passar children processados como prop
     if (block.component.name === 'Stack' || block.component.name === 'Masonry') {
+      console.log(`🔍 ${block.component.name} CHILDREN DEBUG:`, {
+        blockId: block.id,
+        childrenExists: !!block.children,
+        childrenLength: block.children?.length || 0,
+        children: block.children,
+        firstChild: block.children?.[0],
+        childrenValid: block.children?.every(child => child && child.id && child.component)
+      });
+      
       return {
         ...baseProps,
         style: combinedStyles,
