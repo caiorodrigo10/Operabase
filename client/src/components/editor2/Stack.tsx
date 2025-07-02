@@ -105,12 +105,31 @@ export function Stack({
           componentName: child?.component?.name,
           hasComponent: !!child?.component,
           childValid: !!(child?.id && child?.component),
-          fullChild: child
+          childKeys: Object.keys(child || {}),
+          childType: typeof child,
+          childIsArray: Array.isArray(child)
         });
+        
+        // Log específico para debugar estrutura
+        if (child && typeof child === 'object') {
+          console.log(`🔍 Child ${index} structure:`, {
+            id: child.id,
+            '@type': child['@type'],
+            component: child.component ? {
+              name: child.component.name,
+              options: child.component.options
+            } : null
+          });
+        }
         
         // Validação mais permissiva - só precisa ter id
         if (!child?.id) {
-          console.error(`❌ INVALID CHILD ${index} - missing id:`, child);
+          console.error(`❌ INVALID CHILD ${index} - missing id:`, {
+            child: child,
+            keys: Object.keys(child || {}),
+            hasId: !!child?.id,
+            idValue: child?.id
+          });
           return <div key={`invalid-${index}`} style={{ background: 'red', color: 'white', padding: '10px' }}>Invalid Child {index}</div>;
         }
         
