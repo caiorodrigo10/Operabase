@@ -103,23 +103,18 @@ export function AppointmentForm({
   });
 
   // Fetch clinic users
-  const { data: clinicUsers = [], isLoading: usersLoading } = useQuery({
+  const { data: clinicUsers = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['/api/clinic/1/users/management'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/clinic/1/users/management', {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const data = await response.json();
-      console.log('📊 API Response - All users:', data);
-      console.log('🔍 Professional users:', data.filter((u: any) => u.is_professional));
-      return data;
-    },
   });
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('📊 API Response - All users:', clinicUsers);
+    console.log('🔍 Professional users:', clinicUsers.filter((u: any) => u.is_professional));
+    if (usersError) {
+      console.error('❌ Error fetching users:', usersError);
+    }
+  }, [clinicUsers, usersError]);
 
   // Handle preselected contact
   useEffect(() => {
