@@ -1,0 +1,1124 @@
+{
+  "ROOT": {
+    "id": "ROOT",
+    "@type": "@builder.io/sdk:Element",
+    "component": {
+      "name": "Container",
+      "options": {
+        "maxWidth": 1400
+      }
+    },
+    "responsiveStyles": {
+      "large": {
+        "maxWidth": "100%",
+        "margin": "0 auto",
+        "minHeight": "100vh",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "children": [
+      {
+        "id": "hero-section",
+        "@type": "@builder.io/sdk:Element",
+        "component": {
+          "name": "Section",
+          "options": {
+            "maxWidth": 1200
+          }
+        },
+        "responsiveStyles": {
+          "large": {
+            "background": "linear-gradient(135deg, #8B5A96 0%, #E8A87C 100%)",
+            "padding": "120px 0",
+            "width": "100%",
+            "minHeight": "80vh",
+            "display": "flex",
+            "alignItems": "center"
+          }
+        },
+        "children": [
+          {
+            "id": "hero-container",
+            "@type": "@builder.io/sdk:Element",
+            "component": {
+              "name": "Container",
+              "options": {
+                "maxWidth": 1200
+              }
+            },
+            "responsiveStyles": {
+              "large": {
+                "maxWidth": "1200px",
+                "margin": "0 auto",
+                "padding": "0 40px"
+              }
+            },
+            "children": [
+              {
+                "id": "hero-columns",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Columns",
+                  "options": {
+                    "columns": [
+                      {
+                        "width": 65
+                      },
+                      {
+                        "width": 35
+                      }
+                    ],
+                    "gutterSize": 60,
+                    "stackColumnsAt": "tablet"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "hero-content",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Container",
+                      "options": {}
+                    },
+                    "children": [
+                      {
+                        "id": "hero-title",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Dra. Ana Silva",
+                            "tag": "h1"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "56px",
+                            "fontWeight": "800",
+                            "color": "#ffffff",
+                            "lineHeight": "1.1",
+                            "marginBottom": "16px"
+                          }
+                        }
+                      },
+                      {
+                        "id": "hero-subtitle",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Psicóloga Clínica | CRP 06/123456",
+                            "tag": "h2"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "24px",
+                            "fontWeight": "400",
+                            "color": "#f3e8ff",
+                            "lineHeight": "1.4",
+                            "marginBottom": "32px"
+                          }
+                        }
+                      },
+                      {
+                        "id": "hero-description",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Especialista em terapia cognitivo-comportamental, ansiedade e relacionamentos. Atendimento presencial e online com mais de 10 anos de experiência.",
+                            "tag": "p"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "18px",
+                            "color": "#e9d5ff",
+                            "lineHeight": "1.6",
+                            "marginBottom": "40px"
+                          }
+                        }
+                      },
+                      {
+                        "id": "hero-cta",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Button",
+                          "options": {
+                            "text": "Agendar Consulta",
+                            "href": "#contact"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "backgroundColor": "#ffffff",
+                            "color": "#8B5A96",
+                            "padding": "16px 32px",
+                            "borderRadius": "12px",
+                            "fontSize": "18px",
+                            "fontWeight": "600",
+                            "textDecoration": "none",
+                            "display": "inline-block",
+                            "transition": "all 0.3s ease",
+                            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.2)"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "hero-image-container",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Container",
+                      "options": {}
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "display": "flex",
+                        "alignItems": "center",
+                        "justifyContent": "center"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "hero-placeholder",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "🧠",
+                            "tag": "div"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "120px",
+                            "textAlign": "center",
+                            "opacity": "0.8"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "services-section",
+        "@type": "@builder.io/sdk:Element",
+        "component": {
+          "name": "Section",
+          "options": {
+            "maxWidth": 1200
+          }
+        },
+        "responsiveStyles": {
+          "large": {
+            "backgroundColor": "#faf5ff",
+            "padding": "80px 0",
+            "width": "100%"
+          }
+        },
+        "children": [
+          {
+            "id": "services-container",
+            "@type": "@builder.io/sdk:Element",
+            "component": {
+              "name": "Container",
+              "options": {
+                "maxWidth": 1200
+              }
+            },
+            "responsiveStyles": {
+              "large": {
+                "maxWidth": "1200px",
+                "margin": "0 auto",
+                "padding": "0 40px"
+              }
+            },
+            "children": [
+              {
+                "id": "services-title",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Meus Serviços",
+                    "tag": "h2"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "36px",
+                    "fontWeight": "700",
+                    "color": "#581c87",
+                    "textAlign": "center",
+                    "marginBottom": "16px"
+                  }
+                }
+              },
+              {
+                "id": "services-subtitle",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Atendimento personalizado para diferentes necessidades",
+                    "tag": "p"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "18px",
+                    "color": "#7c3aed",
+                    "textAlign": "center",
+                    "marginBottom": "60px"
+                  }
+                }
+              },
+              {
+                "id": "services-grid",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Box",
+                  "options": {
+                    "display": "grid",
+                    "gridTemplateColumns": "repeat(auto-fit, minmax(300px, 1fr))",
+                    "gap": 32,
+                    "width": "100%"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "service-therapy",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Box",
+                      "options": {
+                        "backgroundColor": "#ffffff",
+                        "borderRadius": 16,
+                        "boxShadow": "0 4px 16px rgba(139, 90, 150, 0.1)",
+                        "paddingTop": 40,
+                        "paddingBottom": 40,
+                        "paddingLeft": 32,
+                        "paddingRight": 32,
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "alignItems": "center",
+                        "gap": 24,
+                        "width": "100%",
+                        "border": "2px solid #e9d5ff"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "therapy-icon",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Box",
+                          "options": {
+                            "backgroundColor": "#8B5A96",
+                            "borderRadius": 50,
+                            "width": 64,
+                            "height": 64,
+                            "display": "flex",
+                            "alignItems": "center",
+                            "justifyContent": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "therapy-emoji",
+                            "@type": "@builder.io/sdk:Element",
+                            "component": {
+                              "name": "Text",
+                              "options": {
+                                "text": "💭",
+                                "tag": "span"
+                              }
+                            },
+                            "responsiveStyles": {
+                              "large": {
+                                "fontSize": "24px"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "therapy-title",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Terapia Individual",
+                            "tag": "h3"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "20px",
+                            "fontWeight": "600",
+                            "color": "#581c87",
+                            "textAlign": "center",
+                            "marginBottom": "8px"
+                          }
+                        }
+                      },
+                      {
+                        "id": "therapy-desc",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Acompanhamento personalizado com foco em autoconhecimento e desenvolvimento pessoal",
+                            "tag": "p"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "16px",
+                            "color": "#6b7280",
+                            "textAlign": "center",
+                            "lineHeight": "1.5"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "service-anxiety",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Box",
+                      "options": {
+                        "backgroundColor": "#ffffff",
+                        "borderRadius": 16,
+                        "boxShadow": "0 4px 16px rgba(139, 90, 150, 0.1)",
+                        "paddingTop": 40,
+                        "paddingBottom": 40,
+                        "paddingLeft": 32,
+                        "paddingRight": 32,
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "alignItems": "center",
+                        "gap": 24,
+                        "width": "100%",
+                        "border": "2px solid #e9d5ff"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "anxiety-icon",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Box",
+                          "options": {
+                            "backgroundColor": "#E8A87C",
+                            "borderRadius": 50,
+                            "width": 64,
+                            "height": 64,
+                            "display": "flex",
+                            "alignItems": "center",
+                            "justifyContent": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "anxiety-emoji",
+                            "@type": "@builder.io/sdk:Element",
+                            "component": {
+                              "name": "Text",
+                              "options": {
+                                "text": "🌱",
+                                "tag": "span"
+                              }
+                            },
+                            "responsiveStyles": {
+                              "large": {
+                                "fontSize": "24px"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "anxiety-title",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Ansiedade e Estresse",
+                            "tag": "h3"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "20px",
+                            "fontWeight": "600",
+                            "color": "#581c87",
+                            "textAlign": "center",
+                            "marginBottom": "8px"
+                          }
+                        }
+                      },
+                      {
+                        "id": "anxiety-desc",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Técnicas especializadas para gerenciamento de ansiedade e controle do estresse",
+                            "tag": "p"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "16px",
+                            "color": "#6b7280",
+                            "textAlign": "center",
+                            "lineHeight": "1.5"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "service-relationships",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Box",
+                      "options": {
+                        "backgroundColor": "#ffffff",
+                        "borderRadius": 16,
+                        "boxShadow": "0 4px 16px rgba(139, 90, 150, 0.1)",
+                        "paddingTop": 40,
+                        "paddingBottom": 40,
+                        "paddingLeft": 32,
+                        "paddingRight": 32,
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "alignItems": "center",
+                        "gap": 24,
+                        "width": "100%",
+                        "border": "2px solid #e9d5ff"
+                      }
+                    },
+                    "children": [
+                      {
+                        "id": "relationships-icon",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Box",
+                          "options": {
+                            "backgroundColor": "#a855f7",
+                            "borderRadius": 50,
+                            "width": 64,
+                            "height": 64,
+                            "display": "flex",
+                            "alignItems": "center",
+                            "justifyContent": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "id": "relationships-emoji",
+                            "@type": "@builder.io/sdk:Element",
+                            "component": {
+                              "name": "Text",
+                              "options": {
+                                "text": "💝",
+                                "tag": "span"
+                              }
+                            },
+                            "responsiveStyles": {
+                              "large": {
+                                "fontSize": "24px"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "relationships-title",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Relacionamentos",
+                            "tag": "h3"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "20px",
+                            "fontWeight": "600",
+                            "color": "#581c87",
+                            "textAlign": "center",
+                            "marginBottom": "8px"
+                          }
+                        }
+                      },
+                      {
+                        "id": "relationships-desc",
+                        "@type": "@builder.io/sdk:Element",
+                        "component": {
+                          "name": "Text",
+                          "options": {
+                            "text": "Terapia de casal e orientação para melhorar a comunicação e vínculos afetivos",
+                            "tag": "p"
+                          }
+                        },
+                        "responsiveStyles": {
+                          "large": {
+                            "fontSize": "16px",
+                            "color": "#6b7280",
+                            "textAlign": "center",
+                            "lineHeight": "1.5"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "testimonials-section",
+        "@type": "@builder.io/sdk:Element",
+        "component": {
+          "name": "Section",
+          "options": {
+            "maxWidth": 1200
+          }
+        },
+        "responsiveStyles": {
+          "large": {
+            "backgroundColor": "#f8fafc",
+            "padding": "80px 0",
+            "width": "100%"
+          }
+        },
+        "children": [
+          {
+            "id": "testimonials-container",
+            "@type": "@builder.io/sdk:Element",
+            "component": {
+              "name": "Container",
+              "options": {
+                "maxWidth": 1200
+              }
+            },
+            "responsiveStyles": {
+              "large": {
+                "maxWidth": "1200px",
+                "margin": "0 auto",
+                "padding": "0 40px"
+              }
+            },
+            "children": [
+              {
+                "id": "testimonials-title",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Depoimentos",
+                    "tag": "h2"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "36px",
+                    "fontWeight": "700",
+                    "color": "#1e293b",
+                    "textAlign": "center",
+                    "marginBottom": "16px"
+                  }
+                }
+              },
+              {
+                "id": "testimonials-subtitle",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "O que meus pacientes dizem sobre o atendimento",
+                    "tag": "p"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "18px",
+                    "color": "#64748b",
+                    "textAlign": "center",
+                    "marginBottom": "60px"
+                  }
+                }
+              },
+              {
+                "id": "testimonials-masonry",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Masonry",
+                  "options": {
+                    "columns": 3,
+                    "columnGap": 24,
+                    "rowGap": 24,
+                    "breakpoints": {
+                      "mobile": 1,
+                      "tablet": 2,
+                      "desktop": 3
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "id": "testimonial-1",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "\"A Dra. Ana me ajudou a superar minha ansiedade. Suas técnicas são muito eficazes e ela é extremamente acolhedora.\" - Maria, 32 anos",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#ffffff",
+                        "padding": "24px",
+                        "borderRadius": "12px",
+                        "boxShadow": "0 2px 8px rgba(139, 90, 150, 0.1)",
+                        "border": "1px solid #e9d5ff",
+                        "fontStyle": "italic",
+                        "color": "#374151"
+                      }
+                    }
+                  },
+                  {
+                    "id": "testimonial-2",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "\"Processo terapêutico transformador! A doutora Ana tem uma abordagem muito humana e profissional. Recomendo muito!\" - João, 28 anos",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#ffffff",
+                        "padding": "24px",
+                        "borderRadius": "12px",
+                        "boxShadow": "0 2px 8px rgba(139, 90, 150, 0.1)",
+                        "border": "1px solid #e9d5ff",
+                        "fontStyle": "italic",
+                        "color": "#374151"
+                      }
+                    }
+                  },
+                  {
+                    "id": "testimonial-3",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "\"Meu relacionamento melhorou muito depois das sessões. Aprendi a me comunicar melhor.\" - Ana Paula, 35 anos",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#ffffff",
+                        "padding": "24px",
+                        "borderRadius": "12px",
+                        "boxShadow": "0 2px 8px rgba(139, 90, 150, 0.1)",
+                        "border": "1px solid #e9d5ff",
+                        "fontStyle": "italic",
+                        "color": "#374151"
+                      }
+                    }
+                  },
+                  {
+                    "id": "testimonial-4",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "\"Profissional excelente, muito dedicada e atenciosa.\" - Carlos, 41 anos",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#ffffff",
+                        "padding": "24px",
+                        "borderRadius": "12px",
+                        "boxShadow": "0 2px 8px rgba(139, 90, 150, 0.1)",
+                        "border": "1px solid #e9d5ff",
+                        "fontStyle": "italic",
+                        "color": "#374151"
+                      }
+                    }
+                  },
+                  {
+                    "id": "testimonial-5",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "\"As sessões online são muito práticas e eficazes. A Dra. Ana consegue criar um ambiente acolhedor mesmo à distância. Muito grata pelo acompanhamento!\" - Fernanda, 29 anos",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#ffffff",
+                        "padding": "24px",
+                        "borderRadius": "12px",
+                        "boxShadow": "0 2px 8px rgba(139, 90, 150, 0.1)",
+                        "border": "1px solid #e9d5ff",
+                        "fontStyle": "italic",
+                        "color": "#374151"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "approach-section",
+        "@type": "@builder.io/sdk:Element",
+        "component": {
+          "name": "Section",
+          "options": {
+            "maxWidth": 1200
+          }
+        },
+        "responsiveStyles": {
+          "large": {
+            "backgroundColor": "#581c87",
+            "padding": "80px 0",
+            "width": "100%"
+          }
+        },
+        "children": [
+          {
+            "id": "approach-container",
+            "@type": "@builder.io/sdk:Element",
+            "component": {
+              "name": "Container",
+              "options": {
+                "maxWidth": 1200
+              }
+            },
+            "responsiveStyles": {
+              "large": {
+                "maxWidth": "1200px",
+                "margin": "0 auto",
+                "padding": "0 40px"
+              }
+            },
+            "children": [
+              {
+                "id": "approach-title",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Minha Abordagem",
+                    "tag": "h2"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "36px",
+                    "fontWeight": "700",
+                    "color": "#ffffff",
+                    "textAlign": "center",
+                    "marginBottom": "16px"
+                  }
+                }
+              },
+              {
+                "id": "approach-subtitle",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Metodologia personalizada para cada paciente",
+                    "tag": "p"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "18px",
+                    "color": "#e9d5ff",
+                    "textAlign": "center",
+                    "marginBottom": "60px"
+                  }
+                }
+              },
+              {
+                "id": "approach-stack",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Stack",
+                  "options": {
+                    "direction": "vertical",
+                    "gap": 32,
+                    "alignment": "center"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "approach-item-1",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "🎯 Terapia Cognitivo-Comportamental",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "rgba(255, 255, 255, 0.1)",
+                        "color": "#ffffff",
+                        "padding": "20px 40px",
+                        "borderRadius": "12px",
+                        "fontSize": "18px",
+                        "fontWeight": "500",
+                        "textAlign": "center",
+                        "width": "100%",
+                        "maxWidth": "600px"
+                      }
+                    }
+                  },
+                  {
+                    "id": "approach-item-2",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "🧘 Técnicas de Mindfulness e Relaxamento",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "rgba(255, 255, 255, 0.1)",
+                        "color": "#ffffff",
+                        "padding": "20px 40px",
+                        "borderRadius": "12px",
+                        "fontSize": "18px",
+                        "fontWeight": "500",
+                        "textAlign": "center",
+                        "width": "100%",
+                        "maxWidth": "600px"
+                      }
+                    }
+                  },
+                  {
+                    "id": "approach-item-3",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "💬 Abordagem Humanizada e Acolhedora",
+                        "tag": "div"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "rgba(255, 255, 255, 0.1)",
+                        "color": "#ffffff",
+                        "padding": "20px 40px",
+                        "borderRadius": "12px",
+                        "fontSize": "18px",
+                        "fontWeight": "500",
+                        "textAlign": "center",
+                        "width": "100%",
+                        "maxWidth": "600px"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "contact-section",
+        "@type": "@builder.io/sdk:Element",
+        "component": {
+          "name": "Section",
+          "options": {
+            "maxWidth": 1200
+          }
+        },
+        "responsiveStyles": {
+          "large": {
+            "backgroundColor": "#f3e8ff",
+            "padding": "80px 0",
+            "width": "100%"
+          }
+        },
+        "children": [
+          {
+            "id": "contact-container",
+            "@type": "@builder.io/sdk:Element",
+            "component": {
+              "name": "Container",
+              "options": {
+                "maxWidth": 1200
+              }
+            },
+            "responsiveStyles": {
+              "large": {
+                "maxWidth": "1200px",
+                "margin": "0 auto",
+                "padding": "0 40px"
+              }
+            },
+            "children": [
+              {
+                "id": "contact-title",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Vamos Conversar?",
+                    "tag": "h2"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "36px",
+                    "fontWeight": "700",
+                    "color": "#581c87",
+                    "textAlign": "center",
+                    "marginBottom": "16px"
+                  }
+                }
+              },
+              {
+                "id": "contact-subtitle",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Text",
+                  "options": {
+                    "text": "Estou aqui para te ajudar a cuidar da sua saúde mental",
+                    "tag": "p"
+                  }
+                },
+                "responsiveStyles": {
+                  "large": {
+                    "fontSize": "18px",
+                    "color": "#7c3aed",
+                    "textAlign": "center",
+                    "marginBottom": "60px"
+                  }
+                }
+              },
+              {
+                "id": "contact-fragment",
+                "@type": "@builder.io/sdk:Element",
+                "component": {
+                  "name": "Fragment",
+                  "options": {
+                    "logicalGroup": "contact-info",
+                    "renderAs": "div",
+                    "ariaLabel": "Informações de contato"
+                  }
+                },
+                "children": [
+                  {
+                    "id": "contact-info",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "📱 WhatsApp: (11) 99999-9999",
+                        "tag": "p"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "fontSize": "18px",
+                        "color": "#581c87",
+                        "textAlign": "center",
+                        "marginBottom": "16px",
+                        "fontWeight": "500"
+                      }
+                    }
+                  },
+                  {
+                    "id": "contact-email",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Text",
+                      "options": {
+                        "text": "✉️ Email: ana.silva@psicologia.com",
+                        "tag": "p"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "fontSize": "18px",
+                        "color": "#581c87",
+                        "textAlign": "center",
+                        "marginBottom": "32px",
+                        "fontWeight": "500"
+                      }
+                    }
+                  },
+                  {
+                    "id": "contact-cta",
+                    "@type": "@builder.io/sdk:Element",
+                    "component": {
+                      "name": "Button",
+                      "options": {
+                        "text": "Agendar Primeira Consulta",
+                        "href": "https://wa.me/5511999999999"
+                      }
+                    },
+                    "responsiveStyles": {
+                      "large": {
+                        "backgroundColor": "#8B5A96",
+                        "color": "#ffffff",
+                        "padding": "16px 32px",
+                        "borderRadius": "12px",
+                        "fontSize": "18px",
+                        "fontWeight": "600",
+                        "textDecoration": "none",
+                        "display": "block",
+                        "textAlign": "center",
+                        "maxWidth": "400px",
+                        "margin": "0 auto",
+                        "transition": "all 0.3s ease",
+                        "boxShadow": "0 4px 12px rgba(139, 90, 150, 0.3)"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

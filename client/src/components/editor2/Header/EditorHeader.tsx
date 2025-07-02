@@ -3,12 +3,27 @@ import { ArrowLeft, Monitor, Tablet, Smartphone, ChevronLeft, ChevronRight, Sett
 import { useLocation } from 'wouter';
 import { JsonEditorModal } from '../Modal/JsonEditorModal';
 import { usePage } from '../../../contexts/PageProvider';
+import { mockPageJson } from '@/data/mockPageJson';
+import cleanPageJson from '@/data/cleanPageJson.json';
+import psychologistPageJson from '@/data/psychologistPageJson.json';
 
 export const EditorHeader: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { pageJson, savePageJson } = usePage();
+
+  // Available page templates
+  const pageTemplates = [
+    { id: 'widget-demo', name: 'Widget Demo', data: cleanPageJson },
+    { id: 'psychologist', name: 'Psicóloga', data: psychologistPageJson },
+    { id: 'mock', name: 'Template Original', data: mockPageJson },
+  ];
+
+  const handlePageChange = (templateData: any) => {
+    console.log('🔄 Carregando nova página:', templateData);
+    savePageJson(templateData);
+  };
 
   const handleBackClick = () => {
     console.log('Navigating to funnels page');

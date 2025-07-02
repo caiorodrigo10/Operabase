@@ -6,6 +6,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { PageJSON, PageContextType } from '@/../shared/editor2-types';
 import { mockPageJson } from '@/data/mockPageJson';
+import cleanPageJson from '@/data/cleanPageJson.json';
+import psychologistPageJson from '@/data/psychologistPageJson.json';
 
 // Criação do Context
 const PageContext = createContext<PageContextType | undefined>(undefined);
