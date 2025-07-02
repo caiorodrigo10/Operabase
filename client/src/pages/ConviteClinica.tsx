@@ -30,7 +30,7 @@ type AcceptInvitationForm = z.infer<typeof acceptInvitationSchema>;
 
 interface Invitation {
   id: number;
-  admin_email: string;
+  email: string;
   admin_name: string;
   clinic_name: string;
   status: string;
@@ -59,14 +59,21 @@ export function ConviteClinica() {
   const { data: invitation, isLoading, error } = useQuery({
     queryKey: ['/api/clinics/invitations', token],
     queryFn: async () => {
+      console.log('🔍 Buscando convite para token:', token);
       const res = await fetch(`/api/clinics/invitations/${token}`);
+      console.log('📡 Response status:', res.status);
+      
       if (!res.ok) {
+        console.log('❌ Response não OK:', res.status, res.statusText);
         if (res.status === 404) {
           throw new Error('Convite não encontrado ou expirado');
         }
         throw new Error(`Erro ao carregar convite: ${res.status}`);
       }
-      return res.json();
+      
+      const data = await res.json();
+      console.log('✅ Dados do convite:', data);
+      return data;
     },
     enabled: !!token,
     retry: false
@@ -206,7 +213,7 @@ export function ConviteClinica() {
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-teal-600" />
               <span className="font-medium">Convidado originalmente:</span>
-              <span className="text-gray-600">{invitation.admin_email}</span>
+              <span className="text-gray-600">{invitation.email}</span>
             </div>
             
             <div className="flex items-center gap-2">
