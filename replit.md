@@ -212,6 +212,18 @@ The Operabase platform implements a sophisticated **modular page architecture** 
 
 ## Changelog
 
+### July 02, 2025 - Sistema de Convites Refatorado: Campo Email Padrão Implementado ✅
+- **Refatoração Completa**: Sistema de convites atualizado para usar campo `email` padrão ao invés de `admin_email`
+- **Schema Corrigido**: Tabela clinic_invitations recriada com estrutura limpa (id, email, admin_name, clinic_name, token, status, expires_at, created_by_user_id, clinic_id, created_at)
+- **Backend Atualizado**: ClinicsService corrigido para usar campo `email` em createInvitation e acceptInvitation
+- **Frontend Sincronizado**: Interface atualizada para exibir e enviar dados com campo `email` consistente
+- **Migração Executada**: Removidas todas as colunas antigas (admin_email, role, permissions, invited_by, accepted_at) via migração Supabase
+- **Índices Otimizados**: Criados índices para token, status e expires_at para performance
+- **Fluxo Validado**: Sistema permite dados completamente diferentes no formulário vs convite original
+- **Novo Convite Teste**: Criado convite ID 1 para validação do fluxo completo
+- **Zero Impact**: Funcionalidades preservadas, apenas correção da estrutura de dados
+- **Status**: ✅ SISTEMA REFATORADO - Convites usam campo email padrão e funcionam corretamente
+
 ### July 02, 2025 - Sistema de Convites de Clínica: Estrutura Completa Implementada ✅
 - **Estrutura Correta Identificada**: Sistema usa tabela padrão para convites de usuários com role 'admin'
 - **Tabela Corrigida**: Adicionadas todas as colunas necessárias com compatibilidade total
