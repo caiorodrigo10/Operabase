@@ -421,6 +421,10 @@ app.use((req, res, next) => {
   const systemLogsRoutes = await import('./routes/system-logs.routes');
   app.use('/api', systemLogsRoutes.default);
   
+  // Add Clinics routes
+  const { clinicsRoutes } = await import('./domains/clinics/clinics.routes');
+  app.use('/api/clinics', clinicsRoutes);
+  
   // Add Conversations routes
   const { setupConversationsRoutes } = await import('./conversations-routes');
   setupConversationsRoutes(app, storage);

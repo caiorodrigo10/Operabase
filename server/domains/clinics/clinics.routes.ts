@@ -2,10 +2,41 @@ import { Router } from "express";
 import { ClinicsController } from "./clinics.controller";
 import { z } from "zod";
 import { isAuthenticated } from "../../auth.js";
-import { validateRequest } from "../../middleware/validation";
+// Simple validation middleware
+const validateRequest = (schema: z.ZodSchema) => {
+  return (req: any, res: any, next: any) => {
+    try {
+      schema.parse(req.body);
+      next();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: "Dados inválidos",
+          details: error.errors
+        });
+      }
+      next(error);
+    }
+  };
+};
 
 const router = Router();
 const clinicsController = new ClinicsController();
+
+// Simple role-based authorization middleware
+const requireRole = (allowedRoles: string[]) => {
+  return (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+    
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+    
+    next();
+  };
+};
 
 // Schema for creating clinic invitation
 const createInvitationSchema = z.object({
