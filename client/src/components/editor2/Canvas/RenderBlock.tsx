@@ -203,6 +203,21 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
     };
   })();
 
+  // Debug children antes de renderizar
+  if (block.children && block.children.length > 0 && (block.component?.name === 'Stack' || block.component?.name === 'Masonry')) {
+    console.log(`🎯 DEBUGGING ${block.component.name} children:`, {
+      blockId: block.id,
+      componentName: block.component.name,
+      childrenCount: block.children.length,
+      childrenDetails: block.children.map(child => ({
+        id: child.id,
+        componentName: child.component?.name,
+        hasComponent: !!child.component,
+        componentOptions: child.component?.options
+      }))
+    });
+  }
+
   // Renderizar children recursivamente
   const children = block.children?.map((child) => (
     <RenderBlock 
