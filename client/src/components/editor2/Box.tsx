@@ -109,12 +109,31 @@ export const Box: React.FC<BoxProps> = (props) => {
     Object.entries(boxStyles).filter(([_, value]) => value !== undefined)
   );
 
+  console.log(`📦 Box component rendering:`, {
+    id: props.id,
+    hasBlocks: !!props.blocks,
+    blocksCount: props.blocks?.length || 0,
+    hasChildren: !!props.children,
+    styles: cleanStyles
+  });
+
   return (
     <div 
+      id={props.id}
       className="editor2-box"
       style={cleanStyles}
       {...props.attributes}
     >
+      {/* Renderizar blocks se fornecidos */}
+      {props.blocks && props.blocks.length > 0 && props.blocks.map((block) => (
+        <BuilderBlock 
+          key={block.id} 
+          block={block} 
+          context={props.context} 
+        />
+      ))}
+      
+      {/* Renderizar children React se fornecidos */}
       {props.children}
     </div>
   );
