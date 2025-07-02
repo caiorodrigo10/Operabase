@@ -272,13 +272,21 @@ export function AppointmentForm({
                       <SelectValue placeholder="Selecione o profissional" />
                     </SelectTrigger>
                     <SelectContent>
-                      {clinicUsers
-                        .filter((user: any) => user.is_professional === true)
-                        .map((user: any) => (
-                          <SelectItem key={user.id || user.user_id} value={(user.id || user.user_id)?.toString()}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
+                      {clinicUsers.length === 0 ? (
+                        <div className="p-2 text-sm text-gray-500">Nenhum profissional encontrado</div>
+                      ) : (
+                        clinicUsers
+                          .filter((user: any) => {
+                            console.log('User data:', user);
+                            console.log('is_professional:', user.is_professional);
+                            return user.is_professional === true || user.is_professional === 1;
+                          })
+                          .map((user: any) => (
+                            <SelectItem key={user.id || user.user_id} value={(user.id || user.user_id)?.toString()}>
+                              {user.name}
+                            </SelectItem>
+                          ))
+                      )}
                     </SelectContent>
                   </Select>
                 </FormControl>

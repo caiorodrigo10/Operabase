@@ -697,13 +697,19 @@ export function Consultas() {
   // Helper functions for calendar background colors
   const isUnavailableDay = (date: Date): boolean => {
     if (!clinicConfig) return false;
-    return !isWorkingDay(date, clinicConfig);
+    const isWorking = isWorkingDay(date, clinicConfig);
+    const dayKey = getDayOfWeekKey(date);
+    console.log('Calendar Background - Day:', format(date, 'yyyy-MM-dd'), 'DayKey:', dayKey, 'Working days:', clinicConfig.working_days, 'Is working?', isWorking);
+    return !isWorking;
   };
 
   const isUnavailableHour = (hour: number): boolean => {
     if (!clinicConfig) return false;
     const timeString = `${hour.toString().padStart(2, '0')}:00`;
-    return !isWorkingHour(timeString, clinicConfig) || isLunchTime(timeString, clinicConfig);
+    const isWorking = isWorkingHour(timeString, clinicConfig);
+    const isLunch = isLunchTime(timeString, clinicConfig);
+    console.log('Calendar Background - Hour:', hour, 'TimeString:', timeString, 'Work hours:', clinicConfig.work_start, '-', clinicConfig.work_end, 'Is working?', isWorking, 'Is lunch?', isLunch);
+    return !isWorking || isLunch;
   };
 
   // Enhanced function: Allow booking in any slot, but analyze availability status

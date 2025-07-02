@@ -30,6 +30,10 @@ export async function getClinicUsersForManagement(req: PermissionRequest, res: R
     const clinicUsers = await storage.getClinicUsers(clinicId);
     console.log(`📊 Found ${clinicUsers.length} users in clinic ${clinicId}`);
     console.log(`📋 Raw clinic users data:`, JSON.stringify(clinicUsers, null, 2));
+    console.log(`🔍 Checking professional status for each user:`);
+    clinicUsers.forEach((cu, index) => {
+      console.log(`User ${index}: is_professional = ${cu.is_professional}, type = ${typeof cu.is_professional}`);
+    });
     
     // Handle different data structures from storage implementations
     const usersData = clinicUsers.map(cu => {
@@ -40,7 +44,7 @@ export async function getClinicUsersForManagement(req: PermissionRequest, res: R
           name: cu.name,
           email: cu.email,
           role: cu.role,
-          is_professional: cu.is_professional || false,
+          is_professional: cu.is_professional === true || cu.is_professional === 1,
           is_active: cu.is_active,
           joined_at: cu.joined_at,
           last_login: cu.user_created_at
@@ -54,7 +58,7 @@ export async function getClinicUsersForManagement(req: PermissionRequest, res: R
           name: cu.user.name,
           email: cu.user.email,
           role: cu.role,
-          is_professional: cu.is_professional || false,
+          is_professional: cu.is_professional === true || cu.is_professional === 1,
           is_active: cu.is_active,
           joined_at: cu.joined_at,
           last_login: cu.user.last_login
