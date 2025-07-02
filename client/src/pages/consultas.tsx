@@ -614,6 +614,16 @@ export function Consultas() {
     return config.working_days.includes(dayKey);
   };
 
+  // Debug clinicConfig
+  useEffect(() => {
+    console.log('🏥 Clinic Config loaded:', clinicConfig);
+    if (clinicConfig) {
+      console.log('📅 Working days:', clinicConfig.working_days);
+      console.log('⏰ Work hours:', clinicConfig.work_start, '-', clinicConfig.work_end);
+      console.log('🍽️ Lunch break:', clinicConfig.has_lunch_break ? `${clinicConfig.lunch_start} - ${clinicConfig.lunch_end}` : 'No lunch break');
+    }
+  }, [clinicConfig]);
+
   const isWorkingHour = (time: string, config: any): boolean => {
     if (!config?.work_start || !config?.work_end) return true;
     return time >= config.work_start && time <= config.work_end;
@@ -791,23 +801,16 @@ export function Consultas() {
 
   const getCalendarCellBackgroundClass = (date: Date, hour?: number): string => {
     if (!clinicConfig) {
-      console.log('⚠️ No clinicConfig available');
       return "bg-white";
     }
     
     // For monthly view - check if entire day is unavailable
     if (hour === undefined) {
-      const unavailable = isUnavailableDay(date);
-      console.log(`📅 Day ${date.toDateString()} - unavailable: ${unavailable}`);
-      return unavailable ? "bg-gray-100" : "bg-white";
+      return isUnavailableDay(date) ? "bg-gray-100" : "bg-white";
     }
     
     // For weekly/daily view - check both day and hour
-    const dayUnavailable = isUnavailableDay(date);
-    const hourUnavailable = isUnavailableHour(hour);
-    console.log(`🕐 Hour ${hour}:00 on ${date.toDateString()} - day unavailable: ${dayUnavailable}, hour unavailable: ${hourUnavailable}`);
-    
-    if (dayUnavailable || hourUnavailable) {
+    if (isUnavailableDay(date) || isUnavailableHour(hour)) {
       return "bg-gray-100";
     }
     

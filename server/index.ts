@@ -223,6 +223,30 @@ app.use((req, res, next) => {
       res.status(500).json({ error: 'Failed to get AI Dev configuration' });
     }
   });
+
+  // Add clinic config route for consultas page
+  app.get('/api/clinic/:clinicId/config', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const clinicId = parseInt(req.params.clinicId);
+      
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+
+      // Get clinic from database
+      const clinic = await storage.getClinic(clinicId);
+      
+      if (!clinic) {
+        return res.status(404).json({ error: "Clinic not found" });
+      }
+
+      // Return clinic configuration
+      res.json(clinic);
+    } catch (error) {
+      console.error('Error getting clinic config:', error);
+      res.status(500).json({ error: 'Failed to get clinic configuration' });
+    }
+  });
   const { createRequireProfessional } = await import('./middleware/professional-validation');
   
   const requireProfessional = createRequireProfessional(storage);
