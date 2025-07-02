@@ -60,19 +60,39 @@ export function ConviteClinica() {
     queryKey: ['/api/clinics/invitations', token],
     queryFn: async () => {
       console.log('🔍 Buscando convite para token:', token);
-      const res = await fetch(`/api/clinics/invitations/${token}`);
+      console.log('🌐 Window location:', window.location.href);
+      console.log('🌐 Origin:', window.location.origin);
+      
+      const url = `/api/clinics/invitations/${token}`;
+      console.log('📡 Fazendo requisição para:', url);
+      
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
       console.log('📡 Response status:', res.status);
+      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
       
       if (!res.ok) {
         console.log('❌ Response não OK:', res.status, res.statusText);
+        const errorText = await res.text();
+        console.log('📄 Corpo do erro:', errorText);
+        
         if (res.status === 404) {
           throw new Error('Convite não encontrado ou expirado');
         }
-        throw new Error(`Erro ao carregar convite: ${res.status}`);
+        throw new Error(`Erro ao carregar convite: ${res.status} - ${errorText}`);
       }
       
       const data = await res.json();
-      console.log('✅ Dados do convite:', data);
+      console.log('✅ Dados do convite recebidos:', data);
+      console.log('✅ Tipo dos dados:', typeof data);
+      console.log('✅ Keys dos dados:', Object.keys(data));
+      
       return data;
     },
     enabled: !!token,
