@@ -16,6 +16,7 @@ interface StackProps {
   reverseOrder?: boolean;
   children?: any[];
   responsiveStyles?: any;
+  componentMap?: any;
 }
 
 export function Stack({
@@ -27,7 +28,8 @@ export function Stack({
   wrap = false,
   reverseOrder = false,
   children = [],
-  responsiveStyles = {}
+  responsiveStyles = {},
+  componentMap
 }: StackProps) {
   
   // Gera estilos base do Stack
@@ -110,7 +112,7 @@ export function Stack({
           return <div key={`invalid-${index}`} style={{ background: 'red', color: 'white', padding: '10px' }}>Invalid Child {index}</div>;
         }
         
-        return <RenderBlock key={child.id || `stack-child-${index}`} block={child} />;
+        return <RenderBlock key={child.id || `stack-child-${index}`} block={child} componentMap={componentMap} />;
       })}
     </div>
   );

@@ -239,7 +239,8 @@ export const RenderBlock: React.FC<RenderBlockProps> = ({
       return {
         ...baseProps,
         style: combinedStyles,
-        children: block.children || [] // ⭐ CORREÇÃO CRÍTICA: passar children para Stack/Masonry
+        children: block.children || [], // ⭐ CORREÇÃO CRÍTICA: passar children para Stack/Masonry
+        componentMap: activeComponentMap // ⭐ NOVA CORREÇÃO: passar componentMap
       };
     }
     
