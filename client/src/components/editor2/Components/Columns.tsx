@@ -1,21 +1,11 @@
 import React from 'react';
-import { BlockComponentProps } from '../../../shared/editor2-types';
-import { RenderBlock } from '../Canvas/RenderBlock';
+import { ColumnsProps } from '../../../shared/editor2-types';
+import { BuilderBlock } from '../Canvas/BuilderBlock';
 
 interface ColumnConfig {
   blocks: any[];
   width?: string;
   flex?: string;
-}
-
-interface ColumnsProps extends BlockComponentProps {
-  columns?: ColumnConfig[];
-  gutterSize?: number;
-  stackColumnsAt?: 'tablet' | 'mobile' | 'never';
-  reverseColumnsWhenStacked?: boolean;
-  alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
-  justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
-  renderBlock?: (block: any) => React.ReactNode;
 }
 
 export const Columns: React.FC<ColumnsProps> = ({
@@ -216,7 +206,7 @@ export const Columns: React.FC<ColumnsProps> = ({
             <div className="builder-blocks" style={{ flexGrow: 1 }}>
               {/* Renderizar child específico para esta coluna */}
               {children && children[index] && (
-                <RenderBlock 
+                <BuilderBlock 
                   key={children[index].id} 
                   block={children[index]}
                 />
