@@ -587,20 +587,62 @@ export function Consultas() {
   }, [professionalNameToIdMap]);
 
   // Fetch clinic configuration for working hours validation
-  const { data: clinicConfig } = useQuery({
+  const { data: clinicConfig, error: clinicConfigError, isLoading: clinicConfigLoading } = useQuery({
     queryKey: ["/api/clinic/1/config"],
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false,
-    select: (data: any) => ({
-      working_days: data.working_days || ['monday','tuesday','wednesday','thursday','friday'],
-      work_start: data.work_start || "08:00",
-      work_end: data.work_end || "18:00", 
-      lunch_start: data.lunch_start || "12:00",
-      lunch_end: data.lunch_end || "13:00",
-      has_lunch_break: data.has_lunch_break
-    })
+    queryFn: async () => {
+      console.log('🚀 Fetching clinic config...');
+      const response = await fetch('/api/clinic/1/config', {
+        credentials: 'include',
+        headers: await getAuthHeaders()
+      });
+      console.log('📡 Response status:', response.status);
+      const data = await response.json();
+      console.log('📦 Response data:', data);
+      return data;
+    },
+    select: (data: any) => {
+      console.log('🔍 Raw clinic config data in select:', data);
+      if (!data) {
+        console.log('⚠️ No data received from clinic config endpoint');
+        return null;
+      }
+      return {
+        working_days: data.working_days || ['monday','tuesday','wednesday','thursday','friday'],
+        work_start: data.work_start || "08:00",
+        work_end: data.work_end || "18:00", 
+        lunch_start: data.lunch_start || "12:00",
+        lunch_end: data.lunch_end || "13:00",
+        has_lunch_break: data.has_lunch_break
+      };
+    }
   });
+
+  // Helper function to get auth headers
+  async function getAuthHeaders() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    
+    return headers;
+  }
+
+  // Debug clinic config loading state
+  useEffect(() => {
+    console.log('🏥 Clinic config loading state:', { isLoading: clinicConfigLoading, data: clinicConfig, error: clinicConfigError });
+  }, [clinicConfigLoading, clinicConfig, clinicConfigError]);
+
+  // Debug clinic config error
+  useEffect(() => {
+    if (clinicConfigError) {
+      console.error('❌ Error loading clinic config:', clinicConfigError);
+    }
+  }, [clinicConfigError]);
 
   // Helper functions for working hours validation
   const getDayOfWeekKey = (date: Date): string => {

@@ -234,7 +234,9 @@ app.use((req, res, next) => {
       }
 
       // Get clinic from database
+      console.log('🏥 Getting clinic config for ID:', clinicId);
       const clinic = await storage.getClinic(clinicId);
+      console.log('🏥 Clinic data found:', clinic);
       
       if (!clinic) {
         return res.status(404).json({ error: "Clinic not found" });
