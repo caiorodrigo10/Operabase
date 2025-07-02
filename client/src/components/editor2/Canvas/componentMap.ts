@@ -19,7 +19,7 @@ import { Testimonial } from '../Components/Testimonial';
 import { DefaultComponent } from '../Components/DefaultComponent';
 import { Box } from '../Box';
 import { Stack } from '../Stack';
-import { Masonry } from '../Masonry';
+import { Masonry } from '../MasonryFixed';
 import { Fragment } from '../Fragment';
 
 // Mapeamento principal de componentes

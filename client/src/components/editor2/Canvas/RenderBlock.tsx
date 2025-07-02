@@ -20,7 +20,7 @@ import { Testimonial } from '../Components/Testimonial';
 import { DefaultComponent } from '../Components/DefaultComponent';
 import { Box } from '../Box';
 import { Stack } from '../Stack';
-import { Masonry } from '../Masonry';
+import { Masonry } from '../MasonryFixed';
 import { Fragment } from '../Fragment';
 
 // Import do contexto de edição (opcional para não quebrar se não tiver)
