@@ -35,6 +35,10 @@ export async function getClinicUsersForManagement(req: PermissionRequest, res: R
       console.log(`User ${index}: is_professional = ${cu.is_professional}, type = ${typeof cu.is_professional}`);
     });
     
+    // Log professional filtering
+    const professionals = clinicUsers.filter(cu => cu.is_professional === true || cu.is_professional === 1);
+    console.log(`👨‍⚕️ Found ${professionals.length} professionals out of ${clinicUsers.length} users`);
+    
     // Handle different data structures from storage implementations
     const usersData = clinicUsers.map(cu => {
       // Handle storage-minimal.ts structure (Supabase)

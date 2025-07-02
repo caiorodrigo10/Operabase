@@ -108,7 +108,10 @@ export function AppointmentForm({
     queryFn: async () => {
       const response = await fetch('/api/clinic/1/users/management');
       if (!response.ok) throw new Error('Failed to fetch users');
-      return response.json();
+      const data = await response.json();
+      console.log('📊 API Response - All users:', data);
+      console.log('🔍 Professional users:', data.filter((u: any) => u.is_professional));
+      return data;
     },
   });
 
