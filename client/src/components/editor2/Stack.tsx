@@ -58,6 +58,8 @@ export function Stack({
     wrap,
     reverseOrder,
     childrenCount: children?.length || 0,
+    childrenIds: children?.map(child => child?.id || 'NO_ID') || [],
+    hasValidChildren: children?.every(child => child && child.id && child.component),
     stylesApplied: finalStyles
   });
 
