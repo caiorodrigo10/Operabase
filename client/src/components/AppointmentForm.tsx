@@ -106,7 +106,13 @@ export function AppointmentForm({
   const { data: clinicUsers = [], isLoading: usersLoading } = useQuery({
     queryKey: ['/api/clinic/1/users/management'],
     queryFn: async () => {
-      const response = await fetch('/api/clinic/1/users/management');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/clinic/1/users/management', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
       console.log('📊 API Response - All users:', data);
