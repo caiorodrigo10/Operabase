@@ -451,6 +451,19 @@ export class TenantAwareStorageProxy implements IStorage {
     return this.storage.getLiviaConfigurationForN8N(clinicId);
   }
 
+  // Password Reset Token methods (no tenant filtering needed - global user functionality)
+  async createPasswordResetToken(token: any) {
+    return this.storage.createPasswordResetToken(token);
+  }
+
+  async getPasswordResetToken(token: string) {
+    return this.storage.getPasswordResetToken(token);
+  }
+
+  async markPasswordResetTokenAsUsed(id: number) {
+    return this.storage.markPasswordResetTokenAsUsed(id);
+  }
+
   // Pass through any additional methods without modification
   [key: string]: any;
 }
