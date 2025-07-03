@@ -4,6 +4,7 @@ import { redisCacheService } from './services/redis-cache.service';
 import { memoryCacheService } from './cache/memory-cache.service';
 import { EvolutionMessageService } from './services/evolution-message.service';
 import { AiPauseService, AiPauseContext } from './domains/ai-pause/ai-pause.service';
+import { Logger } from './shared/logger';
 
 export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
   
@@ -18,13 +19,11 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
       // ETAPA 3: Try cache first
       const cachedConversations = await redisCacheService.getCachedConversations(clinicId);
       if (cachedConversations) {
-        console.log('🎯 Cache HIT: conversations list');
+        Logger.debug('Cache HIT: conversations list', { clinicId });
         return res.json({ conversations: cachedConversations });
       }
       
-      console.log('💽 Cache MISS: fetching conversations from database');
-      
-      console.log('🔍 Fetching conversations for clinic:', clinicId);
+      Logger.debug('Cache MISS: fetching conversations from database', { clinicId });
       
       // Use direct Supabase client to get conversations with contact info
       const { createClient } = await import('@supabase/supabase-js');
@@ -33,8 +32,7 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
       
-      // PERFORMANCE: Optimized query with minimal data fetch
-      console.log('🔍 Fetching conversations for clinic:', clinicId);
+      // PERFORMANCE: Optimized query with minimal data fetch  
       const startTime = Date.now();
       
       const { data: conversationsData, error } = await supabase
@@ -60,14 +58,14 @@ export function setupSimpleConversationsRoutes(app: any, storage: IStorage) {
         .limit(20); // Reduced from 50 to 20 for faster load
         
       const queryTime = Date.now() - startTime;
-      console.log('⚡ DB Query completed in', queryTime, 'ms');
+      Logger.debug('DB Query completed', { queryTime: `${queryTime}ms` });
       
       if (error) {
         console.error('❌ Supabase error:', error);
         return res.status(500).json({ error: 'Erro ao buscar conversas' });
       }
       
-      console.log('📊 Found conversations:', conversationsData?.length || 0);
+      Logger.info('Conversations retrieved', { count: conversationsData?.length || 0 });
       
       // PERFORMANCE OPTIMIZATION: Simplified and faster query
       // Limit the number of messages fetched and use better indexing

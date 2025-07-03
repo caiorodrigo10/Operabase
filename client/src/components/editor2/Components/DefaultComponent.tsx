@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { DefaultComponentProps } from '@/../shared/editor2-types';
+import { DefaultComponentProps } from '@/types/editor2-types';
 
 export const DefaultComponent: React.FC<DefaultComponentProps> = ({ 
   name, 

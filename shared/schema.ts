@@ -897,22 +897,4 @@ export const insertPasswordResetTokenSchema = createInsertSchema(password_reset_
 export type PasswordResetToken = typeof password_reset_tokens.$inferSelect;
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
 
-// Types for existing tables
-export type AnalyticsMetric = typeof analytics_metrics.$inferSelect;
-export type InsertAnalyticsMetric = any;
-export type ClinicSetting = typeof clinic_settings.$inferSelect;
-export type InsertClinicSetting = any;
-export type AiTemplate = typeof ai_templates.$inferSelect;
-export type InsertAiTemplate = any;
-export type PipelineStage = typeof pipeline_stages.$inferSelect;
-export type InsertPipelineStage = any;
-export type PipelineOpportunity = typeof pipeline_opportunities.$inferSelect;
-export type InsertPipelineOpportunity = any;
-export type PipelineHistory = typeof pipeline_history.$inferSelect;
-export type InsertPipelineHistory = any;
-export type PipelineActivity = typeof pipeline_activities.$inferSelect;
-export type InsertPipelineActivity = any;
-export type CalendarIntegration = typeof calendar_integrations.$inferSelect;
-export type InsertCalendarIntegration = any;
-export type MedicalRecord = typeof medical_records.$inferSelect;
-export type InsertMedicalRecord = any;
+// Removed duplicate type exports - these are already defined above in the file

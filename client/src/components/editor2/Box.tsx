@@ -1,5 +1,5 @@
 import React from 'react';
-import { BuilderElement } from '../../shared/editor2-types';
+import { BuilderElement } from '../../types/editor2-types';
 import { BuilderBlock } from './Canvas/BuilderBlock';
 
 export interface BoxProps {

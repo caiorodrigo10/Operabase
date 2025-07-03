@@ -6,7 +6,8 @@
   "scripts": {
     "setup": "node setup.js",
     "dev": "NODE_ENV=development tsx --env-file=.env server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build": "vite build",
+    "build:full": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build:frontend": "vite build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
@@ -124,6 +125,7 @@
     "tiktoken": "^1.0.21",
     "tw-animate-css": "^1.2.5",
     "vaul": "^1.1.2",
+    "vite": "^5.4.14",
     "world-countries": "^5.1.0",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
@@ -148,11 +150,11 @@
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
+    "glob": "^11.0.3",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
-    "typescript": "5.6.3",
-    "vite": "^5.4.14"
+    "typescript": "5.6.3"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

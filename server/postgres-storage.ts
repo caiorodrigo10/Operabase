@@ -55,22 +55,27 @@ import {
   type InsertWhatsAppNumber
 } from "../shared/schema";
 import type { IStorage } from "./storage";
+import { Logger } from './shared/logger';
 
 export class PostgreSQLStorage implements IStorage {
   constructor() {
     // Initialize profiles table and create missing user profile on startup
-    this.initializeProfiles().catch(console.error);
+    this.initializeProfiles().catch(err => 
+      Logger.error('Failed to initialize profiles', { error: err instanceof Error ? err.message : String(err) })
+    );
   }
   
   async testConnection(): Promise<void> {
     try {
-      console.log('🔍 Testing PostgreSQL/Supabase connection...');
+      Logger.debug('Testing PostgreSQL/Supabase connection');
       // Use simple query that works with any PostgreSQL setup
       const pool = (db as any)._.session.client;
       await pool.query('SELECT NOW()');
-      console.log('✅ Database connection successful');
+      Logger.info('Database connection successful');
     } catch (error) {
-      console.error('❌ Database connection failed:', error);
+      Logger.error('Database connection failed', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
       throw new Error(`PostgreSQL connection test failed: ${error}`);
     }
   }
@@ -503,6 +508,7 @@ export class PostgreSQLStorage implements IStorage {
   
   async getAppointments(clinicId: number, filters?: { status?: string; date?: Date; contact_id?: number }): Promise<Appointment[]> {
     try {
+      console.log('🔍 PostgreSQL getAppointments called with filters:', filters);
       let conditions = [`a.clinic_id = ${clinicId}`];
 
       if (filters?.status) {
@@ -520,6 +526,7 @@ export class PostgreSQLStorage implements IStorage {
       }
 
       const whereClause = conditions.join(' AND ');
+      console.log('🔍 PostgreSQL query where clause:', whereClause);
       
       // Buscar agendamentos com informações do usuário profissional dinamicamente
       const result = await db.execute(sql`
@@ -534,13 +541,17 @@ export class PostgreSQLStorage implements IStorage {
         LEFT JOIN clinic_users cu ON cu.user_id = a.user_id AND cu.clinic_id = a.clinic_id
         LEFT JOIN users u ON u.id = cu.user_id
         WHERE ${sql.raw(whereClause)}
-        ORDER BY a.scheduled_date ASC
+        ORDER BY a.created_at DESC, a.scheduled_date ASC
         LIMIT 500
       `);
+      
+      console.log('🔍 PostgreSQL query returned rows:', result.rows.length);
+      console.log('🔍 PostgreSQL first few appointments:', result.rows.slice(0, 3).map(r => ({ id: r.id, created_at: r.created_at })));
       
       return result.rows as Appointment[];
     } catch (error) {
       console.error('Error fetching appointments with user data:', error);
+      console.error('Error details:', error);
       // Fallback simples para compatibilidade
       const result = await db.execute(sql`
         SELECT 
@@ -551,18 +562,11 @@ export class PostgreSQLStorage implements IStorage {
           created_at, updated_at
         FROM appointments 
         WHERE clinic_id = ${clinicId}
-        ORDER BY scheduled_date ASC
+        ORDER BY created_at DESC, scheduled_date ASC
         LIMIT 500
       `);
       
-      return result.rows.map((row: any) => ({
-        ...row,
-        observations: '',
-        return_period: '',
-        how_found_clinic: '',
-        tags: [],
-        receive_reminders: true
-      })) as Appointment[];
+      return result.rows as Appointment[];
     }
   }
 
@@ -604,8 +608,47 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
-    const result = await db.insert(appointments).values(insertAppointment).returning();
-    return result[0];
+    // TIMEZONE FIX: Handle scheduled_date properly to avoid timezone conversion issues
+    if (typeof (insertAppointment as any).scheduled_date === 'string') {
+      // If scheduled_date is a string (like "2025-07-06 09:00:00"), use raw SQL to preserve exact time
+      const timestampString = (insertAppointment as any).scheduled_date;
+      console.log('🕐 TIMEZONE FIX: Creating appointment with raw timestamp:', timestampString);
+      
+      const result = await db.execute(sql`
+        INSERT INTO appointments (
+          contact_id, clinic_id, user_id, doctor_name, specialty, appointment_type,
+          scheduled_date, duration_minutes, status, cancellation_reason, session_notes,
+          payment_status, payment_amount, google_calendar_event_id, tag_id
+        ) VALUES (
+          ${insertAppointment.contact_id},
+          ${insertAppointment.clinic_id}, 
+          ${insertAppointment.user_id},
+          ${insertAppointment.doctor_name || null},
+          ${insertAppointment.specialty || null},
+          ${insertAppointment.appointment_type || null},
+          ${timestampString}::timestamp,
+          ${insertAppointment.duration_minutes || 60},
+          ${insertAppointment.status},
+          ${insertAppointment.cancellation_reason || null},
+          ${insertAppointment.session_notes || null},
+          ${insertAppointment.payment_status || 'pendente'},
+          ${insertAppointment.payment_amount || null},
+          ${insertAppointment.google_calendar_event_id || null},
+          ${insertAppointment.tag_id || null}
+        )
+        RETURNING 
+          id, contact_id, clinic_id, user_id, doctor_name, specialty,
+          appointment_type, scheduled_date, duration_minutes, status,
+          cancellation_reason, session_notes, payment_status, payment_amount,
+          google_calendar_event_id, tag_id, created_at, updated_at
+      `);
+      
+      return result.rows[0] as Appointment;
+    } else {
+      // Use normal Drizzle ORM for Date objects
+      const result = await db.insert(appointments).values(insertAppointment).returning();
+      return result[0];
+    }
   }
 
   async updateAppointment(id: number, updates: Partial<InsertAppointment>): Promise<Appointment | undefined> {
@@ -658,6 +701,12 @@ export class PostgreSQLStorage implements IStorage {
 
   async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]> {
     try {
+      console.log('🔍 PostgreSQL getAppointmentsByDateRange called with:', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
+      // Simplified query: get all appointments that might overlap with the time range
       const result = await db.execute(sql`
         SELECT 
           id, contact_id, clinic_id, user_id, doctor_name, specialty,
@@ -666,12 +715,17 @@ export class PostgreSQLStorage implements IStorage {
           payment_status, payment_amount, google_calendar_event_id,
           created_at, updated_at
         FROM appointments 
-        WHERE scheduled_date >= ${startDate.toISOString()}
-          AND scheduled_date <= ${endDate.toISOString()}
+        WHERE scheduled_date <= ${endDate.toISOString()}
+          AND (scheduled_date + INTERVAL '1 minute' * COALESCE(duration_minutes, 60)) > ${startDate.toISOString()}
           AND status NOT IN ('cancelled', 'no_show')
         ORDER BY scheduled_date ASC
       `);
       
+      console.log('📊 PostgreSQL found appointments:', result.rows.length);
+      result.rows.forEach(apt => {
+        console.log(`📋 PostgreSQL appointment ${apt.id}: ${apt.scheduled_date} (user_id: ${apt.user_id}, duration: ${apt.duration_minutes}min, status: ${apt.status})`);
+      });
+
       return result.rows as Appointment[];
     } catch (error) {
       console.error('Error fetching appointments by date range:', error);
@@ -1036,20 +1090,7 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
-  async getCalendarIntegrationsForClinic(clinicId: number): Promise<CalendarIntegration[]> {
-    try {
-      const result = await db.execute(sql`
-        SELECT * FROM calendar_integrations 
-        WHERE clinic_id = ${clinicId}
-        AND is_active = true
-        ORDER BY created_at DESC
-      `);
-      return result.rows as CalendarIntegration[];
-    } catch (error) {
-      console.error('Error fetching calendar integrations for clinic:', error);
-      return [];
-    }
-  }
+
 
   async getCalendarIntegrationsByEmail(userEmail: string): Promise<CalendarIntegration[]> {
     console.log('🔍 Searching calendar integrations for email:', userEmail);
@@ -1737,76 +1778,7 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   // WhatsApp Numbers methods
-  async getWhatsAppNumbers(clinicId: number): Promise<WhatsAppNumber[]> {
-    try {
-      const result = await db.execute(sql`
-        SELECT * FROM whatsapp_numbers 
-        WHERE clinic_id = ${clinicId}
-        ORDER BY created_at DESC
-      `);
-      
-      return result.rows as WhatsAppNumber[];
-    } catch (error) {
-      console.error('❌ Error getting WhatsApp numbers:', error);
-      return [];
-    }
-  }
 
-  async getWhatsAppNumber(id: number): Promise<WhatsAppNumber | undefined> {
-    try {
-      const result = await db.execute(sql`
-        SELECT * FROM whatsapp_numbers WHERE id = ${id}
-      `);
-      
-      return result.rows[0] as WhatsAppNumber | undefined;
-    } catch (error) {
-      console.error('❌ Error getting WhatsApp number:', error);
-      return undefined;
-    }
-  }
-
-  async getWhatsAppNumberByPhone(phone: string, clinicId: number): Promise<WhatsAppNumber | undefined> {
-    try {
-      const result = await db.execute(sql`
-        SELECT * FROM whatsapp_numbers 
-        WHERE phone_number = ${phone} AND clinic_id = ${clinicId}
-      `);
-      
-      return result.rows[0] as WhatsAppNumber | undefined;
-    } catch (error) {
-      console.error('❌ Error getting WhatsApp number by phone:', error);
-      return undefined;
-    }
-  }
-
-  async getWhatsAppNumberByInstance(instanceName: string): Promise<WhatsAppNumber | undefined> {
-    try {
-      const result = await db.execute(sql`
-        SELECT * FROM whatsapp_numbers WHERE instance_name = ${instanceName}
-      `);
-      
-      return result.rows[0] as WhatsAppNumber | undefined;
-    } catch (error) {
-      console.error('❌ Error getting WhatsApp number by instance:', error);
-      return undefined;
-    }
-  }
-
-  async createWhatsAppNumber(whatsappNumber: InsertWhatsAppNumber): Promise<WhatsAppNumber> {
-    try {
-      const result = await db.execute(sql`
-        INSERT INTO whatsapp_numbers (clinic_id, user_id, phone_number, instance_name, status, connected_at)
-        VALUES (${whatsappNumber.clinic_id}, ${whatsappNumber.user_id}, ${whatsappNumber.phone_number || ''}, 
-                ${whatsappNumber.instance_name}, ${whatsappNumber.status || 'pending'}, ${whatsappNumber.connected_at || null})
-        RETURNING *
-      `);
-      
-      return result.rows[0] as WhatsAppNumber;
-    } catch (error) {
-      console.error('❌ Error creating WhatsApp number:', error);
-      throw error;
-    }
-  }
 
   async updateWhatsAppNumber(id: number, updates: Partial<InsertWhatsAppNumber>): Promise<WhatsAppNumber | undefined> {
     try {

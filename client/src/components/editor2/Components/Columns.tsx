@@ -1,5 +1,5 @@
 import React from 'react';
-import { ColumnsProps } from '../../../../shared/editor2-types';
+import { ColumnsProps } from '../../../../types/editor2-types';
 import { BuilderBlock } from '../Canvas/BuilderBlock';
 
 interface ColumnConfig {

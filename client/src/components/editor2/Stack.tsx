@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { StackProps } from '../../../shared/editor2-types';
+import { StackProps } from '../../../types/editor2-types';
 import { BuilderBlock } from './Canvas/BuilderBlock';
 
 export function Stack({

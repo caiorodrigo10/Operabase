@@ -1,6 +1,6 @@
 [build]
   # Comando para build (só frontend, backend não é deployado no Netlify)
-  command = "npm run build:frontend"
+  command = "npm run build"
   
   # Diretório de publicação (onde está o frontend)
   publish = "dist/public"

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { BuilderElement } from '../../../../shared/editor2-types';
+import { BuilderElement } from '../../../../types/editor2-types';
 import { componentMap } from './componentMap';
 
 export interface BuilderBlockProps {

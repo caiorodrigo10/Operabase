@@ -59,10 +59,8 @@ import FunisPage from "./pages/funis";
 import FunilDetalhes from "./pages/funil-detalhes";
 import SystemLogs from "./pages/SystemLogs";
 
-import FunilEditorLanding from "./pages/funil-editor-landing";
 import Editor2 from "./pages/editor2";
 import { PreviewPage } from "./pages/preview";
-import CraftPreviewPage from "./pages/preview-craft";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -213,10 +211,8 @@ function Router() {
         <Route path="/funis/:id" component={FunilDetalhes} />
         <Route path="/system-logs" component={SystemLogs} />
 
-        <Route path="/editor-landing" component={FunilEditorLanding} />
         <Route path="/editor2" component={Editor2} />
         <Route path="/preview/editor2" component={() => <PreviewPage pageId="editor2" />} />
-        <Route path="/preview/craft/editor2" component={() => <CraftPreviewPage pageId="editor2" />} />
 
         <Route component={NotFound} />
       </Switch>
@@ -229,9 +225,8 @@ function GleapWrapper() {
 
   // Don't initialize Gleap for public anamnesis pages or editors
   const isPublicPage = location.startsWith('/public/anamnese/') || location.startsWith('/anamnese/');
-  const isLandingEditor = location === '/editor-landing';
   const isEditor2 = location === '/editor2';
-  const shouldInitializeGleap = !isPublicPage && !isLandingEditor && !isEditor2;
+  const shouldInitializeGleap = !isPublicPage && !isEditor2;
 
   // Always call useGleap hook, but pass condition to control initialization
   useGleap(shouldInitializeGleap);

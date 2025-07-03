@@ -1,14 +1,13 @@
 import { 
-  users, clinics, contacts, appointments, analytics_metrics, clinic_settings, ai_templates,
+  users, clinics, contacts, appointments, analytics_metrics, ai_templates,
   pipeline_stages, pipeline_opportunities, pipeline_history, pipeline_activities,
-  clinic_users, clinic_invitations, calendar_integrations, medical_records, password_reset_tokens,
-  appointment_tags, livia_configurations,
+  clinic_users, clinic_invitations, password_reset_tokens,
+  appointment_tags, livia_configurations, whatsapp_numbers,
   type User, type InsertUser,
   type Clinic, type InsertClinic,
   type Contact, type InsertContact,
   type Appointment, type InsertAppointment,
   type AnalyticsMetric, type InsertAnalyticsMetric,
-  type ClinicSetting, type InsertClinicSetting,
   type AiTemplate, type InsertAiTemplate,
   type PipelineStage, type InsertPipelineStage,
   type PipelineOpportunity, type InsertPipelineOpportunity,
@@ -16,12 +15,19 @@ import {
   type PipelineActivity, type InsertPipelineActivity,
   type ClinicUser, type InsertClinicUser,
   type ClinicInvitation, type InsertClinicInvitation,
-  type CalendarIntegration, type InsertCalendarIntegration,
-  type MedicalRecord, type InsertMedicalRecord,
   type PasswordResetToken, type InsertPasswordResetToken,
   type AppointmentTag, type InsertAppointmentTag,
   type LiviaConfiguration, type InsertLiviaConfiguration, type UpdateLiviaConfiguration,
+  type WhatsAppNumber, type InsertWhatsAppNumber,
 } from "@shared/schema";
+
+// Import missing types from temporary file
+import {
+  clinic_settings, calendar_integrations, medical_records,
+  type ClinicSetting, type InsertClinicSetting,
+  type CalendarIntegration, type InsertCalendarIntegration,
+  type MedicalRecord, type InsertMedicalRecord,
+} from "./types/missing-types";
 
 export interface IStorage {
   // Users
@@ -261,8 +267,13 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
     const user: User = { 
-      ...insertUser, 
       id,
+      email: insertUser.email,
+      password: insertUser.password,
+      name: insertUser.name,
+      role: insertUser.role || 'admin',
+      is_active: insertUser.is_active ?? true,
+      last_login: insertUser.last_login ?? null,
       created_at: new Date(),
       updated_at: new Date()
     };
@@ -300,9 +311,18 @@ export class MemStorage implements IStorage {
   async addUserToClinic(clinicUser: InsertClinicUser): Promise<ClinicUser> {
     const id = this.currentId++;
     const newClinicUser: ClinicUser = {
-      ...clinicUser,
       id,
-      created_at: new Date()
+      clinic_id: clinicUser.clinic_id,
+      user_id: clinicUser.user_id,
+      role: clinicUser.role || 'usuario',
+      is_professional: clinicUser.is_professional ?? false,
+      permissions: clinicUser.permissions ?? null,
+      is_active: clinicUser.is_active ?? true,
+      invited_by: clinicUser.invited_by ?? null,
+      invited_at: clinicUser.invited_at ?? null,
+      joined_at: clinicUser.joined_at ?? null,
+      created_at: new Date(),
+      updated_at: new Date()
     };
     this.clinicUsers.set(id, newClinicUser);
     return newClinicUser;
@@ -1169,6 +1189,127 @@ export class MemStorage implements IStorage {
   async getLiviaConfigurationForN8N(clinicId: number): Promise<any> {
     console.log(`📝 MemStorage stub: get Livia config for N8N for clinic ${clinicId}`);
     return undefined;
+  }
+
+  // Missing methods to implement IStorage interface
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getClinicUserByUserId(userId: number): Promise<ClinicUser | undefined> {
+    for (const clinicUser of this.clinicUsers.values()) {
+      if (clinicUser.user_id === userId) {
+        return clinicUser;
+      }
+    }
+    return undefined;
+  }
+
+  async getClinics(): Promise<Clinic[]> {
+    return Array.from(this.clinics.values());
+  }
+
+  async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]> {
+    return Array.from(this.appointments.values()).filter(appointment => {
+      if (!appointment.scheduled_date) return false;
+      const appointmentDate = new Date(appointment.scheduled_date);
+      return appointmentDate >= startDate && appointmentDate <= endDate;
+    });
+  }
+
+  async getAllCalendarIntegrations(): Promise<CalendarIntegration[]> {
+    return [];
+  }
+
+  async getCalendarIntegrationsForWebhookRenewal(renewalThreshold: Date): Promise<CalendarIntegration[]> {
+    return [];
+  }
+
+  async getCalendarIntegrationByWebhook(channelId: string, resourceId: string): Promise<CalendarIntegration | undefined> {
+    return undefined;
+  }
+
+  async getAppointmentsByGoogleEventId(eventId: string): Promise<Appointment[]> {
+    return Array.from(this.appointments.values()).filter(
+      appointment => appointment.google_calendar_event_id === eventId
+    );
+  }
+
+  async createUserInClinic(userData: {
+    name: string;
+    email: string;
+    role: 'admin' | 'usuario';
+    isProfessional: boolean;
+    clinicId: number;
+    createdBy: string;
+  }): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      const user = await this.createUser({
+        name: userData.name,
+        email: userData.email,
+        password: '', // Should be set elsewhere
+        role: userData.role,
+        is_active: true
+      });
+
+      await this.addUserToClinic({
+        user_id: user.id,
+        clinic_id: userData.clinicId,
+        role: userData.role,
+        is_professional: userData.isProfessional,
+        is_active: true
+      });
+
+      return { success: true, user };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async createMessage(message: any): Promise<any> {
+    return { id: this.currentId++, ...message };
+  }
+
+  async updateMessage(messageId: number, updates: any): Promise<any> {
+    return { id: messageId, ...updates };
+  }
+
+  async createAttachment(attachment: any): Promise<any> {
+    return { id: this.currentId++, ...attachment };
+  }
+
+  async getActiveWhatsAppInstance(clinicId: number): Promise<any> {
+    return undefined;
+  }
+
+  async getConversationById(id: string): Promise<any> {
+    return undefined;
+  }
+
+  async getAppointmentTags(clinicId: number): Promise<AppointmentTag[]> {
+    return [];
+  }
+
+  async getAppointmentTag(id: number): Promise<AppointmentTag | undefined> {
+    return undefined;
+  }
+
+  async createAppointmentTag(tag: InsertAppointmentTag): Promise<AppointmentTag> {
+    const newTag: AppointmentTag = {
+      id: this.currentId++,
+      ...tag,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+    return newTag;
+  }
+
+  async updateAppointmentTag(id: number, updates: Partial<InsertAppointmentTag>): Promise<AppointmentTag | undefined> {
+    return undefined;
+  }
+
+  async deleteAppointmentTag(id: number): Promise<boolean> {
+    return false;
   }
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BlockComponentProps } from '../../../shared/editor2-types';
+import { BlockComponentProps } from '../../../types/editor2-types';
 
 interface VideoProps extends BlockComponentProps {
   src?: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEditor2Store, Column } from '../../../stores/editor2Store';
 import { ResizeHandle } from './ResizeHandle';
-import { TitleWidget } from '../Widgets/TitleWidget/TitleWidget';
+import { TitleWidget } from '../legacy/TitleWidget';
 
 interface ColumnContainerProps {
   column: Column;
