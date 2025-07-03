@@ -125,7 +125,8 @@ Operabase/
 ```bash
 # Desenvolvimento
 npm run dev          # Inicia servidor de desenvolvimento
-npm run build        # Build para produção
+npm run build        # Build para produção (frontend only)
+npm run build:full   # Build completo (frontend + backend)
 npm run start        # Inicia servidor de produção
 
 # Banco de dados
@@ -135,6 +136,25 @@ npm run setup        # Configuração inicial
 # Verificação
 npm run check        # Verificação de tipos TypeScript
 ```
+
+## 🚀 Deploy
+
+### Netlify (Frontend)
+O frontend está configurado para deploy automático no Netlify:
+
+1. **Conecte o repositório** no [Netlify Dashboard](https://app.netlify.com)
+2. **Configure o build**:
+   - Build command: `npm run build`
+   - Publish directory: `dist/public`
+   - Node version: 18
+3. **Adicione as variáveis de ambiente** necessárias
+
+📖 **Guia completo**: [docs/NETLIFY-DEPLOYMENT.md](docs/NETLIFY-DEPLOYMENT.md)
+
+### Backend
+O backend pode ser deployado em qualquer plataforma Node.js:
+- Railway, Heroku, DigitalOcean, AWS, etc.
+- Use `npm run build:full` para build completo
 
 ## 🌍 Variáveis de Ambiente
 

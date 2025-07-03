@@ -119,9 +119,14 @@ O **Operabase** é uma plataforma completa de gestão de saúde desenvolvida par
 - 5 widgets funcionais implementados
 - Sistema CSS-in-JS avançado
 
+### 🚀 [Deployment e DevOps](NETLIFY-DEPLOYMENT.md) ✅
+- Guia completo de deploy no Netlify
+- Configuração de dependências de build
+- Troubleshooting de erros comuns
+- Boas práticas de CI/CD
+
 ### 📁 Documentações Adicionais (Em Desenvolvimento)
 - 👥 **Gestão de Contatos**: Sistema completo de CRM
-- 🚀 **Deployment**: Deploy e configuração DevOps
 - 🛡️ **Segurança**: Compliance LGPD e boas práticas
 - 🔧 **Troubleshooting**: Guia de resolução de problemas
 
