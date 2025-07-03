@@ -619,15 +619,23 @@ app.use((req, res, next) => {
   // This serves both the API and the client
   const port = parseInt(process.env.PORT || '3000', 10);
   
-  server.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
-  }).on('error', (err: any) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`Port ${port} is already in use. Please kill any existing processes or use a different port.`);
-      process.exit(1);
-    } else {
-      console.error('Server error:', err);
-      process.exit(1);
-    }
-  });
+  // For Vercel deployment, make app available globally
+  if (process.env.VERCEL) {
+    (global as any).vercelApp = app;
+  }
+  
+  // Start the server normally for local development and production
+  if (!process.env.VERCEL) {
+    server.listen(port, "0.0.0.0", () => {
+      log(`serving on port ${port}`);
+    }).on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${port} is already in use. Please kill any existing processes or use a different port.`);
+        process.exit(1);
+      } else {
+        console.error('Server error:', err);
+        process.exit(1);
+      }
+    });
+  }
 })();
