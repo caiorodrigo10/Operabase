@@ -1,4 +1,4 @@
-// Set Vercel environment variable
+// Set Vercel environment flag
 process.env.VERCEL = 'true';
 
 // Import the Express app
