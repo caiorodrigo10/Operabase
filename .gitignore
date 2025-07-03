@@ -100,3 +100,4 @@ attached_assets/
 # Keep important documentation
 !README.md
 !GITHUB_SETUP.mdOperabase/
+.vercel
