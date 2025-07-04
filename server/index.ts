@@ -2,12 +2,13 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// AWS Deploy Test - v1.0.6 - Repositório Principal
+// AWS Deploy Test - v1.0.7 - Repositório Principal
 // Teste de deploy automático - 2025-01-28
 // Testando após configurar AWS secrets
 // Novo teste com secrets configurados
 // Workflow corrigido - removido cache e verificação manual
 // Adicionado action oficial AWS configure-aws-credentials
+// Corrigido para usar versão v2 da action AWS
 
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
