@@ -30,27 +30,43 @@ jobs:
           fi
           echo "✅ AWS credentials found"
       
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build application
-        run: npm run build
+      - name: Install server dependencies
+        run: |
+          cd server
+          npm install --production
       
       - name: Create deployment package
         run: |
           echo "📦 Creating deployment package..."
-          ls -la
-          zip -r deploy.zip server/ Procfile .ebextensions/ package.json dist/
+          
+          # Criar estrutura para deploy
+          mkdir -p deploy/server
+          
+          # Copiar arquivos necessários
+          cp -r server/* deploy/server/
+          cp Procfile deploy/
+          cp -r .ebextensions deploy/
+          cp package.json deploy/
+          
+          # Criar zip
+          cd deploy
+          zip -r ../deploy.zip .
+          cd ..
+          
+          # Mostrar conteúdo
           echo "✅ Package created: $(ls -lh deploy.zip)"
+          echo "📋 Package contents:"
+          unzip -l deploy.zip | head -20
       
       - name: Deploy to Elastic Beanstalk
-        uses: einaregilsson/beanstalk-deploy@v21
+        uses: einaregilsson/beanstalk-deploy@v22
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: operabase-backend-mvp
           environment_name: operabase-backend-mvp-env-1
           region: sa-east-1
-          version_label: ${{ github.sha }}
+          version_label: v${{ github.run_number }}-${{ github.sha }}
           deployment_package: deploy.zip
-          wait_for_environment_recovery: 300 
+          wait_for_deployment: true
+          wait_for_environment_recovery: 60 
