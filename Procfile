@@ -1,1 +1,1 @@
-web: node server/simple-server.js || node server/dist/index.js || node app.js 
+web: node server/simple-server.cjs || node server/dist/index.js || node app.js 
