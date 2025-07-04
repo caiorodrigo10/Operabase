@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// AWS Deploy Test - v1.1.5 - Repositório Principal
+// AWS Deploy Test - v1.1.6 - Repositório Principal
 // Teste de deploy automático - 2025-01-28
 // Testando após configurar AWS secrets
 // Novo teste com secrets configurados
@@ -13,6 +13,7 @@ dotenv.config();
 // Corrigido Procfile e package.json - v1.1.3
 // Corrigido .ebextensions/nodejs.config - removido staticfiles inválido - v1.1.4
 // Removido .ebextensions completamente - NodeCommand também inválido - v1.1.5
+// Adicionado logs detalhados para debug e health check básico - v1.1.6
 
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
@@ -39,6 +40,12 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const app = express();
+
+// Log de inicialização para debug
+console.log('🚀 Iniciando aplicação...');
+console.log('📍 NODE_ENV:', process.env.NODE_ENV);
+console.log('📍 PORT:', process.env.PORT);
+
 app.use(express.json({ 
   reviver: (key, value) => {
     // Prevent automatic date parsing - keep strings as strings
@@ -54,7 +61,19 @@ const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 app.use(express.urlencoded({ extended: false }));
 
-app.use((req, res, next) => {
+  console.log('✅ Express configurado, porta:', PORT);
+  
+  // Health check básico (deve vir antes de qualquer middleware complexo)
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      port: PORT,
+      env: process.env.NODE_ENV 
+    });
+  });
+  
+  app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
@@ -638,9 +657,15 @@ app.use((req, res, next) => {
   
   // Start the server normally for local development and production
   if (!process.env.VERCEL) {
+    console.log(`🔄 Tentando iniciar servidor na porta ${port}...`);
     server.listen(port, "0.0.0.0", () => {
+      console.log(`🎉 SERVIDOR INICIADO COM SUCESSO!`);
+      console.log(`📍 Porta: ${port}`);
+      console.log(`📍 Ambiente: ${process.env.NODE_ENV}`);
+      console.log(`📍 Timestamp: ${new Date().toISOString()}`);
       log(`serving on port ${port}`);
     }).on('error', (err: any) => {
+      console.error(`❌ ERRO AO INICIAR SERVIDOR:`, err);
       if (err.code === 'EADDRINUSE') {
         console.error(`Port ${port} is already in use. Please kill any existing processes or use a different port.`);
         process.exit(1);
@@ -649,6 +674,8 @@ app.use((req, res, next) => {
         process.exit(1);
       }
     });
+  } else {
+    console.log('📍 Ambiente Vercel detectado, não iniciando servidor local');
   }
 })();
 
