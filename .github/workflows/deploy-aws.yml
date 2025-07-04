@@ -51,9 +51,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: sa-east-1
       
-      - name: Install server dependencies
+      - name: Install dependencies
         run: |
-          cd server
           npm install --production
       
       - name: Create deployment package
@@ -61,10 +60,16 @@ jobs:
           echo "📦 Creating deployment package..."
           
           # Criar estrutura para deploy
-          mkdir -p deploy/server
+          mkdir -p deploy
           
           # Copiar arquivos necessários
-          cp -r server/* deploy/server/
+          cp -r server deploy/
+          cp -r node_modules deploy/
+          cp -r shared deploy/
+          
+          # Copiar arquivos de configuração
+          cp package.json deploy/
+          cp package-lock.json deploy/
           
           # Copiar arquivos opcionais se existirem
           if [ -f "Procfile" ]; then
@@ -79,13 +84,6 @@ jobs:
             echo "✅ .ebextensions copied"
           else
             echo "⚠️ .ebextensions not found, skipping"
-          fi
-          
-          if [ -f "package.json" ]; then
-            cp package.json deploy/
-            echo "✅ package.json copied"
-          else
-            echo "⚠️ package.json not found, skipping"
           fi
           
           # Criar zip
