@@ -81,7 +81,7 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
       console.log('✅ Processing OAuth for Supabase user:', { userId, email: userEmail, clinicId });
     } else {
       // Legacy integer user ID
-      const user = await storage.getUser(userId);
+      const user = await storage?.getUser(userId);
       if (!user) {
         console.error('❌ User not found:', userId);
         return res.redirect('/configuracoes?calendar=error&reason=user_not_found');
