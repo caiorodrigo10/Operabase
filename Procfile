@@ -1,1 +1,1 @@
-web: node server/simple-server.cjs || node server/dist/index.js || node app.js 
+web: NODE_ENV=production tsx server/index.ts || node server/simple-server.cjs 
