@@ -17,12 +17,39 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@0e613a0980cbf65ed5b322eb7a1e075d28913a83
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: sa-east-1
+      - name: Debug - Check if secrets are available
+        run: |
+          echo "Checking if AWS secrets are available..."
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            echo "❌ AWS_ACCESS_KEY_ID is empty or not set"
+          else
+            echo "✅ AWS_ACCESS_KEY_ID is set (length: ${#AWS_ACCESS_KEY_ID})"
+          fi
+          
+          if [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "❌ AWS_SECRET_ACCESS_KEY is empty or not set"
+          else
+            echo "✅ AWS_SECRET_ACCESS_KEY is set (length: ${#AWS_SECRET_ACCESS_KEY})"
+          fi
+          
+          if [ -z "${{ secrets.AWS_REGION }}" ]; then
+            echo "❌ AWS_REGION is empty or not set"
+          else
+            echo "✅ AWS_REGION is set: ${{ secrets.AWS_REGION }}"
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
+      - name: Configure AWS credentials (Method 1 - Direct env vars)
+        run: |
+          echo "Trying direct environment variables approach..."
+          aws --version
+          aws sts get-caller-identity
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: sa-east-1
       
       - name: Install server dependencies
         run: |
