@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// AWS Deploy Test - v1.1.7 - Repositório Principal
+// AWS Deploy Test - v1.1.8 - Repositório Principal
 // Teste de deploy automático - 2025-01-28
 // Testando após configurar AWS secrets
 // Novo teste com secrets configurados
@@ -15,6 +15,7 @@ dotenv.config();
 // Removido .ebextensions completamente - NodeCommand também inválido - v1.1.5
 // Adicionado logs detalhados para debug e health check básico - v1.1.6
 // Corrigido para compilar TypeScript para JavaScript em produção - v1.1.7
+// Melhorado health checks e logs para diagnosticar problema Red/Degraded - v1.1.8
 
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
@@ -66,11 +67,25 @@ app.use(express.urlencoded({ extended: false }));
   
   // Health check básico (deve vir antes de qualquer middleware complexo)
   app.get('/health', (req, res) => {
+    console.log('🏥 Health check endpoint acessado');
     res.status(200).json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
       port: PORT,
-      env: process.env.NODE_ENV 
+      env: process.env.NODE_ENV,
+      uptime: process.uptime(),
+      memory: process.memoryUsage()
+    });
+  });
+
+  // Health check adicional na raiz para Elastic Beanstalk
+  app.get('/', (req, res) => {
+    console.log('🏠 Root endpoint acessado');
+    res.status(200).json({ 
+      message: 'Operabase API está funcionando!',
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: '1.1.7'
     });
   });
   
@@ -659,19 +674,31 @@ app.use(express.urlencoded({ extended: false }));
   // Start the server normally for local development and production
   if (!process.env.VERCEL) {
     console.log(`🔄 Tentando iniciar servidor na porta ${port}...`);
+    console.log(`📍 NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`📍 PORT from env: ${process.env.PORT}`);
+    console.log(`📍 Porta final: ${port}`);
+    
     server.listen(port, "0.0.0.0", () => {
       console.log(`🎉 SERVIDOR INICIADO COM SUCESSO!`);
       console.log(`📍 Porta: ${port}`);
       console.log(`📍 Ambiente: ${process.env.NODE_ENV}`);
       console.log(`📍 Timestamp: ${new Date().toISOString()}`);
+      console.log(`📍 URL: http://0.0.0.0:${port}`);
+      console.log(`📍 Health check: http://0.0.0.0:${port}/health`);
+      console.log(`📍 Root: http://0.0.0.0:${port}/`);
       log(`serving on port ${port}`);
     }).on('error', (err: any) => {
       console.error(`❌ ERRO AO INICIAR SERVIDOR:`, err);
       if (err.code === 'EADDRINUSE') {
-        console.error(`Port ${port} is already in use. Please kill any existing processes or use a different port.`);
-        process.exit(1);
+        console.error(`❌ Porta ${port} já está em uso!`);
+        console.error(`❌ Tentando usar porta alternativa...`);
+        // Tentar porta alternativa
+        const alternativePort = port + 1;
+        server.listen(alternativePort, "0.0.0.0", () => {
+          console.log(`🎉 SERVIDOR INICIADO NA PORTA ALTERNATIVA: ${alternativePort}`);
+        });
       } else {
-        console.error('Server error:', err);
+        console.error('❌ Erro do servidor:', err);
         process.exit(1);
       }
     });
