@@ -1,1 +1,1 @@
-web: NODE_ENV=production tsx server/index.ts || node server/simple-server.cjs 
+web: npm run build:simple && node server/index.js || node server/simple-server.cjs 
