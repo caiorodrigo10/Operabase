@@ -2,7 +2,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// AWS Deploy Test - v1.0.0 - Repositório Principal
+// AWS Deploy Test - v1.0.1 - Repositório Principal
+// Teste de deploy automático - 2025-01-28
 
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
