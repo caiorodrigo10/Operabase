@@ -6,23 +6,13 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import bcrypt from "bcryptjs";
 import type { IStorage } from "./storage";
-// Define User type based on the users table structure
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  is_active: boolean;
-  last_login: Date | null;
-  created_at: Date | null;
-  updated_at: Date | null;
-}
+import { User } from "../shared/schema";
 import connectPg from "connect-pg-simple";
 
 declare global {
   namespace Express {
     interface User {
-      id: string;
+      id: number;
       email: string;
       name: string;
       role: string;
@@ -138,9 +128,8 @@ export function setupAuth(app: Express, storage: IStorage) {
       const clinic = await storage.createClinic({
         name: clinic_name,
         responsible: name,
-        whatsapp_number: '',
-        specialties: [],
-        working_hours: '09:00-17:00'
+        celular: '',
+        specialties: []
       });
 
       // Create user

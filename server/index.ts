@@ -61,7 +61,7 @@ app.use(express.json({
 
 // ETAPA 2: Criar HTTP server para Socket.IO
 const httpServer = http.createServer(app);
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 app.use(express.urlencoded({ extended: false }));
 
   console.log('✅ Express configurado, porta:', PORT);
@@ -663,9 +663,9 @@ app.use(express.urlencoded({ extended: false }));
   const { startAiPauseChecker } = await import('./middleware/ai-pause-checker');
   startAiPauseChecker();
 
-  // Use PORT from environment variables (.env file) or default to 3000
+  // Use PORT from environment variables (.env file) or default to 8080 for AWS
   // This serves both the API and the client
-  const port = parseInt(process.env.PORT || '3000', 10);
+  const port = parseInt(process.env.PORT || '8080', 10);
   
   // For Vercel deployment, make app available globally
   if (process.env.VERCEL) {

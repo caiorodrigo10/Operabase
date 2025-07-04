@@ -93,7 +93,7 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
   app.post('/api/admin/clinics', isAuthenticated, requireAdminRole, async (req: Request, res: Response) => {
     try {
 
-      const { name, email, phone, address } = req.body;
+      const { name, email, phone, address_street } = req.body;
       
       if (!name || !email) {
         return res.status(400).json({ error: 'Name and email are required' });
@@ -101,11 +101,10 @@ export function setupAdminRoutes(app: any, storage: IStorage) {
 
       const newClinic = await storage.createClinic({
         name,
-        email,
-        phone: phone || null,
-        address: address || null,
-        created_at: new Date(),
-        updated_at: new Date()
+        responsible: name,
+        celular: phone || '',
+        email: email || undefined,
+        address_street: address_street || undefined
       });
 
       res.status(201).json(newClinic);

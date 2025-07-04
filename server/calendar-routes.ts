@@ -87,7 +87,9 @@ export async function handleGoogleCalendarCallback(req: any, res: Response) {
         return res.redirect('/configuracoes?calendar=error&reason=user_not_found');
       }
       userEmail = user.email;
-      clinicId = user.clinic_id || 1;
+      // Get user's clinic through clinic_users table
+      const userClinics = await storage.getUserClinics(user.id);
+      clinicId = userClinics[0]?.clinic_id || 1;
       console.log('✅ Processing OAuth for legacy user:', { userId, email: userEmail, clinicId });
     }
 

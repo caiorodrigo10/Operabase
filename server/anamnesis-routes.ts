@@ -464,7 +464,7 @@ export function setupAnamnesisRoutes(app: any, storage: IStorage) {
           source: 'web',
           contact_id: contactId,
           template_id: parseInt(template_id),
-          filled_by_professional: filled_by_professional || false
+          professional_id: filled_by_professional ? parseInt(req.body.professional_id) : undefined
         }
       );
 

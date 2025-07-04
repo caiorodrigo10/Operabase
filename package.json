@@ -10,8 +10,8 @@
     "build:full": "npm run build:frontend && npm run build:server",
     "build:frontend": "vite build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:@shared/schema --external:../shared/schema.js --external:./shared/schema.js --external:drizzle-orm --external:postgres --external:pg",
-    "build:simple": "tsc server/index.ts --outDir . --target es2020 --module commonjs --moduleResolution node --allowSyntheticDefaultImports --esModuleInterop --skipLibCheck --resolveJsonModule",
-    "start": "NODE_ENV=production node server/index.js",
+    "build:simple": "cd server && tsc --project tsconfig.json",
+    "start": "NODE_ENV=production node server/dist/index.js",
     "start:dev": "NODE_ENV=development tsx server/index.ts",
     "check": "tsc",
     "db:push": "drizzle-kit push"
