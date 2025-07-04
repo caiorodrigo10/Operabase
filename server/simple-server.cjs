@@ -1,73 +1,91 @@
 const express = require('express');
 const app = express();
 
-// Middleware básico
+// CORS configuration for Vercel frontend
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'https://operabase-frontend.vercel.app',
+    'https://operabase-main.vercel.app',
+    'https://operabase-main-git-main-caioapfelbaums-projects.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
+
+// Middleware
 app.use(express.json());
 
-// Health check endpoints
+// Environment variables
+const PORT = process.env.PORT || 8080;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+console.log('🚀 Starting Simple Operabase Server...');
+console.log('📍 NODE_ENV:', NODE_ENV);
+console.log('📍 PORT:', PORT);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Operabase Backend is running!',
+    timestamp: new Date().toISOString(),
+    version: 'v1.2.4-cors',
+    port: PORT,
+    env: NODE_ENV
+  });
+});
+
+// Root endpoint
 app.get('/', (req, res) => {
   res.json({
     status: 'ok',
     message: 'Operabase Backend is running!',
     timestamp: new Date().toISOString(),
-    version: 'v1.2.2-simple',
-    port: process.env.PORT || 8080
+    version: 'v1.2.4-cors',
+    port: PORT
   });
 });
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    env: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Test endpoint
+// Test API endpoint
 app.get('/api/test', (req, res) => {
   res.json({
-    message: 'API is working',
-    timestamp: new Date().toISOString()
+    message: 'API is working!',
+    timestamp: new Date().toISOString(),
+    cors: 'enabled'
   });
 });
 
-// Error handler
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
-    error: 'Internal Server Error',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    path: req.path,
-    timestamp: new Date().toISOString()
+    error: 'Internal server error',
+    message: err.message
   });
 });
 
 // Start server
-const PORT = process.env.PORT || 8080;
-
-console.log('🚀 Starting Simple Operabase Server...');
-console.log(`📍 NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`📍 PORT: ${PORT}`);
-
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`📍 Health check: http://0.0.0.0:${PORT}/health`);
   console.log(`📍 Root: http://0.0.0.0:${PORT}/`);
   console.log(`📍 Test API: http://0.0.0.0:${PORT}/api/test`);
-});
-
-server.on('error', (err) => {
-  console.error('❌ Server error:', err);
-  process.exit(1);
 });
 
 // Graceful shutdown
