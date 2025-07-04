@@ -17,6 +17,13 @@ jobs:
         with:
           node-version: '18'
       
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: sa-east-1
+      
       - name: Install server dependencies
         run: |
           cd server
@@ -75,7 +82,4 @@ jobs:
           version_label: v${{ github.run_number }}-${{ github.sha }}
           deployment_package: deploy.zip
           wait_for_deployment: true
-          wait_for_environment_recovery: 60
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} 
+          wait_for_environment_recovery: 60 
