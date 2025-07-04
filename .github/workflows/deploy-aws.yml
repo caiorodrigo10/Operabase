@@ -16,19 +16,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-      
-      - name: Verify AWS credentials
-        run: |
-          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
-            echo "❌ AWS_ACCESS_KEY_ID secret not found"
-            exit 1
-          fi
-          if [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
-            echo "❌ AWS_SECRET_ACCESS_KEY secret not found"
-            exit 1
-          fi
-          echo "✅ AWS credentials found"
       
       - name: Install server dependencies
         run: |
@@ -44,9 +31,28 @@ jobs:
           
           # Copiar arquivos necessários
           cp -r server/* deploy/server/
-          cp Procfile deploy/
-          cp -r .ebextensions deploy/
-          cp package.json deploy/
+          
+          # Copiar arquivos opcionais se existirem
+          if [ -f "Procfile" ]; then
+            cp Procfile deploy/
+            echo "✅ Procfile copied"
+          else
+            echo "⚠️ Procfile not found, skipping"
+          fi
+          
+          if [ -d ".ebextensions" ]; then
+            cp -r .ebextensions deploy/
+            echo "✅ .ebextensions copied"
+          else
+            echo "⚠️ .ebextensions not found, skipping"
+          fi
+          
+          if [ -f "package.json" ]; then
+            cp package.json deploy/
+            echo "✅ package.json copied"
+          else
+            echo "⚠️ package.json not found, skipping"
+          fi
           
           # Criar zip
           cd deploy
