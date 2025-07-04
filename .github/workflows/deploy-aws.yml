@@ -79,13 +79,6 @@ jobs:
             echo "⚠️ Procfile not found, skipping"
           fi
           
-          if [ -d ".ebextensions" ]; then
-            cp -r .ebextensions deploy/
-            echo "✅ .ebextensions copied"
-          else
-            echo "⚠️ .ebextensions not found, skipping"
-          fi
-          
           # Criar zip
           cd deploy
           zip -r ../deploy.zip .

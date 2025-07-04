@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// AWS Deploy Test - v1.1.4 - Repositório Principal
+// AWS Deploy Test - v1.1.5 - Repositório Principal
 // Teste de deploy automático - 2025-01-28
 // Testando após configurar AWS secrets
 // Novo teste com secrets configurados
@@ -12,6 +12,7 @@ dotenv.config();
 // Teste final após atualização - v1.1.2
 // Corrigido Procfile e package.json - v1.1.3
 // Corrigido .ebextensions/nodejs.config - removido staticfiles inválido - v1.1.4
+// Removido .ebextensions completamente - NodeCommand também inválido - v1.1.5
 
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
