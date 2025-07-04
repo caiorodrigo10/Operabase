@@ -708,4 +708,4 @@ app.use(express.urlencoded({ extended: false }));
   }
 })();
 
-// Trigger AWS deploy test
+// Trigger AWS deploy test - v1.2.2 simplified deployment
