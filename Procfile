@@ -1,1 +1,1 @@
-web: npm run build:server && npm start || npm run start:fallback 
+web: node deploy-aws.js 

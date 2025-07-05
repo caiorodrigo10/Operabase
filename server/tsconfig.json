@@ -31,7 +31,8 @@
     "strictPropertyInitialization": false,
     "noImplicitOverride": false,
     "allowUnreachableCode": true,
-    "allowUnusedLabels": true
+    "allowUnusedLabels": true,
+    "noEmitOnError": false
   },
   "include": [
     "**/*.ts"
