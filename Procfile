@@ -1,1 +1,1 @@
-web: npm run build:simple && node server/index.js || node server/simple-server.cjs 
+web: npm run build:server && npm start || npm run start:fallback 
