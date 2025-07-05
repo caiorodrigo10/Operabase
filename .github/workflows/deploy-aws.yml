@@ -91,12 +91,29 @@ jobs:
           # Create application version
           VERSION_LABEL="production-$(date +%Y%m%d-%H%M%S)"
           
-          aws s3 cp operabase-backend.zip s3://elasticbeanstalk-sa-east-1-891377308041/operabase-backend/$VERSION_LABEL.zip
+          # Get or create the default S3 bucket for this region
+          BUCKET_NAME=$(aws elasticbeanstalk describe-application-versions \
+            --application-name operabase-backend-mvp \
+            --max-records 1 \
+            --query 'ApplicationVersions[0].SourceBundle.S3Bucket' \
+            --output text 2>/dev/null || echo "")
           
+          if [ "$BUCKET_NAME" = "None" ] || [ -z "$BUCKET_NAME" ]; then
+            # Use the default EB bucket pattern
+            BUCKET_NAME="elasticbeanstalk-sa-east-1-$(aws sts get-caller-identity --query Account --output text)"
+            echo "Using default bucket: $BUCKET_NAME"
+          else
+            echo "Using existing bucket: $BUCKET_NAME"
+          fi
+          
+          # Upload to S3
+          aws s3 cp operabase-backend.zip s3://$BUCKET_NAME/operabase-backend/$VERSION_LABEL.zip
+          
+          # Create application version
           aws elasticbeanstalk create-application-version \
             --application-name operabase-backend-mvp \
             --version-label $VERSION_LABEL \
-            --source-bundle S3Bucket=elasticbeanstalk-sa-east-1-891377308041,S3Key=operabase-backend/$VERSION_LABEL.zip
+            --source-bundle S3Bucket=$BUCKET_NAME,S3Key=operabase-backend/$VERSION_LABEL.zip
           
           # Deploy to environment
           aws elasticbeanstalk update-environment \
