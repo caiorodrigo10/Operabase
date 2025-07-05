@@ -187,4 +187,5 @@ jobs:
           echo "✅ Pipeline executado com sucesso!"
         else
           echo "❌ Pipeline falhou. Verifique os logs."
-          exit 1 
+          exit 1
+        fi 
