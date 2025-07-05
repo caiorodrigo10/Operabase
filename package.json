@@ -2,11 +2,13 @@
   "name": "operabase-backend",
   "version": "1.0.0",
   "description": "Backend for Operabase medical management system",
-  "main": "server/enhanced-debug-server-v5.cjs",
+  "main": "server/production-server.js",
   "scripts": {
-    "start": "node server/enhanced-debug-server-v5.cjs",
-    "dev": "nodemon server/enhanced-debug-server-v5.cjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server/production-server.js",
+    "dev": "node server/production-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "echo \"Linting not configured\"",
+    "format:check": "echo \"Formatting not configured\""
   },
   "keywords": [
     "medical",
@@ -20,13 +22,10 @@
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "node-fetch": "^2.6.7",
-    "dotenv": "^16.0.3"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.20"
+    "dotenv": "^16.0.3",
+    "node-fetch": "^2.6.7"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }

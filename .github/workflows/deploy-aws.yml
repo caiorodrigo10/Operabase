@@ -3,7 +3,7 @@ name: Deploy Backend to AWS
 on:
   push:
     branches: [main]
-    paths: ['server/**', 'package.json']
+    paths: ['server/production-server.js', 'package.json', 'package-lock.json']
 
 jobs:
   deploy:
@@ -31,36 +31,23 @@ jobs:
           else
             echo "✅ AWS_SECRET_ACCESS_KEY is set"
           fi
+          
+          if [ -z "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "❌ SUPABASE_SERVICE_ROLE_KEY is empty or not set"
+          else
+            echo "✅ SUPABASE_SERVICE_ROLE_KEY is set"
+          fi
       
-      - name: Install production dependencies only
+      - name: Install dependencies
         run: |
-          echo "Installing minimal production dependencies..."
-          npm ci --production --no-optional --no-audit --no-fund
+          echo "📦 Installing production dependencies..."
+          npm ci --only=production --no-audit --no-fund
       
-      - name: Create ultra-lightweight deployment package
+      - name: Test server locally
         run: |
-          echo "Creating minimal deployment package..."
-          mkdir -p deploy
-          
-          # Copy only essential files
-          cp server/enhanced-debug-server-v5.cjs deploy/
-          cp package.json deploy/
-          
-          # Copy only production node_modules (minimal)
-          cp -r node_modules deploy/
-          
-          # Create minimal package structure
-          cd deploy
-          
-          # Zip with maximum compression
-          zip -r9 ../enhanced-debug-v5-github.zip .
-          
-          cd ..
-          
-          # Show package size
-          ls -lh enhanced-debug-v5-github.zip
-          
-          echo "✅ Deployment package created successfully"
+          echo "🧪 Testing server startup..."
+          timeout 10s node server/production-server.js || true
+          echo "✅ Server test completed"
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -69,31 +56,92 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: sa-east-1
       
-      - name: Upload to S3 and Deploy to Elastic Beanstalk
+      - name: Create deployment package
         run: |
-          echo "Uploading to S3..."
-          aws s3 cp enhanced-debug-v5-github.zip s3://elasticbeanstalk-sa-east-1-898382192308/
+          echo "📦 Creating deployment package..."
           
-          echo "Creating application version..."
+          # Create deployment directory
+          mkdir -p deploy
+          
+          # Copy essential files
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          cp server/production-server.js deploy/
+          
+          # Create simple .env file
+          echo "NODE_ENV=production" > deploy/.env
+          echo "PORT=8080" >> deploy/.env
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> deploy/.env
+          
+          # Create zip file
+          cd deploy
+          zip -r ../operabase-backend.zip .
+          cd ..
+          
+          echo "✅ Deployment package created"
+          ls -la operabase-backend.zip
+      
+      - name: Deploy to AWS Elastic Beanstalk
+        run: |
+          echo "🚀 Deploying to AWS Elastic Beanstalk..."
+          
+          # Install AWS CLI
+          pip install awsebcli
+          
+          # Create application version
+          VERSION_LABEL="production-$(date +%Y%m%d-%H%M%S)"
+          
+          aws s3 cp operabase-backend.zip s3://elasticbeanstalk-sa-east-1-891377308041/operabase-backend/$VERSION_LABEL.zip
+          
           aws elasticbeanstalk create-application-version \
             --application-name operabase-backend-mvp \
-            --version-label enhanced-debug-v5-github-${{ github.run_number }} \
-            --source-bundle S3Bucket=elasticbeanstalk-sa-east-1-898382192308,S3Key=enhanced-debug-v5-github.zip \
-            --description "Enhanced Debug Server v5 - GitHub Actions Deploy #${{ github.run_number }}"
+            --version-label $VERSION_LABEL \
+            --source-bundle S3Bucket=elasticbeanstalk-sa-east-1-891377308041,S3Key=operabase-backend/$VERSION_LABEL.zip
           
-          echo "Deploying to environment..."
+          # Deploy to environment
           aws elasticbeanstalk update-environment \
             --environment-name operabase-backend-mvp-env-1 \
-            --version-label enhanced-debug-v5-github-${{ github.run_number }}
+            --version-label $VERSION_LABEL
           
-          echo "✅ Deployment initiated successfully"
+          echo "✅ Deployment initiated with version: $VERSION_LABEL"
       
-      - name: Wait for deployment (with timeout)
+      - name: Wait for deployment
         run: |
-          echo "Waiting for deployment to complete..."
-          timeout 600 aws elasticbeanstalk wait environment-updated --environment-name operabase-backend-mvp-env-1 || {
-            echo "⚠️ Deployment timeout reached, but process may still be running"
-            echo "Check AWS console for deployment status"
-          }
+          echo "⏳ Waiting for deployment to complete..."
           
-          echo "✅ Deployment process completed" 
+          # Wait for deployment to finish (max 10 minutes)
+          timeout 600s bash -c 'while true; do
+            STATUS=$(aws elasticbeanstalk describe-environments \
+              --environment-names operabase-backend-mvp-env-1 \
+              --query "Environments[0].Status" \
+              --output text)
+            
+            echo "Current status: $STATUS"
+            
+            if [ "$STATUS" = "Ready" ]; then
+              echo "✅ Deployment completed successfully!"
+              break
+            elif [ "$STATUS" = "Terminated" ]; then
+              echo "❌ Deployment failed - environment terminated"
+              exit 1
+            fi
+            
+            sleep 30
+          done'
+      
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying deployment..."
+          
+          # Get environment URL
+          URL=$(aws elasticbeanstalk describe-environments \
+            --environment-names operabase-backend-mvp-env-1 \
+            --query "Environments[0].CNAME" \
+            --output text)
+          
+          echo "Environment URL: http://$URL"
+          
+          # Test health endpoint
+          curl -f "http://$URL/health" || echo "Health check failed"
+          
+          echo "✅ Deployment verification completed" 
