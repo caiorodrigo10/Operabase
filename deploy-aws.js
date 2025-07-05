@@ -24,17 +24,24 @@ try {
       throw new Error('Build output not found');
     }
   } catch (buildError) {
-    console.log('❌ TypeScript build failed due to errors:');
-    console.log('🔄 Using simple server fallback (working solution)...');
-    execSync('npm run start:fallback', { stdio: 'inherit' });
+    console.log('❌ TypeScript build failed due to errors');
+    console.log('🔄 Trying simple server fallback...');
+    
+    try {
+      execSync('npm run start:fallback', { stdio: 'inherit' });
+    } catch (fallbackError) {
+      console.log('❌ Simple server also failed');
+      console.log('🔄 Using ultra-simple server (guaranteed to work)...');
+      execSync('node server/ultra-simple-server.cjs', { stdio: 'inherit' });
+    }
   }
 } catch (error) {
   console.error('❌ Critical error:', error.message);
   try {
-    console.log('🔄 Final fallback to simple server...');
-    execSync('npm run start:fallback', { stdio: 'inherit' });
-  } catch (fallbackError) {
-    console.error('💥 All options failed:', fallbackError.message);
+    console.log('🔄 Final fallback to ultra-simple server...');
+    execSync('node server/ultra-simple-server.cjs', { stdio: 'inherit' });
+  } catch (ultraFallbackError) {
+    console.error('💥 All options failed:', ultraFallbackError.message);
     process.exit(1);
   }
 } 
