@@ -31,17 +31,24 @@ try {
       execSync('npm run start:fallback', { stdio: 'inherit' });
     } catch (fallbackError) {
       console.log('❌ Simple server also failed');
-      console.log('🔄 Using ultra-simple server (guaranteed to work)...');
-      execSync('node server/ultra-simple-server.cjs', { stdio: 'inherit' });
+      console.log('🔄 Trying ultra-simple server...');
+      
+      try {
+        execSync('node server/ultra-simple-server.cjs', { stdio: 'inherit' });
+      } catch (ultraError) {
+        console.log('❌ Ultra-simple server also failed');
+        console.log('🔄 Using debug server (maximum logging)...');
+        execSync('node server/debug-server.cjs', { stdio: 'inherit' });
+      }
     }
   }
 } catch (error) {
   console.error('❌ Critical error:', error.message);
   try {
-    console.log('🔄 Final fallback to ultra-simple server...');
-    execSync('node server/ultra-simple-server.cjs', { stdio: 'inherit' });
-  } catch (ultraFallbackError) {
-    console.error('💥 All options failed:', ultraFallbackError.message);
+    console.log('🔄 Final fallback to debug server...');
+    execSync('node server/debug-server.cjs', { stdio: 'inherit' });
+  } catch (debugFallbackError) {
+    console.error('💥 All options failed:', debugFallbackError.message);
     process.exit(1);
   }
 } 
