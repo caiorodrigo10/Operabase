@@ -8,7 +8,7 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "nodemon --exec ts-node server/index.ts",
     "dev:client": "vite",
-    "build": "npm run build:server && npm run build:client",
+    "build": "vite build",
     "build:server": "tsc --project server/tsconfig.json --noEmitOnError false || echo 'Build completed with warnings'",
     "build:client": "vite build",
     "build:simple": "node server/simple-server.cjs",

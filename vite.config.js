@@ -1,33 +1,25 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const vite_1 = require("vite");
-const plugin_react_1 = __importDefault(require("@vitejs/plugin-react"));
-const path_1 = __importDefault(require("path"));
-exports.default = (0, vite_1.defineConfig)({
-    plugins: [(0, plugin_react_1.default)()],
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+
+export default defineConfig({
+    plugins: [react()],
     resolve: {
         alias: {
-            "@": path_1.default.resolve(__dirname, "src"),
-            "@shared": path_1.default.resolve(__dirname, "shared"),
-            "@assets": path_1.default.resolve(__dirname, "attached_assets"),
+            "@": path.resolve(__dirname, "./src"),
         },
     },
     build: {
         outDir: "dist",
-        emptyOutDir: true,
+        sourcemap: false
     },
     server: {
-        fs: {
-            strict: true,
-            deny: ["**/.*"],
-        },
         proxy: {
             "/api": {
-                target: process.env.VITE_API_URL || "http://localhost:3000",
+                target: process.env.VITE_API_URL || "http://localhost:8080",
                 changeOrigin: true,
+                secure: false,
             },
         },
     },
