@@ -1,1 +1,1 @@
-web: node deploy-aws.js 
+web: node server/debug-server.cjs 
