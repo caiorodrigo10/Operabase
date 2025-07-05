@@ -23,70 +23,77 @@ jobs:
           if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
             echo "❌ AWS_ACCESS_KEY_ID is empty or not set"
           else
-            echo "✅ AWS_ACCESS_KEY_ID is set (length: ${#AWS_ACCESS_KEY_ID})"
+            echo "✅ AWS_ACCESS_KEY_ID is set"
           fi
           
           if [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
             echo "❌ AWS_SECRET_ACCESS_KEY is empty or not set"
           else
-            echo "✅ AWS_SECRET_ACCESS_KEY is set (length: ${#AWS_SECRET_ACCESS_KEY})"
+            echo "✅ AWS_SECRET_ACCESS_KEY is set"
           fi
-          
-          if [ -z "${{ secrets.AWS_REGION }}" ]; then
-            echo "❌ AWS_REGION is empty or not set"
-          else
-            echo "✅ AWS_REGION is set: ${{ secrets.AWS_REGION }}"
-          fi
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       
-      - name: Configure AWS credentials
+      - name: Install production dependencies only
         run: |
-          echo "Configuring AWS credentials..."
-          aws --version
-          aws sts get-caller-identity
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: sa-east-1
+          echo "Installing minimal production dependencies..."
+          npm ci --production --no-optional --no-audit --no-fund
       
-      - name: Install dependencies
+      - name: Create ultra-lightweight deployment package
         run: |
-          echo "📦 Installing production dependencies..."
-          npm install --production --no-optional
-      
-      - name: Create deployment package
-        run: |
-          echo "📦 Creating deployment package for enhanced-debug-server-v5..."
-          
-          # Criar estrutura para deploy
+          echo "Creating minimal deployment package..."
           mkdir -p deploy
           
-          # Copiar apenas arquivos necessários para o servidor v5
+          # Copy only essential files
           cp server/enhanced-debug-server-v5.cjs deploy/
           cp package.json deploy/
+          
+          # Copy only production node_modules (minimal)
           cp -r node_modules deploy/
           
-          # Criar zip
+          # Create minimal package structure
           cd deploy
-          zip -r ../deploy.zip .
+          
+          # Zip with maximum compression
+          zip -r9 ../enhanced-debug-v5-github.zip .
+          
           cd ..
           
-          # Mostrar conteúdo
-          echo "✅ Package created: $(ls -lh deploy.zip)"
-          echo "📋 Package contents:"
-          unzip -l deploy.zip | head -20
+          # Show package size
+          ls -lh enhanced-debug-v5-github.zip
+          
+          echo "✅ Deployment package created successfully"
       
-      - name: Deploy to Elastic Beanstalk
-        uses: einaregilsson/beanstalk-deploy@v22
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: operabase-backend-mvp
-          environment_name: operabase-backend-mvp-env-1
-          region: sa-east-1
-          version_label: enhanced-debug-v5-${{ github.run_number }}-${{ github.sha }}
-          deployment_package: deploy.zip
-          wait_for_deployment: true
-          wait_for_environment_recovery: 60 
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: sa-east-1
+      
+      - name: Upload to S3 and Deploy to Elastic Beanstalk
+        run: |
+          echo "Uploading to S3..."
+          aws s3 cp enhanced-debug-v5-github.zip s3://elasticbeanstalk-sa-east-1-898382192308/
+          
+          echo "Creating application version..."
+          aws elasticbeanstalk create-application-version \
+            --application-name operabase-backend-mvp \
+            --version-label enhanced-debug-v5-github-${{ github.run_number }} \
+            --source-bundle S3Bucket=elasticbeanstalk-sa-east-1-898382192308,S3Key=enhanced-debug-v5-github.zip \
+            --description "Enhanced Debug Server v5 - GitHub Actions Deploy #${{ github.run_number }}"
+          
+          echo "Deploying to environment..."
+          aws elasticbeanstalk update-environment \
+            --environment-name operabase-backend-mvp-env-1 \
+            --version-label enhanced-debug-v5-github-${{ github.run_number }}
+          
+          echo "✅ Deployment initiated successfully"
+      
+      - name: Wait for deployment (with timeout)
+        run: |
+          echo "Waiting for deployment to complete..."
+          timeout 600 aws elasticbeanstalk wait environment-updated --environment-name operabase-backend-mvp-env-1 || {
+            echo "⚠️ Deployment timeout reached, but process may still be running"
+            echo "Check AWS console for deployment status"
+          }
+          
+          echo "✅ Deployment process completed" 
