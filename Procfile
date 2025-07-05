@@ -1,1 +1,1 @@
-web: node server/debug-server.cjs 
+web: node server/enhanced-debug-server.cjs 
