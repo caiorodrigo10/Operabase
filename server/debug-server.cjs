@@ -99,6 +99,7 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   logMessage(`🚀 Debug Server rodando na porta ${PORT}`);
   logMessage(`📍 Ambiente: ${process.env.NODE_ENV || 'production'}`);
+  logMessage(`📍 Commit: 420a879 - Versão funcionando`);
   logMessage(`⏰ Iniciado em: ${new Date().toISOString()}`);
 });
 
