@@ -517,28 +517,74 @@ export function Consultas() {
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
     queryKey: QUERY_KEYS.APPOINTMENTS(1),
     queryFn: async () => {
-      const url = buildApiUrl('/api/appointments?clinic_id=1');
-      console.log('🔍 [Appointments] Fetching from:', url);
+      console.log('🚀 [Appointments] Starting fetch process...');
       
-      // Get auth headers
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {};
+      const url = buildApiUrl('/api/appointments?clinic_id=1');
+      console.log('🔗 [Appointments] Built URL:', url);
+      
+      // Get auth headers with detailed logging
+      console.log('🔐 [Appointments] Getting Supabase session...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ [Appointments] Session error:', sessionError);
+      }
+      
+      console.log('👤 [Appointments] Session details:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email,
+        tokenLength: session?.access_token?.length || 0
+      });
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
       
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('🔑 [Appointments] Auth header set');
+        console.log('🔑 [Appointments] Auth header set with token length:', session.access_token.length);
       } else {
-        console.log('❌ [Appointments] No session or access token found');
+        console.log('❌ [Appointments] No session or access token found - proceeding without auth');
       }
       
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers
-      });
+      console.log('📤 [Appointments] Making request with headers:', Object.keys(headers));
       
-      console.log('📡 [Appointments] Response status:', response.status);
-      if (!response.ok) throw new Error('Failed to fetch appointments');
-      return response.json();
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'include',
+          headers
+        });
+        
+        console.log('📡 [Appointments] Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ [Appointments] Error response body:', errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ [Appointments] Data received:', {
+          isArray: Array.isArray(data),
+          length: Array.isArray(data) ? data.length : 'not array',
+          firstItem: Array.isArray(data) && data.length > 0 ? data[0] : 'no items'
+        });
+        
+        return data;
+      } catch (fetchError) {
+        console.error('💥 [Appointments] Fetch error:', fetchError);
+        throw fetchError;
+      }
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - same as contacts
     gcTime: 10 * 60 * 1000, // 10 minutes - same as contacts
@@ -549,28 +595,74 @@ export function Consultas() {
   const { data: contacts = [] } = useQuery({
     queryKey: QUERY_KEYS.CONTACTS(1),
     queryFn: async () => {
-      const url = buildApiUrl('/api/contacts?clinic_id=1');
-      console.log('🔍 [Contacts] Fetching from:', url);
+      console.log('🚀 [Contacts] Starting fetch process...');
       
-      // Get auth headers
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {};
+      const url = buildApiUrl('/api/contacts?clinic_id=1');
+      console.log('🔗 [Contacts] Built URL:', url);
+      
+      // Get auth headers with detailed logging
+      console.log('🔐 [Contacts] Getting Supabase session...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ [Contacts] Session error:', sessionError);
+      }
+      
+      console.log('👤 [Contacts] Session details:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email,
+        tokenLength: session?.access_token?.length || 0
+      });
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
       
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('🔑 [Contacts] Auth header set');
+        console.log('🔑 [Contacts] Auth header set with token length:', session.access_token.length);
       } else {
-        console.log('❌ [Contacts] No session or access token found');
+        console.log('❌ [Contacts] No session or access token found - proceeding without auth');
       }
       
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers
-      });
+      console.log('📤 [Contacts] Making request with headers:', Object.keys(headers));
       
-      console.log('📡 [Contacts] Response status:', response.status);
-      if (!response.ok) throw new Error('Failed to fetch contacts');
-      return response.json();
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'include',
+          headers
+        });
+        
+        console.log('📡 [Contacts] Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ [Contacts] Error response body:', errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ [Contacts] Data received:', {
+          isArray: Array.isArray(data),
+          length: Array.isArray(data) ? data.length : 'not array',
+          firstItem: Array.isArray(data) && data.length > 0 ? data[0] : 'no items'
+        });
+        
+        return data;
+      } catch (fetchError) {
+        console.error('💥 [Contacts] Fetch error:', fetchError);
+        throw fetchError;
+      }
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
