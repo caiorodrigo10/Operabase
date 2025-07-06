@@ -194,8 +194,6 @@ app.get('/api/contacts', async (req, res) => {
     if (status) query += `&status=eq.${status}`;
     if (search) query += `&name=ilike.*${search}*`;
     
-    query += '&order=created_at.desc';
-
     log(`🔍 CONTACTS DEBUG: Executing Supabase query: contacts?${query}`);
     
     const contacts = await supabaseQuery(`contacts?${query}`);
