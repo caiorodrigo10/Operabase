@@ -1,5 +1,6 @@
-// Production Server for Operabase
+// Production Server for Operabase - v1.1.0
 // Optimized for AWS Elastic Beanstalk deployment with real Supabase data
+// Updated: 2025-07-05 - Fixed S3 bucket auto-detection
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
