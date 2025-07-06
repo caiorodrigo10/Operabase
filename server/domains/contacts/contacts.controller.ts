@@ -3,7 +3,7 @@ import { ContactsService } from './contacts.service';
 import { ContactsRepository } from './contacts.repository';
 import { ContactsRepositoryNew } from './contacts.repository.new';
 import { createContactSchema, updateContactSchema, updateContactStatusSchema } from '../../shared/schemas/index';
-import { CacheMiddleware } from '../../cache-middleware.js';
+// import { CacheMiddleware } from '../../cache-middleware.js'; // REMOVED: Causing 500 error due to Redis dependency
 import { ProxyMigrationFactory } from '../../shared/migration/proxy-factory';
 import { createSuccessResponse, createErrorResponse } from '../../shared/utils/response.utils';
 
@@ -32,14 +32,8 @@ export class ContactsController {
       if (status) filters.status = status as string;
       if (search) filters.search = search as string;
 
-      // Phase 2: Intelligent cache integration for 2-5ms response times
-      const filterKey = `${status || 'all'}:${search || 'none'}`;
-      const contacts = await CacheMiddleware.cacheAside(
-        'contacts',
-        `list:${filterKey}`,
-        clinicId,
-        () => this.service.getContacts(clinicId, filters)
-      );
+      // SIMPLIFIED: Direct service call without cache (matches appointments controller)
+      const contacts = await this.service.getContacts(clinicId, filters);
 
       res.json(contacts);
     } catch (error: any) {
