@@ -10,16 +10,16 @@ export function createAppointmentsRoutes(storage: IStorage): Router {
   const controller = new AppointmentsController(storage);
 
   // Get appointments with filters
-  router.get('/appointments', controller.getAppointments.bind(controller));
+  router.get('/appointments', isAuthenticated, controller.getAppointments.bind(controller));
 
   // Get paginated appointments
-  router.get('/appointments/paginated', controller.getAppointmentsPaginated.bind(controller));
+  router.get('/appointments/paginated', isAuthenticated, controller.getAppointmentsPaginated.bind(controller));
 
   // Get appointment by ID
-  router.get('/appointments/:id', controller.getAppointmentById.bind(controller));
+  router.get('/appointments/:id', isAuthenticated, controller.getAppointmentById.bind(controller));
 
   // Get appointments by contact
-  router.get('/contacts/:contactId/appointments', controller.getAppointmentsByContact.bind(controller));
+  router.get('/contacts/:contactId/appointments', isAuthenticated, controller.getAppointmentsByContact.bind(controller));
 
   // Create appointment (with logging)
   router.post('/appointments', ...appointmentLogsMiddleware, controller.createAppointment.bind(controller));

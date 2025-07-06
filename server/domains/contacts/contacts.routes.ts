@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { ContactsController } from './contacts.controller';
 import { contactLogsMiddleware } from '../../middleware/system-logs.middleware';
+import { isAuthenticated } from '../../auth';
 import type { Storage } from '../../storage';
 
 export function createContactsRoutes(storage: Storage): Router {
@@ -9,13 +10,13 @@ export function createContactsRoutes(storage: Storage): Router {
   const controller = new ContactsController(storage);
 
   // Get contacts with filters
-  router.get('/contacts', controller.getContacts.bind(controller));
+  router.get('/contacts', isAuthenticated, controller.getContacts.bind(controller));
 
   // Get paginated contacts
-  router.get('/contacts/paginated', controller.getContactsPaginated.bind(controller));
+  router.get('/contacts/paginated', isAuthenticated, controller.getContactsPaginated.bind(controller));
 
   // Get contact by ID
-  router.get('/contacts/:id', controller.getContactById.bind(controller));
+  router.get('/contacts/:id', isAuthenticated, controller.getContactById.bind(controller));
 
   // Create contact (with logging)
   router.post('/contacts', ...contactLogsMiddleware, controller.createContact.bind(controller));
