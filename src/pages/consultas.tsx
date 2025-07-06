@@ -519,7 +519,24 @@ export function Consultas() {
     queryFn: async () => {
       const url = buildApiUrl('/api/appointments?clinic_id=1');
       console.log('🔍 [Appointments] Fetching from:', url);
-      const response = await fetch(url);
+      
+      // Get auth headers
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+        console.log('🔑 [Appointments] Auth header set');
+      } else {
+        console.log('❌ [Appointments] No session or access token found');
+      }
+      
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers
+      });
+      
+      console.log('📡 [Appointments] Response status:', response.status);
       if (!response.ok) throw new Error('Failed to fetch appointments');
       return response.json();
     },
@@ -534,7 +551,24 @@ export function Consultas() {
     queryFn: async () => {
       const url = buildApiUrl('/api/contacts?clinic_id=1');
       console.log('🔍 [Contacts] Fetching from:', url);
-      const response = await fetch(url);
+      
+      // Get auth headers
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+        console.log('🔑 [Contacts] Auth header set');
+      } else {
+        console.log('❌ [Contacts] No session or access token found');
+      }
+      
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers
+      });
+      
+      console.log('📡 [Contacts] Response status:', response.status);
       if (!response.ok) throw new Error('Failed to fetch contacts');
       return response.json();
     },
