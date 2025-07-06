@@ -87,9 +87,9 @@ jobs:
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: operabase-backend
-          environment_name: Operabase-backend-env
-          region: us-east-1
+          application_name: operabase-backend-mvp
+          environment_name: operabase-backend-mvp-env-1
+          region: sa-east-1
           version_label: ${{ github.sha }}
           deployment_package: deployment.zip
           wait_for_environment_recovery: 300
@@ -101,5 +101,5 @@ jobs:
         run: |
           echo "🔍 Deployment completed!"
           echo "🎯 Version: ${{ github.sha }}"
-          echo "📍 Environment: Operabase-backend-env"
-          echo "�� Region: us-east-1" 
+          echo "📍 Environment: operabase-backend-mvp-env-1"
+          echo "�� Region: sa-east-1" 
