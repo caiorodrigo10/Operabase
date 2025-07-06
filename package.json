@@ -1,21 +1,28 @@
 {
-  "name": "operabase-backend",
+  "name": "operabase",
   "version": "1.0.0",
-  "description": "Backend for Operabase medical management system",
+  "description": "Sistema de gestão para clínicas médicas",
   "main": "server/production-server.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:frontend": "vite build",
+    "build:server": "echo 'Server build not needed - using production-server.js'",
     "start": "node server/production-server.js",
-    "dev": "node server/production-server.js",
+    "start:fallback": "node server/production-server.js",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "echo \"Linting not configured\"",
     "format:check": "echo \"Formatting not configured\""
   },
   "keywords": [
     "medical",
-    "backend",
-    "api",
-    "express",
-    "supabase"
+    "clinic",
+    "management",
+    "healthcare",
+    "supabase",
+    "react",
+    "vite"
   ],
   "author": "Operabase Team",
   "license": "ISC",
@@ -23,9 +30,24 @@
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@supabase/supabase-js": "^2.50.3",
+    "@tanstack/react-query": "^5.81.5",
+    "wouter": "^3.7.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.6.0",
+    "vite": "^5.4.19",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
