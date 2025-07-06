@@ -33,6 +33,7 @@ import { useAvailabilityCheck, formatConflictMessage, createTimeSlots } from "@/
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QUERY_KEYS, invalidateAppointmentQueries } from "@/lib/queryKeys";
 import { supabase } from "@/lib/supabase";
+import { buildApiUrl } from "@/lib/api";
 import { mockAppointments, mockContacts } from "@/lib/mock-data";
 import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfDay, endOfDay, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -516,7 +517,9 @@ export function Consultas() {
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
     queryKey: QUERY_KEYS.APPOINTMENTS(1),
     queryFn: async () => {
-      const response = await fetch('/api/appointments?clinic_id=1');
+      const url = buildApiUrl('/api/appointments?clinic_id=1');
+      console.log('🔍 [Appointments] Fetching from:', url);
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch appointments');
       return response.json();
     },
@@ -529,7 +532,9 @@ export function Consultas() {
   const { data: contacts = [] } = useQuery({
     queryKey: QUERY_KEYS.CONTACTS(1),
     queryFn: async () => {
-      const response = await fetch('/api/contacts?clinic_id=1');
+      const url = buildApiUrl('/api/contacts?clinic_id=1');
+      console.log('🔍 [Contacts] Fetching from:', url);
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch contacts');
       return response.json();
     },

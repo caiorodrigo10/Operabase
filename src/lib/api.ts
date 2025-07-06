@@ -88,4 +88,20 @@ export const getApiBaseUrlSafe = (): string => {
     console.error('❌ [API Config] Failed to get base URL:', error);
     return '';
   }
+};
+
+// Helper function to build full API URLs
+export const buildApiUrl = (endpoint: string): string => {
+  const baseUrl = (import.meta as any).env.VITE_API_URL || '';
+  
+  // Ensure endpoint starts with /
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  
+  // In production with VITE_API_URL, use full URL
+  if (baseUrl) {
+    return `${baseUrl}${cleanEndpoint}`;
+  }
+  
+  // In development or fallback, use relative URL (proxy handles it)
+  return cleanEndpoint;
 }; 
