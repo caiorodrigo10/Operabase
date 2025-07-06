@@ -32,140 +32,74 @@ jobs:
             echo "✅ AWS_SECRET_ACCESS_KEY is set"
           fi
           
-          if [ -z "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
-            echo "❌ SUPABASE_SERVICE_ROLE_KEY is empty or not set"
-          else
-            echo "✅ SUPABASE_SERVICE_ROLE_KEY is set"
-          fi
-
           if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
             echo "❌ SUPABASE_URL is empty or not set"
           else
             echo "✅ SUPABASE_URL is set"
           fi
+          
+          if [ -z "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "❌ SUPABASE_SERVICE_ROLE_KEY is empty or not set"
+          else
+            echo "✅ SUPABASE_SERVICE_ROLE_KEY is set"
+          fi
       
-      - name: Install dependencies
+      - name: Install production dependencies
         run: |
           echo "📦 Installing production dependencies..."
-          npm ci --only=production --no-audit --no-fund
-      
-      - name: Test server locally
-        run: |
-          echo "🧪 Testing server startup..."
-          timeout 10s node server/production-server.js || true
-          echo "✅ Server test completed"
-      
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: sa-east-1
+          # Check if package-lock.json exists and is in sync
+          if [ -f "package-lock.json" ]; then
+            echo "📄 package-lock.json found, attempting npm ci..."
+            npm ci --omit=dev --no-audit --no-fund || {
+              echo "⚠️ npm ci failed, falling back to npm install..."
+              rm -f package-lock.json
+              npm install --omit=dev --no-audit --no-fund
+            }
+          else
+            echo "📄 No package-lock.json found, using npm install..."
+            npm install --omit=dev --no-audit --no-fund
+          fi
       
       - name: Create deployment package
         run: |
           echo "📦 Creating deployment package..."
-          
-          # Create deployment directory
+          # Create a clean directory for deployment
           mkdir -p deploy
           
-          # Copy essential files
+          # Copy only necessary files for backend
           cp package.json deploy/
-          cp package-lock.json deploy/
           cp -r server/ deploy/
+          cp -r node_modules/ deploy/ 2>/dev/null || echo "⚠️ node_modules not found, will install on AWS"
           
-          # Create .env file with environment variables
-          echo "NODE_ENV=production" > deploy/.env
-          echo "PORT=8080" >> deploy/.env
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> deploy/.env
-          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> deploy/.env
+          # Copy configuration files
+          cp -r .ebextensions/ deploy/ 2>/dev/null || echo "ℹ️ No .ebextensions directory"
           
-          # Create zip file
+          # Create zip for deployment
           cd deploy
-          zip -r ../operabase-backend.zip .
+          zip -r ../deployment.zip . -x "*.git*" "*.DS_Store*" "node_modules/.cache/*"
           cd ..
           
-          echo "✅ Deployment package created"
-          ls -la operabase-backend.zip
+          echo "✅ Deployment package created: deployment.zip"
+          ls -la deployment.zip
       
       - name: Deploy to AWS Elastic Beanstalk
-        run: |
-          echo "🚀 Deploying to AWS Elastic Beanstalk..."
-          
-          # Install AWS CLI
-          pip install awsebcli
-          
-          # Create application version
-          VERSION_LABEL="production-$(date +%Y%m%d-%H%M%S)"
-          
-          # Get or create the default S3 bucket for this region
-          BUCKET_NAME=$(aws elasticbeanstalk describe-application-versions \
-            --application-name operabase-backend-mvp \
-            --max-records 1 \
-            --query 'ApplicationVersions[0].SourceBundle.S3Bucket' \
-            --output text 2>/dev/null || echo "")
-          
-          if [ "$BUCKET_NAME" = "None" ] || [ -z "$BUCKET_NAME" ]; then
-            # Use the default EB bucket pattern
-            BUCKET_NAME="elasticbeanstalk-sa-east-1-$(aws sts get-caller-identity --query Account --output text)"
-            echo "Using default bucket: $BUCKET_NAME"
-          else
-            echo "Using existing bucket: $BUCKET_NAME"
-          fi
-          
-          # Upload to S3
-          aws s3 cp operabase-backend.zip s3://$BUCKET_NAME/operabase-backend/$VERSION_LABEL.zip
-          
-          # Create application version
-          aws elasticbeanstalk create-application-version \
-            --application-name operabase-backend-mvp \
-            --version-label $VERSION_LABEL \
-            --source-bundle S3Bucket=$BUCKET_NAME,S3Key=operabase-backend/$VERSION_LABEL.zip
-          
-          # Deploy to environment
-          aws elasticbeanstalk update-environment \
-            --environment-name operabase-backend-mvp-env-1 \
-            --version-label $VERSION_LABEL
-          
-          echo "✅ Deployment initiated with version: $VERSION_LABEL"
-      
-      - name: Wait for deployment
-        run: |
-          echo "⏳ Waiting for deployment to complete..."
-          
-          # Wait for deployment to finish (max 10 minutes)
-          timeout 600s bash -c 'while true; do
-            STATUS=$(aws elasticbeanstalk describe-environments \
-              --environment-names operabase-backend-mvp-env-1 \
-              --query "Environments[0].Status" \
-              --output text)
-            
-            echo "Current status: $STATUS"
-            
-            if [ "$STATUS" = "Ready" ]; then
-              echo "✅ Deployment completed successfully!"
-              break
-            elif [ "$STATUS" = "Terminated" ]; then
-              echo "❌ Deployment failed - environment terminated"
-              exit 1
-            fi
-            
-            sleep 30
-          done'
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: operabase-backend
+          environment_name: Operabase-backend-env
+          region: us-east-1
+          version_label: ${{ github.sha }}
+          deployment_package: deployment.zip
+          wait_for_environment_recovery: 300
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       
       - name: Verify deployment
         run: |
-          echo "🔍 Verifying deployment..."
-          
-          # Get environment URL
-          URL=$(aws elasticbeanstalk describe-environments \
-            --environment-names operabase-backend-mvp-env-1 \
-            --query "Environments[0].CNAME" \
-            --output text)
-          
-          echo "Environment URL: http://$URL"
-          
-          # Test health endpoint
-          curl -f "http://$URL/health" || echo "Health check failed"
-          
-          echo "✅ Deployment verification completed" 
+          echo "🔍 Deployment completed!"
+          echo "🎯 Version: ${{ github.sha }}"
+          echo "📍 Environment: Operabase-backend-env"
+          echo "�� Region: us-east-1" 

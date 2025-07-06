@@ -23,11 +23,6 @@
       "NPM_CONFIG_AUDIT": "false"
     }
   },
-  "functions": {
-    "app/**": {
-      "includeFiles": "dist/**"
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
