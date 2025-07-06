@@ -92,8 +92,8 @@ export const getApiBaseUrlSafe = (): string => {
 
 // Helper function to build full API URLs - SEMPRE usa URL completa
 export const buildApiUrl = (endpoint: string): string => {
-  // SEMPRE usar o backend AWS em produção
-  const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com';
+  // SEMPRE usar o backend AWS em produção com HTTPS para evitar Mixed Content
+  const baseUrl = (import.meta as any).env.VITE_API_URL || 'https://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com';
   
   // Ensure endpoint starts with /
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
