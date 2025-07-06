@@ -29,6 +29,29 @@ function log(message) {
   console.log(`[${timestamp}] ${message}`);
 }
 
+// Supabase query utility function
+async function supabaseQuery(endpoint) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log(`❌ Supabase query error for ${endpoint}: ${error.message}`);
+    throw error;
+  }
+}
+
 // CORS configuration para Vercel frontend
 app.use(cors({
   origin: [
@@ -82,62 +105,7 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Supabase proxy endpoints
-app.get('/api/calendar/events', async (req, res) => {
-  try {
-    const { clinic_id } = req.query;
-    
-    if (!clinic_id) {
-      return res.status(400).json({ error: 'clinic_id is required' });
-    }
 
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?clinic_id=eq.${clinic_id}&select=*`, {
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'apikey': SUPABASE_SERVICE_ROLE_KEY,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Supabase error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error('Calendar events error:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar events' });
-  }
-});
-
-app.get('/api/contacts', async (req, res) => {
-  try {
-    const { clinic_id } = req.query;
-    
-    if (!clinic_id) {
-      return res.status(400).json({ error: 'clinic_id is required' });
-    }
-
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/contacts?clinic_id=eq.${clinic_id}&select=*`, {
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'apikey': SUPABASE_SERVICE_ROLE_KEY,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Supabase error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error('Contacts error:', error);
-    res.status(500).json({ error: 'Failed to fetch contacts' });
-  }
-});
 
 // Get appointments with filters
 app.get('/api/appointments', async (req, res) => {
