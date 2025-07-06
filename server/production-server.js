@@ -4,7 +4,6 @@
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -26,10 +25,11 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 
 // Logging utility
 function log(message) {
-  console.log(`[${new Date().toISOString()}] ${message}`);
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${message}`);
 }
 
-// CORS configuration
+// CORS configuration para Vercel frontend
 app.use(cors({
   origin: [
     'https://operabase-main.vercel.app',
@@ -286,15 +286,14 @@ function getEventColor(status) {
 }
 
 // Error handling middleware
-app.use((error, req, res, next) => {
-  log(`❌ Unhandled error: ${error.message}`);
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 // 404 handler
-app.use((req, res) => {
-  log(`❌ 404 - Route not found: ${req.method} ${req.path}`);
-  res.status(404).json({ error: 'Route not found' });
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
 });
 
 // Start server
