@@ -90,16 +90,28 @@ export const getApiBaseUrlSafe = (): string => {
   }
 };
 
-// Helper function to build full API URLs - SEMPRE usa URL completa
+// Helper function to build full API URLs - usa proxy do Vercel em produção
 export const buildApiUrl = (endpoint: string): string => {
-  // SEMPRE usar o backend AWS em produção com HTTPS para evitar Mixed Content
-  const baseUrl = (import.meta as any).env.VITE_API_URL || 'https://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com';
+  const isDev = (import.meta as any).env.DEV;
+  const viteApiUrl = (import.meta as any).env.VITE_API_URL;
   
   // Ensure endpoint starts with /
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   
-  // SEMPRE usar URL completa (nunca proxy)
-  const fullUrl = `${baseUrl}${cleanEndpoint}`;
-  console.log('🔗 [API] Building URL:', fullUrl);
-  return fullUrl;
+  // Em desenvolvimento, usar proxy do Vite
+  if (isDev) {
+    console.log('🔗 [API] Dev mode - using Vite proxy:', cleanEndpoint);
+    return cleanEndpoint;
+  }
+  
+  // Em produção, se VITE_API_URL estiver configurada, usar diretamente
+  if (viteApiUrl) {
+    const fullUrl = `${viteApiUrl}${cleanEndpoint}`;
+    console.log('🔗 [API] Using VITE_API_URL:', fullUrl);
+    return fullUrl;
+  }
+  
+  // Em produção no Vercel, usar proxy interno (HTTPS seguro)
+  console.log('🔗 [API] Using Vercel proxy:', cleanEndpoint);
+  return cleanEndpoint;
 }; 
