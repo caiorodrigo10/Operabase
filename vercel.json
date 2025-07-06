@@ -25,6 +25,13 @@
       "VITE_API_URL": "http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com"
     }
   },
+  "redirects": [
+    {
+      "source": "/api/(.*)",
+      "destination": "http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com/api/$1",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api|assets|_next|favicon.ico).*)",
