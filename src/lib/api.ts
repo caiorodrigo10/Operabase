@@ -27,12 +27,12 @@ export const getApiBaseUrl = (): string => {
     return '';
   }
   
-  // Production without VITE_API_URL - this is the problem!
+  // Production without VITE_API_URL - log error but don't crash
   console.error('❌ [API Config] VITE_API_URL is required in production but not found');
   console.error('🔍 [API Config] Available env vars:', Object.keys((import.meta as any).env));
   
-  // Throw error instead of fallback for better debugging
-  throw new Error('VITE_API_URL is required in production. Please configure it in Vercel environment variables.');
+  // Return empty string as fallback instead of throwing
+  return '';
 };
 
 // Helper function to make API requests with proper base URL
@@ -80,14 +80,12 @@ export const makeApiRequest = async (endpoint: string, options?: RequestInit): P
   }
 };
 
-// Export API base URL for components that need it
-let API_BASE_URL: string;
-
-try {
-  API_BASE_URL = getApiBaseUrl();
-} catch (error) {
-  console.error('❌ [API Config] Failed to get base URL:', error);
-  API_BASE_URL = '';
-}
-
-export { API_BASE_URL }; 
+// Export API base URL getter function instead of trying to get it immediately
+export const getApiBaseUrlSafe = (): string => {
+  try {
+    return getApiBaseUrl();
+  } catch (error) {
+    console.error('❌ [API Config] Failed to get base URL:', error);
+    return '';
+  }
+}; 
