@@ -14,6 +14,12 @@ export default defineConfig({
   build: {
     outDir: "dist",
     rollupOptions: {
+      external: [
+        '@rollup/rollup-linux-x64-gnu',
+        '@rollup/rollup-linux-arm64-gnu',
+        '@rollup/rollup-darwin-x64',
+        '@rollup/rollup-darwin-arm64'
+      ],
       output: {
         manualChunks: undefined,
       },
@@ -22,16 +28,29 @@ export default defineConfig({
       include: [/node_modules/],
     },
     emptyOutDir: true,
+    target: 'es2015',
+    minify: 'esbuild',
+    sourcemap: false,
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
+    exclude: [
+      '@rollup/rollup-linux-x64-gnu',
+      '@rollup/rollup-linux-arm64-gnu'
+    ]
   },
   server: {
     port: 5173,
     host: true,
     fs: {
       strict: true,
-      deny: ["**/.*"],
+      allow: [
+        '..',
+        '.',
+        './src',
+        './shared',
+        './attached_assets'
+      ],
     },
     proxy: {
       "/api": {
@@ -44,4 +63,10 @@ export default defineConfig({
     port: 4173,
     host: true,
   },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+  },
+  esbuild: {
+    target: 'es2015'
+  }
 });

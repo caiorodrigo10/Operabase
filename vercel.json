@@ -1,16 +1,31 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "node build-vercel.js",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "framework": "vite",
+  "installCommand": "npm install --include=optional --legacy-peer-deps --unsafe-perm",
+  "framework": null,
   "regions": ["gru1"],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NPM_CONFIG_OPTIONAL": "true",
+    "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+    "NPM_CONFIG_UNSAFE_PERM": "true",
+    "NPM_CONFIG_INCLUDE": "optional"
   },
   "build": {
     "env": {
-      "NODE_ENV": "production"
+      "NODE_ENV": "production",
+      "NPM_CONFIG_OPTIONAL": "true",
+      "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+      "NPM_CONFIG_UNSAFE_PERM": "true",
+      "NPM_CONFIG_INCLUDE": "optional",
+      "NPM_CONFIG_FUND": "false",
+      "NPM_CONFIG_AUDIT": "false"
+    }
+  },
+  "functions": {
+    "app/**": {
+      "includeFiles": "dist/**"
     }
   },
   "rewrites": [
