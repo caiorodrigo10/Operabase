@@ -90,10 +90,9 @@ export const getApiBaseUrlSafe = (): string => {
   }
 };
 
-// Helper function to build full API URLs - usa proxy do Vercel em produção
+// Helper function to build full API URLs - SEMPRE usa proxy do Vercel em produção
 export const buildApiUrl = (endpoint: string): string => {
   const isDev = (import.meta as any).env.DEV;
-  const viteApiUrl = (import.meta as any).env.VITE_API_URL;
   
   // Ensure endpoint starts with /
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -104,14 +103,8 @@ export const buildApiUrl = (endpoint: string): string => {
     return cleanEndpoint;
   }
   
-  // Em produção, se VITE_API_URL estiver configurada, usar diretamente
-  if (viteApiUrl) {
-    const fullUrl = `${viteApiUrl}${cleanEndpoint}`;
-    console.log('🔗 [API] Using VITE_API_URL:', fullUrl);
-    return fullUrl;
-  }
-  
-  // Em produção no Vercel, usar proxy interno (HTTPS seguro)
-  console.log('🔗 [API] Using Vercel proxy:', cleanEndpoint);
+  // Em produção no Vercel, SEMPRE usar proxy interno (HTTPS seguro)
+  // Ignorar VITE_API_URL para forçar uso do proxy
+  console.log('🔗 [API] Production - using Vercel proxy:', cleanEndpoint);
   return cleanEndpoint;
 }; 
