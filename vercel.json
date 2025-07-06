@@ -10,7 +10,8 @@
     "NPM_CONFIG_OPTIONAL": "true",
     "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
     "NPM_CONFIG_UNSAFE_PERM": "true",
-    "NPM_CONFIG_INCLUDE": "optional"
+    "NPM_CONFIG_INCLUDE": "optional",
+    "VITE_API_URL": "http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com"
   },
   "build": {
     "env": {
@@ -20,7 +21,8 @@
       "NPM_CONFIG_UNSAFE_PERM": "true",
       "NPM_CONFIG_INCLUDE": "optional",
       "NPM_CONFIG_FUND": "false",
-      "NPM_CONFIG_AUDIT": "false"
+      "NPM_CONFIG_AUDIT": "false",
+      "VITE_API_URL": "http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com"
     }
   },
   "rewrites": [

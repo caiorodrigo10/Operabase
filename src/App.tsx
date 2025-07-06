@@ -210,6 +210,7 @@ function Router() {
         <Route path="/funis" component={FunisPage} />
         <Route path="/funis/:id" component={FunilDetalhes} />
         <Route path="/system-logs" component={SystemLogs} />
+        <Route path="/debug" component={lazy(() => import('./pages/debug'))} />
 
         <Route path="/editor2" component={Editor2} />
         <Route path="/preview/editor2" component={() => <PreviewPage pageId="editor2" />} />

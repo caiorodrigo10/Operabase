@@ -55,6 +55,7 @@ async function supabaseQuery(endpoint) {
 // CORS configuration para Vercel frontend
 app.use(cors({
   origin: [
+    'https://operabase.vercel.app',
     'https://operabase-main.vercel.app',
     'https://operabase-main-git-main-caioapfelbaums-projects.vercel.app',
     'http://localhost:3000',
