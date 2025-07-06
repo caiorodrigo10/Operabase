@@ -3,7 +3,7 @@ name: Deploy Backend to AWS
 on:
   push:
     branches: [main]
-    paths: ['server/production-server.js', 'package.json', 'package-lock.json']
+    paths: ['server/production-server.js', 'package.json', 'package-lock.json', '.github/workflows/deploy-aws.yml']
 
 jobs:
   deploy:
@@ -37,6 +37,12 @@ jobs:
           else
             echo "✅ SUPABASE_SERVICE_ROLE_KEY is set"
           fi
+
+          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
+            echo "❌ SUPABASE_URL is empty or not set"
+          else
+            echo "✅ SUPABASE_URL is set"
+          fi
       
       - name: Install dependencies
         run: |
@@ -66,11 +72,12 @@ jobs:
           # Copy essential files
           cp package.json deploy/
           cp package-lock.json deploy/
-          cp server/production-server.js deploy/
+          cp -r server/ deploy/
           
-          # Create simple .env file
+          # Create .env file with environment variables
           echo "NODE_ENV=production" > deploy/.env
           echo "PORT=8080" >> deploy/.env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> deploy/.env
           echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> deploy/.env
           
           # Create zip file

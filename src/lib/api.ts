@@ -15,8 +15,8 @@ export const getApiBaseUrl = (): string => {
     return '';
   }
   
-  // Fallback to AWS backend
-  return 'http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com';
+  // Throw error instead of fallback for better debugging
+  throw new Error('VITE_API_URL is required in production. Please configure it in Vercel environment variables.');
 };
 
 // Helper function to make API requests with proper base URL

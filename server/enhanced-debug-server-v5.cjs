@@ -6,10 +6,21 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Configurações do Supabase
-const SUPABASE_URL = 'https://lkwrevhxugaxfpwiktdy.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrd3Jldmh4dWdheGZwd2lrdGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU5MzA5NjMsImV4cCI6MjA0MTUwNjk2M30.3zIzJjHZrCmTjJLHzBQFZXMZCJcTGQgWDq8LQlhc1Ys';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+// Configurações do Supabase - APENAS variáveis de ambiente
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Validação obrigatória das variáveis de ambiente
+if (!SUPABASE_URL) {
+  console.error('❌ SUPABASE_URL is required');
+  process.exit(1);
+}
+
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ SUPABASE_SERVICE_ROLE_KEY is required');
+  process.exit(1);
+}
 
 // Configuração do CORS
 app.use(cors({

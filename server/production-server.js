@@ -3,10 +3,26 @@
 // Updated: 2025-07-05 - Fixed S3 bucket auto-detection
 const express = require('express');
 const cors = require('cors');
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Configurações do Supabase - APENAS variáveis de ambiente
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Validação obrigatória das variáveis de ambiente
+if (!SUPABASE_URL) {
+  console.error('❌ SUPABASE_URL is required');
+  process.exit(1);
+}
+
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ SUPABASE_SERVICE_ROLE_KEY is required');
+  process.exit(1);
+}
 
 // Logging utility
 function log(message) {
@@ -16,11 +32,10 @@ function log(message) {
 // CORS configuration
 app.use(cors({
   origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
     'https://operabase-main.vercel.app',
     'https://operabase-main-git-main-caioapfelbaums-projects.vercel.app',
-    'https://operabase-main-caioapfelbaums-projects.vercel.app'
+    'http://localhost:3000',
+    'http://localhost:5173'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -30,83 +45,98 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Supabase configuration
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://lkwrevhxugaxfpwiktdy.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrd3Jldmh4dWdheGZwd2lrdGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU5MzA5NjMsImV4cCI6MjA0MTUwNjk2M30.3zIzJjHZrCmTjJLHzBQFZXMZCJcTGQgWDq8LQlhc1Ys';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-
 log(`🚀 Starting Operabase Production Server`);
 log(`📍 Environment: ${process.env.NODE_ENV || 'production'}`);
 log(`📍 Port: ${PORT}`);
 log(`📍 Service Role Available: ${!!SUPABASE_SERVICE_ROLE_KEY}`);
 
-// Enhanced Supabase client using service role for RLS bypass
-async function supabaseQuery(endpoint, options = {}) {
-  const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
-  
-  // Use service role key if available, fallback to anon key
-  const apiKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-  const keyType = SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE' : 'ANON';
-  
-  log(`🔍 Supabase query (${keyType}): ${endpoint}`);
-  
-  const headers = {
-    'apikey': apiKey,
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  };
-
-  try {
-    const response = await fetch(url, {
-      method: options.method || 'GET',
-      headers,
-      body: options.body ? JSON.stringify(options.body) : undefined
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      log(`❌ Supabase error: ${response.status} ${response.statusText} - ${errorText}`);
-      throw new Error(`Supabase error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    log(`✅ Supabase data received: ${data.length || 'N/A'} records`);
-    return data;
-  } catch (error) {
-    log(`❌ Supabase error: ${error.message}`);
-    throw error;
-  }
-}
-
 // Health check endpoint
 app.get('/health', (req, res) => {
-  const healthInfo = {
+  res.json({
     status: 'ok',
-    message: 'Operabase Production Server is running!',
     timestamp: new Date().toISOString(),
-    version: 'production-1.0.0',
-    port: PORT,
-    env: process.env.NODE_ENV || 'production',
-    pid: process.pid,
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    features: ['appointments', 'contacts', 'calendar', 'supabase', 'real-data'],
-    service_role_available: !!SUPABASE_SERVICE_ROLE_KEY
-  };
-  
-  log(`✅ Health check responded`);
-  res.json(healthInfo);
+    environment: process.env.NODE_ENV || 'production',
+    supabase_configured: !!SUPABASE_URL,
+    service_role_configured: !!SUPABASE_SERVICE_ROLE_KEY
+  });
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Operabase Production API',
     status: 'ok',
+    message: 'Operabase Backend API',
     timestamp: new Date().toISOString(),
-    version: 'production-1.0.0'
+    version: '1.0.0'
   });
+});
+
+// API test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'API is working',
+    timestamp: new Date().toISOString(),
+    supabase_url: SUPABASE_URL ? 'configured' : 'missing',
+    environment: process.env.NODE_ENV || 'production'
+  });
+});
+
+// Supabase proxy endpoints
+app.get('/api/calendar/events', async (req, res) => {
+  try {
+    const { clinic_id } = req.query;
+    
+    if (!clinic_id) {
+      return res.status(400).json({ error: 'clinic_id is required' });
+    }
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?clinic_id=eq.${clinic_id}&select=*`, {
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Calendar events error:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar events' });
+  }
+});
+
+app.get('/api/contacts', async (req, res) => {
+  try {
+    const { clinic_id } = req.query;
+    
+    if (!clinic_id) {
+      return res.status(400).json({ error: 'clinic_id is required' });
+    }
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/contacts?clinic_id=eq.${clinic_id}&select=*`, {
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Contacts error:', error);
+    res.status(500).json({ error: 'Failed to fetch contacts' });
+  }
 });
 
 // Get appointments with filters
@@ -268,11 +298,15 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   log(`🚀 Operabase Production Server started successfully`);
   log(`📍 Server running on port ${PORT}`);
   log(`🌐 Health check: http://localhost:${PORT}/health`);
   log(`📊 API Base: http://localhost:${PORT}/api`);
+  log(`📍 Environment: ${process.env.NODE_ENV || 'production'}`);
+  log(`📍 Supabase URL: ${SUPABASE_URL ? 'configured' : 'missing'}`);
+  log(`📍 Service Role Key: ${SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'missing'}`);
+  log(`⏰ Started at: ${new Date().toISOString()}`);
 });
 
 // Graceful shutdown
