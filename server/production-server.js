@@ -106,8 +106,6 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-
-
 // Get appointments with filters
 app.get('/api/appointments', async (req, res) => {
   try {
@@ -184,7 +182,10 @@ app.get('/api/contacts', async (req, res) => {
   try {
     const { clinic_id, status, search } = req.query;
     
+    log(`🔍 CONTACTS DEBUG: Received request with clinic_id=${clinic_id}, status=${status}, search=${search}`);
+    
     if (!clinic_id) {
+      log(`❌ CONTACTS ERROR: clinic_id is required`);
       return res.status(400).json({ error: 'clinic_id is required' });
     }
 
@@ -195,13 +196,23 @@ app.get('/api/contacts', async (req, res) => {
     
     query += '&order=created_at.desc';
 
+    log(`🔍 CONTACTS DEBUG: Executing Supabase query: contacts?${query}`);
+    
     const contacts = await supabaseQuery(`contacts?${query}`);
     
     log(`👥 Retrieved ${contacts.length} contacts for clinic ${clinic_id}`);
+    log(`🔍 CONTACTS DEBUG: First contact sample:`, contacts[0] ? JSON.stringify(contacts[0], null, 2) : 'No contacts found');
+    
     res.json(contacts);
   } catch (error) {
     log(`❌ Error getting contacts: ${error.message}`);
-    res.status(500).json({ error: 'Failed to get contacts' });
+    log(`❌ CONTACTS ERROR STACK: ${error.stack}`);
+    log(`❌ CONTACTS ERROR DETAILS: ${JSON.stringify(error, null, 2)}`);
+    res.status(500).json({ 
+      error: 'Failed to get contacts',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
