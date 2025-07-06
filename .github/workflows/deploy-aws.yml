@@ -3,7 +3,7 @@ name: Deploy Backend to AWS
 on:
   push:
     branches: [main]
-    paths: ['server/production-server.js', 'package.json', 'package-lock.json', '.github/workflows/deploy-aws.yml']
+    paths: ['server/**', 'package.json', 'package-lock.json', '.github/workflows/deploy-aws.yml']
 
 jobs:
   deploy:
