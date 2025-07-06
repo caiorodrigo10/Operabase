@@ -90,18 +90,16 @@ export const getApiBaseUrlSafe = (): string => {
   }
 };
 
-// Helper function to build full API URLs
+// Helper function to build full API URLs - SEMPRE usa URL completa
 export const buildApiUrl = (endpoint: string): string => {
-  const baseUrl = (import.meta as any).env.VITE_API_URL || '';
+  // SEMPRE usar o backend AWS em produção
+  const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com';
   
   // Ensure endpoint starts with /
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   
-  // In production with VITE_API_URL, use full URL
-  if (baseUrl) {
-    return `${baseUrl}${cleanEndpoint}`;
-  }
-  
-  // In development or fallback, use relative URL (proxy handles it)
-  return cleanEndpoint;
+  // SEMPRE usar URL completa (nunca proxy)
+  const fullUrl = `${baseUrl}${cleanEndpoint}`;
+  console.log('🔗 [API] Building URL:', fullUrl);
+  return fullUrl;
 }; 
