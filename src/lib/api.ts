@@ -107,4 +107,28 @@ export const buildApiUrl = (endpoint: string): string => {
   // Ignorar VITE_API_URL para forçar uso do proxy
   console.log('🔗 [API] Production - using Vercel proxy:', cleanEndpoint);
   return cleanEndpoint;
-}; 
+};
+
+// Fetch all professionals of a clinic
+export async function fetchProfessionals(clinicId: string | number) {
+  const endpoint = buildApiUrl(`/clinic/${clinicId}/professionals`);
+  const response = await fetch(endpoint, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error(`Erro ao buscar profissionais: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+// Fetch all users of a clinic (management)
+export async function fetchClinicUsers(clinicId: string | number) {
+  const endpoint = buildApiUrl(`/clinic/${clinicId}/users/management`);
+  const response = await fetch(endpoint, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error(`Erro ao buscar usuários da clínica: ${response.statusText}`);
+  }
+  return response.json();
+} 
