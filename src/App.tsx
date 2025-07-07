@@ -15,7 +15,7 @@ import { AdminLayout } from "./components/AdminLayout";
 import { AdminRouteGuard } from "./components/AdminRouteGuard";
 import { Dashboard } from "./pages/dashboard";
 import { Pipeline } from "./pages/pipeline";
-import Consultas from "./pages/consultas";
+import { Consultas } from "./pages/consultas";
 import { Contatos } from "./pages/contatos";
 import ConversasPage from "./pages/conversas";
 import Conversas2Page from "./pages/conversas2";
