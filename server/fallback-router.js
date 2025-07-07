@@ -181,20 +181,55 @@ function createFallbackRouter() {
     try {
       const { clinic_id } = req.params;
       
-      const query = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true&order=created_at.desc`;
-      const clinicUsers = await supabaseQuery(`clinic_users?${query}`);
+      log(`👨‍⚕️ USERS MANAGEMENT DEBUG: Getting users for clinic_id=${clinic_id}`);
       
-      // Transform null permissions to empty arrays to prevent frontend split() errors
-      const sanitizedUsers = clinicUsers.map(user => ({
-        ...user,
-        permissions: user.permissions || []
-      }));
+      // Get clinic_users data
+      const clinicUsersQuery = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true&order=created_at.desc`;
+      const clinicUsers = await supabaseQuery(`clinic_users?${clinicUsersQuery}`);
       
-      log(`👨‍⚕️ Retrieved ${sanitizedUsers.length} clinic users for clinic ${clinic_id}`);
-      res.json(sanitizedUsers);
+      log(`👨‍⚕️ USERS MANAGEMENT DEBUG: Found ${clinicUsers.length} clinic_users records`);
+      
+      // For each clinic_user, get the corresponding user data
+      const usersWithDetails = await Promise.all(
+        clinicUsers.map(async (clinicUser) => {
+          let userDetails = { name: 'Unknown User', email: '' };
+          
+          if (clinicUser.user_id) {
+            try {
+              const userQuery = `select=name,email&id=eq.${clinicUser.user_id}`;
+              const users = await supabaseQuery(`users?${userQuery}`);
+              if (users.length > 0) {
+                userDetails = {
+                  name: users[0].name || 'Unknown User',
+                  email: users[0].email || ''
+                };
+              }
+            } catch (userError) {
+              log(`⚠️ Error getting user details for user_id ${clinicUser.user_id}: ${userError.message}`);
+            }
+          }
+          
+          return {
+            ...clinicUser,
+            name: userDetails.name,
+            email: userDetails.email,
+            permissions: clinicUser.permissions || []
+          };
+        })
+      );
+      
+      log(`👨‍⚕️ USERS MANAGEMENT DEBUG: Returning ${usersWithDetails.length} users with details`);
+      log(`👨‍⚕️ USERS MANAGEMENT DEBUG: First user sample:`, usersWithDetails[0]);
+      
+      res.json(usersWithDetails);
     } catch (error) {
       log(`❌ Error getting clinic users: ${error.message}`);
-      res.status(500).json({ error: 'Failed to get clinic users' });
+      log(`❌ USERS MANAGEMENT ERROR STACK: ${error.stack}`);
+      res.status(500).json({ 
+        error: 'Failed to get clinic users',
+        details: error.message,
+        timestamp: new Date().toISOString()
+      });
     }
   });
 
@@ -205,19 +240,45 @@ function createFallbackRouter() {
       
       log(`👨‍⚕️ PROFESSIONALS DEBUG: Getting professionals for clinic_id=${clinic_id}`);
       
-      const query = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true&is_professional=eq.true&order=created_at.desc`;
-      const professionals = await supabaseQuery(`clinic_users?${query}`);
+      // Get clinic_users data for professionals
+      const professionalsQuery = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true&is_professional=eq.true&order=created_at.desc`;
+      const professionals = await supabaseQuery(`clinic_users?${professionalsQuery}`);
       
-      // Transform null permissions to empty arrays to prevent frontend split() errors
-      const sanitizedProfessionals = professionals.map(user => ({
-        ...user,
-        permissions: user.permissions || []
-      }));
+      log(`👨‍⚕️ PROFESSIONALS DEBUG: Found ${professionals.length} clinic_users records`);
       
-      log(`👨‍⚕️ Retrieved ${sanitizedProfessionals.length} professionals for clinic ${clinic_id}`);
-      log(`👨‍⚕️ PROFESSIONALS DEBUG: First professional sample:`, sanitizedProfessionals[0]);
+      // For each professional, get the corresponding user data
+      const professionalsWithDetails = await Promise.all(
+        professionals.map(async (professional) => {
+          let userDetails = { name: 'Unknown Professional', email: '' };
+          
+          if (professional.user_id) {
+            try {
+              const userQuery = `select=name,email&id=eq.${professional.user_id}`;
+              const users = await supabaseQuery(`users?${userQuery}`);
+              if (users.length > 0) {
+                userDetails = {
+                  name: users[0].name || 'Unknown Professional',
+                  email: users[0].email || ''
+                };
+              }
+            } catch (userError) {
+              log(`⚠️ Error getting user details for user_id ${professional.user_id}: ${userError.message}`);
+            }
+          }
+          
+          return {
+            ...professional,
+            name: userDetails.name,
+            email: userDetails.email,
+            permissions: professional.permissions || []
+          };
+        })
+      );
       
-      res.json(sanitizedProfessionals);
+      log(`👨‍⚕️ PROFESSIONALS DEBUG: Returning ${professionalsWithDetails.length} professionals with details`);
+      log(`👨‍⚕️ PROFESSIONALS DEBUG: First professional sample:`, professionalsWithDetails[0]);
+      
+      res.json(professionalsWithDetails);
     } catch (error) {
       log(`❌ Error getting professionals: ${error.message}`);
       log(`❌ PROFESSIONALS ERROR STACK: ${error.stack}`);
