@@ -1,0 +1,21 @@
+# Copie este conteúdo para um arquivo .env na raiz do projeto
+
+# Supabase Configuration
+SUPABASE_URL=https://lkwrevhxugaxfpwiktdy.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrd3Jldmh4dWdheGZwd2lrdGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4Mjg0NjMsImV4cCI6MjA2NTQwNDQ2M30.sWOsGKa_PWfjth6iaXcTpyGa95xmGZO_vnBnrFnK-sc
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrd3Jldmh4dWdheGZwd2lrdGR5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTgyODQ2MywiZXhwIjoyMDY1NDA0NDYzfQ.Hzqr8mVPnJvwKGjQF-LlKzKqXlqKXxnKQJ8PZB7wqWU
+
+# Database Connection (Pooler URL preferido)
+SUPABASE_POOLER_URL=postgresql://postgres.lkwrevhxugaxfpwiktdy:your-password@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.lkwrevhxugaxfpwiktdy:your-password@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
+
+# Server Configuration
+NODE_ENV=development
+PORT=3000
+
+# Session Secret
+SESSION_SECRET=your-session-secret-here
+
+# Redis (opcional)
+REDIS_HOST=localhost
+REDIS_PORT=6379 

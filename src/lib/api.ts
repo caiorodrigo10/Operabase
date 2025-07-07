@@ -90,17 +90,15 @@ export const getApiBaseUrlSafe = (): string => {
   }
 };
 
-// Helper function to build full API URLs - MODELO UNIFICADO RAILWAY
+// Helper function to build full API URLs - DESABILITADO PARA EVITAR DUPLICAÇÃO
 export const buildApiUrl = (endpoint: string): string => {
-  const isDev = (import.meta as any).env.DEV;
-  
   // Ensure endpoint starts with /
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   
-  // 🚀 RAILWAY UNIFIED MODEL: Frontend e Backend no mesmo servidor
-  // Sempre usar URLs relativas - mesmo servidor serve frontend e backend
-  console.log('🚀 [API] Railway Unified Model - same server:', `/api${cleanEndpoint}`);
-  return `/api${cleanEndpoint}`;
+  // 🚀 RAILWAY UNIFIED MODEL: Usar URLs diretas sem adicionar /api
+  // O endpoint já deve vir com /api incluído
+  console.log('🚀 [API] Railway Unified Model - direct URL:', cleanEndpoint);
+  return cleanEndpoint;
 };
 
 // Fetch all professionals of a clinic

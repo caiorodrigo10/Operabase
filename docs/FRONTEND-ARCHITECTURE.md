@@ -1,29 +1,75 @@
-# Arquitetura do Frontend - Operabase
+# Arquitetura do Frontend - Operabase Railway
 
 ## 📋 Visão Geral
 
-Este documento descreve a arquitetura completa do frontend da Operabase, um sistema de gestão para clínicas médicas construído com **React 18**, **Vite**, **TypeScript**, **TanStack Query** e **Tailwind CSS**.
+Este documento descreve a arquitetura completa do frontend da Operabase, um sistema de gestão para clínicas médicas construído com **React 18**, **Vite**, **TypeScript**, **TanStack Query** e **Tailwind CSS**, integrado com **Railway Unified Server** para desenvolvimento local.
 
 ## 🌐 Conectividade Frontend-Backend
 
-### Arquitetura de Deploy
-- **Frontend**: Vercel (HTTPS) - `https://operabase.vercel.app`
-- **Backend**: AWS Elastic Beanstalk (HTTP) - `http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com`
-- **Proxy System**: Vercel proxies para resolver Mixed Content Error
+### Arquitetura Railway Local
+- **Frontend**: Vite Dev Server (HTTP) - `http://localhost:5173`
+- **Backend**: Railway Unified Server (HTTP) - `http://localhost:3000`
+- **Database**: Supabase PostgreSQL (HTTPS)
+- **Proxy**: Vite proxy interno para desenvolvimento
 
-### Problema Resolvido: Mixed Content Error
+### Configuração de Desenvolvimento
 
-#### 🚨 Problema Original
-```javascript
-// ❌ ERRO: HTTPS → HTTP bloqueado pelo navegador
-fetch('http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com/api/appointments')
-// SecurityError: Mixed Content: The page was loaded over HTTPS, but requested an insecure HTTP resource
+#### Vite Proxy Configuration
+```typescript
+// vite.config.ts - Proxy para desenvolvimento
+export default defineConfig({
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+});
 ```
 
-#### ✅ Solução: Sistema de Proxy HTTPS
-```javascript
-// ✅ SOLUÇÃO: HTTPS → HTTPS Proxy → HTTP Backend
-fetch('/api/appointments') // Roteado via proxy Vercel
+#### API Client Configuration
+```typescript
+// src/lib/api.ts - Configuração simplificada
+function buildApiUrl(endpoint: string): string {
+  // Para desenvolvimento local: sempre usar proxy Vite
+  // /api/contacts -> Vite proxy -> http://localhost:3000/api/contacts
+  return `/api${endpoint}`;
+}
+
+// Exemplo de uso
+export async function fetchAppointments(clinicId: number) {
+  const response = await fetch(buildApiUrl(`/appointments?clinic_id=${clinicId}`));
+  return response.json();
+}
+
+export async function fetchContacts(clinicId: number) {
+  const response = await fetch(buildApiUrl(`/contacts?clinic_id=${clinicId}`));
+  return response.json();
+}
+
+export async function fetchContact(id: number, clinicId: number) {
+  const response = await fetch(buildApiUrl(`/contacts/${id}?clinic_id=${clinicId}`));
+  return response.json();
+}
+```
+
+### Fluxo de Dados Railway
+```mermaid
+graph LR
+    A[Frontend Vite :5173] --> B[Vite Proxy /api]
+    B --> C[Railway Server :3000]
+    C --> D[Supabase PostgreSQL]
+    
+    A --> E["fetch('/api/contacts')"]
+    E --> F["Vite Proxy"]
+    F --> G["Railway Server /api/contacts"]
+    G --> H["Supabase Query"]
+    H --> I["Response JSON"]
+    I --> G --> F --> E --> A
 ```
 
 ## 🏗️ Stack Tecnológico
@@ -42,7 +88,7 @@ fetch('/api/appointments') // Roteado via proxy Vercel
 - **Linting**: ESLint + Prettier
 - **Type Checking**: TypeScript strict mode
 - **Hot Reload**: Vite HMR
-- **Package Manager**: npm/pnpm
+- **Package Manager**: npm
 
 ## 🏗️ Estrutura de Diretórios
 
@@ -65,44 +111,37 @@ src/
 
 ## 🔌 Sistema de Conectividade
 
-### API Client Configuration
+### API Client Railway
 
-#### buildApiUrl() - Roteamento Inteligente
+#### buildApiUrl() - Roteamento Simplificado
 ```typescript
-// src/lib/api.ts
+// src/lib/api.ts - Função simplificada para Railway
 function buildApiUrl(endpoint: string): string {
-  // Desenvolvimento: usar proxy do Vite
-  if (import.meta.env.DEV) {
-    return `/api${endpoint}`;
-  }
-  
-  // Produção: SEMPRE usar proxy do Vercel
-  // Isso previne Mixed Content Error forçando HTTPS
-  return `/api${endpoint}`;
+  // Sempre usar proxy Vite para desenvolvimento local
+  // Remove duplicate /api if present
+  const cleanEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+  return cleanEndpoint;
 }
-```
 
-#### Configuração de Ambiente
-```typescript
-// vite.config.ts - Proxy para desenvolvimento
-export default defineConfig({
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false
-      }
-    }
+// Teste de conectividade
+export async function testConnection() {
+  try {
+    const response = await fetch('/api/health');
+    const health = await response.json();
+    console.log('✅ Conectividade Railway:', health);
+    return health;
+  } catch (error) {
+    console.error('❌ Erro de conectividade:', error);
+    throw error;
   }
-});
+}
 ```
 
 ### Sistema de Fetch Padronizado
 
 #### API Base Functions
 ```typescript
-// src/lib/api.ts
+// src/lib/api.ts - Funções base para Railway
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -112,7 +151,7 @@ export async function apiRequest<T>(
   const defaultOptions: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeaders(),
+      // Auth headers serão adicionados quando implementarmos autenticação
     },
   };
 
@@ -128,53 +167,56 @@ export async function apiRequest<T>(
   return response.json();
 }
 
-// Funções específicas por domínio
+// APIs específicas para Railway
 export const appointmentsApi = {
   getAll: (clinicId: number) => 
     apiRequest<Appointment[]>(`/appointments?clinic_id=${clinicId}`),
   
-  create: (data: CreateAppointmentData) =>
-    apiRequest<Appointment>('/appointments', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
+  getByContact: (clinicId: number, contactId: number) =>
+    apiRequest<Appointment[]>(`/appointments?clinic_id=${clinicId}&contact_id=${contactId}`),
   
-  update: (id: number, data: UpdateAppointmentData) =>
-    apiRequest<Appointment>(`/appointments/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    })
+  getByDate: (clinicId: number, date: string) =>
+    apiRequest<Appointment[]>(`/appointments?clinic_id=${clinicId}&date=${date}`)
 };
 
 export const contactsApi = {
   getAll: (clinicId: number) =>
     apiRequest<Contact[]>(`/contacts?clinic_id=${clinicId}`),
     
-  create: (data: CreateContactData) =>
-    apiRequest<Contact>('/contacts', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
+  getById: (id: number, clinicId: number) =>
+    apiRequest<Contact>(`/contacts/${id}?clinic_id=${clinicId}`),
+    
+  search: (clinicId: number, searchTerm: string) =>
+    apiRequest<Contact[]>(`/contacts?clinic_id=${clinicId}&search=${searchTerm}`)
+};
+
+export const clinicApi = {
+  getUsers: (clinicId: number) =>
+    apiRequest<User[]>(`/clinic/${clinicId}/users/management`),
+    
+  getConfig: (clinicId: number) =>
+    apiRequest<ClinicConfig>(`/clinic/${clinicId}/config`)
 };
 ```
 
 ## 🔄 Gerenciamento de Estado
 
-### TanStack Query Configuration
+### TanStack Query Configuration Railway
 
 #### Query Client Setup
 ```typescript
-// src/main.tsx
+// src/main.tsx - Configuração otimizada para Railway
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos
+      staleTime: 2 * 60 * 1000, // 2 minutos (Railway local é rápido)
       cacheTime: 10 * 60 * 1000, // 10 minutos
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      refetchOnWindowFocus: false, // Desabilitado para desenvolvimento
     },
     mutations: {
       retry: 1,
@@ -196,368 +238,190 @@ function App() {
 }
 ```
 
-#### Custom Hooks por Domínio
+#### Custom Hooks Otimizados para Railway
 
 ##### Appointments Hooks
 ```typescript
-// src/hooks/useAppointments.ts
+// src/hooks/useAppointments.ts - Hooks para Railway
 export function useAppointments(clinicId: number) {
   return useQuery({
-    queryKey: ['appointments', clinicId],
+    queryKey: ['/api/appointments', { clinic_id: clinicId }],
     queryFn: () => appointmentsApi.getAll(clinicId),
     enabled: !!clinicId,
   });
 }
 
-export function useCreateAppointment() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: appointmentsApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-    },
-  });
-}
-
-export function useUpdateAppointment() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateAppointmentData }) =>
-      appointmentsApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-    },
+export function useAppointmentsByContact(clinicId: number, contactId: number) {
+  return useQuery({
+    queryKey: ['/api/appointments', { clinic_id: clinicId, contact_id: contactId }],
+    queryFn: () => appointmentsApi.getByContact(clinicId, contactId),
+    enabled: !!clinicId && !!contactId,
   });
 }
 ```
 
 ##### Contacts Hooks
 ```typescript
-// src/hooks/useContacts.ts
+// src/hooks/useContacts.ts - Hooks para Railway
 export function useContacts(clinicId: number) {
   return useQuery({
-    queryKey: ['contacts', clinicId],
+    queryKey: ['/api/contacts', { clinic_id: clinicId }],
     queryFn: () => contactsApi.getAll(clinicId),
     enabled: !!clinicId,
   });
 }
 
-export function useCreateContact() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: contactsApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
-    },
+export function useContact(id: number, clinicId: number) {
+  return useQuery({
+    queryKey: ['/api/contacts', id, { clinic_id: clinicId }],
+    queryFn: () => contactsApi.getById(id, clinicId),
+    enabled: !!id && !!clinicId,
+  });
+}
+
+export function useContactSearch(clinicId: number, searchTerm: string) {
+  return useQuery({
+    queryKey: ['/api/contacts', { clinic_id: clinicId, search: searchTerm }],
+    queryFn: () => contactsApi.search(clinicId, searchTerm),
+    enabled: !!clinicId && searchTerm.length > 2,
+    staleTime: 30 * 1000, // 30 segundos para busca
   });
 }
 ```
 
-### Zustand Stores
-
-#### Editor Store
+##### Clinic Management Hooks
 ```typescript
-// src/stores/editor2Store.ts
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-
-interface EditorState {
-  selectedComponent: string | null;
-  pageData: any;
-  isDragging: boolean;
-  
-  // Actions
-  setSelectedComponent: (id: string | null) => void;
-  updatePageData: (data: any) => void;
-  setDragging: (isDragging: boolean) => void;
+// src/hooks/useClinic.ts - Hooks para Railway
+export function useClinicUsers(clinicId: number) {
+  return useQuery({
+    queryKey: ['/api/clinic', clinicId, 'users', 'management'],
+    queryFn: () => clinicApi.getUsers(clinicId),
+    enabled: !!clinicId,
+  });
 }
 
-export const useEditor2Store = create<EditorState>()(
-  devtools(
-    (set) => ({
-      selectedComponent: null,
-      pageData: null,
-      isDragging: false,
-      
-      setSelectedComponent: (id) => set({ selectedComponent: id }),
-      updatePageData: (data) => set({ pageData: data }),
-      setDragging: (isDragging) => set({ isDragging }),
-    }),
-    { name: 'editor2-store' }
-  )
-);
+export function useClinicConfig(clinicId: number) {
+  return useQuery({
+    queryKey: ['/api/clinic', clinicId, 'config'],
+    queryFn: () => clinicApi.getConfig(clinicId),
+    enabled: !!clinicId,
+    staleTime: 5 * 60 * 1000, // 5 minutos (config muda pouco)
+  });
+}
 ```
 
-## 🎨 Sistema de UI
+## 📱 Páginas e Roteamento Railway
 
-### Shadcn/UI Components
-
-#### Base Components
+### Contact Detail Page (Visão Geral)
 ```typescript
-// src/components/ui/button.tsx
-import { cn } from '@/lib/utils';
-import { Slot } from '@radix-ui/react-slot';
-import { cva, type VariantProps } from 'class-variance-authority';
+// src/pages/contatos/[id]/visao-geral.tsx - Página de detalhes
+import { useParams } from 'react-router-dom';
+import { useContact, useAppointmentsByContact } from '@/hooks';
 
-const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-  {
-    variants: {
-      variant: {
-        default: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
-        outline: 'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
-      },
-      size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-md px-8',
-        icon: 'h-9 w-9',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  }
-);
+export default function ContactDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const contactId = parseInt(id!);
+  const clinicId = 1; // TODO: Get from auth context
+  
+  const { data: contact, isLoading: contactLoading, error: contactError } = useContact(contactId, clinicId);
+  const { data: appointments, isLoading: appointmentsLoading } = useAppointmentsByContact(clinicId, contactId);
 
-interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button';
+  if (contactLoading) {
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
     );
   }
-);
-```
 
-#### Composite Components
-```typescript
-// src/components/AppointmentCard.tsx
-interface AppointmentCardProps {
-  appointment: Appointment;
-  onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
-}
+  if (contactError) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <h2 className="text-red-800 font-semibold">Contato não encontrado</h2>
+          <p className="text-red-600">O contato solicitado não foi encontrado ou você não tem permissão para acessá-lo.</p>
+        </div>
+      </div>
+    );
+  }
 
-export function AppointmentCard({ appointment, onEdit, onDelete }: AppointmentCardProps) {
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>{appointment.contact_name}</span>
-          <Badge variant={getStatusVariant(appointment.status)}>
-            {appointment.status}
-          </Badge>
-        </CardTitle>
-        <CardDescription>
-          {format(new Date(appointment.datetime), 'PPP')} às {format(new Date(appointment.datetime), 'HH:mm')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">
-          {appointment.professional_name}
-        </p>
-        {appointment.notes && (
-          <p className="text-sm mt-2">{appointment.notes}</p>
-        )}
-      </CardContent>
-      <CardFooter className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={() => onEdit(appointment.id)}>
-          Editar
-        </Button>
-        <Button variant="destructive" size="sm" onClick={() => onDelete(appointment.id)}>
-          Excluir
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-```
-
-### Tailwind CSS Configuration
-
-#### tailwind.config.js
-```javascript
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  darkMode: ['class'],
-  content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-  ],
-  theme: {
-    container: {
-      center: true,
-      padding: '2rem',
-      screens: {
-        '2xl': '1400px',
-      },
-    },
-    extend: {
-      colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-      keyframes: {
-        'accordion-down': {
-          from: { height: 0 },
-          to: { height: 'var(--radix-accordion-content-height)' },
-        },
-        'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: 0 },
-        },
-      },
-      animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
-      },
-    },
-  },
-  plugins: [require('tailwindcss-animate')],
-};
-```
-
-## 📱 Páginas e Roteamento
-
-### Estrutura de Páginas
-
-#### Main Pages
-```typescript
-// src/pages/appointments.tsx
-export default function AppointmentsPage() {
-  const { data: user } = useAuth();
-  const { data: appointments, isLoading } = useAppointments(user?.clinic_id);
-  const createAppointment = useCreateAppointment();
-
-  if (isLoading) return <LoadingSpinner />;
+  if (!contact) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-8">
+          <p className="text-gray-500">Contato não encontrado</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Agendamentos</h1>
-        <Button onClick={() => setShowCreateModal(true)}>
-          Novo Agendamento
-        </Button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">{contact.name}</h1>
+        <p className="text-gray-600">{contact.email}</p>
+        <p className="text-gray-600">{contact.phone}</p>
       </div>
       
-      <div className="grid gap-4">
-        {appointments?.map((appointment) => (
-          <AppointmentCard
-            key={appointment.id}
-            appointment={appointment}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Informações do Contato</h2>
+          <div className="bg-white rounded-lg border p-4">
+            <div className="space-y-2">
+              <div>
+                <span className="font-medium">Status:</span>
+                <span className="ml-2">{contact.status}</span>
+              </div>
+              <div>
+                <span className="font-medium">Prioridade:</span>
+                <span className="ml-2">{contact.priority}</span>
+              </div>
+              <div>
+                <span className="font-medium">Fonte:</span>
+                <span className="ml-2">{contact.source}</span>
+              </div>
+              <div>
+                <span className="font-medium">Primeiro Contato:</span>
+                <span className="ml-2">{new Date(contact.first_contact).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Agendamentos</h2>
+          <div className="bg-white rounded-lg border p-4">
+            {appointmentsLoading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+              </div>
+            ) : appointments && appointments.length > 0 ? (
+              <div className="space-y-2">
+                {appointments.map((appointment) => (
+                  <div key={appointment.id} className="p-3 bg-gray-50 rounded">
+                    <div className="font-medium">{new Date(appointment.scheduled_date).toLocaleDateString()}</div>
+                    <div className="text-sm text-gray-600">{appointment.notes}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">Nenhum agendamento encontrado</p>
+            )}
+          </div>
+        </div>
       </div>
-      
-      <CreateAppointmentModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSubmit={createAppointment.mutate}
-      />
     </div>
   );
 }
 ```
 
-#### Contacts Page
+### Router Configuration Railway
 ```typescript
-// src/pages/contacts.tsx
-export default function ContactsPage() {
-  const { data: user } = useAuth();
-  const { data: contacts, isLoading } = useContacts(user?.clinic_id);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredContacts = contacts?.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Contatos</h1>
-        <Button onClick={() => setShowCreateModal(true)}>
-          Novo Contato
-        </Button>
-      </div>
-      
-      <div className="mb-4">
-        <Input
-          placeholder="Buscar contatos..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-      
-      <ContactsTable contacts={filteredContacts} />
-    </div>
-  );
-}
-```
-
-### Router Configuration
-```typescript
-// src/main.tsx
+// src/main.tsx - Configuração de rotas
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 const router = createBrowserRouter([
@@ -566,349 +430,267 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: 'appointments', element: <AppointmentsPage /> },
-      { path: 'contacts', element: <ContactsPage /> },
-      { path: 'calendar', element: <CalendarPage /> },
-      { path: 'conversations', element: <ConversationsPage /> },
-      { path: 'pipeline', element: <PipelinePage /> },
-      { path: 'medical-records', element: <MedicalRecordsPage /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'admin', element: <AdminLayout />, children: [
-        { path: 'clinics', element: <AdminClinicsPage /> },
-        { path: 'users', element: <AdminUsersPage /> },
+      { path: 'consultas', element: <AppointmentsPage /> },
+      { path: 'contatos', element: <ContactsPage /> },
+      { path: 'contatos/:id', element: <ContactLayout />, children: [
+        { index: true, element: <Navigate to="visao-geral" replace /> },
+        { path: 'visao-geral', element: <ContactDetailPage /> },
+        { path: 'agendamentos', element: <ContactAppointmentsPage /> },
+        { path: 'conversas', element: <ContactConversationsPage /> },
       ]},
+      { path: 'calendar', element: <CalendarPage /> },
+      { path: 'pipeline', element: <PipelinePage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
   { path: '/login', element: <LoginPage /> },
-  { path: '/anamnese-publica/:id', element: <PublicAnamnesePage /> },
 ]);
 ```
 
-## 🔐 Autenticação Frontend
+## 🎨 Sistema de UI
 
-### Auth Context
+### Loading States Railway-Optimized
 ```typescript
-// src/contexts/AuthContext.tsx
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  isLoading: boolean;
-}
-
-export const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Login failed');
-    }
-
-    const userData = await response.json();
-    setUser(userData);
-  };
-
-  const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    setUser(null);
-  };
-
+// src/components/LoadingStates.tsx - Estados de loading otimizados
+export function ContactDetailSkeleton() {
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
-      {children}
-    </AuthContext.Provider>
+    <div className="container mx-auto p-6">
+      <div className="animate-pulse">
+        {/* Header skeleton */}
+        <div className="mb-6">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3 mb-1"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+        </div>
+        
+        {/* Content skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg border p-4">
+            <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex">
+                  <div className="h-4 bg-gray-200 rounded w-1/3 mr-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg border p-4">
+            <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="p-3 bg-gray-50 rounded">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-};
+export function AppointmentCardSkeleton() {
+  return (
+    <div className="bg-white rounded-lg border p-4 animate-pulse">
+      <div className="flex justify-between items-start mb-3">
+        <div className="h-5 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-5 bg-gray-200 rounded w-16"></div>
+      </div>
+      <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+    </div>
+  );
+}
 ```
 
-### Protected Routes
+### Error Handling Railway
 ```typescript
-// src/components/ProtectedRoute.tsx
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: 'admin' | 'professional' | 'patient';
+// src/components/ErrorStates.tsx - Estados de erro para Railway
+export function ContactNotFound() {
+  return (
+    <div className="container mx-auto p-6">
+      <div className="bg-red-50 border border-red-200 rounded-md p-6 text-center">
+        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+          <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h2 className="text-red-800 font-semibold text-lg mb-2">Contato não encontrado</h2>
+        <p className="text-red-600 mb-4">O contato solicitado não foi encontrado ou você não tem permissão para acessá-lo.</p>
+        <button 
+          onClick={() => window.history.back()}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          Voltar
+        </button>
+      </div>
+    </div>
+  );
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
+export function ApiConnectionError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-yellow-800">Erro de Conexão</h3>
+          <div className="mt-2 text-sm text-yellow-700">
+            <p>Não foi possível conectar com o servidor. Verifique se o Railway server está rodando.</p>
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={onRetry}
+              className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+## 📊 Monitoramento e Debug Railway
+
+### Connection Monitor
+```typescript
+// src/hooks/useConnectionMonitor.ts - Monitor de conexão Railway
+export function useConnectionMonitor() {
+  const [isOnline, setIsOnline] = useState(true);
+  const [railwayStatus, setRailwayStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      navigate('/login');
+    const checkRailwayConnection = async () => {
+      try {
+        const response = await fetch('/api/health', { 
+          method: 'GET',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        if (response.ok) {
+          const health = await response.json();
+          setRailwayStatus('connected');
+          console.log('✅ Railway server conectado:', health);
+        } else {
+          setRailwayStatus('disconnected');
+          console.warn('⚠️ Railway server respondeu com erro:', response.status);
+        }
+      } catch (error) {
+        setRailwayStatus('disconnected');
+        console.error('❌ Railway server desconectado:', error);
+      }
+    };
+
+    // Check inicial
+    checkRailwayConnection();
+
+    // Check periódico a cada 30 segundos
+    const interval = setInterval(checkRailwayConnection, 30000);
+
+    // Monitor de conectividade do navegador
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return { isOnline, railwayStatus };
+}
+```
+
+### Debug Panel
+```typescript
+// src/components/DebugPanel.tsx - Painel de debug para desenvolvimento
+export function DebugPanel() {
+  const { isOnline, railwayStatus } = useConnectionMonitor();
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+
+  const fetchDebugInfo = async () => {
+    try {
+      const health = await fetch('/api/health').then(r => r.json());
+      const contacts = await fetch('/api/contacts?clinic_id=1').then(r => r.json());
+      const appointments = await fetch('/api/appointments?clinic_id=1').then(r => r.json());
+      
+      setDebugInfo({
+        health,
+        contactsCount: contacts.length,
+        appointmentsCount: appointments.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      setDebugInfo({ error: error.message });
     }
-  }, [user, isLoading, navigate]);
+  };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!user) {
+  if (process.env.NODE_ENV !== 'development') {
     return null;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
-    return <div>Acesso negado</div>;
-  }
-
-  return <>{children}</>;
-}
-```
-
-## 🎯 Features Específicas
-
-### Editor Visual (Editor2)
-
-#### Editor Context
-```typescript
-// src/contexts/EditorContext.tsx
-export interface EditorContextType {
-  selectedComponent: string | null;
-  pageData: any;
-  setSelectedComponent: (id: string | null) => void;
-  updateComponent: (id: string, props: any) => void;
-  addComponent: (type: string, props: any) => void;
-  removeComponent: (id: string) => void;
-}
-
-export const EditorContext = createContext<EditorContextType | null>(null);
-
-export function EditorProvider({ children }: { children: React.ReactNode }) {
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
-  const [pageData, setPageData] = useState<any>(null);
-
-  const updateComponent = (id: string, props: any) => {
-    setPageData((prev: any) => ({
-      ...prev,
-      components: prev.components.map((comp: any) =>
-        comp.id === id ? { ...comp, props: { ...comp.props, ...props } } : comp
-      ),
-    }));
-  };
-
-  const addComponent = (type: string, props: any) => {
-    const newComponent = {
-      id: generateId(),
-      type,
-      props,
-    };
-    
-    setPageData((prev: any) => ({
-      ...prev,
-      components: [...(prev.components || []), newComponent],
-    }));
-  };
-
-  const removeComponent = (id: string) => {
-    setPageData((prev: any) => ({
-      ...prev,
-      components: prev.components.filter((comp: any) => comp.id !== id),
-    }));
-  };
-
   return (
-    <EditorContext.Provider
-      value={{
-        selectedComponent,
-        pageData,
-        setSelectedComponent,
-        updateComponent,
-        addComponent,
-        removeComponent,
-      }}
-    >
-      {children}
-    </EditorContext.Provider>
+    <div className="fixed bottom-4 right-4 bg-white border rounded-lg shadow-lg p-4 max-w-sm">
+      <h3 className="font-semibold mb-2">Debug Railway</h3>
+      
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span>Navegador:</span>
+          <span className={isOnline ? 'text-green-600' : 'text-red-600'}>
+            {isOnline ? 'Online' : 'Offline'}
+          </span>
+        </div>
+        
+        <div className="flex justify-between">
+          <span>Railway:</span>
+          <span className={
+            railwayStatus === 'connected' ? 'text-green-600' : 
+            railwayStatus === 'disconnected' ? 'text-red-600' : 'text-yellow-600'
+          }>
+            {railwayStatus === 'connected' ? 'Conectado' : 
+             railwayStatus === 'disconnected' ? 'Desconectado' : 'Verificando...'}
+          </span>
+        </div>
+        
+        <button
+          onClick={fetchDebugInfo}
+          className="w-full bg-blue-600 text-white py-1 px-2 rounded text-xs hover:bg-blue-700"
+        >
+          Testar APIs
+        </button>
+        
+        {debugInfo && (
+          <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 ```
 
-### Conversas (WhatsApp Integration)
+## 🚀 Build e Deploy Railway
 
-#### Conversation Hooks
+### Vite Configuration Railway
 ```typescript
-// src/hooks/useConversations.ts
-export function useConversations(clinicId: number) {
-  return useQuery({
-    queryKey: ['conversations', clinicId],
-    queryFn: () => apiRequest<Conversation[]>(`/conversations?clinic_id=${clinicId}`),
-    enabled: !!clinicId,
-  });
-}
-
-export function useMessages(conversationId: number) {
-  return useQuery({
-    queryKey: ['messages', conversationId],
-    queryFn: () => apiRequest<Message[]>(`/conversations/${conversationId}/messages`),
-    enabled: !!conversationId,
-    refetchInterval: 5000, // Polling para novas mensagens
-  });
-}
-
-export function useSendMessage() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ conversationId, content }: { conversationId: number; content: string }) =>
-      apiRequest(`/conversations/${conversationId}/messages`, {
-        method: 'POST',
-        body: JSON.stringify({ content }),
-      }),
-    onSuccess: (_, { conversationId }) => {
-      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
-    },
-  });
-}
-```
-
-## 📊 Monitoramento e Debug
-
-### Error Boundary
-```typescript
-// src/components/ErrorBoundary.tsx
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
-
-export class ErrorBoundary extends Component<
-  React.PropsWithChildren<{}>,
-  ErrorBoundaryState
-> {
-  constructor(props: React.PropsWithChildren<{}>) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-    
-    // Enviar erro para serviço de monitoramento
-    if (import.meta.env.PROD) {
-      this.logErrorToService(error, errorInfo);
-    }
-  }
-
-  private logErrorToService(error: Error, errorInfo: React.ErrorInfo) {
-    // Implementar logging para produção
-    fetch('/api/errors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-      }),
-    }).catch(console.error);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Algo deu errado</CardTitle>
-              <CardDescription>
-                Ocorreu um erro inesperado. Por favor, recarregue a página.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => window.location.reload()}>
-                Recarregar Página
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-```
-
-### Performance Monitoring
-```typescript
-// src/hooks/usePerformanceMonitor.ts
-export function usePerformanceMonitor() {
-  useEffect(() => {
-    // Monitorar Core Web Vitals
-    if ('web-vital' in window) {
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(console.log);
-        getFID(console.log);
-        getFCP(console.log);
-        getLCP(console.log);
-        getTTFB(console.log);
-      });
-    }
-
-    // Monitorar erros não capturados
-    const handleError = (event: ErrorEvent) => {
-      console.error('Unhandled error:', event.error);
-    };
-
-    const handleRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleRejection);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleRejection);
-    };
-  }, []);
-}
-```
-
-## 🚀 Build e Deploy
-
-### Vite Configuration
-```typescript
-// vite.config.ts
+// vite.config.ts - Configuração otimizada para Railway
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -921,10 +703,10 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5174,
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },
@@ -947,57 +729,51 @@ export default defineConfig({
 });
 ```
 
-### Package.json Scripts
+### Package.json Scripts Railway
 ```json
 {
   "scripts": {
     "dev": "vite",
+    "dev:railway": "tsx server/railway-server.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "dev:full": "concurrently \"npm run dev:railway\" \"npm run dev\""
   }
 }
 ```
 
-### Vercel Configuration
-```json
-// vercel.json
-{
-  "rewrites": [
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
-      ]
-    }
-  ]
-}
-```
-
-## 🔧 Configuração de Desenvolvimento
+## 🔧 Configuração de Desenvolvimento Railway
 
 ### Environment Variables
 ```bash
-# .env.local
-VITE_API_URL=http://localhost:5000
+# .env.local - Configuração para desenvolvimento Railway
+VITE_API_URL=http://localhost:3000
 VITE_APP_NAME=Operabase
-VITE_SUPABASE_URL=https://lkwrevhxugaxfpwiktdy.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_ENVIRONMENT=development
 ```
 
-### TypeScript Configuration
+### Fluxo de Desenvolvimento
+```bash
+# Opção 1: Executar separadamente
+# Terminal 1: Backend Railway
+npm run dev:railway
+
+# Terminal 2: Frontend Vite
+npm run dev
+
+# Opção 2: Executar junto (se tiver concurrently instalado)
+npm run dev:full
+
+# Acessar aplicação
+open http://localhost:5173
+```
+
+### TypeScript Configuration Railway
 ```json
-// tsconfig.json
+// tsconfig.json - Configuração para Railway
 {
   "compilerOptions": {
     "target": "ES2020",
@@ -1025,148 +801,138 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-## 📋 Checklist de Desenvolvimento
+## 📋 Checklist de Desenvolvimento Railway
 
 ### ✅ Funcionalidades Implementadas
-- ✅ **Sistema de Proxy** - Mixed Content Error resolvido
-- ✅ **TanStack Query** - Gerenciamento de estado servidor
-- ✅ **Shadcn/UI** - Componentes base implementados
-- ✅ **Tailwind CSS** - Styling system configurado
-- ✅ **TypeScript** - Type safety completo
-- ✅ **React Router** - Navegação configurada
-- ✅ **Auth System** - Autenticação e autorização
-- ✅ **Error Boundary** - Tratamento de erros
-- ✅ **Performance Monitor** - Monitoramento básico
+- ✅ **Vite Proxy** - Configurado para Railway (:3000)
+- ✅ **TanStack Query** - Query keys otimizadas para Railway
+- ✅ **API Client** - Funções específicas para endpoints Railway
+- ✅ **Contact Detail Page** - Página de visão geral funcionando
+- ✅ **Error Handling** - Estados de erro específicos para Railway
+- ✅ **Loading States** - Skeletons otimizados
+- ✅ **Connection Monitor** - Monitor de conectividade Railway
+- ✅ **Debug Panel** - Painel de debug para desenvolvimento
 
 ### 🚧 Funcionalidades Pendentes
-- ⏳ **Conversations** - Interface completa WhatsApp
-- ⏳ **Medical Records** - CRUD completo
-- ⏳ **Pipeline** - Sistema de vendas
-- ⏳ **Analytics** - Dashboards e relatórios
-- ⏳ **Settings** - Configurações da clínica
+- ⏳ **Authentication** - Sistema de login/logout
+- ⏳ **Offline Support** - Funcionamento offline com cache
+- ⏳ **Real-time Updates** - Polling ou WebSockets
 - ⏳ **PWA** - Progressive Web App
-- ⏳ **Offline Support** - Funcionamento offline
 - ⏳ **Push Notifications** - Notificações em tempo real
 
-### 🔄 Padrões de Desenvolvimento
+### 🔄 Padrões de Desenvolvimento Railway
 
-#### Component Pattern
+#### Component Pattern Railway
 ```typescript
-// Padrão de componente funcional
+// Padrão de componente otimizado para Railway
 interface ComponentProps {
+  clinicId: number;
   // Props tipadas
 }
 
-export function Component({ ...props }: ComponentProps) {
-  // Hooks no topo
-  const { data, isLoading } = useQuery(...);
-  const mutation = useMutation(...);
+export function RailwayComponent({ clinicId, ...props }: ComponentProps) {
+  // Hooks Railway-optimized
+  const { data, isLoading, error } = useContacts(clinicId);
+  const { railwayStatus } = useConnectionMonitor();
   
-  // Event handlers
-  const handleAction = useCallback(() => {
-    // Logic
-  }, []);
+  // Early returns para Railway
+  if (railwayStatus === 'disconnected') {
+    return <ApiConnectionError onRetry={() => window.location.reload()} />;
+  }
   
-  // Early returns
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage />;
+  if (isLoading) return <ContactDetailSkeleton />;
+  if (error) return <ContactNotFound />;
   
   // Main render
   return (
-    <div className="container">
-      {/* JSX */}
+    <div className="container mx-auto p-6">
+      {/* JSX optimized for Railway data */}
     </div>
   );
 }
 ```
 
-#### Hook Pattern
+#### Hook Pattern Railway
 ```typescript
-// Padrão de custom hook
-export function useFeature(params: FeatureParams) {
-  // State
-  const [state, setState] = useState(initialState);
+// Padrão de custom hook para Railway
+export function useRailwayFeature(clinicId: number, params: FeatureParams) {
+  // Connection monitoring
+  const { railwayStatus } = useConnectionMonitor();
   
-  // Queries
+  // Query with Railway-specific key
   const query = useQuery({
-    queryKey: ['feature', params.id],
-    queryFn: () => api.getFeature(params.id),
+    queryKey: ['/api/feature', { clinic_id: clinicId, ...params }],
+    queryFn: () => apiRequest(`/feature?clinic_id=${clinicId}`),
+    enabled: !!clinicId && railwayStatus === 'connected',
   });
   
-  // Mutations
-  const mutation = useMutation({
-    mutationFn: api.updateFeature,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feature'] });
-    },
-  });
-  
-  // Return interface
+  // Return Railway-optimized interface
   return {
     data: query.data,
     isLoading: query.isLoading,
     error: query.error,
-    update: mutation.mutate,
-    isUpdating: mutation.isPending,
+    isRailwayConnected: railwayStatus === 'connected',
+    refetch: query.refetch,
   };
 }
 ```
 
-## 🎯 Próximos Passos
+## 🎯 Próximos Passos Railway
 
 ### Prioridade Alta
-1. **Implementar Conversations** - Interface completa de WhatsApp
-2. **Medical Records CRUD** - Sistema completo de prontuários
-3. **Pipeline System** - Funil de vendas
-4. **Real-time Updates** - WebSockets ou Server-Sent Events
+1. **Implementar Authentication** - Sistema de login/logout
+2. **Contact CRUD** - Criar, editar, deletar contatos
+3. **Appointment CRUD** - Gerenciamento completo de agendamentos
+4. **Real-time Updates** - Polling ou WebSockets
 
 ### Prioridade Média
-1. **PWA Configuration** - Service Worker e App Manifest
-2. **Offline Support** - Cache de dados críticos
-3. **Performance Optimization** - Code splitting e lazy loading
-4. **Analytics Dashboard** - Relatórios e métricas
+1. **Offline Support** - Cache local com sync
+2. **Performance Optimization** - Code splitting otimizado
+3. **Error Tracking** - Sentry ou similar
+4. **Analytics** - Tracking de uso
 
 ### Prioridade Baixa
-1. **Dark Mode** - Tema escuro
-2. **Internationalization** - Suporte a múltiplos idiomas
-3. **Accessibility** - Melhorias de acessibilidade
-4. **Testing** - Testes unitários e E2E
+1. **PWA Configuration** - Service Worker
+2. **Dark Mode** - Tema escuro
+3. **Internationalization** - Suporte a idiomas
+4. **Accessibility** - Melhorias A11Y
 
 ---
 
-## 📞 Suporte e Recursos
+## 📞 Suporte e Recursos Railway
 
-### Documentação
-- **Backend**: `/docs/BACKEND-ARCHITECTURE.md`
-- **API Guide**: `/docs/API-RESOLUTION-GUIDE.md`
-- **Components**: Storybook (futuro)
-
-### Ferramentas de Debug
-- **React DevTools** - Extensão do navegador
-- **TanStack Query DevTools** - Integrado no desenvolvimento
-- **Vite DevTools** - Hot reload e debugging
-
-### Comandos Úteis
+### Comandos Úteis Railway
 ```bash
-# Desenvolvimento
-npm run dev
+# Status dos serviços
+lsof -i :3000  # Railway Server
+lsof -i :5173  # Vite Dev Server
+
+# Testar conectividade
+curl http://localhost:3000/health
+curl http://localhost:5173/api/health
+
+# Debug de proxy
+curl -v http://localhost:5173/api/contacts?clinic_id=1
 
 # Build para produção
 npm run build
-
-# Preview da build
-npm run preview
-
-# Lint e type check
-npm run lint
-npm run type-check
-
-# Análise de bundle
-npm run build && npx vite-bundle-analyzer dist
+npm run dev:railway  # Serve static files
 ```
+
+### Troubleshooting Railway
+- **Proxy 404**: Verificar se Railway server está rodando na porta 3000
+- **CORS Error**: Verificar configuração CORS no Railway server
+- **API Error**: Verificar logs do Railway server no terminal
+- **Build Error**: Verificar se todos os tipos estão corretos
+
+### Ferramentas de Debug Railway
+- **React DevTools** - Extensão do navegador
+- **TanStack Query DevTools** - Integrado no desenvolvimento
+- **Network Tab** - Para verificar requests /api
+- **Debug Panel** - Componente customizado para desenvolvimento
 
 ---
 
 *Documentação atualizada em: Janeiro 2025*
-*Versão: v1.0*
-*Status: ✅ Produção* 
+*Versão: v2.0 Railway*
+*Status: ✅ Desenvolvimento Local* 
