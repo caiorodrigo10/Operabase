@@ -68,6 +68,32 @@ function createFallbackRouter() {
     });
   });
 
+  // Test users table access
+  router.get('/test-users-table', async (req, res) => {
+    try {
+      log(`🔍 USERS TEST: Testing access to users table`);
+      
+      const usersQuery = `select=id,name,email&limit=10`;
+      const users = await supabaseQuery(`users?${usersQuery}`);
+      
+      log(`🔍 USERS TEST: Found ${users.length} users`);
+      
+      res.json({ 
+        success: true,
+        users_count: users.length,
+        users: users,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      log(`❌ USERS TEST ERROR: ${error.message}`);
+      res.status(500).json({ 
+        error: 'Failed to access users table',
+        details: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Get appointments with filters
   router.get('/appointments', async (req, res) => {
     try {
@@ -765,27 +791,28 @@ function createFallbackRouter() {
       error: 'Endpoint temporarily unavailable',
       message: 'This endpoint is part of the domain system which is not available in fallback mode',
       fallback_mode: true,
-             available_endpoints: [
-         '/api/test',
-         '/api/appointments',
-         '/api/calendar/events', 
-         '/api/contacts',
-         '/api/clinic/:id/users/management',
-         '/api/clinic/:id/professionals',
-         '/api/clinic/:id/config',
-         '/api/conversations-simple',
-         '/api/conversations-simple/:id',
-         '/api/conversations-simple/:id/messages',
-         '/api/conversations-simple/:id/mark-read',
-         '/api/conversations/:id/upload',
-         '/api/medical-records',
-         '/api/anamneses',
-         '/api/anamnesis-responses',
-         '/api/pipeline-stages',
-         '/api/pipeline-opportunities',
-         '/api/knowledge-bases',
-         '/api/api-keys'
-       ],
+                   available_endpoints: [
+        '/api/test',
+        '/api/test-users-table',
+        '/api/appointments',
+        '/api/calendar/events', 
+        '/api/contacts',
+        '/api/clinic/:id/users/management',
+        '/api/clinic/:id/professionals',
+        '/api/clinic/:id/config',
+        '/api/conversations-simple',
+        '/api/conversations-simple/:id',
+        '/api/conversations-simple/:id/messages',
+        '/api/conversations-simple/:id/mark-read',
+        '/api/conversations/:id/upload',
+        '/api/medical-records',
+        '/api/anamneses',
+        '/api/anamnesis-responses',
+        '/api/pipeline-stages',
+        '/api/pipeline-opportunities',
+        '/api/knowledge-bases',
+        '/api/api-keys'
+      ],
       requested: req.originalUrl,
       timestamp: new Date().toISOString()
     });
