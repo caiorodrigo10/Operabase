@@ -307,8 +307,8 @@ function createFallbackRouter() {
       
       const conversation = conversations[0];
       
-      // Get messages for this conversation
-      const msgQuery = `select=*&conversation_id=eq.${conversation_id}&order=created_at.desc&limit=${limit}&offset=${offset}`;
+      // Get messages for this conversation (conversation_id is TEXT, need proper encoding)
+      const msgQuery = `select=*&conversation_id=eq.${conversation_id}&order=timestamp.desc&limit=${limit}&offset=${offset}`;
       const messages = await supabaseQuery(`messages?${msgQuery}`);
       
       log(`💬 Retrieved ${messages.length} messages for conversation ${conversation_id}`);
