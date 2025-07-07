@@ -158,8 +158,29 @@ async function startServer() {
       });
     });
     
-    // Apply middleware chain to all /api routes
+    // Apply detailed logging and middleware chain to all /api routes
     app.use('/api', (req, res, next) => {
+      const startTime = Date.now();
+      
+      // Detailed request logging
+      log(`📥 ${req.method} ${req.originalUrl}`);
+      log(`📥 Headers: ${JSON.stringify(req.headers, null, 2)}`);
+      if (req.body && Object.keys(req.body).length > 0) {
+        log(`📥 Body: ${JSON.stringify(req.body, null, 2)}`);
+      }
+      if (req.query && Object.keys(req.query).length > 0) {
+        log(`📥 Query: ${JSON.stringify(req.query, null, 2)}`);
+      }
+      
+      // Override res.json to log responses
+      const originalJson = res.json;
+      res.json = function(data) {
+        const responseTime = Date.now() - startTime;
+        log(`📤 ${req.method} ${req.originalUrl} - ${res.statusCode} - ${responseTime}ms`);
+        log(`📤 Response: ${JSON.stringify(data, null, 2)}`);
+        return originalJson.call(this, data);
+      };
+      
       // Skip middleware for uploads to avoid conflicts
       if (req.path.includes('/upload')) {
         return next();
@@ -187,6 +208,7 @@ async function startServer() {
     log('   📅 Appointments: /api/appointments/*');
     log('   👥 Contacts: /api/contacts/*');
     log('   📆 Calendar: /api/calendar/*');
+    log('   💬 Conversations: /api/conversations-simple/*');
     log('   🏥 Medical Records: /api/medical-records/*');
     log('   💼 Pipeline: /api/pipeline-*');
     log('   📈 Analytics: /api/analytics/*');
@@ -197,6 +219,7 @@ async function startServer() {
     log('   🧠 Livia AI: /api/livia/*');
     log('   📋 Anamneses: /api/anamneses/*');
     log('   📚 RAG System: /api/rag/*');
+    log('   📎 File Upload: /api/conversations/*/upload');
     
     // Global error handler
     app.use(errorLoggingMiddleware);
