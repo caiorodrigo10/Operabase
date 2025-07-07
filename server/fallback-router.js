@@ -248,7 +248,9 @@ function createFallbackRouter() {
         services: clinic.services || [],
         payment_methods: clinic.payment_methods || [],
         working_days: clinic.working_days || [],
-        specialties: clinic.specialties || []
+        specialties: clinic.specialties || [],
+        lunch_times: clinic.lunch_times || [],
+        business_hours: clinic.business_hours || []
       };
       
       log(`🏥 Retrieved clinic config for clinic ${clinic_id}`);
