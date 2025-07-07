@@ -68,31 +68,7 @@ function createFallbackRouter() {
     });
   });
 
-  // Test users table access
-  router.get('/test-users-table', async (req, res) => {
-    try {
-      log(`🔍 USERS TEST: Testing access to users table`);
-      
-      const usersQuery = `select=id,name,email&limit=10`;
-      const users = await supabaseQuery(`users?${usersQuery}`);
-      
-      log(`🔍 USERS TEST: Found ${users.length} users`);
-      
-      res.json({ 
-        success: true,
-        users_count: users.length,
-        users: users,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      log(`❌ USERS TEST ERROR: ${error.message}`);
-      res.status(500).json({ 
-        error: 'Failed to access users table',
-        details: error.message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
+
 
   // Get appointments with filters
   router.get('/appointments', async (req, res) => {
@@ -793,7 +769,6 @@ function createFallbackRouter() {
       fallback_mode: true,
                    available_endpoints: [
         '/api/test',
-        '/api/test-users-table',
         '/api/appointments',
         '/api/calendar/events', 
         '/api/contacts',
