@@ -305,9 +305,9 @@ export function Consultas() {
   });
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Pagination constants
-  const ITEMS_PER_PAGE = 10;
-  
+// Pagination constants
+const ITEMS_PER_PAGE = 10;
+
 
   
   // Create a stable reference for "today" to avoid timezone issues
@@ -1681,8 +1681,8 @@ export function Consultas() {
                   <div className="text-xs text-slate-500 space-y-1">
                     <div>• {appointmentsLoading ? '⏳' : '✅'} Consultas</div>
                     <div>• {!clinicUsers.length ? '⏳' : '✅'} Profissionais</div>
-                  </div>
-                </div>
+          </div>
+        </div>
               </div>
             </div>
           </CardContent>
@@ -1781,7 +1781,7 @@ export function Consultas() {
                     className={`flex items-center justify-center w-10 h-10 p-0 ${viewMode === "list" ? "bg-[#0f766e]" : ""}`}
                   >
                     <List className="w-4 h-4" />
-                  </Button>
+                </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Lista</p>
@@ -1822,8 +1822,8 @@ export function Consultas() {
                       .join('')
                       .substring(0, 2)
                       .toUpperCase();
-                    
-                    return (
+
+                return (
                       <button
                         key={professional.user_id} // ← CORRIGIDO
                         onClick={() => selectProfessional(professional.user_id)} // ← CORRIGIDO
@@ -1846,7 +1846,7 @@ export function Consultas() {
           )}
 
           {viewMode === "calendar" && (
-            <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-4">
               {/* Calendar View Selector */}
               <div className="flex space-x-1 bg-slate-100 rounded-lg p-1">
                 <Button
@@ -1887,18 +1887,18 @@ export function Consultas() {
                   {calendarView === 'month' && format(currentDate, "MMMM yyyy", { locale: ptBR })}
                   {calendarView === 'week' && `${format(startOfWeek(currentDate), "dd MMM", { locale: ptBR })} - ${format(endOfWeek(currentDate), "dd MMM yyyy", { locale: ptBR })}`}
                   {calendarView === 'day' && format(currentDate, "EEEE, dd 'de' MMMM yyyy", { locale: ptBR }).replace(/^(\w)/, (match) => match.toUpperCase()).replace(/ de (\w)/, (match, letter) => ` de ${letter.toUpperCase()}`)}
-                </span>
+                            </span>
                 <Button variant="outline" size="sm" onClick={() => navigateCalendar('next')}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
-              </div>
+                          </div>
 
               <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                 Hoje
               </Button>
             </div>
           )}
-        </div>
+                          </div>
 
         {/* Content */}
         <div className="p-4">
@@ -1962,7 +1962,7 @@ export function Consultas() {
                           <Badge variant="secondary" className="bg-teal-100 text-teal-800">
                             0 consultas
                           </Badge>
-                        </div>
+                          </div>
                       </div>
                       <div className="text-center py-8 text-slate-500">
                         Nenhuma consulta encontrada
@@ -1981,9 +1981,9 @@ export function Consultas() {
                         <Badge variant="secondary" className="bg-teal-100 text-teal-800">
                           {filteredAppointments.length} consulta{filteredAppointments.length !== 1 ? 's' : ''}
                         </Badge>
-                      </div>
-                    </div>
-                    
+                            </div>
+                        </div>
+
                     {paginatedAppointments.map((appointment: Appointment) => {
                       const patientName = getPatientName(appointment.contact_id, appointment);
                       const colors = getEventColor(appointment.status, !!appointment.google_calendar_event_id);
@@ -2010,7 +2010,7 @@ export function Consultas() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                                 {/* Clickable Status Badge with Dropdown */}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -2020,7 +2020,7 @@ export function Consultas() {
                                       >
                                         {statusLabels[appointment.status]?.label || appointment.status}
                                         <span className="ml-1 text-xs opacity-60">▼</span>
-                                      </Badge>
+                          </Badge>
                                     </div>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-48">
@@ -2052,9 +2052,9 @@ export function Consultas() {
                                 {/* Actions Menu */}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
+                            <Button
+                              variant="ghost"
+                              size="sm"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <MoreVertical className="w-4 h-4" />
@@ -2062,20 +2062,20 @@ export function Consultas() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-40">
                                     <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleAppointmentClick(appointment);
-                                      }}
-                                    >
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAppointmentClick(appointment);
+                              }}
+                            >
                                       <Eye className="w-4 h-4 mr-2" />
                                       Ver detalhes
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEditAppointment(appointment.id);
-                                      }}
-                                    >
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditAppointment(appointment.id);
+                              }}
+                            >
                                       <Edit className="w-4 h-4 mr-2" />
                                       Editar consulta
                                     </DropdownMenuItem>
@@ -2271,10 +2271,10 @@ export function Consultas() {
                                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                                           <div className="bg-teal-100 border border-teal-300 rounded px-2 py-1 text-xs font-medium text-teal-800">
                                             {timeLabel}
-                                          </div>
-                                        </div>
+                          </div>
+                        </div>
                                       )}
-                                    </div>
+                      </div>
                                   );
                                 })}
                                 
@@ -2358,8 +2358,8 @@ export function Consultas() {
                       })}
                     </div>
                   </div>
-                </div>
-              )}
+                        </div>
+                      )}
 
               {calendarView === "day" && (
                 <div className="space-y-4">
@@ -2424,9 +2424,9 @@ export function Consultas() {
                                       </div>
                                     )}
                                   </div>
-                                );
-                              })}
-                              
+                );
+              })}
+
                               {/* Lunch time highlighting */}
                               {hour === 12 && clinicConfig?.has_lunch_break && (
                                 <div className="absolute inset-0 bg-slate-50 opacity-30 pointer-events-none" />
@@ -2515,22 +2515,22 @@ export function Consultas() {
               Detalhes da Consulta
               <div className="flex space-x-2">
                 {selectedAppointment && (
-                  <Button
-                    variant="outline"
-                    size="sm"
+                    <Button
+                      variant="outline"
+                      size="sm"
                     onClick={() => handleEditAppointment(selectedAppointment.id)}
-                  >
+                    >
                     <Edit className="w-4 h-4" />
-                  </Button>
+                    </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
+                    <Button
+                      variant="outline"
+                      size="sm"
                   onClick={() => setIsDialogOpen(false)}
-                >
+                    >
                   <X className="w-4 h-4" />
-                </Button>
-              </div>
+                    </Button>
+                  </div>
             </DialogTitle>
           </DialogHeader>
           
@@ -2583,8 +2583,8 @@ export function Consultas() {
                       <div className="mt-4">
                         <p className="text-sm text-gray-600">Observações</p>
                         <p className="font-medium">{selectedAppointment.session_notes}</p>
-                      </div>
-                    )}
+                </div>
+              )}
                   </div>
                 </div>
               ) : (
@@ -2618,9 +2618,9 @@ export function Consultas() {
                             <p className="text-sm text-slate-600">Idade</p>
                             <p className="font-medium">{getPatientInfo(selectedAppointment.contact_id)?.age || 'Não informado'} anos</p>
                           </div>
-                        </>
-                      )}
-                    </div>
+            </>
+          )}
+        </div>
                   </div>
 
                   {/* Appointment Details */}
@@ -3275,4 +3275,4 @@ export function Consultas() {
 
     </div>
   );
-}
+} 

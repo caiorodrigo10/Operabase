@@ -90,23 +90,17 @@ export const getApiBaseUrlSafe = (): string => {
   }
 };
 
-// Helper function to build full API URLs - SEMPRE usa proxy do Vercel em produção
+// Helper function to build full API URLs - MODELO UNIFICADO RAILWAY
 export const buildApiUrl = (endpoint: string): string => {
   const isDev = (import.meta as any).env.DEV;
   
   // Ensure endpoint starts with /
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   
-  // Em desenvolvimento, usar proxy do Vite
-  if (isDev) {
-    console.log('🔗 [API] Dev mode - using Vite proxy:', cleanEndpoint);
-    return cleanEndpoint;
-  }
-  
-  // Em produção no Vercel, SEMPRE usar proxy interno (HTTPS seguro)
-  // Ignorar VITE_API_URL para forçar uso do proxy
-  console.log('🔗 [API] Production - using Vercel proxy:', cleanEndpoint);
-  return cleanEndpoint;
+  // 🚀 RAILWAY UNIFIED MODEL: Frontend e Backend no mesmo servidor
+  // Sempre usar URLs relativas - mesmo servidor serve frontend e backend
+  console.log('🚀 [API] Railway Unified Model - same server:', `/api${cleanEndpoint}`);
+  return `/api${cleanEndpoint}`;
 };
 
 // Fetch all professionals of a clinic
