@@ -192,6 +192,31 @@ function createFallbackRouter() {
     }
   });
 
+  // Get clinic professionals (filtered from clinic_users)
+  router.get('/clinic/:clinic_id/professionals', async (req, res) => {
+    try {
+      const { clinic_id } = req.params;
+      
+      log(`👨‍⚕️ PROFESSIONALS DEBUG: Getting professionals for clinic_id=${clinic_id}`);
+      
+      const query = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true&is_professional=eq.true&order=created_at.desc`;
+      const professionals = await supabaseQuery(`clinic_users?${query}`);
+      
+      log(`👨‍⚕️ Retrieved ${professionals.length} professionals for clinic ${clinic_id}`);
+      log(`👨‍⚕️ PROFESSIONALS DEBUG: First professional sample:`, professionals[0]);
+      
+      res.json(professionals);
+    } catch (error) {
+      log(`❌ Error getting professionals: ${error.message}`);
+      log(`❌ PROFESSIONALS ERROR STACK: ${error.stack}`);
+      res.status(500).json({ 
+        error: 'Failed to get professionals',
+        details: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Get clinic configuration
   router.get('/clinic/:clinic_id/config', async (req, res) => {
     try {
@@ -661,6 +686,7 @@ function createFallbackRouter() {
          '/api/calendar/events', 
          '/api/contacts',
          '/api/clinic/:id/users/management',
+         '/api/clinic/:id/professionals',
          '/api/clinic/:id/config',
          '/api/conversations-simple',
          '/api/conversations-simple/:id',
