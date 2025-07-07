@@ -241,8 +241,18 @@ function createFallbackRouter() {
         return res.status(404).json({ error: 'Clinic not found' });
       }
       
+      // Sanitize null array fields to prevent frontend split() errors
+      const clinic = clinics[0];
+      const sanitizedClinic = {
+        ...clinic,
+        services: clinic.services || [],
+        payment_methods: clinic.payment_methods || [],
+        working_days: clinic.working_days || [],
+        specialties: clinic.specialties || []
+      };
+      
       log(`🏥 Retrieved clinic config for clinic ${clinic_id}`);
-      res.json(clinics[0]);
+      res.json(sanitizedClinic);
     } catch (error) {
       log(`❌ Error getting clinic config: ${error.message}`);
       res.status(500).json({ error: 'Failed to get clinic config' });
