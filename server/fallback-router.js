@@ -184,8 +184,14 @@ function createFallbackRouter() {
       const query = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true&order=created_at.desc`;
       const clinicUsers = await supabaseQuery(`clinic_users?${query}`);
       
-      log(`👨‍⚕️ Retrieved ${clinicUsers.length} clinic users for clinic ${clinic_id}`);
-      res.json(clinicUsers);
+      // Transform null permissions to empty arrays to prevent frontend split() errors
+      const sanitizedUsers = clinicUsers.map(user => ({
+        ...user,
+        permissions: user.permissions || []
+      }));
+      
+      log(`👨‍⚕️ Retrieved ${sanitizedUsers.length} clinic users for clinic ${clinic_id}`);
+      res.json(sanitizedUsers);
     } catch (error) {
       log(`❌ Error getting clinic users: ${error.message}`);
       res.status(500).json({ error: 'Failed to get clinic users' });
@@ -202,10 +208,16 @@ function createFallbackRouter() {
       const query = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true&is_professional=eq.true&order=created_at.desc`;
       const professionals = await supabaseQuery(`clinic_users?${query}`);
       
-      log(`👨‍⚕️ Retrieved ${professionals.length} professionals for clinic ${clinic_id}`);
-      log(`👨‍⚕️ PROFESSIONALS DEBUG: First professional sample:`, professionals[0]);
+      // Transform null permissions to empty arrays to prevent frontend split() errors
+      const sanitizedProfessionals = professionals.map(user => ({
+        ...user,
+        permissions: user.permissions || []
+      }));
       
-      res.json(professionals);
+      log(`👨‍⚕️ Retrieved ${sanitizedProfessionals.length} professionals for clinic ${clinic_id}`);
+      log(`👨‍⚕️ PROFESSIONALS DEBUG: First professional sample:`, sanitizedProfessionals[0]);
+      
+      res.json(sanitizedProfessionals);
     } catch (error) {
       log(`❌ Error getting professionals: ${error.message}`);
       log(`❌ PROFESSIONALS ERROR STACK: ${error.stack}`);
