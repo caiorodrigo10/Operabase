@@ -196,6 +196,314 @@ app.get('/api/contacts', async (req, res) => {
 });
 ```
 
+## 🔧 **APRENDIZADOS CRÍTICOS: Resolução de Endpoints Usuários e Profissionais**
+
+### 📊 **Problema Diagnosticado**
+
+#### Erro Frontend
+```javascript
+TypeError: Cannot read properties of undefined (reading 'split')
+    at index-BNhU-L4t.js:177:80936
+    at Array.map (<anonymous>)
+    at HL (index-BNhU-L4t.js:177:80900)
+```
+
+#### Código Frontend Problemático
+```typescript
+// src/components/UserManagement.tsx - Linha 390
+{user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+//     ^^^^ 
+//     ERRO: user.name era null, causando falha no split()
+```
+
+### 🔍 **Metodologia de Diagnóstico**
+
+#### 1. **Identificação da Origem do Erro**
+```bash
+# ✅ MÉTODO: Buscar por .split( no código
+grep -r "\.split(" src/
+# RESULTADO: Encontrou UserManagement.tsx usando user.name.split()
+```
+
+#### 2. **Verificação dos Dados da API**
+```bash
+# ✅ MÉTODO: Testar endpoint diretamente
+curl -s "https://operabase.vercel.app/api/clinic/1/users/management" | jq '.[].name'
+# RESULTADO: Todos retornavam null
+```
+
+#### 3. **Análise da Estrutura de Dados**
+```bash
+# ✅ MÉTODO: Examinar estrutura completa dos dados
+curl -s "https://operabase.vercel.app/api/clinic/1/users/management" | jq '.[0]'
+# RESULTADO: Dados vinham da tabela clinic_users (sem name/email)
+```
+
+### 🎯 **Causa Raiz Identificada**
+
+#### Problema Arquitetural
+```javascript
+// ❌ ENDPOINT INCORRETO: Retornava apenas dados de clinic_users
+router.get('/clinic/:clinic_id/users/management', async (req, res) => {
+  const query = `select=*&clinic_id=eq.${clinic_id}`;
+  const clinicUsers = await supabaseQuery(`clinic_users?${query}`);
+  //                                       ^^^^^^^^^^^
+  //                                       TABELA SEM name/email
+  res.json(clinicUsers);
+});
+```
+
+#### Schema das Tabelas
+```sql
+-- clinic_users: Relacionamento clínica-usuário
+clinic_users {
+  id: number,
+  clinic_id: number,
+  user_id: number,        -- ← FK para users
+  role: string,
+  permissions: array,
+  is_professional: boolean
+  -- ❌ SEM name, email
+}
+
+-- users: Dados pessoais dos usuários  
+users {
+  id: number,
+  name: string,           -- ← CAMPO NECESSÁRIO
+  email: string,          -- ← CAMPO NECESSÁRIO
+  created_at: timestamp
+}
+```
+
+### ✅ **Solução Implementada**
+
+#### Abordagem: JOIN Manual via Múltiplas Queries
+```javascript
+// ✅ ENDPOINT CORRIGIDO: JOIN manual com tabela users
+router.get('/clinic/:clinic_id/users/management', async (req, res) => {
+  try {
+    // 1. Buscar dados de clinic_users
+    const clinicUsersQuery = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true`;
+    const clinicUsers = await supabaseQuery(`clinic_users?${clinicUsersQuery}`);
+    
+    // 2. Para cada clinic_user, buscar dados do user
+    const usersWithDetails = await Promise.all(
+      clinicUsers.map(async (clinicUser) => {
+        let userDetails = { name: 'Unknown User', email: '' };
+        
+        if (clinicUser.user_id) {
+          const userQuery = `select=name,email&id=eq.${clinicUser.user_id}`;
+          const users = await supabaseQuery(`users?${userQuery}`);
+          if (users.length > 0) {
+            userDetails = {
+              name: users[0].name || 'Unknown User',
+              email: users[0].email || ''
+            };
+          }
+        }
+        
+        // 3. Combinar dados de ambas as tabelas
+        return {
+          ...clinicUser,
+          name: userDetails.name,      // ← CAMPO ADICIONADO
+          email: userDetails.email,    // ← CAMPO ADICIONADO
+          permissions: clinicUser.permissions || []  // ← SANITIZAÇÃO
+        };
+      })
+    );
+    
+    res.json(usersWithDetails);
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to get clinic users',
+      details: error.message 
+    });
+  }
+});
+```
+
+#### Sanitização de Dados Null
+```javascript
+// ✅ PADRÃO: Transformar null em arrays vazios
+const sanitizedUser = {
+  ...user,
+  permissions: user.permissions || [],        // null → []
+  lunch_times: user.lunch_times || [],       // null → []
+  business_hours: user.business_hours || [], // null → []
+  services: user.services || [],             // null → []
+  payment_methods: user.payment_methods || [] // null → []
+};
+```
+
+### 🧪 **Metodologia de Validação**
+
+#### 1. **Teste Backend Direto**
+```bash
+# ✅ VALIDAR: Endpoint retorna dados corretos
+curl -s "http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com/api/clinic/1/users/management" | jq '.[0]'
+
+# RESULTADO ESPERADO:
+{
+  "id": 11,
+  "name": "Teste2",           # ← NOME PRESENTE
+  "email": "teste2@gmail.com", # ← EMAIL PRESENTE
+  "role": "usuario"
+}
+```
+
+#### 2. **Teste Via Proxy Vercel**
+```bash
+# ✅ VALIDAR: Proxy funciona end-to-end
+curl -s "https://operabase.vercel.app/api/clinic/1/users/management" | jq '.[0].name'
+
+# RESULTADO ESPERADO: "Teste2" (não null)
+```
+
+#### 3. **Teste Frontend**
+```bash
+# ✅ VALIDAR: Frontend não apresenta erros de split()
+npm run dev
+# Acessar http://localhost:5174 e verificar console
+# RESULTADO ESPERADO: Sem erros TypeError
+```
+
+### 📋 **Padrão Replicável para Outras APIs**
+
+#### Template de Correção
+```javascript
+// 🔄 PADRÃO PARA OUTRAS APIs COM RELACIONAMENTOS
+
+router.get('/api/endpoint-com-relacionamento', async (req, res) => {
+  try {
+    // 1. BUSCAR TABELA PRINCIPAL
+    const mainQuery = `select=*&clinic_id=eq.${clinic_id}`;
+    const mainRecords = await supabaseQuery(`main_table?${mainQuery}`);
+    
+    // 2. ENRIQUECER COM DADOS RELACIONADOS
+    const enrichedRecords = await Promise.all(
+      mainRecords.map(async (record) => {
+        let relatedData = { name: 'Unknown', email: '' };
+        
+        if (record.related_id) {
+          const relatedQuery = `select=name,email&id=eq.${record.related_id}`;
+          const related = await supabaseQuery(`related_table?${relatedQuery}`);
+          if (related.length > 0) {
+            relatedData = {
+              name: related[0].name || 'Unknown',
+              email: related[0].email || ''
+            };
+          }
+        }
+        
+        // 3. SANITIZAR CAMPOS NULL
+        return {
+          ...record,
+          name: relatedData.name,
+          email: relatedData.email,
+          array_field: record.array_field || [],  // ← SEMPRE SANITIZAR
+          permissions: record.permissions || []
+        };
+      })
+    );
+    
+    res.json(enrichedRecords);
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to get records',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+```
+
+### 🎯 **Checklist de Validação para Futuras APIs**
+
+#### ✅ **Antes de Implementar**
+- [ ] Identificar todas as tabelas envolvidas
+- [ ] Mapear relacionamentos (FKs)
+- [ ] Verificar quais campos são necessários no frontend
+- [ ] Identificar campos que podem ser null
+
+#### ✅ **Durante Implementação**
+- [ ] Implementar JOIN manual via múltiplas queries
+- [ ] Sanitizar todos os campos array (null → [])
+- [ ] Adicionar tratamento de erro detalhado
+- [ ] Incluir logs de debug
+
+#### ✅ **Validação Pós-Implementação**
+- [ ] Testar endpoint direto no backend
+- [ ] Testar via proxy Vercel
+- [ ] Verificar no frontend (sem erros no console)
+- [ ] Validar com dados reais da produção
+
+### 🚀 **Resultados Comprovados**
+
+#### Antes da Correção
+```json
+// ❌ DADOS INCOMPLETOS
+{
+  "id": 11,
+  "name": null,     // ← Causava erro split()
+  "email": null,
+  "permissions": null // ← Causava erro map()
+}
+```
+
+#### Depois da Correção
+```json
+// ✅ DADOS COMPLETOS E SANITIZADOS
+{
+  "id": 11,
+  "name": "Teste2",              // ← Nome real do usuário
+  "email": "teste2@gmail.com",   // ← Email real do usuário
+  "permissions": []              // ← Array vazio (não null)
+}
+```
+
+#### Impacto no Frontend
+```typescript
+// ✅ AGORA FUNCIONA SEM ERROS
+{user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+//     ^^^^
+//     "Teste2" → ["Teste2"] → ["T"] → "T"
+```
+
+### 📚 **Lições Aprendidas**
+
+#### 1. **Diagnóstico Sistemático**
+- Sempre começar pelo erro no frontend
+- Rastrear até a origem dos dados (API)
+- Verificar estrutura das tabelas no banco
+
+#### 2. **Padrão de Relacionamentos**
+- Supabase REST API não faz JOINs automáticos
+- Implementar JOIN manual via múltiplas queries
+- Sempre incluir fallbacks para dados não encontrados
+
+#### 3. **Sanitização Obrigatória**
+- Frontend JavaScript não tolera null em operações de array
+- Sempre transformar null em [] para campos array
+- Sempre transformar null em string vazia para campos string
+
+#### 4. **Validação End-to-End**
+- Testar backend direto
+- Testar via proxy
+- Testar no frontend
+- Validar com dados reais
+
+### 🔄 **Aplicação para Próximas Funcionalidades**
+
+Este padrão deve ser aplicado para resolver:
+
+1. **Conversations** → JOIN com contacts para nomes
+2. **Medical Records** → JOIN com contacts e users
+3. **Pipeline** → JOIN com contacts e users
+4. **Analytics** → Agregações com JOINs
+5. **Settings** → Relacionamentos com users
+
+**Cada funcionalidade seguirá o mesmo padrão de diagnóstico, correção e validação estabelecido aqui.**
+
 ### Fluxo de Dados Completo
 
 #### Arquitetura de Conectividade Final
