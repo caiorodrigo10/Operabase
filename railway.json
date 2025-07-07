@@ -1,1 +1,9 @@
- 
+{
+  "build": {
+    "buildCommand": "npm run build:railway"
+  },
+  "deploy": {
+    "startCommand": "npm run start:railway",
+    "healthcheckPath": "/health"
+  }
+} 
