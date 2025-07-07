@@ -47,6 +47,101 @@ import type { Appointment } from "../../../server/domains/appointments/appointme
 import type { Contact } from "../../../server/domains/contacts/contacts.schema";
 import { logger } from '../lib/logger';
 
+// ===== MULTI-TENANT UTILITY FUNCTIONS =====
+
+/**
+ * Obtém o email do usuário atual do localStorage
+ */
+const getCurrentUserEmail = (): string | null => {
+  try {
+    const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
+    return authData?.user?.email || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Determina a seleção padrão de profissional baseada no contexto
+ */
+const getDefaultProfessionalSelection = (
+  clinicUsers: any[], 
+  currentUserEmail: string,
+  clinicId: number
+): number | null => {
+  if (!clinicUsers.length || !currentUserEmail) return null;
+  
+  // 1. Prioridade: Usuário atual se for profissional
+  const currentUser = clinicUsers.find(u => 
+    u.email === currentUserEmail && u.is_professional
+  );
+  if (currentUser) {
+    return currentUser.id;
+  }
+  
+  // 2. Fallback: Primeiro profissional ativo da clínica
+  const firstProfessional = clinicUsers.find(u => 
+    u.clinic_id === clinicId && u.is_professional && u.is_active
+  );
+  if (firstProfessional) {
+    return firstProfessional.id;
+  }
+  
+  // 3. Fallback final: null (mostrar todos)
+  return null;
+};
+
+/**
+ * Salva a seleção do profissional no cache local
+ */
+const saveProfessionalSelection = (professionalId: number, clinicId: number): void => {
+  try {
+    localStorage.setItem(
+      `selected_professional_${clinicId}`, 
+      professionalId.toString()
+    );
+  } catch (error) {
+    console.warn('Failed to save professional selection to cache:', error);
+  }
+};
+
+/**
+ * Recupera a seleção do profissional do cache local
+ */
+const getCachedProfessionalSelection = (clinicId: number): number | null => {
+  try {
+    const cached = localStorage.getItem(`selected_professional_${clinicId}`);
+    return cached ? parseInt(cached, 10) : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Obtém IDs de usuários válidos para uma clínica
+ */
+const getValidUserIds = (clinicId: number, clinicUsers: any[]): number[] => {
+  return clinicUsers
+    .filter(user => user.clinic_id === clinicId && user.is_active)
+    .map(user => user.user_id);
+};
+
+/**
+ * Inicialização inteligente do profissional selecionado
+ */
+const getInitialProfessionalSelection = (clinicId: number = 1): number | null => {
+  // 1. Verificar cache primeiro
+  const cachedSelection = getCachedProfessionalSelection(clinicId);
+  if (cachedSelection) {
+    return cachedSelection;
+  }
+  
+  // 2. Será resolvido quando clinicUsers carregar
+  return null;
+};
+
+// ===== END MULTI-TENANT UTILITIES =====
+
 // Schema for appointment creation form
 const appointmentSchema = z.object({
   contact_id: z.string().min(1, "Contato é obrigatório"),
@@ -174,7 +269,12 @@ export function Consultas() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null);
+  
+  // ✅ MULTI-TENANT: Inicialização inteligente do profissional selecionado
+  const [selectedProfessional, setSelectedProfessional] = useState<number | null>(() => {
+    return getInitialProfessionalSelection(1); // Clinic ID 1
+  });
+  
   const [currentPage, setCurrentPage] = useState(1);
 
   // Pagination constants
@@ -670,7 +770,7 @@ export function Consultas() {
   });
 
   // Fetch users with optimized caching
-  const { data: clinicUsers = [], isLoading: clinicUsersLoading } = useQuery({
+  const { data: clinicUsers = [] } = useQuery({
     queryKey: QUERY_KEYS.CLINIC_USERS(1),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
@@ -698,12 +798,20 @@ export function Consultas() {
     return map;
   }, [clinicUsers]);
 
-  // Pre-select current user when clinicUsers data loads - single professional selection
+  // ✅ MULTI-TENANT: Sincronização inteligente de profissional quando dados carregam
   React.useEffect(() => {
     if (clinicUsers.length > 0 && selectedProfessional === null && currentUserEmail) {
-      const currentClinicUser = clinicUserByEmail.get(currentUserEmail);
-      if (currentClinicUser && currentClinicUser.is_professional) {
-        setSelectedProfessional(currentClinicUser.id);
+      const clinicId = 1; // TODO: Obter dinamicamente do contexto
+      const defaultSelection = getDefaultProfessionalSelection(
+        clinicUsers, 
+        currentUserEmail, 
+        clinicId
+      );
+      
+      if (defaultSelection) {
+        console.log('🎯 Multi-tenant: Auto-selecting professional:', defaultSelection);
+        setSelectedProfessional(defaultSelection);
+        saveProfessionalSelection(defaultSelection, clinicId);
       }
     }
   }, [clinicUsers.length, selectedProfessional, currentUserEmail, clinicUserByEmail]);
@@ -767,24 +875,6 @@ export function Consultas() {
       };
     }
   });
-
-  // 🔄 COORDINATED LOADING: Wait for all critical data before rendering
-  const isInitialDataLoading = 
-    appointmentsLoading || 
-    clinicConfigLoading || 
-    clinicUsersLoading ||
-    clinicUsers.length === 0;
-
-  // Debug loading states
-  useEffect(() => {
-    console.log('🔄 Loading States:', {
-      appointmentsLoading,
-      clinicConfigLoading,
-      clinicUsersLoading,
-      clinicUsersCount: clinicUsers.length,
-      isInitialDataLoading
-    });
-  }, [appointmentsLoading, clinicConfigLoading, clinicUsersLoading, clinicUsers.length, isInitialDataLoading]);
 
   // Debug clinic config loading state
   useEffect(() => {
@@ -1406,21 +1496,34 @@ export function Consultas() {
       });
     }
     
-    // FIRST: Filter out appointments from users who don't belong to this clinic
-    const validUserIds = [2, 3, 4, 5, 6]; // Valid professional IDs in this clinic (updated to include all existing users)
+    // ✅ MULTI-TENANT: Filter appointments by clinic and valid users
+    const clinicId = 1; // TODO: Obter dinamicamente do contexto
+    const validUserIds = getValidUserIds(clinicId, clinicUsers);
+    
     const validAppointments = dayAppointments.filter((appointment: Appointment) => {
       // Always include Google Calendar events
       if (appointment.google_calendar_event_id) {
         return true;
       }
       
-      // EXCLUDE appointments from users not in this clinic
-      const isValidUser = validUserIds.includes(appointment.user_id);
+      // Filter 1: Only appointments from this clinic
+      if (appointment.clinic_id && appointment.clinic_id !== clinicId) {
+        console.log('🚫 Excluding appointment from different clinic:', { 
+          appointmentId: appointment.id, 
+          appointmentClinicId: appointment.clinic_id,
+          currentClinicId: clinicId
+        });
+        return false;
+      }
+      
+      // Filter 2: Only appointments from valid users in this clinic
+      const isValidUser = validUserIds.length === 0 || validUserIds.includes(appointment.user_id);
       if (!isValidUser) {
         console.log('🚫 Excluding orphaned appointment:', { 
           appointmentId: appointment.id, 
           userId: appointment.user_id,
-          reason: 'User not in clinic'
+          reason: 'User not in clinic',
+          validUserIds
         });
       }
       return isValidUser;
@@ -1452,13 +1555,24 @@ export function Consultas() {
     return filteredAppointments;
   }, [appointmentsByDate, selectedProfessional, currentUserEmail, clinicUserByEmail]);
 
-  // Function to select professional (single selection only)
+  // ✅ MULTI-TENANT: Function to select professional with cache support
   const selectProfessional = (professionalId: number) => {
+    const clinicId = 1; // TODO: Obter dinamicamente do contexto
+    
     // If clicking the same professional, deselect them
     if (selectedProfessional === professionalId) {
       setSelectedProfessional(null);
+      // Clear cache when deselecting
+      try {
+        localStorage.removeItem(`selected_professional_${clinicId}`);
+      } catch (error) {
+        console.warn('Failed to clear professional selection cache:', error);
+      }
     } else {
       setSelectedProfessional(professionalId);
+      // Save selection to cache
+      saveProfessionalSelection(professionalId, clinicId);
+      console.log('🎯 Multi-tenant: Professional selected and cached:', professionalId);
     }
   };
 
@@ -1477,20 +1591,24 @@ export function Consultas() {
 
 
 
-  // 🔄 COORDINATED LOADING: Show loading skeleton while ANY critical data is loading
+  // ✅ MULTI-TENANT: Show loading while critical data is loading
+  const isInitialDataLoading = appointmentsLoading || clinicUsersLoading || clinicConfigLoading;
+  
   if (isInitialDataLoading) {
     return (
       <div className="p-4 lg:p-6">
         <Card className="animate-pulse">
           <CardContent className="p-6">
-            <div className="h-96 bg-slate-200 rounded flex items-center justify-center">
-              <div className="flex flex-col items-center space-y-3">
-                <div className="w-8 h-8 border-4 border-slate-300 border-t-[#0f766e] rounded-full animate-spin"></div>
-                <span className="text-slate-600 font-medium">Carregando agenda...</span>
-                <div className="text-sm text-slate-500 space-y-1 text-center">
-                  <div>• {appointmentsLoading ? '⏳' : '✅'} Consultas</div>
-                  <div>• {clinicUsersLoading ? '⏳' : '✅'} Profissionais</div>
-                  <div>• {clinicConfigLoading ? '⏳' : '✅'} Configurações</div>
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center space-y-4">
+                <div className="w-8 h-8 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mx-auto"></div>
+                <div className="space-y-2">
+                  <div className="text-sm text-slate-600 font-medium">Carregando agenda...</div>
+                  <div className="text-xs text-slate-500 space-y-1">
+                    <div>• {appointmentsLoading ? '⏳' : '✅'} Consultas</div>
+                    <div>• {clinicUsersLoading ? '⏳' : '✅'} Profissionais</div>
+                    <div>• {clinicConfigLoading ? '⏳' : '✅'} Configurações</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1727,11 +1845,19 @@ export function Consultas() {
                     }
                   }
                   
-                                  // FIRST: Filter out appointments from users not in this clinic
-                const validUserIds = [2, 3, 4, 5, 6]; // Valid professional IDs in this clinic (updated to include all existing users)
-                if (!app.google_calendar_event_id && !validUserIds.includes(app.user_id)) {
-                  return false; // Exclude orphaned appointments
-                }
+                                  // ✅ MULTI-TENANT: Filter appointments by clinic and valid users
+                  const clinicId = 1; // TODO: Obter dinamicamente do contexto
+                  const validUserIds = getValidUserIds(clinicId, clinicUsers);
+                  
+                  // Filter 1: Only appointments from this clinic
+                  if (app.clinic_id && app.clinic_id !== clinicId) {
+                    return false;
+                  }
+                  
+                  // Filter 2: Only appointments from valid users in this clinic
+                  if (!app.google_calendar_event_id && validUserIds.length > 0 && !validUserIds.includes(app.user_id)) {
+                    return false; // Exclude orphaned appointments
+                  }
                   
                   // SECOND: Apply professional filter on valid appointments only
                   if (selectedProfessional === null) return true;
