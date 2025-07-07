@@ -223,12 +223,13 @@ function createFallbackRouter() {
       
       log(`💬 CONVERSATIONS DEBUG: Getting conversations with status=${status}, limit=${limit}, clinic_id=${clinic_id}`);
       
-      // Query conversations table
+      // Query conversations table (note: id is TEXT, not INTEGER)
       let query = `select=*&clinic_id=eq.${clinic_id}`;
       if (status !== 'all') {
         query += `&status=eq.${status}`;
       }
-      query += `&order=last_activity_at.desc&limit=${limit}`;
+      // Remove order by last_activity_at since it might not exist in current schema
+      query += `&order=created_at.desc&limit=${limit}`;
       
       log(`💬 CONVERSATIONS DEBUG: Executing query: conversations?${query}`);
       
@@ -487,15 +488,160 @@ function createFallbackRouter() {
     }
   });
 
+  // ===============================
+  // ADDITIONAL DOMAIN ENDPOINTS
+  // ===============================
+
+  // Medical Records endpoints
+  router.get('/medical-records', async (req, res) => {
+    try {
+      const { clinic_id, contact_id, limit = 50 } = req.query;
+      
+      log(`🏥 MEDICAL RECORDS DEBUG: Getting records for clinic_id=${clinic_id}, contact_id=${contact_id}`);
+      
+      let query = `select=*&clinic_id=eq.${clinic_id}`;
+      if (contact_id) query += `&contact_id=eq.${contact_id}`;
+      query += `&order=created_at.desc&limit=${limit}`;
+      
+      const records = await supabaseQuery(`medical_records?${query}`);
+      
+      log(`🏥 Retrieved ${records.length} medical records`);
+      res.json(records);
+    } catch (error) {
+      log(`❌ Error getting medical records: ${error.message}`);
+      res.status(500).json({ error: 'Failed to get medical records' });
+    }
+  });
+
+  // Anamnesis Templates endpoints
+  router.get('/anamneses', async (req, res) => {
+    try {
+      const { clinic_id } = req.query;
+      
+      log(`📋 ANAMNESES DEBUG: Getting templates for clinic_id=${clinic_id}`);
+      
+      let query = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true`;
+      query += `&order=created_at.desc`;
+      
+      const templates = await supabaseQuery(`anamnesis_templates?${query}`);
+      
+      log(`📋 Retrieved ${templates.length} anamnesis templates`);
+      res.json(templates);
+    } catch (error) {
+      log(`❌ Error getting anamneses: ${error.message}`);
+      res.status(500).json({ error: 'Failed to get anamneses' });
+    }
+  });
+
+  // Anamnesis Responses endpoints
+  router.get('/anamnesis-responses', async (req, res) => {
+    try {
+      const { clinic_id, contact_id, status } = req.query;
+      
+      log(`📝 ANAMNESIS RESPONSES DEBUG: Getting responses for clinic_id=${clinic_id}`);
+      
+      let query = `select=*&clinic_id=eq.${clinic_id}`;
+      if (contact_id) query += `&contact_id=eq.${contact_id}`;
+      if (status) query += `&status=eq.${status}`;
+      query += `&order=created_at.desc`;
+      
+      const responses = await supabaseQuery(`anamnesis_responses?${query}`);
+      
+      log(`📝 Retrieved ${responses.length} anamnesis responses`);
+      res.json(responses);
+    } catch (error) {
+      log(`❌ Error getting anamnesis responses: ${error.message}`);
+      res.status(500).json({ error: 'Failed to get anamnesis responses' });
+    }
+  });
+
+  // Pipeline endpoints
+  router.get('/pipeline-stages', async (req, res) => {
+    try {
+      const { clinic_id } = req.query;
+      
+      log(`🔄 PIPELINE STAGES DEBUG: Getting stages for clinic_id=${clinic_id}`);
+      
+      let query = `select=*&clinic_id=eq.${clinic_id}&is_active=eq.true`;
+      query += `&order=order_position.asc`;
+      
+      const stages = await supabaseQuery(`pipeline_stages?${query}`);
+      
+      log(`🔄 Retrieved ${stages.length} pipeline stages`);
+      res.json(stages);
+    } catch (error) {
+      log(`❌ Error getting pipeline stages: ${error.message}`);
+      res.status(500).json({ error: 'Failed to get pipeline stages' });
+    }
+  });
+
+  router.get('/pipeline-opportunities', async (req, res) => {
+    try {
+      const { clinic_id, stage_id, status } = req.query;
+      
+      log(`💼 PIPELINE OPPORTUNITIES DEBUG: Getting opportunities for clinic_id=${clinic_id}`);
+      
+      let query = `select=*&clinic_id=eq.${clinic_id}`;
+      if (stage_id) query += `&stage_id=eq.${stage_id}`;
+      if (status) query += `&status=eq.${status}`;
+      query += `&order=created_at.desc`;
+      
+      const opportunities = await supabaseQuery(`pipeline_opportunities?${query}`);
+      
+      log(`💼 Retrieved ${opportunities.length} pipeline opportunities`);
+      res.json(opportunities);
+    } catch (error) {
+      log(`❌ Error getting pipeline opportunities: ${error.message}`);
+      res.status(500).json({ error: 'Failed to get pipeline opportunities' });
+    }
+  });
+
+  // Knowledge Base endpoints  
+  router.get('/knowledge-bases', async (req, res) => {
+    try {
+      const { clinic_id } = req.query;
+      
+      log(`🧠 KNOWLEDGE BASES DEBUG: Getting knowledge bases for clinic_id=${clinic_id}`);
+      
+      let query = `select=*&clinic_id=eq.${clinic_id}`;
+      query += `&order=created_at.desc`;
+      
+      const knowledgeBases = await supabaseQuery(`knowledge_bases?${query}`);
+      
+      log(`🧠 Retrieved ${knowledgeBases.length} knowledge bases`);
+      res.json(knowledgeBases);
+    } catch (error) {
+      log(`❌ Error getting knowledge bases: ${error.message}`);
+      res.status(500).json({ error: 'Failed to get knowledge bases' });
+    }
+  });
+
+  // API Keys endpoints
+  router.get('/api-keys', async (req, res) => {
+    try {
+      const { clinic_id } = req.query;
+      
+      log(`🔑 API KEYS DEBUG: Getting API keys for clinic_id=${clinic_id}`);
+      
+      let query = `select=id,clinic_id,key_name,is_active,permissions,last_used_at,usage_count,expires_at,created_at&clinic_id=eq.${clinic_id}`;
+      query += `&order=created_at.desc`;
+      
+      const apiKeys = await supabaseQuery(`api_keys?${query}`);
+      
+      log(`🔑 Retrieved ${apiKeys.length} API keys (sensitive data hidden)`);
+      res.json(apiKeys);
+    } catch (error) {
+      log(`❌ Error getting API keys: ${error.message}`);
+      res.status(500).json({ error: 'Failed to get API keys' });
+    }
+  });
+
   // Placeholder endpoints for other domains (return appropriate messages)
   const placeholderDomains = [
     { path: '/auth/*', name: 'Authentication' },
-    { path: '/anamneses/*', name: 'Anamneses' },
     { path: '/rag/*', name: 'RAG System' },
     { path: '/mara/*', name: 'MARA AI' },
-    { path: '/pipeline-*', name: 'Pipeline' },
     { path: '/analytics/*', name: 'Analytics' },
-    { path: '/medical-records/*', name: 'Medical Records' },
     { path: '/user/profile', name: 'User Profile' },
     { path: '/clinics/*/settings/*', name: 'Settings' },
     { path: '/clinics/*/ai-templates/*', name: 'AI Templates' },
@@ -520,7 +666,14 @@ function createFallbackRouter() {
          '/api/conversations-simple/:id',
          '/api/conversations-simple/:id/messages',
          '/api/conversations-simple/:id/mark-read',
-         '/api/conversations/:id/upload'
+         '/api/conversations/:id/upload',
+         '/api/medical-records',
+         '/api/anamneses',
+         '/api/anamnesis-responses',
+         '/api/pipeline-stages',
+         '/api/pipeline-opportunities',
+         '/api/knowledge-bases',
+         '/api/api-keys'
        ],
       requested: req.originalUrl,
       timestamp: new Date().toISOString()
