@@ -490,10 +490,29 @@ app.get('/api/clinic/:id/config', authMiddleware, async (req: Request, res: Resp
 // ============ STATIC FILES ============
 
 // Serve static files from dist directory
-const distPath = path.join(__dirname, '../dist');
-console.log('📁 Servindo arquivos estáticos do build:', distPath);
+// When compiled, server is in dist/server/, so frontend is in dist/ (go up one level)
+const distPath = path.join(__dirname, '..');
+console.log('📁 Verificando diretório de build:', distPath);
+console.log('📁 Diretório atual do servidor:', __dirname);
 
+// Check if dist directory exists and log its contents
 if (fs.existsSync(distPath)) {
+  console.log('✅ Diretório dist encontrado!');
+  
+  try {
+    const distContents = fs.readdirSync(distPath);
+    console.log('📂 Conteúdo do dist:', distContents);
+    
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      console.log('✅ index.html encontrado no dist');
+    } else {
+      console.log('❌ index.html NÃO encontrado no dist');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao ler conteúdo do dist:', error);
+  }
+  
   app.use(express.static(distPath));
   
   // Serve index.html for all non-API routes (SPA routing)
@@ -503,12 +522,33 @@ if (fs.existsSync(distPath)) {
       return;
     }
     
-    res.sendFile(path.join(distPath, 'index.html'));
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(500).send(`
+        <html>
+          <body>
+            <h1>Operabase Railway Server</h1>
+            <p>❌ index.html não encontrado em: ${indexPath}</p>
+            <p>API está funcionando em: <a href="/api">/api</a></p>
+          </body>
+        </html>
+      `);
+    }
   });
 } else {
-  console.log('⚠️  Diretório dist não encontrado. Execute npm run build primeiro.');
+  console.log('❌ Diretório dist não encontrado:', distPath);
+  console.log('📁 Listando diretório pai:', path.join(__dirname, '..'));
   
-  // Serve a simple message if build doesn't exist
+  try {
+    const parentContents = fs.readdirSync(path.join(__dirname, '..'));
+    console.log('📂 Conteúdo do diretório pai:', parentContents);
+  } catch (error) {
+    console.error('❌ Erro ao ler diretório pai:', error);
+  }
+  
+  // Serve a detailed message if build doesn't exist
   app.get('*', (req: Request, res: Response) => {
     if (req.path.startsWith('/api/')) {
       res.status(404).json({ error: 'API endpoint not found' });
@@ -517,10 +557,50 @@ if (fs.existsSync(distPath)) {
     
     res.send(`
       <html>
+        <head>
+          <title>Operabase Railway Server</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .error { color: #d32f2f; background: #ffebee; padding: 15px; border-radius: 4px; margin: 20px 0; }
+            .info { color: #1976d2; background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 20px 0; }
+            code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+            a { color: #1976d2; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
         <body>
-          <h1>Operabase Railway Server</h1>
-          <p>Frontend build não encontrado. Execute <code>npm run build</code> primeiro.</p>
-          <p>API está funcionando em: <a href="/api">/api</a></p>
+          <div class="container">
+            <h1>🚀 Operabase Railway Server</h1>
+            
+            <div class="error">
+              <strong>❌ Frontend Build Não Encontrado</strong><br>
+              O diretório <code>dist/</code> não foi encontrado no servidor.
+            </div>
+            
+            <div class="info">
+              <strong>🔧 Como resolver:</strong><br>
+              1. Verificar se o build do frontend está sendo executado no Railway<br>
+              2. Comando esperado: <code>npm run build:railway</code><br>
+              3. Deve gerar a pasta <code>dist/</code> com os arquivos do React
+            </div>
+            
+            <h3>✅ API Backend Funcionando:</h3>
+            <ul>
+              <li><a href="/api">/api</a> - Informações da API</li>
+              <li><a href="/health">/health</a> - Health check</li>
+              <li><a href="/api/contacts">/api/contacts</a> - Lista contatos</li>
+              <li><a href="/api/appointments">/api/appointments</a> - Lista agendamentos</li>
+            </ul>
+            
+            <h3>📋 Debug Info:</h3>
+            <ul>
+              <li><strong>Diretório servidor:</strong> <code>${__dirname}</code></li>
+              <li><strong>Diretório dist esperado:</strong> <code>${distPath}</code></li>
+              <li><strong>NODE_ENV:</strong> <code>${process.env.NODE_ENV || 'undefined'}</code></li>
+              <li><strong>PORT:</strong> <code>${PORT}</code></li>
+            </ul>
+          </div>
         </body>
       </html>
     `);

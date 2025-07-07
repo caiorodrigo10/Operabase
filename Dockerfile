@@ -7,17 +7,17 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build frontend
-RUN npm run build
-
-# Build Railway server
+# Build everything (frontend + server)
 RUN npm run build:railway
+
+# Clean up devDependencies after build (optional optimization)
+RUN npm prune --production
 
 # Expose port
 EXPOSE 3000
