@@ -90,6 +90,7 @@ const getValidUserIds = (clinicId: number, clinicUsers: any[], appointments: any
 
 /**
  * Determina a seleção padrão de profissional baseada no contexto
+ * IMPORTANTE: Retorna USER_ID, não clinic_user_id
  */
 const getDefaultProfessionalSelection = (
   clinicUsers: any[], 
@@ -103,8 +104,8 @@ const getDefaultProfessionalSelection = (
     u.email === currentUserEmail && u.is_professional
   );
   if (currentUser) {
-    console.log('🎯 Multi-tenant: Selecting current user as professional:', currentUser.id);
-    return currentUser.id;
+    console.log('🎯 Multi-tenant: Selecting current user as professional:', currentUser.user_id);
+    return currentUser.user_id; // ← CORRIGIDO: retornar user_id
   }
   
   // 2. Fallback: Primeiro profissional ativo da clínica
@@ -112,8 +113,8 @@ const getDefaultProfessionalSelection = (
     u.clinic_id === clinicId && u.is_professional && u.is_active
   );
   if (firstProfessional) {
-    console.log('🎯 Multi-tenant: Selecting first professional:', firstProfessional.id);
-    return firstProfessional.id;
+    console.log('🎯 Multi-tenant: Selecting first professional:', firstProfessional.user_id);
+    return firstProfessional.user_id; // ← CORRIGIDO: retornar user_id
   }
   
   // 3. Fallback final: null (mostrar todos)
@@ -296,6 +297,7 @@ export function Consultas() {
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   // ✅ MULTI-TENANT: Inicialização inteligente do profissional selecionado
+  // IMPORTANTE: selectedProfessional agora armazena USER_ID, não clinic_user_id
   const [selectedProfessional, setSelectedProfessional] = useState<number | null>(() => {
     return getInitialProfessionalSelection(1); // TODO: Obter clinicId dinamicamente do contexto
   });
@@ -1798,7 +1800,7 @@ export function Consultas() {
                 {clinicUsers
                   .filter((user: any) => user.is_professional === true)
                   .map((professional: any) => {
-                    const isSelected = selectedProfessional === professional.id;
+                    const isSelected = selectedProfessional === professional.user_id; // ← CORRIGIDO
                     const initials = professional.name
                       .split(' ')
                       .map((n: string) => n[0])
@@ -1808,8 +1810,8 @@ export function Consultas() {
                     
                     return (
                       <button
-                        key={professional.id}
-                        onClick={() => selectProfessional(professional.id)}
+                        key={professional.user_id} // ← CORRIGIDO
+                        onClick={() => selectProfessional(professional.user_id)} // ← CORRIGIDO
                         title={professional.name}
                         className={`
                           w-9 h-9 rounded-full flex items-center justify-center text-xs font-medium
