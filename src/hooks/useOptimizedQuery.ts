@@ -121,3 +121,38 @@ export function useOptimizedDashboardStats(clinicId: number) {
     }
   );
 }
+
+/**
+ * Hook para consultas de profissionais da clínica com otimizações
+ */
+export function useOptimizedProfessionals(clinicId: number, filters?: {
+  search?: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const queryKey = useMemo(() => [
+    '/api/clinic/professionals',
+    { clinic_id: clinicId, ...filters }
+  ], [clinicId, filters]);
+
+  return useOptimizedQuery(
+    queryKey,
+    async () => {
+      const params = new URLSearchParams({
+        clinic_id: clinicId.toString(),
+        ...(filters?.search && { search: filters.search }),
+        ...(filters?.status && filters.status !== 'all' && { status: filters.status }),
+        ...(filters?.limit && { limit: filters.limit.toString() }),
+        ...(filters?.offset && { offset: filters.offset.toString() }),
+      });
+      const response = await fetch(`/api/clinic/${clinicId}/professionals?${params}`);
+      if (!response.ok) throw new Error('Erro ao carregar profissionais');
+      return response.json();
+    },
+    {
+      staleTime: filters?.search ? 30 * 1000 : 5 * 60 * 1000,
+      enabled: !!clinicId,
+    }
+  );
+}
