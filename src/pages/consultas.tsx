@@ -670,7 +670,7 @@ export function Consultas() {
   });
 
   // Fetch users with optimized caching
-  const { data: clinicUsers = [] } = useQuery({
+  const { data: clinicUsers = [], isLoading: clinicUsersLoading } = useQuery({
     queryKey: QUERY_KEYS.CLINIC_USERS(1),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
@@ -768,7 +768,23 @@ export function Consultas() {
     }
   });
 
+  // 🔄 COORDINATED LOADING: Wait for all critical data before rendering
+  const isInitialDataLoading = 
+    appointmentsLoading || 
+    clinicConfigLoading || 
+    clinicUsersLoading ||
+    clinicUsers.length === 0;
 
+  // Debug loading states
+  useEffect(() => {
+    console.log('🔄 Loading States:', {
+      appointmentsLoading,
+      clinicConfigLoading,
+      clinicUsersLoading,
+      clinicUsersCount: clinicUsers.length,
+      isInitialDataLoading
+    });
+  }, [appointmentsLoading, clinicConfigLoading, clinicUsersLoading, clinicUsers.length, isInitialDataLoading]);
 
   // Debug clinic config loading state
   useEffect(() => {
@@ -1461,13 +1477,23 @@ export function Consultas() {
 
 
 
-  // Show loading skeleton while data is loading
-  if (appointmentsLoading) {
+  // 🔄 COORDINATED LOADING: Show loading skeleton while ANY critical data is loading
+  if (isInitialDataLoading) {
     return (
       <div className="p-4 lg:p-6">
         <Card className="animate-pulse">
           <CardContent className="p-6">
-            <div className="h-96 bg-slate-200 rounded"></div>
+            <div className="h-96 bg-slate-200 rounded flex items-center justify-center">
+              <div className="flex flex-col items-center space-y-3">
+                <div className="w-8 h-8 border-4 border-slate-300 border-t-[#0f766e] rounded-full animate-spin"></div>
+                <span className="text-slate-600 font-medium">Carregando agenda...</span>
+                <div className="text-sm text-slate-500 space-y-1 text-center">
+                  <div>• {appointmentsLoading ? '⏳' : '✅'} Consultas</div>
+                  <div>• {clinicUsersLoading ? '⏳' : '✅'} Profissionais</div>
+                  <div>• {clinicConfigLoading ? '⏳' : '✅'} Configurações</div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
