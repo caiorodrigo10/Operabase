@@ -97,15 +97,17 @@ const getDefaultProfessionalSelection = (
   currentUserEmail: string,
   clinicId: number
 ): number | null => {
-  if (!clinicUsers.length || !currentUserEmail) return null;
+  if (!clinicUsers.length) return null;
   
-  // 1. Prioridade: Usuário atual se for profissional
-  const currentUser = clinicUsers.find(u => 
-    u.email === currentUserEmail && u.is_professional
-  );
-  if (currentUser) {
-    console.log('🎯 Multi-tenant: Selecting current user as professional:', currentUser.user_id);
-    return currentUser.user_id; // ← CORRIGIDO: retornar user_id
+  // 1. Prioridade: Usuário atual se for profissional (apenas se temos email)
+  if (currentUserEmail) {
+    const currentUser = clinicUsers.find(u => 
+      u.email === currentUserEmail && u.is_professional
+    );
+    if (currentUser) {
+      console.log('🎯 Multi-tenant: Selecting current user as professional:', currentUser.user_id);
+      return currentUser.user_id; // ← CORRIGIDO: retornar user_id
+    }
   }
   
   // 2. Fallback: Primeiro profissional ativo da clínica
@@ -117,8 +119,8 @@ const getDefaultProfessionalSelection = (
     return firstProfessional.user_id; // ← CORRIGIDO: retornar user_id
   }
   
-  // 3. Fallback final: null (mostrar todos)
-  console.log('🎯 Multi-tenant: No professionals found, showing all');
+  // 3. Fallback final: null (será tratado no useEffect)
+  console.log('🎯 Multi-tenant: No professionals found in getDefaultProfessionalSelection');
   return null;
 };
 
@@ -857,13 +859,26 @@ export function Consultas() {
 
   // ✅ MULTI-TENANT: Sincronização inteligente de profissional quando dados carregam
   React.useEffect(() => {
-    if (clinicUsers.length > 0 && selectedProfessional === null && currentUserEmail) {
+    if (clinicUsers.length > 0 && selectedProfessional === null) {
       const clinicId = 1; // TODO: Obter dinamicamente do contexto
-      const defaultSelection = getDefaultProfessionalSelection(
+      
+      // Tentar seleção inteligente primeiro
+      let defaultSelection = getDefaultProfessionalSelection(
         clinicUsers, 
-        currentUserEmail, 
+        currentUserEmail || '', 
         clinicId
       );
+      
+      // Se não encontrou por email, selecionar primeiro profissional disponível
+      if (!defaultSelection) {
+        const firstProfessional = clinicUsers.find((user: any) => 
+          user.is_professional && user.is_active
+        );
+        if (firstProfessional) {
+          defaultSelection = firstProfessional.user_id;
+          console.log('🎯 Multi-tenant: Auto-selecting first available professional:', defaultSelection);
+        }
+      }
       
       if (defaultSelection) {
         console.log('🎯 Multi-tenant: Auto-selecting professional:', defaultSelection);
@@ -871,7 +886,7 @@ export function Consultas() {
         saveProfessionalSelection(defaultSelection, clinicId);
       }
     }
-  }, [clinicUsers.length, selectedProfessional, currentUserEmail, clinicUserByEmail]);
+  }, [clinicUsers.length, selectedProfessional, currentUserEmail]);
 
   // Memoized professional ID lookup for performance
   const professionalNameToIdMap = useMemo(() => {
