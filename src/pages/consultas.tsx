@@ -62,6 +62,33 @@ const getCurrentUserEmail = (): string | null => {
 };
 
 /**
+ * Obtém IDs de usuários válidos para uma clínica (incluindo consultas órfãs)
+ */
+const getValidUserIds = (clinicId: number, clinicUsers: any[], appointments: any[] = []): number[] => {
+  // Get user IDs from clinic_users table
+  const clinicUserIds = clinicUsers
+    .filter(user => user.clinic_id === clinicId && user.is_active)
+    .map(user => user.user_id);
+  
+  // Get user IDs from appointments (to include "orphaned" appointments)
+  const appointmentUserIds = appointments
+    .filter(appointment => appointment.clinic_id === clinicId && appointment.user_id)
+    .map(appointment => appointment.user_id);
+  
+  // Combine both sets and remove duplicates
+  const allValidUserIds = [...new Set([...clinicUserIds, ...appointmentUserIds])];
+  
+  console.log('🔧 Multi-tenant: Valid user IDs calculation:', {
+    clinicId,
+    clinicUserIds,
+    appointmentUserIds,
+    allValidUserIds
+  });
+  
+  return allValidUserIds;
+};
+
+/**
  * Determina a seleção padrão de profissional baseada no contexto
  */
 const getDefaultProfessionalSelection = (
@@ -76,6 +103,7 @@ const getDefaultProfessionalSelection = (
     u.email === currentUserEmail && u.is_professional
   );
   if (currentUser) {
+    console.log('🎯 Multi-tenant: Selecting current user as professional:', currentUser.id);
     return currentUser.id;
   }
   
@@ -84,15 +112,17 @@ const getDefaultProfessionalSelection = (
     u.clinic_id === clinicId && u.is_professional && u.is_active
   );
   if (firstProfessional) {
+    console.log('🎯 Multi-tenant: Selecting first professional:', firstProfessional.id);
     return firstProfessional.id;
   }
   
   // 3. Fallback final: null (mostrar todos)
+  console.log('🎯 Multi-tenant: No professionals found, showing all');
   return null;
 };
 
 /**
- * Salva a seleção do profissional no cache local
+ * Salva a seleção do profissional no cache local por clínica
  */
 const saveProfessionalSelection = (professionalId: number, clinicId: number): void => {
   try {
@@ -100,30 +130,24 @@ const saveProfessionalSelection = (professionalId: number, clinicId: number): vo
       `selected_professional_${clinicId}`, 
       professionalId.toString()
     );
+    console.log('💾 Multi-tenant: Professional selection cached:', { professionalId, clinicId });
   } catch (error) {
     console.warn('Failed to save professional selection to cache:', error);
   }
 };
 
 /**
- * Recupera a seleção do profissional do cache local
+ * Recupera a seleção do profissional do cache local por clínica
  */
 const getCachedProfessionalSelection = (clinicId: number): number | null => {
   try {
     const cached = localStorage.getItem(`selected_professional_${clinicId}`);
-    return cached ? parseInt(cached, 10) : null;
+    const result = cached ? parseInt(cached, 10) : null;
+    console.log('📖 Multi-tenant: Retrieved cached professional selection:', { clinicId, result });
+    return result;
   } catch {
     return null;
   }
-};
-
-/**
- * Obtém IDs de usuários válidos para uma clínica
- */
-const getValidUserIds = (clinicId: number, clinicUsers: any[]): number[] => {
-  return clinicUsers
-    .filter(user => user.clinic_id === clinicId && user.is_active)
-    .map(user => user.user_id);
 };
 
 /**
@@ -133,10 +157,12 @@ const getInitialProfessionalSelection = (clinicId: number = 1): number | null =>
   // 1. Verificar cache primeiro
   const cachedSelection = getCachedProfessionalSelection(clinicId);
   if (cachedSelection) {
+    console.log('🔄 Multi-tenant: Using cached professional selection:', cachedSelection);
     return cachedSelection;
   }
   
   // 2. Será resolvido quando clinicUsers carregar
+  console.log('🔄 Multi-tenant: No cache found, will auto-select when data loads');
   return null;
 };
 
@@ -269,12 +295,10 @@ export function Consultas() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
-  
   // ✅ MULTI-TENANT: Inicialização inteligente do profissional selecionado
   const [selectedProfessional, setSelectedProfessional] = useState<number | null>(() => {
-    return getInitialProfessionalSelection(1); // Clinic ID 1
+    return getInitialProfessionalSelection(1); // TODO: Obter clinicId dinamicamente do contexto
   });
-  
   const [currentPage, setCurrentPage] = useState(1);
 
   // Pagination constants
@@ -770,7 +794,7 @@ export function Consultas() {
   });
 
   // Fetch users with optimized caching
-  const { data: clinicUsers = [], isLoading: clinicUsersLoading } = useQuery({
+  const { data: clinicUsers = [] } = useQuery({
     queryKey: QUERY_KEYS.CLINIC_USERS(1),
     queryFn: async () => {
       console.log('🚀 [Clinic Users] Starting fetch process...');
@@ -815,15 +839,8 @@ export function Consultas() {
     refetchOnWindowFocus: false,
   });
 
-  // Memoized current user email for performance
-  const currentUserEmail = useMemo(() => {
-    try {
-      const authData = JSON.parse(localStorage.getItem('sb-lkwrevhxugaxfpwiktdy-auth-token') || '{}');
-      return authData?.user?.email || null;
-    } catch {
-      return null;
-    }
-  }, []);
+  // ✅ MULTI-TENANT: Memoized current user email for performance
+  const currentUserEmail = useMemo(() => getCurrentUserEmail(), []);
 
   // Memoized clinic user lookup by email
   const clinicUserByEmail = useMemo(() => {
@@ -913,6 +930,8 @@ export function Consultas() {
       };
     }
   });
+
+
 
   // Debug clinic config loading state
   useEffect(() => {
@@ -1536,7 +1555,7 @@ export function Consultas() {
     
     // ✅ MULTI-TENANT: Filter appointments by clinic and valid users
     const clinicId = 1; // TODO: Obter dinamicamente do contexto
-    const validUserIds = getValidUserIds(clinicId, clinicUsers);
+    const validUserIds = getValidUserIds(clinicId, clinicUsers, dayAppointments);
     
     const validAppointments = dayAppointments.filter((appointment: Appointment) => {
       // Always include Google Calendar events
@@ -1546,7 +1565,7 @@ export function Consultas() {
       
       // Filter 1: Only appointments from this clinic
       if (appointment.clinic_id && appointment.clinic_id !== clinicId) {
-        console.log('🚫 Excluding appointment from different clinic:', { 
+        console.log('🚫 Multi-tenant: Excluding appointment from different clinic:', { 
           appointmentId: appointment.id, 
           appointmentClinicId: appointment.clinic_id,
           currentClinicId: clinicId
@@ -1557,7 +1576,7 @@ export function Consultas() {
       // Filter 2: Only appointments from valid users in this clinic
       const isValidUser = validUserIds.length === 0 || validUserIds.includes(appointment.user_id);
       if (!isValidUser) {
-        console.log('🚫 Excluding orphaned appointment:', { 
+        console.log('🚫 Multi-tenant: Excluding orphaned appointment:', { 
           appointmentId: appointment.id, 
           userId: appointment.user_id,
           reason: 'User not in clinic',
@@ -1630,7 +1649,7 @@ export function Consultas() {
 
 
   // ✅ MULTI-TENANT: Show loading while critical data is loading
-  const isInitialDataLoading = appointmentsLoading || clinicUsersLoading || clinicConfigLoading;
+  const isInitialDataLoading = appointmentsLoading || !clinicUsers.length;
   
   if (isInitialDataLoading) {
     return (
@@ -1644,8 +1663,7 @@ export function Consultas() {
                   <div className="text-sm text-slate-600 font-medium">Carregando agenda...</div>
                   <div className="text-xs text-slate-500 space-y-1">
                     <div>• {appointmentsLoading ? '⏳' : '✅'} Consultas</div>
-                    <div>• {clinicUsersLoading ? '⏳' : '✅'} Profissionais</div>
-                    <div>• {clinicConfigLoading ? '⏳' : '✅'} Configurações</div>
+                    <div>• {!clinicUsers.length ? '⏳' : '✅'} Profissionais</div>
                   </div>
                 </div>
               </div>
@@ -1883,9 +1901,9 @@ export function Consultas() {
                     }
                   }
                   
-                                  // ✅ MULTI-TENANT: Filter appointments by clinic and valid users
+                  // ✅ MULTI-TENANT: Filter appointments by clinic and valid users
                   const clinicId = 1; // TODO: Obter dinamicamente do contexto
-                  const validUserIds = getValidUserIds(clinicId, clinicUsers);
+                  const validUserIds = getValidUserIds(clinicId, clinicUsers, appointments);
                   
                   // Filter 1: Only appointments from this clinic
                   if (app.clinic_id && app.clinic_id !== clinicId) {

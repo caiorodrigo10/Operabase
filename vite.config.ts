@@ -54,7 +54,7 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: process.env.VITE_API_URL || "http://localhost:3000",
+        target: process.env.VITE_API_URL || "http://operabase-backend-mvp-env-1.sa-east-1.elasticbeanstalk.com",
         changeOrigin: true,
       },
     },
