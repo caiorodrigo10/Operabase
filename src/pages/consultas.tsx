@@ -770,8 +770,46 @@ export function Consultas() {
   });
 
   // Fetch users with optimized caching
-  const { data: clinicUsers = [] } = useQuery({
+  const { data: clinicUsers = [], isLoading: clinicUsersLoading } = useQuery({
     queryKey: QUERY_KEYS.CLINIC_USERS(1),
+    queryFn: async () => {
+      console.log('🚀 [Clinic Users] Starting fetch process...');
+      
+      const url = buildApiUrl('/api/clinic/1/users/management');
+      console.log('🔗 [Clinic Users] Built URL:', url);
+      
+      // Get auth headers
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [Clinic Users] Error response body:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ [Clinic Users] Data received:', {
+        isArray: Array.isArray(data),
+        length: Array.isArray(data) ? data.length : 'not array',
+        firstItem: Array.isArray(data) && data.length > 0 ? data[0] : 'no items'
+      });
+      
+      return data;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
