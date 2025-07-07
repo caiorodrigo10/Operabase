@@ -146,9 +146,14 @@ export function useOptimizedProfessionals(clinicId: number, filters?: {
         ...(filters?.limit && { limit: filters.limit.toString() }),
         ...(filters?.offset && { offset: filters.offset.toString() }),
       });
-      const response = await fetch(`/api/clinic/${clinicId}/professionals?${params}`);
+      const endpoint = `/api/clinic/${clinicId}/professionals?${params}`;
+      console.log('[PROFESSIONALS][FETCH] Endpoint:', endpoint);
+      const response = await fetch(endpoint);
+      console.log('[PROFESSIONALS][FETCH] Status:', response.status, response.statusText);
+      const data = await response.json();
+      console.log('[PROFESSIONALS][FETCH] Payload:', Array.isArray(data) ? `Array(${data.length})` : data && typeof data === 'object' ? Object.keys(data) : data);
       if (!response.ok) throw new Error('Erro ao carregar profissionais');
-      return response.json();
+      return data;
     },
     {
       staleTime: filters?.search ? 30 * 1000 : 5 * 60 * 1000,
