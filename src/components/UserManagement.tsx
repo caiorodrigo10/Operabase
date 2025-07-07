@@ -13,6 +13,7 @@ import { Pencil, Plus, User, Users, UserPlus, Trash2, UserX, MoreVertical } from
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useOptimizedProfessionals } from '@/hooks/useOptimizedQuery';
 
 interface User {
   id: number;
@@ -49,6 +50,12 @@ export function UserManagement({ clinicId }: UserManagementProps) {
     queryKey: [`/api/clinic/${clinicId}/users/management`],
     enabled: !!clinicId
   });
+
+  // DEBUG: Hook de profissionais
+  const { data: professionals, isLoading: professionalsLoading, error: professionalsError } = useOptimizedProfessionals(clinicId);
+  console.log('[DEBUG][PROFESSIONALS] professionals:', professionals);
+  console.log('[DEBUG][PROFESSIONALS] isLoading:', professionalsLoading);
+  console.log('[DEBUG][PROFESSIONALS] error:', professionalsError);
 
   // Update user mutation (role and professional status)
   const updateUserMutation = useMutation({
