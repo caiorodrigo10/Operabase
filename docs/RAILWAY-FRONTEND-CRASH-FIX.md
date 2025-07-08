@@ -96,6 +96,8 @@ res.json(contacts || []);
 1. **GET /api/contacts** - Agora retorna array direto
 2. **GET /api/contacts/:id** - Agora retorna objeto direto
 3. **POST /api/contacts** - Agora retorna objeto direto
+4. **GET /api/appointments** - Agora retorna array direto ✨ **NOVO**
+5. **POST /api/appointments** - Agora retorna objeto direto ✨ **NOVO**
 
 ## ✅ Validação Completa
 
@@ -113,6 +115,12 @@ curl /api/appointments?clinic_id=1 | jq 'length'
 
 curl /api/clinic/1/users/management | jq 'length'
 # Resultado: 3 ✅
+
+curl /api/appointments?clinic_id=1 | jq 'type'
+# Resultado: "array" ✅
+
+curl /api/appointments?clinic_id=1 | jq 'length'
+# Resultado: 83 ✅
 ```
 
 ### Consistência de Dados
@@ -250,7 +258,9 @@ status 4xx/5xx → { error: string, details?: any }
 **Antes**: `me.forEach is not a function` → Crash total
 **Depois**: Interface funciona perfeitamente
 
-**Commit**: `7f0ae13` - fix: corrigir endpoint contacts retornando objeto em vez de array
+**Commits**: 
+- `7f0ae13` - fix: corrigir endpoint contacts retornando objeto em vez de array
+- `7c70585` - fix: corrigir endpoint appointments retornando objeto em vez de array
 **Deploy**: Pronto para Railway
 **Status**: ✅ PRODUÇÃO READY
 
