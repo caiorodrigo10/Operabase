@@ -21,54 +21,44 @@ const router = express.Router();
 router.get('/clinic/:id/users/management', authMiddleware, async (req, res) => {
   try {
     const supabaseAdmin = createSupabaseClient();
-    const { id } = req.params;
+    const { id: clinic_id } = req.params;
     
-    console.log('🏥 Buscando usuários da clínica:', id);
+    console.log('🔍 Buscando usuários para clinic_id:', clinic_id);
     
+    // Query real data from database with JOIN manual
     const { data: users, error } = await supabaseAdmin
-      .from('users')
+      .from('clinic_users')
       .select(`
-        id,
-        email,
-        full_name,
-        role,
-        is_active,
-        created_at
+        *,
+        users!inner(name, email)
       `)
-      .eq('clinic_id', id)
-      .eq('is_active', true);
+      .eq('clinic_id', Number(clinic_id))
+      .eq('is_active', true)
+      .order('id');
     
     if (error) {
       console.error('❌ Erro ao buscar usuários:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Erro interno do servidor'
-      });
+      res.status(500).json({ error: 'Erro ao buscar usuários', details: error.message });
       return;
     }
     
-    // Formatar dados para o frontend
+    // Transform data to match expected format
     const formattedUsers = users?.map(user => ({
-      id: user.id,
-      email: user.email,
-      name: user.full_name,
-      role: user.role,
-      status: user.is_active ? 'active' : 'inactive',
-      created_at: user.created_at
-    }));
+      user_id: user.user_id,
+      id: user.user_id,
+      name: user.users.name,
+      email: user.users.email,
+      is_professional: user.is_professional,
+      is_active: user.is_active,
+      clinic_id: user.clinic_id,
+      role: user.role
+    })) || [];
     
-    console.log(`✅ Encontrados ${formattedUsers?.length || 0} usuários`);
-    
-    res.json({
-      success: true,
-      data: formattedUsers
-    });
+    console.log('✅ Usuários encontrados:', formattedUsers.length);
+    res.json(formattedUsers);
   } catch (error) {
-    console.error('❌ Erro na busca de usuários:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor'
-    });
+    console.error('💥 Erro inesperado:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
