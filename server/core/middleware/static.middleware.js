@@ -14,7 +14,7 @@ const fs = require('fs');
  */
 function setupStaticFiles(app) {
   // Verificar se diretório dist existe
-  const distPath = path.join(__dirname, '../../../dist');
+  const distPath = path.join(__dirname, '../../../../dist');
   const indexPath = path.join(distPath, 'index.html');
   
   console.log('📁 Configurando arquivos estáticos...');
