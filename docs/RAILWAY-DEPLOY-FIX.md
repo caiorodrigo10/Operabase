@@ -300,5 +300,54 @@ Error: Cannot find module '/app/dist/server/core/routes/contacts.routes.js'
 - `71cb0fd` - fix: package-lock.json
 - `8b79ce2` - fix: build server modules
 
-**Status:** ✅ **TOTALMENTE CORRIGIDO E TESTADO**  
+## 🚨 **TERCEIRA CORREÇÃO APLICADA - SOLUÇÃO DEFINITIVA**
+
+### **Problema Final Identificado:**
+```
+Error: Cannot find module '../middleware/auth.middleware'
+Require stack:
+- /app/dist/server/core/routes/contacts.routes.js
+- /app/dist/server/railway-server.js
+```
+
+### **Causa Raiz:**
+- Arquivos `.js` tentando importar módulos TypeScript
+- Caminhos relativos quebrados após build/cópia  
+- Middleware `auth.middleware.ts` não sendo compilado para `.js`
+
+### **Solução Final Aplicada:**
+```bash
+# Scripts de build otimizados
+"build:server": "npm run build:server:compile && npm run build:server:copy && npm run build:server:fix"
+"build:server:compile": "tsc server/railway-server.ts --outDir dist/server ..."
+"build:server:copy": "cp -r server/core dist/server/"
+"build:server:fix": "node -e \"...criar arquivos faltantes...\""
+```
+
+### **Mudanças Estruturais:**
+1. **Revertido `contacts.routes.ts` → `contacts.routes.js`**
+   - Imports CommonJS: `require()` em vez de `import`
+   - Middleware auth inline para evitar dependências
+   
+2. **Build Robusto:**
+   - Compila TypeScript principal
+   - Copia estrutura `server/core/` completa
+   - Cria arquivos faltantes automaticamente
+
+3. **Testes Locais Aprovados:**
+   ```bash
+   ✅ npm run build - funcionando
+   ✅ node dist/server/railway-server.js - iniciando porta 3001
+   ✅ curl /health - 200 OK com Supabase conectado
+   ✅ curl /api/contacts - 200 OK retornando dados reais
+   ```
+
+---
+
+**Commits:** 
+- `71cb0fd` - fix: package-lock.json
+- `8b79ce2` - fix: build server modules  
+- `38fc56a` - fix: módulos não encontrados
+
+**Status:** ✅ **DEFINITIVAMENTE CORRIGIDO E TESTADO**  
 **Data:** 08 de Janeiro de 2025 
