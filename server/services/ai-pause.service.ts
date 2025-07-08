@@ -1,10 +1,7 @@
 /**
- * SISTEMA DE PAUSA AUTOMÁTICA DA IA
+ * AI Pause Service - Sistema de Pausa Automática da IA
  * Detecta mensagens manuais de profissionais e pausa IA automaticamente
- * Baseado na implementação do painel espelho
  */
-
-import { createClient } from '@supabase/supabase-js';
 
 export interface AiPauseContext {
   conversationId: string | number;
@@ -23,22 +20,14 @@ export interface AiPauseResult {
   pausedByUserId?: number;
 }
 
-interface LiviaConfiguration {
+export interface LiviaConfiguration {
   off_duration: number;
-  off_unit: 'minutes' | 'hours' | 'days';
+  off_unit: string;
 }
 
 export class AiPauseService {
   private static instance: AiPauseService;
-  private supabase: any;
-
-  private constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-  }
-
+  
   public static getInstance(): AiPauseService {
     if (!AiPauseService.instance) {
       AiPauseService.instance = new AiPauseService();
@@ -48,8 +37,7 @@ export class AiPauseService {
 
   /**
    * Detecta se uma mensagem deve pausar a IA
-   * Critério: sender_type = 'professional' AND device_type = 'manual' | 'system'
-   * PROTEÇÃO: Só aplica pausa automática se IA estiver ativa
+   * Critério: sender_type = 'professional' AND device_type = 'manual' ou 'system'
    */
   public shouldPauseAi(context: AiPauseContext, currentAiActive?: boolean, currentPauseReason?: string): boolean {
     console.log('🔍 AI PAUSE: Analisando se deve pausar IA...', {
@@ -117,12 +105,15 @@ export class AiPauseService {
 
     switch (unit) {
       case 'minutes':
+      case 'minutos':
         pauseEnd.setMinutes(pauseEnd.getMinutes() + duration);
         break;
       case 'hours':
+      case 'horas':
         pauseEnd.setHours(pauseEnd.getHours() + duration);
         break;
       case 'days':
+      case 'dias':
         pauseEnd.setDate(pauseEnd.getDate() + duration);
         break;
       default:
@@ -137,7 +128,6 @@ export class AiPauseService {
 
   /**
    * Processa mensagem e retorna resultado da análise de pausa
-   * PROTEÇÃO: Recebe estado atual da IA para evitar sobrescrever desativação manual
    */
   public async processMessage(
     context: AiPauseContext,
@@ -244,7 +234,7 @@ export class AiPauseService {
   }
 
   /**
-   * Reseta pausa da IA (por exemplo, quando usuário manda mensagem)
+   * Reseta pausa da IA (usado quando ativando manualmente)
    */
   public resetAiPause(): { aiPausedUntil: null; aiPauseReason: null; aiPausedByUserId: null } {
     console.log('🔄 AI PAUSE: Resetando pausa da IA');
@@ -275,58 +265,6 @@ export class AiPauseService {
 
     const diffHours = Math.ceil(diffMinutes / 60);
     return `${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
-  }
-
-  /**
-   * Middleware de reativação automática - executa a cada 30 segundos
-   */
-  public async checkAndReactivateExpiredPauses(): Promise<void> {
-    try {
-      const now = new Date();
-      
-      // Buscar conversas com pausa expirada (apenas manual_message)
-      const { data: expiredPauses, error } = await this.supabase
-        .from('conversations')
-        .select('id, clinic_id, ai_paused_until, ai_pause_reason')
-        .eq('ai_active', false)
-        .eq('ai_pause_reason', 'manual_message')
-        .lt('ai_paused_until', now.toISOString())
-        .not('ai_paused_until', 'is', null);
-
-      if (error) {
-        console.error('❌ AI PAUSE: Erro ao buscar pausas expiradas:', error);
-        return;
-      }
-
-      if (!expiredPauses || expiredPauses.length === 0) {
-        return; // Nenhuma pausa expirada
-      }
-
-      console.log(`🔄 AI PAUSE: Encontradas ${expiredPauses.length} pausas expiradas para reativação`);
-
-      // Reativar conversas com pausa expirada
-      for (const conversation of expiredPauses) {
-        const { error: updateError } = await this.supabase
-          .from('conversations')
-          .update({
-            ai_active: true,
-            ai_paused_until: null,
-            ai_pause_reason: null,
-            ai_paused_by_user_id: null,
-            updated_at: now.toISOString()
-          })
-          .eq('id', conversation.id);
-
-        if (updateError) {
-          console.error(`❌ AI PAUSE: Erro ao reativar conversa ${conversation.id}:`, updateError);
-        } else {
-          console.log(`✅ AI PAUSE: IA reativada para conversa ${conversation.id} (pausa expirou)`);
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ AI PAUSE: Erro no middleware de reativação:', error);
-    }
   }
 }
 

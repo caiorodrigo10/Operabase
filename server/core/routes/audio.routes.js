@@ -87,6 +87,15 @@ router.post('/audio/voice-message/:conversationId', upload.single('file'), async
     console.log('🔗 Public URL created:', publicUrl.signedUrl);
 
     // ========== CREATE MESSAGE RECORD ==========
+    // Função para obter timestamp no horário de Brasília (seguindo padrão das mensagens de texto)
+    const getBrasiliaTimestamp = () => {
+      const now = new Date();
+      // Aplicar offset do fuso horário de São Paulo (GMT-3)
+      const saoPauloOffset = -3 * 60; // GMT-3 em minutos
+      const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
+      return saoPauloTime.toISOString();
+    };
+
     const { data: message, error: messageError } = await supabaseAdmin
       .from('messages')
       .insert([{
@@ -94,7 +103,8 @@ router.post('/audio/voice-message/:conversationId', upload.single('file'), async
         content: 'Áudio enviado',
         message_type: 'audio_voice',
         sender_type: 'user',
-        created_at: new Date().toISOString()
+        timestamp: getBrasiliaTimestamp(),
+        created_at: getBrasiliaTimestamp()
       }])
       .select()
       .single();
@@ -120,7 +130,7 @@ router.post('/audio/voice-message/:conversationId', upload.single('file'), async
         file_size: req.file.size,
         file_type: req.file.mimetype,
         storage_url: publicUrl.signedUrl,
-        created_at: new Date().toISOString()
+        created_at: getBrasiliaTimestamp()
       }])
       .select()
       .single();
@@ -182,7 +192,7 @@ router.post('/audio/voice-message/:conversationId', upload.single('file'), async
             message_id: message.id,
             transcribed_text: transcribedText,
             audio_file_path: filePath,
-            created_at: new Date().toISOString()
+            created_at: getBrasiliaTimestamp()
           });
           
           console.log('✅ TRANSCRIPTION: Transcrição salva na tabela N8N');

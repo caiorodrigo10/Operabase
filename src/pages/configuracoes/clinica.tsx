@@ -57,8 +57,18 @@ export default function ClinicaPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Buscar dados da clínica
-  const { data: clinic, refetch: refetchClinic } = useQuery({
+  const { data: clinic, refetch: refetchClinic, isLoading, error } = useQuery({
     queryKey: ['/api/clinic/1/config'],
+    queryFn: async () => {
+      console.log('🔍 Buscando configurações da clínica...');
+      const response = await fetch('/api/clinic/1/config');
+      if (!response.ok) {
+        throw new Error('Erro ao buscar configurações da clínica');
+      }
+      const result = await response.json();
+      console.log('📋 Resposta da API:', result);
+      return result.data || result; // Retorna os dados da clínica
+    },
     staleTime: 0,
   });
 

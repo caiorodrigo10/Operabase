@@ -629,11 +629,15 @@ export function DebugPanel() {
       const health = await fetch('/api/health').then(r => r.json());
       const contacts = await fetch('/api/contacts?clinic_id=1').then(r => r.json());
       const appointments = await fetch('/api/appointments?clinic_id=1').then(r => r.json());
+      const whatsappNumbers = await fetch('/api/whatsapp/numbers').then(r => r.json());
+      const conversations = await fetch('/api/conversations-simple?clinic_id=1').then(r => r.json());
       
       setDebugInfo({
         health,
         contactsCount: contacts.length,
         appointmentsCount: appointments.length,
+        whatsappNumbersCount: whatsappNumbers.length,
+        conversationsCount: conversations.length,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -684,6 +688,73 @@ export function DebugPanel() {
         </div>
       );
     }
+
+### Detailed Component Logging
+```typescript
+// src/components/WhatsAppManager.tsx - Logs estruturados implementados
+useEffect(() => {
+  console.log('[WhatsAppManager][useEffect] Iniciando busca de números WhatsApp...');
+  const fetchWhatsAppNumbers = async () => {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      console.log('[WhatsAppManager][fetch] Auth token existe?', !!authToken);
+      
+      const url = '/api/whatsapp/numbers';
+      console.log('[WhatsAppManager][fetch] URL completa:', window.location.origin + url);
+      
+      const response = await fetch(url, { headers });
+      console.log('[WhatsAppManager][fetch] Resposta recebida:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+      
+      const responseText = await response.text();
+      console.log('[WhatsAppManager][fetch] Resposta bruta:', responseText);
+      
+      const data = JSON.parse(responseText);
+      console.log('[WhatsAppManager][fetch] Dados parseados:', data);
+      
+      if (Array.isArray(data)) {
+        console.log('[WhatsAppManager][fetch] Atualizando estado com', data.length, 'números');
+        setWhatsappNumbers(data);
+      }
+    } catch (error) {
+      console.error('[WhatsAppManager][fetch] Erro:', error);
+    }
+  };
+  
+  fetchWhatsAppNumbers();
+}, []);
+
+// Logs no render para debugging de estado
+{!isLoading && whatsappNumbers.length === 0 && (
+  (() => { 
+    console.log('[WhatsAppManager][render] Nenhum número conectado - whatsappNumbers:', whatsappNumbers); 
+    return null; 
+  })(),
+  <div className="text-center py-8 text-muted-foreground">
+    <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+    <p className="text-lg font-medium">Nenhum número conectado</p>
+    <p className="text-sm">Clique em "Adicionar Número" para conectar seu WhatsApp</p>
+  </div>
+)}
+
+{whatsappNumbers.length > 0 && (
+  (() => { 
+    console.log('[WhatsAppManager][render] Renderizando lista com', whatsappNumbers.length, 'números'); 
+    return null; 
+  })(),
+  <div className="space-y-4">
+    {whatsappNumbers.map((number) => {
+      console.log('[WhatsAppManager][render] Renderizando número:', number);
+      return (
+        <WhatsAppNumberCard key={number.id} number={number} />
+      );
+    })}
+  </div>
+)}
+```
 ```
 
 ## 🚀 Build e Deploy Railway
@@ -803,7 +874,7 @@ open http://localhost:5173
 
 ## 📋 Checklist de Desenvolvimento Railway
 
-### ✅ Funcionalidades Implementadas
+### ✅ Funcionalidades Implementadas e Validadas
 - ✅ **Vite Proxy** - Configurado para Railway (:3000)
 - ✅ **TanStack Query** - Query keys otimizadas para Railway
 - ✅ **API Client** - Funções específicas para endpoints Railway
@@ -812,6 +883,9 @@ open http://localhost:5173
 - ✅ **Loading States** - Skeletons otimizados
 - ✅ **Connection Monitor** - Monitor de conectividade Railway
 - ✅ **Debug Panel** - Painel de debug para desenvolvimento
+- ✅ **WhatsApp Manager** - Componente com logs detalhados ✨ **NOVO**
+- ✅ **Conversations System** - Sistema de conversas funcionando ✨ **NOVO**
+- ✅ **Detailed Logging** - Sistema de logs estruturados ✨ **NOVO**
 
 ### 🚧 Funcionalidades Pendentes
 - ⏳ **Authentication** - Sistema de login/logout

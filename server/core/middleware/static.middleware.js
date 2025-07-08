@@ -14,7 +14,7 @@ const fs = require('fs');
  */
 function setupStaticFiles(app) {
   // Verificar se diretório dist existe
-  const distPath = path.join(__dirname, '../../..');
+  const distPath = path.join(__dirname, '../../../dist');
   const indexPath = path.join(distPath, 'index.html');
   
   console.log('📁 Configurando arquivos estáticos...');
@@ -33,13 +33,11 @@ function setupStaticFiles(app) {
         console.log('✅ index.html encontrado - SPA routing ativo');
         
         // SPA routing - todas as rotas não-API servem index.html
-        app.get('*', (req, res) => {
+        app.get('*', (req, res, next) => {
           // Não interceptar rotas da API
           if (req.path.startsWith('/api/') || req.path.startsWith('/health')) {
-            return res.status(404).json({
-              success: false,
-              error: 'Endpoint não encontrado'
-            });
+            // Passar para o próximo middleware
+            return next();
           }
           
           console.log('🔀 SPA routing:', req.path, '-> index.html');
@@ -63,13 +61,11 @@ function setupStaticFiles(app) {
  * Configurar página de erro personalizada
  */
 function setupErrorPage(app, distPath) {
-  app.get('*', (req, res) => {
+  app.get('*', (req, res, next) => {
     // Não interceptar rotas da API
     if (req.path.startsWith('/api/') || req.path.startsWith('/health')) {
-      return res.status(404).json({
-        success: false,
-        error: 'Endpoint não encontrado'
-      });
+      // Passar para o próximo middleware
+      return next();
     }
     
     console.log('📄 Servindo página de erro para:', req.path);

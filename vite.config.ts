@@ -3,7 +3,16 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxImportSource: '@types/react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
+    })
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -21,19 +30,23 @@ export default defineConfig(({ mode }) => ({
         '@rollup/rollup-darwin-arm64'
       ],
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          query: ['@tanstack/react-query']
+        },
       },
     },
     commonjsOptions: {
       include: [/node_modules/],
     },
     emptyOutDir: true,
-    target: 'es2015',
-    minify: 'esbuild',
-    sourcemap: false,
+    target: 'es2020',
+    minify: mode === 'production' ? 'esbuild' : false,
+    sourcemap: mode === 'development',
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
     exclude: [
       '@rollup/rollup-linux-x64-gnu',
       '@rollup/rollup-linux-arm64-gnu'
@@ -68,6 +81,7 @@ export default defineConfig(({ mode }) => ({
     'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production')
   },
   esbuild: {
-    target: 'es2015'
+    target: 'es2020',
+    jsx: 'automatic'
   }
 }));

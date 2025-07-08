@@ -199,7 +199,7 @@ export function MainConversationArea({
   const toggleAIMutation = useMutation({
     mutationFn: async (newAIState: boolean) => {
       return apiRequest(
-        `/api/conversations/${selectedConversationId}/ai-toggle`, 
+        `/api/conversations-simple/${selectedConversationId}/ai-toggle`, 
         'PATCH', 
         { ai_active: newAIState }
       );

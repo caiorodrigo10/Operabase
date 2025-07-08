@@ -20,7 +20,9 @@ interface WhatsAppManagerProps {
 export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedQR, setSelectedQR] = useState<{ qrCode: string; instanceName: string; numberId?: number } | null>(null);
+  const [whatsappNumbers, setWhatsappNumbers] = useState<WhatsAppNumber[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedQR, setSelectedQR] = useState<string | null>(null);
   const [pollingEnabled, setPollingEnabled] = useState(false);
   
   // QR Code timeout states
@@ -69,13 +71,96 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
     }
   };
 
-  // Query to fetch WhatsApp numbers with conditional polling
-  const { data: whatsappNumbers = [], isLoading } = useQuery({
-    queryKey: ['/api/whatsapp/numbers', clinicId],
-    queryFn: () => fetch(`/api/whatsapp/numbers/${clinicId}`).then(res => res.json()) as Promise<WhatsAppNumber[]>,
-    refetchInterval: pollingEnabled ? 3000 : false, // Poll every 3 seconds when enabled
-    refetchIntervalInBackground: false
-  });
+  // Fetch WhatsApp numbers from API
+  useEffect(() => {
+    console.log('[WhatsAppManager][useEffect] Iniciando busca de números WhatsApp...');
+    const fetchWhatsAppNumbers = async () => {
+      try {
+        setIsLoading(true);
+        
+        const authToken = localStorage.getItem('authToken');
+        console.log('[WhatsAppManager][fetch] Auth token existe?', !!authToken);
+        console.log('[WhatsAppManager][fetch] Auth token (primeiros 20 chars):', authToken?.substring(0, 20) + '...');
+        
+        const url = '/api/whatsapp/numbers';
+        console.log('[WhatsAppManager][fetch] URL completa:', window.location.origin + url);
+        console.log('[WhatsAppManager][fetch] Fazendo requisição para:', url);
+        
+        const headers = {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        };
+        console.log('[WhatsAppManager][fetch] Headers enviados:', headers);
+        
+        const response = await fetch(url, { headers });
+        
+        console.log('[WhatsAppManager][fetch] Resposta recebida:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          url: response.url,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[WhatsAppManager][fetch] Erro HTTP:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+        }
+        
+        const responseText = await response.text();
+        console.log('[WhatsAppManager][fetch] Resposta bruta (texto):', responseText);
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+          console.log('[WhatsAppManager][fetch] Dados parseados com sucesso:', data);
+        } catch (parseError) {
+          console.error('[WhatsAppManager][fetch] Erro ao fazer parse do JSON:', parseError);
+          console.log('[WhatsAppManager][fetch] Texto que falhou no parse:', responseText);
+          throw new Error('Resposta inválida do servidor');
+        }
+        
+        console.log('[WhatsAppManager][fetch] Tipo dos dados:', typeof data, 'Array?', Array.isArray(data));
+        
+        if (Array.isArray(data)) {
+          console.log('[WhatsAppManager][fetch] Atualizando estado com', data.length, 'números');
+          console.log('[WhatsAppManager][fetch] Números encontrados:', data.map(n => ({ id: n.id, phone: n.phone_number, status: n.status })));
+          setWhatsappNumbers(data);
+        } else {
+          console.warn('[WhatsAppManager][fetch] Dados não são um array:', data);
+          setWhatsappNumbers([]);
+        }
+      } catch (error) {
+        console.error('[WhatsAppManager][fetch] Erro ao buscar números WhatsApp:', error);
+        setWhatsappNumbers([]);
+      } finally {
+        setIsLoading(false);
+        console.log('[WhatsAppManager][fetch] Loading finalizado');
+      }
+    };
+
+    fetchWhatsAppNumbers();
+  }, []);
+
+  // Log do estado atual
+  useEffect(() => {
+    console.log('[WhatsAppManager][state] Estado atual:', {
+      whatsappNumbers,
+      numbersCount: whatsappNumbers.length,
+      isLoading,
+      selectedQR
+    });
+  }, [whatsappNumbers, isLoading, selectedQR]);
+
+  // DEBUG LOGS
+  console.log('[WhatsAppManager] clinicId:', clinicId, 'userId:', userId);
+  console.log('[WhatsAppManager] whatsappNumbers:', whatsappNumbers);
+  console.log('[WhatsAppManager] isLoading:', isLoading);
 
   // Query to fetch clinic professionals
   const { data: professionals = [] } = useQuery({
@@ -387,6 +472,7 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         )}
 
         {!isLoading && whatsappNumbers.length === 0 && (
+          (() => { console.log('[WhatsAppManager][render] Nenhum número conectado - whatsappNumbers:', whatsappNumbers); return null; })(),
           <div className="text-center py-8 text-muted-foreground">
             <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg font-medium">Nenhum número conectado</p>
@@ -395,102 +481,104 @@ export function WhatsAppManager({ clinicId, userId }: WhatsAppManagerProps) {
         )}
 
         {whatsappNumbers.length > 0 && (
+          (() => { console.log('[WhatsAppManager][render] Renderizando whatsappNumbers:', whatsappNumbers); return null; })(),
           <div className="space-y-4">
-            {whatsappNumbers.map((number) => (
-              <div key={number.id} className="p-4 border rounded-lg space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Smartphone className="w-8 h-8 text-green-600" />
-                    <div>
-                      <p className="font-medium">{formatPhoneNumber(number.phone_number)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Conectado em: {number.connected_at 
-                          ? new Date(number.connected_at).toLocaleString() 
-                          : 'Não conectado'}
-                      </p>
+            {whatsappNumbers.map((number, idx) => {
+              console.log(`[WhatsAppManager][render] number[${idx}]:`, number);
+              return (
+                <div key={number.id} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Smartphone className="w-8 h-8 text-green-600" />
+                      <div>
+                        <p className="font-medium">{formatPhoneNumber(number.phone_number)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Conectado em: {number.connected_at 
+                            ? new Date(number.connected_at).toLocaleString() 
+                            : 'Não conectado'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(number.status)}
                     
-                    {number.status === 'disconnected' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          console.log('🔄 Reconnecting instance:', number.instance_name);
-                          reconnectMutation.mutate(number.instance_name);
-                        }}
-                        disabled={reconnectMutation.isPending}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        {reconnectMutation.isPending ? (
-                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <RotateCcw className="w-4 h-4" />
-                        )}
-                      </Button>
-                    )}
-                    
-                    {number.status === 'open' && (
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(number.status)}
+                      
+                      {number.status === 'disconnected' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            console.log('🔄 Reconnecting instance:', number.instance_name);
+                            reconnectMutation.mutate(number.instance_name);
+                          }}
+                          disabled={reconnectMutation.isPending}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          {reconnectMutation.isPending ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <RotateCcw className="w-4 h-4" />
+                          )}
+                        </Button>
+                      )}
+                      
+                      {number.status === 'open' && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <PowerOff className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Desconectar WhatsApp</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja desconectar este número? Você precisará escanear o QR Code novamente para reconectar.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => disconnectMutation.mutate(number.id)}
+                                disabled={disconnectMutation.isPending}
+                              >
+                                Desconectar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <PowerOff className="w-4 h-4" />
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Desconectar WhatsApp</AlertDialogTitle>
+                            <AlertDialogTitle>Remover número</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Tem certeza que deseja desconectar este número? Você precisará escanear o QR Code novamente para reconectar.
+                              Tem certeza que deseja remover este número WhatsApp? Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction 
-                              onClick={() => disconnectMutation.mutate(number.id)}
-                              disabled={disconnectMutation.isPending}
+                              onClick={() => deleteMutation.mutate(number.id)}
+                              disabled={deleteMutation.isPending}
+                              className="bg-[#0f766e] hover:bg-[#0d5a56]"
                             >
-                              Desconectar
+                              Remover
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                    )}
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remover número</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja remover este número WhatsApp? Esta ação não pode ser desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => deleteMutation.mutate(number.id)}
-                            disabled={deleteMutation.isPending}
-                            className="bg-[#0f766e] hover:bg-[#0d5a56]"
-                          >
-                            Remover
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    </div>
                   </div>
                 </div>
-
-                
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

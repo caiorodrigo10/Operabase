@@ -67,39 +67,86 @@ router.get('/clinic/:id/users/management', authMiddleware, async (req, res) => {
  */
 router.get('/clinic/:id/config', authMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
+    const supabaseAdmin = createSupabaseClient();
+    const { id: clinic_id } = req.params;
     
-    console.log('⚙️ Buscando configurações da clínica:', id);
+    console.log('⚙️ Buscando configurações da clínica:', clinic_id);
     
-    // TODO: Implementar busca real das configurações
-    const mockConfig = {
-      clinic_id: id,
-      name: 'Clínica Exemplo',
-      address: 'Rua Exemplo, 123',
-      phone: '(11) 99999-9999',
-      email: 'contato@clinica.com',
-      working_hours: {
-        monday: '08:00-18:00',
-        tuesday: '08:00-18:00',
-        wednesday: '08:00-18:00',
-        thursday: '08:00-18:00',
-        friday: '08:00-18:00',
-        saturday: '08:00-12:00',
-        sunday: 'closed'
-      },
-      settings: {
-        appointment_duration: 30,
-        allow_online_booking: true,
-        require_confirmation: true
+    // Buscar dados reais da clínica no banco
+    const { data: clinic, error } = await supabaseAdmin
+      .from('clinics')
+      .select('*')
+      .eq('id', Number(clinic_id))
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao buscar configurações da clínica:', error);
+      if (error.code === 'PGRST116') {
+        res.status(404).json({ 
+          success: false, 
+          error: 'Clínica não encontrada' 
+        });
+        return;
       }
-    };
+      res.status(500).json({ 
+        success: false, 
+        error: 'Erro ao buscar configurações', 
+        details: error.message 
+      });
+      return;
+    }
     
+    console.log('✅ Configurações da clínica encontradas:', clinic?.name || 'N/A');
     res.json({
       success: true,
-      data: mockConfig
+      data: clinic
     });
   } catch (error) {
     console.error('❌ Erro na busca de configurações:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
+    });
+  }
+});
+
+/**
+ * PUT /api/clinic/:id/config - Atualizar configurações da clínica
+ */
+router.put('/clinic/:id/config', authMiddleware, async (req, res) => {
+  try {
+    const supabaseAdmin = createSupabaseClient();
+    const { id: clinic_id } = req.params;
+    const updateData = req.body;
+    
+    console.log('⚙️ Atualizando configurações da clínica:', clinic_id);
+    console.log('📝 Dados para atualização:', updateData);
+    
+    // Atualizar dados da clínica no banco
+    const { data: clinic, error } = await supabaseAdmin
+      .from('clinics')
+      .update(updateData)
+      .eq('id', Number(clinic_id))
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao atualizar configurações da clínica:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Erro ao atualizar configurações', 
+        details: error.message 
+      });
+      return;
+    }
+    
+    console.log('✅ Configurações da clínica atualizadas:', clinic?.name || 'N/A');
+    res.json({
+      success: true,
+      data: clinic
+    });
+  } catch (error) {
+    console.error('❌ Erro na atualização de configurações:', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'

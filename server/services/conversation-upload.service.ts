@@ -1,6 +1,8 @@
-import { IStorage } from '../storage';
-import { SupabaseStorageService } from './supabase-storage.service';
-import { EvolutionAPIService } from './evolution-api.service';
+// Carregar variáveis de ambiente
+import dotenv from 'dotenv';
+dotenv.config();
+
+import { createClient } from '@supabase/supabase-js';
 
 interface UploadParams {
   file: Buffer;
@@ -11,21 +13,7 @@ interface UploadParams {
   userId: number;
   caption?: string;
   sendToWhatsApp?: boolean;
-  messageType?: string; // Para distinguir audio_voice de outros tipos
-}
-
-interface N8NUploadParams {
-  file: Buffer;
-  filename: string;
-  mimeType: string;
-  conversationId: string;
-  clinicId: number;
-  caption?: string;
-  whatsappMessageId?: string;
-  whatsappMediaId?: string;
-  whatsappMediaUrl?: string;
-  timestamp?: string;
-  senderType?: string; // 🤖 Novo: Para identificar origem (patient/ai)
+  messageType?: string;
 }
 
 interface UploadResult {
@@ -36,9 +24,17 @@ interface UploadResult {
   expiresAt: string;
   whatsapp: {
     sent: boolean;
-    messageId?: string;
-    error?: string;
+    messageId: string | undefined;
+    error: string | undefined;
   };
+}
+
+interface EvolutionResponse {
+  key?: {
+    id: string;
+  };
+  status?: string;
+  message?: any;
 }
 
 // Mapeamento MIME -> Evolution mediaType
@@ -62,38 +58,19 @@ const evolutionTypeMapping: Record<string, 'image' | 'video' | 'document' | 'aud
   'application/pdf': 'document',
   'application/msword': 'document',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
-  'text/plain': 'document'
+  'text/plain': 'document',
+  'application/json': 'document',
+  'application/octet-stream': 'document'
 };
 
 export class ConversationUploadService {
-  constructor(
-    private storage: IStorage,
-    private supabaseStorage: SupabaseStorageService,
-    private evolutionAPI: EvolutionAPIService
-  ) {}
+  private supabase;
 
-  // Mapear MIME type para message_type
-  private getMimeToMessageType(mimeType: string): string {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('audio/')) return 'audio_file'; // Upload de arquivo de áudio
-    if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType === 'application/pdf' || 
-        mimeType.includes('document') || 
-        mimeType.includes('text/') ||
-        mimeType.includes('application/')) return 'document';
-    return 'document'; // fallback
-  }
-
-  // Método específico para arquivos recebidos do WhatsApp via N8N
-  private getWhatsAppMessageType(mimeType: string): string {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('audio/')) return 'audio_voice'; // WhatsApp audio = audio_voice  
-    if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType === 'application/pdf' || 
-        mimeType.includes('document') || 
-        mimeType.includes('text/') ||
-        mimeType.includes('application/')) return 'document';
-    return 'document'; // fallback
+  constructor() {
+    this.supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
   }
 
   async uploadFile(params: UploadParams): Promise<UploadResult> {
@@ -115,54 +92,27 @@ export class ConversationUploadService {
       // 1. Validar arquivo
       this.validateFile(file, mimeType, filename);
 
-      // 2. Sanitizar filename ANTES do upload
+      // 2. Sanitizar filename
       const sanitizedFilename = this.sanitizeFilename(filename);
       
-      // 3. Upload para Supabase Storage com nome sanitizado
+      // 3. Upload para Supabase Storage
       console.log('📁 Uploading to Supabase Storage...');
-      console.log('🔧 Using sanitized filename for storage:', sanitizedFilename);
       const storageResult = await this.uploadToSupabase({
         file,
-        filename: sanitizedFilename, // Usar nome sanitizado
+        filename: sanitizedFilename,
         mimeType,
         conversationId,
         clinicId
       });
       
-      // 4. Validar que conversation existe usando Supabase direto (compatível com IDs científicos)
+      // 4. Validar que conversation existe
       console.log('🔍 Validating conversation exists...');
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL!, 
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-
-      let conversation;
-      const isScientificNotation = typeof conversationId === 'string' && conversationId.includes('e+');
-      
-      if (isScientificNotation) {
-        // Para IDs científicos, usar busca robusta como no endpoint GET
-        console.log('🔬 Scientific notation ID detected, using robust lookup');
-        const { data: allConversations } = await supabase
-          .from('conversations')
-          .select('id, contact_id, clinic_id')
-          .eq('clinic_id', clinicId);
-        
-        const paramIdNum = parseFloat(conversationId);
-        conversation = allConversations?.find(conv => {
-          const convIdNum = parseFloat(conv.id.toString());
-          return Math.abs(convIdNum - paramIdNum) < 1;
-        });
-      } else {
-        // Para IDs normais, busca direta
-        const { data } = await supabase
+      const { data: conversation } = await this.supabase
           .from('conversations')
           .select('id, contact_id, clinic_id')
           .eq('id', conversationId)
           .eq('clinic_id', clinicId)
           .single();
-        conversation = data;
-      }
 
       if (!conversation) {
         console.error(`❌ Conversation not found: ${conversationId} for clinic ${clinicId}`);
@@ -171,48 +121,72 @@ export class ConversationUploadService {
       
       console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
       
-      // 5. Criar mensagem no banco (usar ID numérico da conversa) - deixar PostgreSQL criar timestamp automaticamente
+      // 5. Criar mensagem no banco
       console.log('💾 Creating message in database...');
-      // Se cliente enviar caption, usar caption. Se não enviar, deixar mensagem vazia (só arquivo)
-      const messageContent = caption && caption.trim() ? caption.trim() : '';
-      
-      // Usar messageType fornecido ou mapear MIME type automaticamente
       const finalMessageType = messageType || this.getMimeToMessageType(mimeType);
       
-      const message = await this.storage.createMessage({
-        conversation_id: conversation.id.toString(), // Usar ID da conversa encontrada
+      // Função para obter timestamp no horário de Brasília (seguindo padrão das mensagens de texto)
+      const getBrasiliaTimestamp = () => {
+        const now = new Date();
+        // Aplicar offset do fuso horário de São Paulo (GMT-3)
+        const saoPauloOffset = -3 * 60; // GMT-3 em minutos
+        const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
+        return saoPauloTime.toISOString();
+      };
+      
+      const { data: message, error: messageError } = await this.supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          content: caption || filename,
+          message_type: finalMessageType,
         sender_type: 'professional',
-        content: messageContent,
-        message_type: finalMessageType, // Usar tipo fornecido ou mapeado automaticamente
-        ai_action: 'file_upload' // Indicar que foi upload de arquivo
-      });
+          evolution_status: 'pending',
+          timestamp: getBrasiliaTimestamp()
+        })
+        .select()
+        .single();
 
-      // 6. Criar attachment (preservar nome original para o usuário)
-      console.log('📎 Creating attachment record...');
-      const attachment = await this.storage.createAttachment({
+      if (messageError) {
+        console.error('❌ Error creating message:', messageError);
+        throw new Error(`Error creating message: ${messageError.message}`);
+      }
+
+      console.log('✅ Message created:', message.id);
+
+      // 6. Criar attachment
+      console.log('📎 Creating attachment...');
+      const { data: attachment, error: attachmentError } = await this.supabase
+        .from('message_attachments')
+        .insert({
         message_id: message.id,
         clinic_id: clinicId,
-        file_name: filename, // Nome original para exibição
+          file_name: filename,
         file_type: mimeType,
         file_size: file.length,
-        file_url: storageResult.signed_url || storageResult.public_url
-      });
+          file_url: storageResult.signed_url,
+          created_at: getBrasiliaTimestamp()
+        })
+        .select()
+        .single();
 
-      let whatsappResult = { sent: false, messageId: undefined, error: undefined };
+      if (attachmentError) {
+        console.error('❌ Error creating attachment:', attachmentError);
+        // Continuar mesmo com erro no attachment
+      }
 
-      // 5. Enviar via Evolution API (se solicitado)
+      console.log('✅ Attachment created:', attachment?.id || 'failed');
+
+      let whatsappResult = { 
+        sent: false, 
+        messageId: undefined as string | undefined, 
+        error: undefined as string | undefined 
+      };
+
+      // 7. Enviar via Evolution API (se solicitado)
       if (sendToWhatsApp) {
-        console.log('📱 INICIANDO envio via Evolution API...');
-        console.log('📱 sendToWhatsApp =', sendToWhatsApp);
-        console.log('📱 Parâmetros para sendToEvolution:', {
-          conversationId,
-          clinicId,
-          mediaType: this.getEvolutionMediaType(mimeType),
-          mediaUrl: storageResult.signed_url,
-          fileName: this.shouldIncludeFileName(mimeType) ? filename : undefined
-        });
+        console.log('📱 Sending via Evolution API...');
         try {
-          console.log('📱 Chamando this.sendToEvolution...');
           whatsappResult = await this.sendToEvolution({
             conversationId,
             clinicId,
@@ -220,32 +194,35 @@ export class ConversationUploadService {
             mediaUrl: storageResult.signed_url,
             fileName: this.shouldIncludeFileName(mimeType) ? filename : undefined,
             caption: mimeType.startsWith('audio/') ? undefined : caption,
-            messageType: finalMessageType // Usar o messageType final que foi salvo no banco
+            messageType: finalMessageType
           });
 
-          // Atualizar status da mensagem usando evolution_status
+          // Atualizar status da mensagem
           if (whatsappResult.sent) {
-            await this.storage.updateMessage(message.id, {
-              status: 'sent'
-            });
+            await this.supabase
+              .from('messages')
+              .update({ evolution_status: 'sent' })
+              .eq('id', message.id);
             console.log('✅ WhatsApp sent successfully');
           } else {
-            await this.storage.updateMessage(message.id, {
-              status: 'failed'
-            });
+            await this.supabase
+              .from('messages')
+              .update({ evolution_status: 'failed' })
+              .eq('id', message.id);
             console.log('⚠️ WhatsApp failed, but file saved');
           }
         } catch (whatsappError) {
           console.error('❌ WhatsApp sending failed:', whatsappError);
           whatsappResult = {
             sent: false,
+            messageId: undefined,
             error: whatsappError instanceof Error ? whatsappError.message : 'Unknown error'
           };
           
-          // Manter como 'pending' para retry posterior
-          await this.storage.updateMessage(message.id, {
-            status: 'failed'
-          });
+          await this.supabase
+            .from('messages')
+            .update({ evolution_status: 'failed' })
+            .eq('id', message.id);
         }
       }
 
@@ -266,30 +243,77 @@ export class ConversationUploadService {
   }
 
   private validateFile(file: Buffer, mimeType: string, filename: string): void {
-    // Validar tamanho (50MB max)
-    const maxSize = 50 * 1024 * 1024;
-    if (file.length > maxSize) {
-      throw new Error(`Arquivo muito grande. Máximo: ${this.formatFileSize(maxSize)}`);
+    console.log('🔍 Validating file:', {
+      filename,
+      mimeType,
+      size: file.length,
+      isAudio: mimeType.startsWith('audio/')
+    });
+
+    // Validação básica de tamanho
+    if (file.length === 0) {
+      throw new Error('Arquivo vazio');
     }
 
-    // Validar tipo MIME
-    if (!evolutionTypeMapping[mimeType]) {
-      throw new Error(`Tipo de arquivo não suportado: ${mimeType}`);
+    if (file.length > 50 * 1024 * 1024) { // 50MB
+      throw new Error('Arquivo muito grande (máximo 50MB)');
     }
 
-    // Validar nome do arquivo
-    if (!filename || filename.length > 255) {
-      throw new Error('Nome do arquivo inválido');
+    // Validação específica para arquivos de áudio
+    if (mimeType.startsWith('audio/')) {
+      console.log('🎵 Validating audio file...');
+      
+      // Verificar se é um arquivo de áudio válido
+      if (file.length < 100) {
+        throw new Error('Arquivo de áudio muito pequeno (possível arquivo corrompido)');
+      }
+
+      // Verificar extensão do arquivo
+      const audioExtensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.webm', '.opus', '.mp4'];
+      const hasValidExtension = audioExtensions.some(ext => filename.toLowerCase().endsWith(ext));
+      
+      if (!hasValidExtension) {
+        console.warn('⚠️ Audio file without valid extension:', filename);
+        // Não bloquear, mas logar warning
     }
+
+      // Verificar MIME type específico
+      const validAudioMimes = [
+        'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a', 
+        'audio/aac', 'audio/ogg', 'audio/webm', 'audio/opus',
+        'audio/mp4'
+      ];
+      
+      if (!validAudioMimes.includes(mimeType)) {
+        console.warn('⚠️ Audio file with unusual MIME type:', mimeType);
+        // Não bloquear, mas logar warning
+      }
+
+      console.log('✅ Audio file validation passed');
+    }
+
+    // Validação de tipos MIME permitidos
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/mov', 'video/avi', 'video/webm',
+      'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/mp4', 'audio/webm',
+      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain', 'application/json', 'application/octet-stream'
+    ];
+
+    if (!allowedTypes.includes(mimeType)) {
+      throw new Error(`Tipo de arquivo não permitido: ${mimeType}`);
+    }
+
+    console.log('✅ File validation passed');
   }
 
   private sanitizeFilename(filename: string): string {
     if (!filename) return 'unnamed-file';
     
     console.log('🔧 Sanitizing filename:', filename);
-    console.log('🔧 Original bytes:', Buffer.from(filename).toString('hex'));
     
-    // Mapeamento completo de caracteres especiais para Supabase Storage
+    // Mapeamento de caracteres especiais
     const characterMap: { [key: string]: string } = {
       // Acentos maiúsculos
       'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A', 'Å': 'A', 'Æ': 'AE',
@@ -307,7 +331,7 @@ export class ConversationUploadService {
       'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
       'ç': 'c', 'ñ': 'n', 'ý': 'y', 'ÿ': 'y',
       
-      // Caracteres especiais comuns
+      // Caracteres especiais
       ' ': '_', '\t': '_', '\n': '_', '\r': '_',
       '!': '', '?': '', '@': '', '#': '', '$': '', '%': '', '&': '', '*': '',
       '(': '', ')': '', '[': '', ']': '', '{': '', '}': '', '|': '', '\\': '',
@@ -315,15 +339,13 @@ export class ConversationUploadService {
       '`': '', "'": '', '"': '', ',': '', '^': ''
     };
     
-    // Primeiro: aplicar mapeamento de caracteres
+    // Aplicar mapeamento
     let sanitized = filename
       .split('')
       .map(char => {
-        // Se está no mapa, usar mapeamento
         if (characterMap.hasOwnProperty(char)) {
           return characterMap[char];
         }
-        // Se é ASCII básico permitido (a-z, A-Z, 0-9, ., -, _), manter
         const code = char.charCodeAt(0);
         if ((code >= 48 && code <= 57) ||  // 0-9
             (code >= 65 && code <= 90) ||  // A-Z
@@ -333,35 +355,22 @@ export class ConversationUploadService {
             code === 95) {                 // _
           return char;
         }
-        // Qualquer outro caractere é removido
         return '';
       })
       .join('')
-      // Limpar múltiplos underscores e pontos
       .replace(/_{2,}/g, '_')
       .replace(/\.{2,}/g, '.')
       .replace(/^[._-]+|[._-]+$/g, '')
       .toLowerCase();
     
-    // Garantir que há pelo menos algum conteúdo
+    // Fallback se vazio
     if (!sanitized || sanitized.length === 0 || sanitized === '.' || sanitized === '_') {
       const timestamp = Date.now();
       const extension = filename.includes('.') ? filename.split('.').pop()?.toLowerCase() || 'file' : 'file';
       sanitized = `arquivo_${timestamp}.${extension}`;
     }
     
-    // Validação final: apenas caracteres permitidos pelo Supabase
-    const validPattern = /^[a-zA-Z0-9._-]+$/;
-    if (!validPattern.test(sanitized)) {
-      console.warn('🚨 Filename ainda contém caracteres inválidos, usando fallback');
-      const timestamp = Date.now();
-      const extension = filename.includes('.') ? filename.split('.').pop()?.toLowerCase() || 'file' : 'file';
-      sanitized = `arquivo_${timestamp}.${extension}`;
-    }
-    
     console.log('✅ Sanitized filename:', sanitized);
-    console.log('🔍 Validation check:', validPattern.test(sanitized));
-    
     return sanitized;
   }
 
@@ -372,104 +381,53 @@ export class ConversationUploadService {
     conversationId: string;
     clinicId: number;
   }) {
-    console.log('📤 Iniciando upload para Supabase Storage...');
-    console.log('📋 Parâmetros:', {
-      filename: params.filename,
-      mimeType: params.mimeType,
-      fileSize: params.file.length,
-      conversationId: params.conversationId,
-      clinicId: params.clinicId
-    });
+    console.log('📤 Uploading to Supabase Storage...');
 
     const timestamp = Date.now();
     const category = this.getCategoryFromMime(params.mimeType);
     const storagePath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${timestamp}-${params.filename}`;
-
-    console.log('🗂️ Caminho de armazenamento:', storagePath);
-
-    // Upload direto usando Supabase sem service intermediário
-    const supabase = this.supabaseStorage['supabase'];
     const bucketName = 'conversation-attachments';
     
-    console.log('📤 Fazendo upload para bucket:', bucketName);
+    console.log('🗂️ Storage path:', storagePath);
+    console.log('📤 Uploading to bucket:', bucketName);
     
-    // Check if file already exists to prevent duplication
-    const { data: existingFiles } = await supabase.storage
-      .from(bucketName)
-      .list(`clinic-${params.clinicId}/conversation-${params.conversationId}/${category}`, {
-        search: params.filename
-      });
-    
-    console.log('🔍 Checking for existing files:', existingFiles?.length || 0);
-    
-    // If file with same name exists recently (within 1 minute), skip upload
-    if (existingFiles && existingFiles.length > 0) {
-      const recentFile = existingFiles.find(file => {
-        const fileTimestamp = parseInt(file.name.split('-')[0]);
-        const timeDiff = timestamp - fileTimestamp;
-        return timeDiff < 60000; // Less than 1 minute
-      });
-      
-      if (recentFile) {
-        console.log('⚠️ Recent duplicate file detected, using existing:', recentFile.name);
-        const existingPath = `clinic-${params.clinicId}/conversation-${params.conversationId}/${category}/${recentFile.name}`;
-        
-        // Generate signed URL for existing file
-        const { data: signedData, error: signedError } = await supabase.storage
-          .from(bucketName)
-          .createSignedUrl(existingPath, 86400);
-        
-        if (!signedError && signedData) {
-          return {
-            bucket: bucketName,
-            path: existingPath,
-            storage_path: existingPath,
-            signed_url: signedData.signedUrl,
-            signedUrl: signedData.signedUrl,
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            publicUrl: null
-          };
-        }
-      }
-    }
-
-    const { data, error } = await supabase.storage
+    // Upload para Supabase Storage
+    const { data, error } = await this.supabase.storage
       .from(bucketName)
       .upload(storagePath, params.file, {
         contentType: params.mimeType,
-        upsert: false // Prevent overwriting
+        upsert: false
       });
 
     if (error) {
-      console.error('❌ Erro no upload direto:', error);
-      throw new Error(`Erro no upload: ${error.message}`);
+      console.error('❌ Upload error:', error);
+      throw new Error(`Upload error: ${error.message}`);
     }
 
-    console.log('✅ Upload direto realizado com sucesso:', data.path);
+    console.log('✅ Upload successful:', data.path);
 
-    // Gerar URL assinada usando método direto também
-    console.log('🔗 Gerando URL assinada...');
-    const { data: signedData, error: signedError } = await supabase.storage
+    // Gerar URL assinada (24h)
+    console.log('🔗 Generating signed URL...');
+    const { data: signedData, error: signedError } = await this.supabase.storage
       .from(bucketName)
       .createSignedUrl(storagePath, 86400); // 24 horas
 
     if (signedError) {
-      console.error('❌ Erro ao gerar URL assinada:', signedError);
-      throw new Error(`Erro ao gerar URL assinada: ${signedError.message}`);
+      console.error('❌ Signed URL error:', signedError);
+      throw new Error(`Signed URL error: ${signedError.message}`);
     }
 
-    console.log('✅ URL assinada gerada com sucesso');
+    console.log('✅ Signed URL generated');
     
     return {
       bucket: bucketName,
       path: storagePath,
       storage_path: storagePath,
       signed_url: signedData.signedUrl,
-      signedUrl: signedData.signedUrl, // Compatibility
+      signedUrl: signedData.signedUrl,
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Compatibility
-      publicUrl: null // N8N uploads are private
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      publicUrl: null
     };
   }
 
@@ -480,21 +438,13 @@ export class ConversationUploadService {
     mediaUrl: string;
     fileName?: string;
     caption?: string;
-    messageType?: string; // ETAPA 4: Para detectar audio_voice
-  }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
+    messageType?: string;
+  }): Promise<{ sent: boolean; messageId: string | undefined; error: string | undefined }> {
     try {
-      console.log('🔍 Starting Evolution API media send process...');
+      console.log('🔍 Starting Evolution API media send...');
       
-      // Usar EXATAMENTE a mesma lógica do envio de texto (conversations-simple-routes.ts linha 592-598)
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL!, 
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-
-      console.log('🔍 UPLOAD: Querying WhatsApp instances for clinic:', params.clinicId);
-      
-      const { data: instanceArray, error: instanceError } = await supabase
+      // Buscar instância WhatsApp ativa
+      const { data: instanceArray, error: instanceError } = await this.supabase
         .from('whatsapp_numbers')
         .select('*')
         .eq('clinic_id', params.clinicId)
@@ -502,71 +452,43 @@ export class ConversationUploadService {
         .order('created_at', { ascending: false })
         .limit(1);
       
-      console.log('🔍 UPLOAD: Raw query result:', instanceArray);
-      console.log('🔍 UPLOAD: Query error:', instanceError);
-      
       const activeInstance = instanceArray?.[0];
       
-      console.log('🔍 UPLOAD: Selected instance:', activeInstance?.instance_name);
-
-      if (instanceError) {
-        console.error('❌ Error fetching WhatsApp instance:', instanceError);
-        throw new Error('Erro ao buscar instância WhatsApp ativa');
+      if (instanceError || !activeInstance) {
+        console.error('❌ No active WhatsApp instance found');
+        throw new Error('Nenhuma instância WhatsApp ativa encontrada');
       }
 
-      if (!activeInstance) {
-        console.error('❌ No active WhatsApp instance found for clinic:', params.clinicId);
-        throw new Error('Nenhuma instância WhatsApp ativa encontrada para esta clínica');
-      }
+      console.log('✅ Active WhatsApp instance found:', activeInstance.instance_name);
 
-      console.log('✅ Active WhatsApp instance found (using text message logic):', {
-        instance_name: activeInstance.instance_name,
-        phone_number: activeInstance.phone_number,
-        status: activeInstance.status
-      });
+      // Buscar informações de contato
+      const { data: conversation } = await this.supabase
+        .from('conversations')
+        .select(`
+          id,
+          contact_id,
+          contacts!inner(phone, name)
+        `)
+        .eq('id', params.conversationId)
+        .single();
 
-      // Buscar informações de contato usando método existente
-      const conversation = await this.storage.getConversationById(params.conversationId);
-
-      console.log('🔍 Conversation lookup result:', {
-        conversationId: params.conversationId,
-        found: !!conversation,
-        phone: conversation?.contact?.phone
-      });
-
-      if (!conversation?.contact?.phone) {
-        console.error('❌ No contact phone found for conversation:', params.conversationId);
+      if (!conversation?.contacts?.phone) {
+        console.error('❌ No contact phone found');
         throw new Error('Conversa não possui contato com telefone');
       }
 
-      console.log('📤 Sending to Evolution API with clinic instance...', {
-        phone: conversation.contact.phone,
+      console.log('📤 Sending to Evolution API:', {
+        phone: conversation.contacts.phone,
         instance: activeInstance.instance_name,
         mediaType: params.mediaType,
-        fileName: params.fileName
+        fileName: params.fileName,
+        messageType: params.messageType
       });
-
-      // Helper para MIME types
-      const getMimeType = (mediaType: string): string => {
-        const mimeTypes = {
-          'image': 'image/png',
-          'video': 'video/mp4', 
-          'audio': 'audio/mpeg',
-          'document': 'application/pdf'
-        };
-        return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
-      };
 
       const evolutionUrl = process.env.EVOLUTION_URL || 'https://n8n-evolution-api.4gmy9o.easypanel.host';
       const evolutionApiKey = process.env.EVOLUTION_API_KEY;
       
-      console.log('🔧 Evolution API Configuration Check:');
-      console.log('📍 URL:', evolutionUrl);
-      console.log('🔑 API Key exists:', !!evolutionApiKey);
-      console.log('🔑 API Key length:', evolutionApiKey?.length || 0);
-      
       if (!evolutionApiKey) {
-        console.error('❌ EVOLUTION_API_KEY not found in environment variables');
         throw new Error('Evolution API Key não configurada');
       }
 
@@ -582,494 +504,164 @@ export class ConversationUploadService {
         mediaType: params.mediaType
       });
       
-      if (isVoiceMessage) {
+      let response;
+      
+      if (isVoiceMessage && params.mediaType === 'audio') {
         console.log('🎤 Using /sendWhatsAppAudio endpoint for voice message');
         
-        return await this.retryWithBackoff(async () => {
-          return await this.sendWhatsAppAudio({
-            instanceName: activeInstance.instance_name,
-            number: conversation.contact.phone,
-            audioUrl: params.mediaUrl,
-            evolutionUrl,
-            evolutionApiKey
-          });
-        });
-      }
-
-      // Para outros tipos de mídia, usar endpoint genérico
-      console.log('📎 Using /sendMedia endpoint for media file');
-      return await this.sendGenericMedia({
-        instanceName: activeInstance.instance_name,
-        number: conversation.contact.phone,
-        mediaType: params.mediaType,
-        mediaUrl: params.mediaUrl,
-        fileName: params.fileName,
-        caption: params.caption,
-        evolutionUrl,
-        evolutionApiKey
-      });
-
-    } catch (error) {
-      console.error('❌ Evolution API media send failed:', error);
-      return {
-        sent: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  // Método para enviar áudio usando endpoint específico /sendWhatsAppAudio da Evolution API V2
-  private async sendWhatsAppAudio(params: {
-    instanceName: string;
-    number: string;
-    audioUrl: string;
-    evolutionUrl: string;
-    evolutionApiKey: string;
-  }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
-    console.log('🎤 Enviando áudio via /sendWhatsAppAudio (Evolution API V2)...');
-
-    // CORREÇÃO CRÍTICA: Regenerar URL assinada no momento do envio
-    let finalAudioUrl = params.audioUrl;
-    
-    if (params.audioUrl.includes('supabase') && params.audioUrl.includes('token=')) {
-      console.log('🔄 Regenerando URL assinada do Supabase (correção de expiração)...');
-      try {
-        // Extrair path do storage da URL atual
-        const urlParts = params.audioUrl.split('/object/sign/');
-        if (urlParts.length === 2) {
-          const storagePath = urlParts[1].split('?')[0]; // Remove parâmetros de query
-          
-          const { createClient } = await import('@supabase/supabase-js');
-          const supabase = createClient(
-            process.env.SUPABASE_URL!, 
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-          );
-          
-          const { data: newSignedData, error: signedError } = await supabase.storage
-            .from('conversation-attachments')
-            .createSignedUrl(storagePath, 3600); // 1 hora de validade
-          
-          if (!signedError && newSignedData?.signedUrl) {
-            finalAudioUrl = newSignedData.signedUrl;
-            console.log('✅ URL assinada regenerada com sucesso');
-          } else {
-            console.warn('⚠️ Falha ao regenerar URL, usando original:', signedError?.message);
+        // CORREÇÃO CRÍTICA: Baixar arquivo e converter para base64 (como painelespelho)
+        console.log('📥 Baixando arquivo do Supabase para conversão base64...');
+        
+        let base64Audio: string;
+        try {
+          // Baixar arquivo do Supabase Storage
+          const response = await fetch(params.mediaUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to download audio file: ${response.status}`);
           }
-        }
-      } catch (error) {
-        console.warn('⚠️ Erro ao regenerar URL assinada, usando original:', error);
-      }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          base64Audio = buffer.toString('base64');
+          
+          console.log('✅ Arquivo convertido para base64:', {
+            originalSize: buffer.length,
+            base64Length: base64Audio.length
+          });
+        } catch (downloadError) {
+          console.error('❌ Erro ao baixar/converter arquivo:', downloadError);
+          throw new Error('Falha ao processar arquivo de áudio');
     }
 
-    // Payload conforme documentação Evolution API V2
-    const payload = {
-      number: params.number,
-      audio: finalAudioUrl, // URL regenerada ou original
+        // Payload para /sendWhatsAppAudio (mensagem de voz) - usando base64
+        const audioPayload = {
+          number: conversation.contacts.phone,
+          audio: base64Audio, // Base64 encoded audio for better Evolution API compatibility
       delay: 1000
     };
 
     console.log('🎤 Audio Payload (Evolution API V2):', {
-      endpoint: `${params.evolutionUrl}/message/sendWhatsAppAudio/${params.instanceName}`,
-      number: payload.number,
-      audioUrl: payload.audio,
-      urlRegenerated: finalAudioUrl !== params.audioUrl,
-      delay: payload.delay
+          endpoint: `${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`,
+          number: audioPayload.number,
+          audioLength: audioPayload.audio.length,
+          delay: audioPayload.delay
     });
 
-    try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(`${params.evolutionUrl}/message/sendWhatsAppAudio/${params.instanceName}`, {
+        response = await fetch(`${evolutionUrl}/message/sendWhatsAppAudio/${activeInstance.instance_name}`, {
         method: 'POST',
         headers: {
-          'apikey': params.evolutionApiKey,
+            'apikey': evolutionApiKey,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(payload),
+          body: JSON.stringify(audioPayload),
         signal: controller.signal
       });
 
       clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        console.log('✅ WhatsApp Audio Success:', {
-          messageId: result.key?.id,
-          status: result.status,
-          audioMessage: !!result.message?.audioMessage,
-          mimetype: result.message?.audioMessage?.mimetype
-        });
-        
-        return {
-          sent: true,
-          messageId: result.key?.id
-        };
       } else {
-        const errorText = await response.text();
+        console.log('📎 Using /sendMedia endpoint for media file');
         
-        console.error('❌ WhatsApp Audio Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText,
-          originalUrl: params.audioUrl,
-          finalUrl: finalAudioUrl,
-          urlWasRegenerated: finalAudioUrl !== params.audioUrl
-        });
-        
-        // Se URL foi regenerada e ainda falhou, é erro definitivo
-        if (finalAudioUrl !== params.audioUrl) {
-          console.error('❌ ERRO DEFINITIVO: URL regenerada ainda falhou - problema não é de expiração');
-        }
-        
-        return {
-          sent: false,
-          error: `Audio send failed: ${response.status} - ${errorText}`
-        };
-      }
-    } catch (error) {
-      console.error('❌ WhatsApp Audio Request Failed:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      });
-      
-      return {
-        sent: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  // ETAPA 5: Audio format optimization
-  private async optimizeAudioFormat(params: {
-    instanceName: string;
-    number: string;
-    audioUrl: string;
-    evolutionUrl: string;
-    evolutionApiKey: string;
-  }) {
-    console.log('🔧 ETAPA 5: Optimizing audio format...');
-    
-    // Se é URL signed do Supabase, mantém como está (já otimizado)
-    if (params.audioUrl.includes('supabase')) {
-      console.log('✅ Using Supabase storage URL (pre-optimized)');
-      return params;
-    }
-
-    // Para base64 ou outros formatos, aplicar otimizações
-    if (params.audioUrl.startsWith('data:audio/')) {
-      console.log('🔄 Converting data URL to optimized format...');
-      // Aqui poderia implementar conversão de formato se necessário
-      // Por agora, mantém o formato original
-    }
-
-    console.log('✅ Audio format optimization complete');
-    return params;
-  }
-
-  // ETAPA 5: Error categorization for better debugging
-  private categorizeAudioError(status: number, errorText: string): string {
-    if (status >= 400 && status < 500) {
-      if (status === 401) return 'AUTHENTICATION_ERROR';
-      if (status === 403) return 'PERMISSION_ERROR';
-      if (status === 404) return 'INSTANCE_NOT_FOUND';
-      if (status === 422) return 'INVALID_AUDIO_FORMAT';
-      if (status === 429) return 'RATE_LIMIT_ERROR';
-      return 'CLIENT_ERROR';
-    }
-    
-    if (status >= 500) {
-      return 'SERVER_ERROR';
-    }
-    
-    return 'UNKNOWN_ERROR';
-  }
-
-  // ETAPA 5: Network error categorization
-  private categorizeNetworkError(error: any): string {
-    if (error.name === 'AbortError') return 'TIMEOUT';
-    if (error.message?.includes('network') || error.message?.includes('fetch')) return 'NETWORK';
-    if (error.message?.includes('JSON')) return 'PARSE_ERROR';
-    return 'UNKNOWN_NETWORK_ERROR';
-  }
-
-  // ETAPA 5: Determine if error is retryable
-  private isRetryableError(status: number): boolean {
-    return status >= 500 || status === 429 || status === 408;
-  }
-
-  // ETAPA 6: Intelligent retry logic with exponential backoff
-  private async retryWithBackoff<T>(
-    operation: () => Promise<T>,
-    maxRetries: number = 3,
-    baseDelay: number = 1000
-  ): Promise<T> {
-    let lastError: Error;
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`🔄 ETAPA 6: Attempt ${attempt + 1}/${maxRetries + 1}`);
-        const result = await operation();
-        
-        if (attempt > 0) {
-          console.log(`✅ ETAPA 6: Retry successful after ${attempt} attempts`);
-        }
-        
-        return result;
-      } catch (error) {
-        lastError = error as Error;
-        
-        if (attempt === maxRetries) {
-          console.error(`❌ ETAPA 6: All retry attempts failed after ${maxRetries + 1} tries`);
-          break;
-        }
-
-        // Check if error is retryable
-        const isRetryable = this.shouldRetryError(error);
-        if (!isRetryable) {
-          console.log(`🚫 ETAPA 6: Error not retryable, stopping attempts`);
-          break;
-        }
-
-        // Calculate exponential backoff delay
-        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000; // Add jitter
-        console.log(`⏳ ETAPA 6: Retrying in ${Math.round(delay)}ms (attempt ${attempt + 1})`);
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-    
-    throw lastError;
-  }
-
-  // ETAPA 6: Enhanced retry decision logic
-  private shouldRetryError(error: any): boolean {
-    // Network errors are retryable
-    if (error.name === 'AbortError' || error.message?.includes('network')) {
-      return true;
-    }
-
-    // HTTP errors with specific status codes
-    if (error.response?.status) {
-      const status = error.response.status;
-      return this.isRetryableError(status);
-    }
-
-    // Evolution API specific errors
-    if (error.message?.includes('Evolution API')) {
-      return true; // Most Evolution API errors are transient
-    }
-
-    // Default: don't retry unknown errors
-    return false;
-  }
-
-  // ETAPA 6: Intelligent recovery strategies
-  private async recoverFromFailure(params: {
-    conversationId: string | number;
-    clinicId: number;
-    mediaType: string;
-    mediaUrl: string;
-    fileName?: string;
-    caption?: string;
-    messageType?: string;
-    originalError: any;
-  }): Promise<{ sent: boolean; messageId?: string; error?: string; recoveryMethod?: string }> {
-    console.log('🔧 ETAPA 6: Attempting intelligent recovery...');
-
-    const errorType = this.categorizeNetworkError(params.originalError);
-    
-    // Recovery Strategy 1: URL refresh for Supabase storage issues
-    if (params.mediaUrl.includes('supabase') && errorType === 'NETWORK') {
-      console.log('🔄 ETAPA 6: Recovery Strategy 1 - Refreshing Supabase URL');
-      try {
-        // Could implement URL refresh logic here
-        console.log('✅ ETAPA 6: URL refresh strategy prepared');
-        return {
-          sent: false,
-          error: 'URL_REFRESH_NEEDED',
-          recoveryMethod: 'url_refresh'
-        };
-      } catch (error) {
-        console.error('❌ ETAPA 6: URL refresh failed:', error);
-      }
-    }
-
-    // Recovery Strategy 2: Fallback to generic media endpoint
-    if (params.messageType === 'audio_voice' && errorType !== 'AUTHENTICATION_ERROR') {
-      console.log('🔄 ETAPA 6: Recovery Strategy 2 - Fallback to generic media endpoint');
-      try {
-        const fallbackResult = await this.sendGenericMedia({
-          instanceName: 'fallback', // Would get from params in real implementation
-          number: 'fallback',
-          mediaType: params.mediaType,
-          mediaUrl: params.mediaUrl,
-          fileName: params.fileName,
-          caption: params.caption,
-          evolutionUrl: process.env.EVOLUTION_API_URL || '',
-          evolutionApiKey: process.env.EVOLUTION_API_KEY || ''
-        });
-
-        if (fallbackResult.sent) {
-          console.log('✅ ETAPA 6: Recovery successful via generic endpoint');
-          return {
-            ...fallbackResult,
-            recoveryMethod: 'generic_endpoint_fallback'
-          };
-        }
-      } catch (error) {
-        console.error('❌ ETAPA 6: Generic endpoint fallback failed:', error);
-      }
-    }
-
-    // Recovery Strategy 3: Store for later retry
-    console.log('🔄 ETAPA 6: Recovery Strategy 3 - Store for background retry');
-    await this.storeForBackgroundRetry(params);
-    
-    return {
-      sent: false,
-      error: 'STORED_FOR_RETRY',
-      recoveryMethod: 'background_retry'
-    };
-  }
-
-  // ETAPA 6: Store failed sends for background retry
-  private async storeForBackgroundRetry(params: {
-    conversationId: string | number;
-    clinicId: number;
-    mediaType: string;
-    mediaUrl: string;
-    fileName?: string;
-    caption?: string;
-    messageType?: string;
-    originalError: any;
-  }): Promise<void> {
-    console.log('💾 ETAPA 6: Storing failed send for background retry');
-    
-    const retryData = {
-      conversationId: params.conversationId,
-      clinicId: params.clinicId,
-      mediaType: params.mediaType,
-      mediaUrl: params.mediaUrl,
-      fileName: params.fileName,
-      caption: params.caption,
-      messageType: params.messageType,
-      originalError: params.originalError.message,
-      timestamp: new Date().toISOString(),
-      retryCount: 0,
-      nextRetryAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes
-    };
-
-    // In a real implementation, this would store in a retry queue table
-    console.log('📝 ETAPA 6: Retry data prepared:', {
-      id: `retry_${Date.now()}`,
-      nextRetry: retryData.nextRetryAt,
-      type: retryData.messageType
-    });
-  }
-
-  // Método para mídia genérica (mantém funcionalidade existente)
-  private async sendGenericMedia(params: {
-    instanceName: string;
-    number: string;
-    mediaType: string;
-    mediaUrl: string;
-    fileName?: string;
-    caption?: string;
-    evolutionUrl: string;
-    evolutionApiKey: string;
-  }): Promise<{ sent: boolean; messageId?: string; error?: string }> {
-    // Helper para mapeamento MIME type
-    const getMimeTypeV2 = (mediaType: string): string => {
-      const mimeTypes = {
-        'image': 'image/png',
-        'video': 'video/mp4', 
-        'audio': 'audio/mpeg',
-        'document': 'application/pdf'
-      };
-      return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
-    };
-
+        // Payload para /sendMedia (arquivo normal)
     const payload = {
-      number: params.number,
+          number: conversation.contacts.phone,
       mediatype: params.mediaType,
-      mimetype: getMimeTypeV2(params.mediaType),
+          mimetype: this.getMimeTypeFromEvolutionType(params.mediaType),
       media: params.mediaUrl,
       fileName: params.fileName || 'attachment',
       delay: 1000,
       ...(params.caption && params.mediaType !== 'audio' && { caption: params.caption })
     };
     
-    console.log('📎 Generic Media API Payload:');
-    console.log('📤 URL:', `${params.evolutionUrl}/message/sendMedia/${params.instanceName}`);
-    console.log('📤 mediatype:', payload.mediatype);
-    console.log('📤 fileName:', payload.fileName);
+        console.log('📤 Evolution API payload:', {
+          endpoint: `${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`,
+          mediatype: payload.mediatype,
+          fileName: payload.fileName,
+          hasCaption: !!payload.caption
+        });
 
-    try {
-      const response = await fetch(`${params.evolutionUrl}/message/sendMedia/${params.instanceName}`, {
+        response = await fetch(`${evolutionUrl}/message/sendMedia/${activeInstance.instance_name}`, {
         method: 'POST',
         headers: {
-          'apikey': params.evolutionApiKey,
+            'apikey': evolutionApiKey,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       });
+      }
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Generic Media API success:', result);
+        const result = await response.json() as EvolutionResponse;
+        console.log('✅ Evolution API success:', {
+          messageId: result.key?.id,
+          status: result.status,
+          audioMessage: isVoiceMessage ? !!result.message?.audioMessage : undefined,
+          mimetype: isVoiceMessage ? result.message?.audioMessage?.mimetype : undefined
+        });
         
         return {
           sent: true,
-          messageId: result.key?.id
+          messageId: result.key?.id,
+          error: undefined
         };
       } else {
         const errorText = await response.text();
-        console.error('❌ Generic Media API error:', {
+        console.error('❌ Evolution API error:', {
           status: response.status,
           statusText: response.statusText,
-          body: errorText
+          body: errorText,
+          isVoiceMessage,
+          endpoint: isVoiceMessage ? 'sendWhatsAppAudio' : 'sendMedia'
         });
         
         return {
           sent: false,
-          error: `Generic Media API error: ${response.status} - ${errorText}`
+          messageId: undefined,
+          error: `Evolution API error: ${response.status} - ${errorText}`
         };
       }
     } catch (error) {
-      console.error('❌ Generic Media API request failed:', error);
+      console.error('❌ Evolution API send failed:', error);
       return {
         sent: false,
+        messageId: undefined,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
 
-  private getCategoryFromMime(mimeType: string): string {
-    if (mimeType.startsWith('image/')) return 'images';
-    if (mimeType.startsWith('video/')) return 'videos';
-    if (mimeType.startsWith('audio/')) return 'audio';
-    if (mimeType.includes('pdf') || mimeType.includes('doc') || mimeType.includes('text')) return 'documents';
-    return 'others';
-  }
-
-  private getEvolutionMediaType(mimeType: string): 'image' | 'video' | 'document' | 'audio' {
-    // Para Evolution API, sempre usar "audio" independente do tipo
-    if (mimeType.startsWith('audio/')) return 'audio';
-    return evolutionTypeMapping[mimeType] || 'document';
-  }
-
-  private getMessageTypeFromMime(mimeType: string): string {
+  private getMimeToMessageType(mimeType: string): string {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
     if (mimeType.startsWith('audio/')) return 'audio';
     return 'document';
   }
 
+  private getCategoryFromMime(mimeType: string): string {
+    if (mimeType.startsWith('image/')) return 'images';
+    if (mimeType.startsWith('video/')) return 'videos';
+    if (mimeType.startsWith('audio/')) return 'audio';
+    return 'documents';
+  }
+
+  private getEvolutionMediaType(mimeType: string): 'image' | 'video' | 'document' | 'audio' {
+    return evolutionTypeMapping[mimeType] || 'document';
+  }
+
+  private getMimeTypeFromEvolutionType(mediaType: string): string {
+    const mimeTypes = {
+      'image': 'image/png',
+      'video': 'video/mp4', 
+      'audio': 'audio/mpeg',
+      'document': 'application/pdf'
+    };
+    return mimeTypes[mediaType as keyof typeof mimeTypes] || 'application/octet-stream';
+  }
+
   private shouldIncludeFileName(mimeType: string): boolean {
-    // Evolution API só precisa do fileName para documentos
     return this.getEvolutionMediaType(mimeType) === 'document';
   }
 
@@ -1079,173 +671,5 @@ export class ConversationUploadService {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-
-  /**
-   * Método específico para receber arquivos do N8N (origem: pacientes via WhatsApp)
-   * Não envia via Evolution API - apenas armazena no Supabase Storage
-   */
-  async uploadFromN8N(params: N8NUploadParams): Promise<{
-    success: boolean;
-    message: any;
-    attachment: any;
-    signedUrl: string;
-    expiresAt: string;
-  }> {
-    const {
-      file,
-      filename,
-      mimeType,
-      conversationId,
-      clinicId,
-      caption,
-      whatsappMessageId,
-      whatsappMediaId,
-      whatsappMediaUrl,
-      timestamp,
-      senderType // 🤖 Novo: identificação da origem (patient/ai)
-    } = params;
-
-    console.log(`📥 N8N Upload: ${filename} (${mimeType}) for conversation ${conversationId}`);
-    console.log(`🤖 Sender Type: ${senderType || 'patient (default)'}`); // Log identificação da origem
-
-    try {
-      // 1. Validar arquivo
-      this.validateFile(file, mimeType, filename);
-
-      // 2. Sanitizar filename 
-      const sanitizedFilename = this.sanitizeFilename(filename);
-      
-      // 3. Upload para Supabase Storage
-      console.log('📁 Uploading N8N file to Supabase Storage...');
-      const storageResult = await this.uploadToSupabase({
-        file,
-        filename: sanitizedFilename,
-        mimeType,
-        conversationId,
-        clinicId
-      });
-      
-      // 4. Validar conversation (mesmo código robusto do uploadFile)
-      console.log('🔍 Validating conversation exists...');
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL!, 
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-
-      let conversation;
-      const isScientificNotation = typeof conversationId === 'string' && conversationId.includes('e+');
-      
-      if (isScientificNotation) {
-        console.log('🔬 Scientific notation ID detected, using robust lookup');
-        const { data: allConversations } = await supabase
-          .from('conversations')
-          .select('id, contact_id, clinic_id')
-          .eq('clinic_id', clinicId);
-        
-        const paramIdNum = parseFloat(conversationId);
-        conversation = allConversations?.find(conv => {
-          const convIdNum = parseFloat(conv.id.toString());
-          return Math.abs(convIdNum - paramIdNum) < 1;
-        });
-      } else {
-        const { data } = await supabase
-          .from('conversations')
-          .select('id, contact_id, clinic_id')
-          .eq('id', conversationId)
-          .eq('clinic_id', clinicId)
-          .single();
-        conversation = data;
-      }
-
-      if (!conversation) {
-        console.error(`❌ Conversation not found: ${conversationId} for clinic ${clinicId}`);
-        throw new Error(`Conversation ${conversationId} not found`);
-      }
-      
-      console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
-      
-      // 5. Criar mensagem no banco com identificação correta baseada no senderType
-      console.log('💾 Creating N8N message in database...');
-      
-      // 🤖 NOVA LÓGICA: Identificação da origem (patient/ai)
-      const isAIMessage = senderType === 'ai';
-      console.log(`🤖 Message identification: ${isAIMessage ? 'AI-generated' : 'Patient-sent'}`);
-      
-      // Determinar sender_type e device_type baseado na origem
-      const finalSenderType = isAIMessage ? 'ai' : 'patient';
-      const finalDeviceType = isAIMessage ? 'system' : 'manual';
-      
-      console.log(`📝 Using sender_type: '${finalSenderType}', device_type: '${finalDeviceType}'`);
-      
-      // Se cliente enviar caption, usar caption. Se não enviar, deixar mensagem vazia (só arquivo)
-      let messageContent = '';
-      if (caption !== undefined && caption !== null && caption.trim() !== '') {
-        messageContent = caption.trim();
-      }
-      // Deixar content vazio para arquivos sem caption do cliente
-      
-      // Usar método específico para WhatsApp (audio_voice ao invés de audio_file)
-      const messageType = this.getWhatsAppMessageType(mimeType);
-      
-      // Usar timestamp do WhatsApp se disponível, senão usar atual
-      const messageTimestamp = timestamp ? new Date(timestamp) : new Date();
-      
-      console.log('🕐 Adjusting timestamp to GMT-3 (Brasília)...');
-      const brasiliaTimestamp = new Date(messageTimestamp.getTime() - 3 * 60 * 60 * 1000);
-      
-      const message = await this.storage.createMessage({
-        conversation_id: conversation.id.toString(),
-        content: messageContent,
-        sender_type: finalSenderType, // 🤖 'ai' ou 'patient' baseado na identificação
-        message_type: messageType,
-        device_type: finalDeviceType, // 🤖 'system' para IA, 'manual' para paciente
-        timestamp: brasiliaTimestamp,
-        created_at: brasiliaTimestamp,
-        sent_at: brasiliaTimestamp,
-        evolution_status: 'sent', // Já foi enviado pelo WhatsApp
-        whatsapp_message_id: whatsappMessageId || null
-      });
-
-      console.log('✅ N8N Message created:', message.id);
-
-      // 6. Criar attachment no banco com todos os campos necessários
-      console.log('📎 Creating N8N attachment...');
-      console.log('📋 Storage result for attachment:', {
-        bucket: storageResult.bucket,
-        path: storageResult.path,
-        signedUrl: storageResult.signedUrl,
-        expiresAt: storageResult.expiresAt
-      });
-      
-      // Use only existing database columns (compatibility with current schema)
-      const attachment = await this.storage.createAttachment({
-        message_id: message.id,
-        clinic_id: clinicId,
-        file_name: filename, // Nome original para exibição
-        file_type: mimeType, // MIME type original
-        file_size: file.length,
-        file_url: storageResult.signedUrl, // URL assinada para acesso direto
-        // Note: Supabase Storage columns (storage_bucket, storage_path, etc.) 
-        // are disabled in current schema per DATABASE-SCHEMA-GUIDE.md
-        whatsapp_media_id: whatsappMediaId || null,
-        whatsapp_media_url: whatsappMediaUrl || null
-      });
-
-      console.log('✅ N8N Attachment created:', attachment.id);
-
-      return {
-        success: true,
-        message,
-        attachment,
-        signedUrl: storageResult.signedUrl,
-        expiresAt: storageResult.expiresAt.toISOString()
-      };
-
-    } catch (error) {
-      console.error('❌ N8N Upload error:', error);
-      throw error;
-    }
   }
 }

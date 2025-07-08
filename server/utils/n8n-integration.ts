@@ -4,13 +4,17 @@
  * Reutiliza lógica do sistema de mensagens de texto existente
  */
 
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 export async function saveToN8NTable(
   conversationId: string, 
   content: string, 
   messageType: 'human' | 'ai' = 'human'
 ): Promise<void> {
   
-  const { createClient } = await import('@supabase/supabase-js');
   const supabase = createClient(
     process.env.SUPABASE_URL!, 
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -71,7 +75,7 @@ export async function saveToN8NTable(
     const sessionId = `${contact.phone}-${clinicWhatsApp.phone_number}`;
     console.log('🆔 N8N Integration: Session ID formatado:', sessionId);
     
-    // 4. Criar estrutura de mensagem EXATAMENTE como no sistema atual
+    // 5. Criar estrutura de mensagem EXATAMENTE como no sistema atual
     const n8nMessage = {
       type: messageType,
       content: content,
@@ -85,7 +89,7 @@ export async function saveToN8NTable(
       contentPreview: content.substring(0, 50) + (content.length > 50 ? '...' : '')
     });
     
-    // 5. Inserir na tabela n8n_chat_messages
+    // 6. Inserir na tabela n8n_chat_messages
     const { data: insertResult, error: insertError } = await supabase
       .from('n8n_chat_messages')
       .insert({

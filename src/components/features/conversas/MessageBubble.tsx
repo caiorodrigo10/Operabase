@@ -159,10 +159,20 @@ export function MessageBubble({ message, isOptimistic, optimisticStatus }: Messa
               if (!timestamp) return '';
               
               try {
+                // O timestamp já vem no fuso horário correto do servidor (Brasília)
+                // Apenas extrair a hora e minuto sem conversão adicional
+                const timeStr = timestamp.toString();
+                const match = timeStr.match(/(\d{2}):(\d{2})/);
+                if (match) {
+                  return `${match[1]}:${match[2]}`;
+                }
+                
+                // Fallback para Date se não conseguir extrair diretamente
                 return new Date(timestamp).toLocaleTimeString('pt-BR', { 
                   hour: '2-digit', 
                   minute: '2-digit',
-                  hour12: false 
+                  hour12: false,
+                  timeZone: 'America/Sao_Paulo' // Forçar fuso horário de São Paulo
                 });
               } catch (e) {
                 console.error('Error formatting timestamp:', timestamp, e);

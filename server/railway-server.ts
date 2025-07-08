@@ -1,6 +1,7 @@
 import { createExpressApp, serverConfig, logServerConfig } from './core/config/app.config';
 import { testSupabaseConnection } from './core/config/database.config';
 import healthRoutes from './core/routes/health.routes';
+import { startAiPauseChecker } from './middleware/ai-pause-checker';
 import * as path from 'path';
 
 // Usar caminhos absolutos baseados na localização do arquivo
@@ -10,6 +11,8 @@ const appointmentsRoutes = require(path.join(currentDir, 'core', 'routes', 'appo
 const authRoutes = require(path.join(currentDir, 'core', 'routes', 'auth.routes.js'));
 const audioRoutes = require(path.join(currentDir, 'core', 'routes', 'audio.routes.js'));
 const clinicRoutes = require(path.join(currentDir, 'core', 'routes', 'clinic.routes.js'));
+const conversationsRoutes = require(path.join(currentDir, 'core', 'routes', 'conversations.routes.js'));
+const liviaRoutes = require(path.join(currentDir, 'core', 'routes', 'livia.routes.js'));
 const { setupStaticFiles } = require(path.join(currentDir, 'core', 'middleware', 'static.middleware.js'));
 
 /**
@@ -34,16 +37,21 @@ async function startServer() {
       console.log('⚠️  Servidor iniciado sem conexão com Supabase');
     }
 
-    // Registrar rotas
+    // Registrar rotas da API ANTES do middleware estático
     app.use('/', healthRoutes);
     app.use('/api', contactsRoutes);
     app.use('/api', appointmentsRoutes);
     app.use('/api', authRoutes);
     app.use('/api', audioRoutes);
     app.use('/api', clinicRoutes);
+    app.use('/api', conversationsRoutes);
+    app.use('/api', liviaRoutes);
 
     // Configurar arquivos estáticos (deve ser por último)
     setupStaticFiles(app);
+
+    // Iniciar verificador de pausas da IA
+    startAiPauseChecker();
 
     // Iniciar servidor
     const server = app.listen(serverConfig.port, () => {
@@ -66,6 +74,14 @@ async function startServer() {
       console.log('   POST /api/audio/voice-message/:conversationId - Audio upload');
       console.log('   GET  /api/clinic/:id/users/management - Clinic users');
       console.log('   GET  /api/clinic/:id/config - Clinic config');
+      console.log('   GET  /api/conversations-simple - List conversations');
+      console.log('   POST /api/conversations-simple/:id/messages - Send message');
+      console.log('   POST /api/conversations-simple/:id/upload - Upload file');
+      console.log('   PATCH /api/conversations-simple/:id/ai-toggle - Toggle AI status');
+      console.log('   GET  /api/livia/config - Livia config');
+      console.log('   PUT  /api/livia/config - Update Livia config');
+      console.log('   POST /api/livia/config - Create Livia config');
+      console.log('   DELETE /api/livia/config - Delete Livia config');
       console.log('');
       console.log('✅ Servidor pronto para receber requisições!');
     });

@@ -120,6 +120,14 @@ npm run start:railway
 - ✅ **Connection Monitor** - Monitor de conectividade
 - ✅ **Debug Panel** - Painel de debug para desenvolvimento
 
+#### 📁 **Sistema de Upload de Arquivos** ✨ **NOVO**
+- ✅ **Supabase Storage** - Armazenamento de arquivos
+- ✅ **Evolution API** - Envio para WhatsApp
+- ✅ **Validação de Arquivos** - Tipos e tamanhos suportados
+- ✅ **URLs Assinadas** - Acesso seguro por 24h
+- ✅ **Database Integration** - Mensagens e attachments
+- ✅ **Frontend Uploader** - Interface completa de upload
+
 ### 📈 **Estatísticas Atuais**
 - **Contatos**: 38 registros ativos
 - **Agendamentos**: 83 consultas
@@ -219,6 +227,7 @@ curl "http://localhost:5173/api/contacts?clinic_id=1"
 - [`docs/admin-clinic-management.md`](docs/admin-clinic-management.md) - Gestão de clínicas
 - [`docs/ai-assistant.md`](docs/ai-assistant.md) - Assistente IA
 - [`docs/medical-records.md`](docs/medical-records.md) - Prontuários médicos
+- [`docs/SISTEMA-UPLOAD-ARQUIVOS.md`](docs/SISTEMA-UPLOAD-ARQUIVOS.md) - Sistema de Upload de Arquivos ✨ **NOVO**
 
 ## 🚧 Roadmap de Desenvolvimento
 
@@ -230,9 +239,9 @@ curl "http://localhost:5173/api/contacts?clinic_id=1"
 
 ### Funcionalidades Planejadas (Prioridade Média)
 1. **Real-time Updates** - WebSockets ou polling
-2. **File Upload** - Upload de arquivos e imagens
-3. **WhatsApp Integration** - Integração com WhatsApp
-4. **Analytics Dashboard** - Relatórios e métricas
+2. **WhatsApp Integration** - Integração com WhatsApp (parcialmente implementada)
+3. **Analytics Dashboard** - Relatórios e métricas
+4. **Advanced File Management** - Gestão avançada de arquivos
 
 ### Melhorias Técnicas (Prioridade Baixa)
 1. **Performance Optimization** - Code splitting e lazy loading

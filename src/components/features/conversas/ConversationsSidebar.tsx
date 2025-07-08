@@ -13,6 +13,39 @@ const formatMessageTimestamp = (timestamp: string | null | undefined): string =>
   }
   
   try {
+    // O timestamp já vem no fuso horário correto do servidor (Brasília)
+    // Primeiro tentar extrair diretamente da string
+    const timeStr = timestamp.toString();
+    const dateMatch = timeStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+    const timeMatch = timeStr.match(/(\d{2}):(\d{2})/);
+    
+    if (dateMatch && timeMatch) {
+      const [, year, month, day] = dateMatch;
+      const [, hour, minute] = timeMatch;
+      
+      // Criar data usando os valores extraídos (sem conversão de fuso)
+      const messageDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      const today = new Date();
+      
+      // Normalizar datas para comparação (remover hora)
+      const messageDateOnly = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      
+      const isToday = messageDateOnly.getTime() === todayOnly.getTime();
+      
+      // Mesmo dia: mostrar apenas hora (ex: "14:30")
+      if (isToday) {
+        return `${hour}:${minute}`;
+      }
+      
+      // Dia diferente: mostrar dia e mês (ex: "25 jun", "2 jan")
+      return messageDate.toLocaleDateString('pt-BR', {
+        day: 'numeric',
+        month: 'short'
+      }).replace('.', ''); // Remove o ponto do mês abreviado
+    }
+    
+    // Fallback para Date com fuso horário forçado
     const messageDate = new Date(timestamp);
     if (isNaN(messageDate.getTime())) {
       return '';
@@ -31,14 +64,16 @@ const formatMessageTimestamp = (timestamp: string | null | undefined): string =>
       return messageDate.toLocaleTimeString('pt-BR', { 
         hour: '2-digit', 
         minute: '2-digit',
-        hour12: false
+        hour12: false,
+        timeZone: 'America/Sao_Paulo'
       });
     }
     
     // Dia diferente: mostrar dia e mês (ex: "25 jun", "2 jan")
     return messageDate.toLocaleDateString('pt-BR', {
       day: 'numeric',
-      month: 'short'
+      month: 'short',
+      timeZone: 'America/Sao_Paulo'
     }).replace('.', ''); // Remove o ponto do mês abreviado
   } catch (error) {
     return '';

@@ -36,7 +36,7 @@ export function useConversations(status: string = 'active', limit: number = 50) 
     queryKey: ['/api/conversations-simple', status, limit],
     queryFn: async () => {
       const timestamp = Date.now();
-      const response = await fetch(`/api/conversations-simple?status=${status}&limit=${limit}&t=${timestamp}`);
+      const response = await fetch(`/api/conversations-simple?t=${timestamp}`);
       if (!response.ok) {
         throw new Error('Erro ao buscar conversas');
       }

@@ -1331,7 +1331,7 @@ const ITEMS_PER_PAGE = 10;
       return appointment.doctor_name || 'Evento do Google Calendar';
     }
     const contact = contacts.find((c: any) => c.id === contactId);
-    return contact ? contact.name : 'Paciente não encontrado';
+    return contact ? contact.name : `Paciente #${contactId}`;
   };
 
   // Calendar height and positioning helpers

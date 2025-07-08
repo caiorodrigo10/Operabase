@@ -6,7 +6,11 @@ import type { LiviaConfiguration, InsertLiviaConfiguration, UpdateLiviaConfigura
 export function useLiviaConfiguration() {
   return useQuery({
     queryKey: ['/api/livia/config'],
-    queryFn: () => apiRequest('/api/livia/config').then(res => res.json()),
+    queryFn: async () => {
+      const response = await apiRequest('/api/livia/config', 'GET');
+      const result = await response.json();
+      return result.data || result; // Retorna os dados da configuração
+    },
     staleTime: 0, // Force fresh data
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -63,7 +67,11 @@ export function useLiviaConfigurationForN8N() {
 export function useWhatsAppNumbers() {
   return useQuery({
     queryKey: ['/api/whatsapp/numbers'],
-    queryFn: () => apiRequest('/api/whatsapp/numbers').then(res => res.json()),
+    queryFn: async () => {
+      const response = await apiRequest('/api/whatsapp/numbers', 'GET');
+      const result = await response.json();
+      return result.data || result; // Retorna os dados dos números
+    },
     staleTime: 0, // Force fresh data
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -73,7 +81,11 @@ export function useWhatsAppNumbers() {
 export function useProfessionals() {
   return useQuery({
     queryKey: ['/api/clinic/1/professionals'],
-    queryFn: () => apiRequest('/api/clinic/1/professionals').then(res => res.json()),
+    queryFn: async () => {
+      const response = await apiRequest('/api/clinic/1/professionals', 'GET');
+      const result = await response.json();
+      return result.data || result; // Retorna os dados dos profissionais
+    },
     staleTime: 0, // Force fresh data
     gcTime: 5 * 60 * 1000, // 5 minutes
   });

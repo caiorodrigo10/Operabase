@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { X, Upload, FileIcon, Image, Video, Music, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUpload } from '@/hooks/useUpload';
+// import { useUpload } from '@/hooks/useUpload'; // Removido - usando fetch direto
 
 interface FileUploadModalProps {
   isOpen: boolean;
@@ -61,7 +61,7 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionStage, setTransitionStage] = useState<'idle' | 'optimistic' | 'fetching' | 'complete'>('idle');
   
-  const uploadMutation = useUpload();
+  // const uploadMutation = useUpload(); // Removido - usando fetch direto
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map(file => {
@@ -144,12 +144,32 @@ export function FileUploadModal({ isOpen, onClose, conversationId, onUploadSucce
         sendToWhatsApp
       });
       
-      const uploadResult = await uploadMutation.mutateAsync({
-        conversationId,
-        file,
-        caption: caption.trim() || undefined,
+      // Upload direto para o Railway server
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('caption', caption.trim() || '');
+      formData.append('sendToWhatsApp', sendToWhatsApp.toString());
+      
+      console.log('📤 Sending to Railway server:', {
+        endpoint: `/api/conversations-simple/${conversationId}/upload`,
+        fileName: file.name,
+        fileSize: file.size,
+        caption: caption.trim() || 'no caption',
         sendToWhatsApp
       });
+      
+      const response = await fetch(`/api/conversations-simple/${conversationId}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const uploadResult = await response.json();
+      
+      if (!response.ok || !uploadResult.success) {
+        throw new Error(uploadResult.error || 'Erro no upload');
+      }
+      
+      console.log('✅ Upload successful:', uploadResult);
       
       // ETAPA 5.3: Wait for cache replacement to complete before completing transition
       console.log('🔄 ETAPA 5.3: Upload successful, waiting for cache stabilization...');

@@ -441,8 +441,7 @@ export class PostgreSQLStorage implements IStorage {
     return db.select()
       .from(contacts)
       .where(and(...conditions))
-      .orderBy(desc(contacts.last_interaction))
-      .limit(200); // Limitar para melhor performance
+      .orderBy(contacts.id); // Order by ID to ensure consistent results - no limit to get all contacts
   }
 
   async getContact(id: number): Promise<Contact | undefined> {

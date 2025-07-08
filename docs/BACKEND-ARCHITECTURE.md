@@ -133,7 +133,7 @@ const authMiddleware = (req, res, next) => {
 };
 ```
 
-### Endpoints Implementados
+### Endpoints Implementados e Validados
 
 #### 1. Health Check
 ```typescript
@@ -308,6 +308,110 @@ app.get('/api/clinic/:id/users/management', authMiddleware, async (req, res) => 
 });
 ```
 
+#### 5. WhatsApp Numbers API
+```typescript
+// GET /api/whatsapp/numbers - Lista números WhatsApp
+app.get('/api/whatsapp/numbers', authMiddleware, async (req: any, res: any) => {
+  try {
+    const clinic_id = req.user?.clinic_id || 1;
+    console.log('🔍 Buscando números WhatsApp para clinic_id:', clinic_id);
+    
+    const supabaseAdmin = createSupabaseClient();
+    const { data: numbers, error } = await supabaseAdmin
+      .from('whatsapp_numbers')
+      .select('*')
+      .eq('clinic_id', clinic_id)
+      .eq('is_deleted', false)
+      .order('id', { ascending: true });
+      
+    if (error) {
+      console.error('❌ Erro ao buscar números WhatsApp:', error);
+      res.status(500).json({ error: 'Erro ao buscar números WhatsApp', details: error.message });
+      return;
+    }
+    
+    console.log('✅ Números WhatsApp encontrados:', numbers?.length || 0);
+    res.json(numbers || []);
+  } catch (error) {
+    console.error('❌ Erro inesperado ao buscar números WhatsApp:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+```
+
+#### 6. Conversations API
+```typescript
+// GET /api/conversations-simple - Lista conversas
+app.get('/api/conversations-simple', authMiddleware, async (req: any, res: any) => {
+  try {
+    const clinic_id = req.query.clinic_id || 1;
+    console.log('🔍 Fetching conversations for clinic:', clinic_id);
+    
+    const supabaseAdmin = createSupabaseClient();
+    const { data: conversations, error } = await supabaseAdmin
+      .from('conversations')
+      .select('*')
+      .eq('clinic_id', clinic_id)
+      .order('updated_at', { ascending: false });
+    
+    if (error) {
+      console.error('❌ Erro ao buscar conversas:', error);
+      res.status(500).json({ error: 'Erro ao buscar conversas', details: error.message });
+      return;
+    }
+    
+    console.log('📊 Found conversations:', conversations?.length || 0);
+    res.json(conversations || []);
+  } catch (error) {
+    console.error('❌ Erro inesperado ao buscar conversas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/conversations-simple/:id/messages - Adicionar mensagem
+app.post('/api/conversations-simple/:id/messages', authMiddleware, async (req: any, res: any) => {
+  try {
+    const conversationId = req.params.id;
+    const { content } = req.body;
+    
+    console.log('🔍 Sending message to conversation:', conversationId);
+    
+    const supabaseAdmin = createSupabaseClient();
+    
+    // Inserir mensagem com timestamp de Brasília
+    const getBrasiliaTimestamp = () => {
+      const now = new Date();
+      const saoPauloOffset = -3 * 60; // GMT-3 em minutos
+      const saoPauloTime = new Date(now.getTime() + saoPauloOffset * 60000);
+      return saoPauloTime.toISOString();
+    };
+    
+    const { data: message, error } = await supabaseAdmin
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        content,
+        timestamp: getBrasiliaTimestamp(),
+        created_at: getBrasiliaTimestamp()
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao salvar mensagem:', error);
+      res.status(500).json({ error: 'Erro ao salvar mensagem', details: error.message });
+      return;
+    }
+    
+    console.log('✅ Message saved to database:', message.id);
+    res.json(message);
+  } catch (error) {
+    console.error('❌ Erro inesperado ao salvar mensagem:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+```
+
 ## 💾 Sistema de Banco de Dados
 
 ### Conexão Supabase
@@ -454,7 +558,7 @@ npm run dev
 
 ### Structured Logging
 ```typescript
-// Padrão de log estruturado
+// Padrão de log estruturado implementado e validado
 function logRequest(method: string, path: string, clinicId?: number) {
   console.log(`🔍 ${method} ${path}${clinicId ? ` para clinic_id: ${clinicId}` : ''}`);
 }
@@ -465,6 +569,22 @@ function logSuccess(operation: string, count?: number) {
 
 function logError(operation: string, error: any) {
   console.error(`❌ Erro em ${operation}:`, error);
+}
+
+// Logs específicos implementados
+function logWhatsAppQuery(clinicId: number, numbersFound: number) {
+  console.log(`🔍 Buscando números WhatsApp para clinic_id: ${clinicId}`);
+  console.log(`✅ Números WhatsApp encontrados: ${numbersFound}`);
+}
+
+function logConversationQuery(clinicId: number, conversationsFound: number) {
+  console.log(`🔍 Fetching conversations for clinic: ${clinicId}`);
+  console.log(`📊 Found conversations: ${conversationsFound}`);
+}
+
+function logMessageSave(conversationId: string, messageId: number) {
+  console.log(`🔍 Sending message to conversation: ${conversationId}`);
+  console.log(`✅ Message saved to database: ${messageId}`);
 }
 ```
 
@@ -512,10 +632,14 @@ app.get('/health', async (req, res) => {
 ### 📊 API Endpoints
 - ✅ **GET /health** - Health check completo
 - ✅ **GET /api/contacts** - Lista contatos (38 registros)
-- ✅ **GET /api/contacts/:id** - Contato individual ✨ **NOVO**
+- ✅ **GET /api/contacts/:id** - Contato individual
 - ✅ **GET /api/appointments** - Lista agendamentos (83 registros)
 - ✅ **GET /api/clinic/:id/users/management** - Usuários da clínica (3 usuários)
 - ✅ **GET /api/clinic/:id/config** - Configuração da clínica
+- ✅ **GET /api/whatsapp/numbers** - Lista números WhatsApp (1 registro ativo) ✨ **NOVO**
+- ✅ **GET /api/conversations-simple** - Lista conversas (5 registros) ✨ **NOVO**
+- ✅ **GET /api/conversations-simple/:id** - Conversa individual ✨ **NOVO**
+- ✅ **POST /api/conversations-simple/:id/messages** - Adicionar mensagem ✨ **NOVO**
 
 ### 💾 Banco de Dados
 - ✅ **Supabase PostgreSQL** conectado

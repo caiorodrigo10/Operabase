@@ -22,27 +22,24 @@ const router = express.Router();
 router.get('/contacts', authMiddleware, async (req, res) => {
   try {
     const supabaseAdmin = createSupabaseClient();
-    const { search, page = '1', limit = '10' } = req.query;
+    const { search, clinic_id = 1 } = req.query;
     
-    console.log('📞 Buscando contatos:', { search, page, limit });
+    console.log('📞 Buscando contatos:', { search, clinic_id });
     
     let query = supabaseAdmin
       .from('contacts')
-      .select('*');
+      .select('*')
+      .eq('clinic_id', Number(clinic_id));
     
     // Aplicar filtro de busca se fornecido
     if (search) {
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
     }
     
-    // Aplicar paginação
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
+    // Remover paginação para retornar TODOS os contatos da clínica
+    // Isso resolve o problema de "paciente não encontrado" no calendário
     
-    query = query.range(offset, offset + limitNum - 1);
-    
-    const { data: contacts, error } = await query.order('first_contact', { ascending: false });
+    const { data: contacts, error } = await query.order('id', { ascending: true });
     
     if (error) {
       console.error('❌ Erro ao buscar contatos:', error);

@@ -1,11 +1,19 @@
 import OpenAI from 'openai';
+import dotenv from 'dotenv';
 
-class TranscriptionService {
+dotenv.config();
+
+export class TranscriptionService {
   private openai: OpenAI;
   
   constructor() {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY não encontrada nas variáveis de ambiente');
+    }
+    
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: apiKey
     });
   }
   
