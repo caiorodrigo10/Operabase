@@ -55,15 +55,8 @@ router.get('/contacts', authMiddleware, async (req, res) => {
     
     console.log(`✅ Encontrados ${contacts?.length || 0} contatos`);
     
-    res.json({
-      success: true,
-      data: contacts,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: contacts?.length || 0
-      }
-    });
+    // Return array directly for frontend compatibility
+    res.json(contacts || []);
   } catch (error) {
     console.error('❌ Erro na busca de contatos:', error);
     res.status(500).json({
@@ -100,10 +93,8 @@ router.get('/contacts/:id', authMiddleware, async (req, res) => {
     
     console.log('✅ Contato encontrado:', contact.name);
     
-    res.json({
-      success: true,
-      data: contact
-    });
+    // Return contact object directly
+    res.json(contact);
   } catch (error) {
     console.error('❌ Erro na busca de contato:', error);
     res.status(500).json({
@@ -140,10 +131,8 @@ router.post('/contacts', authMiddleware, async (req, res) => {
     
     console.log('✅ Contato criado com sucesso:', contact.id);
     
-    res.status(201).json({
-      success: true,
-      data: contact
-    });
+    // Return contact object directly
+    res.status(201).json(contact);
   } catch (error) {
     console.error('❌ Erro na criação de contato:', error);
     res.status(500).json({
