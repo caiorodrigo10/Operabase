@@ -133,8 +133,8 @@ export async function testConnection() {
   } catch (error) {
     console.error('❌ Erro de conectividade:', error);
     throw error;
+    }
   }
-}
 ```
 
 ### Sistema de Fetch Padronizado
@@ -336,10 +336,10 @@ export default function ContactDetailPage() {
         </div>
       </div>
     );
-  }
+}
 
   if (contactError) {
-    return (
+  return (
       <div className="container mx-auto p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <h2 className="text-red-800 font-semibold">Contato não encontrado</h2>
@@ -350,14 +350,14 @@ export default function ContactDetailPage() {
   }
 
   if (!contact) {
-    return (
-      <div className="container mx-auto p-6">
+  return (
+    <div className="container mx-auto p-6">
         <div className="text-center py-8">
           <p className="text-gray-500">Contato não encontrado</p>
-        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="container mx-auto p-6">
@@ -390,8 +390,8 @@ export default function ContactDetailPage() {
               </div>
             </div>
           </div>
-        </div>
-        
+      </div>
+      
         <div>
           <h2 className="text-lg font-semibold mb-4">Agendamentos</h2>
           <div className="bg-white rounded-lg border p-4">
@@ -492,7 +492,7 @@ export function ContactDetailSkeleton() {
       </div>
     </div>
   );
-}
+    }
 
 export function AppointmentCardSkeleton() {
   return (
@@ -505,7 +505,7 @@ export function AppointmentCardSkeleton() {
       <div className="h-3 bg-gray-200 rounded w-3/4"></div>
     </div>
   );
-}
+    }
 ```
 
 ### Error Handling Railway
@@ -586,7 +586,7 @@ export function useConnectionMonitor() {
         } else {
           setRailwayStatus('disconnected');
           console.warn('⚠️ Railway server respondeu com erro:', response.status);
-        }
+}
       } catch (error) {
         setRailwayStatus('disconnected');
         console.error('❌ Railway server desconectado:', error);
@@ -638,7 +638,7 @@ export function DebugPanel() {
       });
     } catch (error) {
       setDebugInfo({ error: error.message });
-    }
+  }
   };
 
   if (process.env.NODE_ENV !== 'development') {
@@ -681,9 +681,9 @@ export function DebugPanel() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
+        </div>
+      );
+    }
 ```
 
 ## 🚀 Build e Deploy Railway

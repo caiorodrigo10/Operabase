@@ -1,16 +1,16 @@
-import { createExpressApp, serverConfig, logServerConfig } from './core/config/app.config';
-import { testSupabaseConnection } from './core/config/database.config';
-import healthRoutes from './core/routes/health.routes';
+import { createExpressApp, serverConfig, logServerConfig } from './config/app.config';
+import { testSupabaseConnection } from './config/database.config';
+import healthRoutes from './routes/health.routes';
 import * as path from 'path';
 
 // Usar caminhos absolutos baseados na localização do arquivo
 const currentDir = path.dirname(__filename);
-const contactsRoutes = require(path.join(currentDir, 'core', 'routes', 'contacts.routes.js'));
-const appointmentsRoutes = require(path.join(currentDir, 'core', 'routes', 'appointments.routes.js'));
-const authRoutes = require(path.join(currentDir, 'core', 'routes', 'auth.routes.js'));
-const audioRoutes = require(path.join(currentDir, 'core', 'routes', 'audio.routes.js'));
-const clinicRoutes = require(path.join(currentDir, 'core', 'routes', 'clinic.routes.js'));
-const { setupStaticFiles } = require(path.join(currentDir, 'core', 'middleware', 'static.middleware.js'));
+const contactsRoutes = require(path.join(currentDir, 'routes', 'contacts.routes.js'));
+const appointmentsRoutes = require(path.join(currentDir, 'routes', 'appointments.routes.js'));
+const authRoutes = require(path.join(currentDir, 'routes', 'auth.routes.js'));
+const audioRoutes = require(path.join(currentDir, 'routes', 'audio.routes.js'));
+const clinicRoutes = require(path.join(currentDir, 'routes', 'clinic.routes.js'));
+const { setupStaticFiles } = require(path.join(currentDir, 'middleware', 'static.middleware.js'));
 
 /**
  * Servidor Principal Refatorado

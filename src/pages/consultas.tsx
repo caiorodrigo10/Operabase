@@ -1647,7 +1647,7 @@ const ITEMS_PER_PAGE = 10;
         <div className="mb-6">
           <div className="h-8 bg-slate-200 rounded w-1/3 mb-2 animate-pulse"></div>
           <div className="h-4 bg-slate-200 rounded w-1/2 animate-pulse"></div>
-        </div>
+          </div>
         <Card className="animate-pulse">
           <CardContent className="p-6">
             <div className="h-96 bg-slate-200 rounded"></div>

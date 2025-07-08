@@ -129,7 +129,7 @@ app.use(express.json());
 // Auth Middleware Simplificado
 const authMiddleware = (req, res, next) => {
   // Bypass para desenvolvimento - em produção implementar auth real
-  next();
+    next();
 };
 ```
 
@@ -138,9 +138,9 @@ const authMiddleware = (req, res, next) => {
 #### 1. Health Check
 ```typescript
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     services: {
       supabase: !!process.env.SUPABASE_URL,
@@ -178,7 +178,7 @@ app.get('/api/contacts', authMiddleware, async (req, res) => {
     
     console.log('✅ Contatos encontrados:', contacts?.length || 0);
     res.json(contacts || []);
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Erro ao buscar contatos:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }

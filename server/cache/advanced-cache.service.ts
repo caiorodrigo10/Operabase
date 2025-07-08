@@ -4,6 +4,7 @@
  */
 
 import { redisCacheService } from '../services/redis-cache.service.js';
+import { memoryCacheService } from './memory-cache.service';
 
 interface CacheLayer {
   name: string;
@@ -24,12 +25,20 @@ interface SmartCacheConfig {
   };
 }
 
+interface CacheOptions {
+  ttl?: number; // TTL em segundos
+  category?: string;
+}
+
 export class AdvancedCacheService {
+  private static instance: AdvancedCacheService;
+  private redisAvailable = false;
+  private redis: any = null;
   private config: SmartCacheConfig;
   private hitRateThreshold = 75; // Minimum acceptable hit rate
   private maxResponseTime = 200; // Maximum acceptable response time (ms)
 
-  constructor() {
+  private constructor() {
     this.config = {
       conversations: {
         list: {
@@ -66,6 +75,200 @@ export class AdvancedCacheService {
         }
       }
     };
+    this.initializeRedis();
+  }
+
+  public static getInstance(): AdvancedCacheService {
+    if (!AdvancedCacheService.instance) {
+      AdvancedCacheService.instance = new AdvancedCacheService();
+    }
+    return AdvancedCacheService.instance;
+  }
+
+  private async initializeRedis(): Promise<void> {
+    try {
+      // Tentar conectar Redis se disponível
+      if (process.env.REDIS_URL) {
+        const Redis = require('ioredis');
+        this.redis = new Redis(process.env.REDIS_URL, {
+          retryDelayOnFailover: 100,
+          maxRetriesPerRequest: 3,
+          lazyConnect: true
+        });
+
+        await this.redis.ping();
+        this.redisAvailable = true;
+        console.log('✅ CACHE: Redis conectado com sucesso');
+      } else {
+        console.log('⚠️ CACHE: Redis não configurado, usando apenas Memory Cache');
+      }
+    } catch (error) {
+      console.log('⚠️ CACHE: Redis não disponível, usando apenas Memory Cache:', error.message);
+      this.redisAvailable = false;
+    }
+  }
+
+  /**
+   * Buscar dados do cache (Redis primeiro, Memory como fallback)
+   */
+  public async get(key: string, category?: string): Promise<any> {
+    try {
+      // 1. Tentar Redis primeiro (mais rápido quando disponível)
+      if (this.redisAvailable && this.redis) {
+        const redisKey = category ? `${category}:${key}` : key;
+        const cached = await this.redis.get(redisKey);
+        
+        if (cached !== null) {
+          console.log(`🎯 CACHE HIT [Redis]: ${redisKey}`);
+          return JSON.parse(cached);
+        }
+      }
+
+      // 2. Fallback para Memory Cache
+      const memoryCached = await memoryCacheService.get(key);
+      if (memoryCached !== null) {
+        console.log(`🎯 CACHE HIT [Memory]: ${key}`);
+        return memoryCached;
+      }
+
+      console.log(`💽 CACHE MISS: ${key}`);
+      return null;
+
+    } catch (error) {
+      console.error('❌ CACHE: Erro ao buscar cache:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Salvar dados no cache (Redis + Memory)
+   */
+  public async set(key: string, data: any, options: CacheOptions = {}): Promise<void> {
+    try {
+      const { ttl = 300, category } = options; // 5 minutos padrão
+
+      // 1. Salvar no Redis (se disponível)
+      if (this.redisAvailable && this.redis) {
+        const redisKey = category ? `${category}:${key}` : key;
+        await this.redis.setex(redisKey, ttl, JSON.stringify(data));
+        console.log(`💾 CACHE SET [Redis]: ${redisKey} (TTL: ${ttl}s)`);
+      }
+
+      // 2. Salvar no Memory Cache também
+      await memoryCacheService.set(key, data, ttl * 1000); // Memory cache usa ms
+      console.log(`💾 CACHE SET [Memory]: ${key} (TTL: ${ttl}s)`);
+
+    } catch (error) {
+      console.error('❌ CACHE: Erro ao salvar cache:', error);
+    }
+  }
+
+  /**
+   * Invalidar cache específico
+   */
+  public async invalidate(key: string, category?: string): Promise<void> {
+    try {
+      // 1. Invalidar Redis
+      if (this.redisAvailable && this.redis) {
+        const redisKey = category ? `${category}:${key}` : key;
+        await this.redis.del(redisKey);
+        console.log(`🧹 CACHE INVALIDATED [Redis]: ${redisKey}`);
+      }
+
+      // 2. Invalidar Memory Cache
+      memoryCacheService.delete(key);
+      console.log(`🧹 CACHE INVALIDATED [Memory]: ${key}`);
+
+    } catch (error) {
+      console.error('❌ CACHE: Erro ao invalidar cache:', error);
+    }
+  }
+
+  /**
+   * Invalidar por padrão (Redis + Memory)
+   */
+  public async invalidatePattern(pattern: string): Promise<number> {
+    let deletedCount = 0;
+
+    try {
+      // 1. Invalidar Redis por padrão
+      if (this.redisAvailable && this.redis) {
+        const keys = await this.redis.keys(pattern);
+        if (keys.length > 0) {
+          const deleted = await this.redis.del(...keys);
+          deletedCount += deleted;
+          console.log(`🧹 CACHE PATTERN INVALIDATED [Redis]: ${pattern} (${deleted} keys)`);
+        }
+      }
+
+      // 2. Invalidar Memory Cache por padrão
+      const memoryDeleted = memoryCacheService.deletePattern(pattern);
+      deletedCount += memoryDeleted;
+      console.log(`🧹 CACHE PATTERN INVALIDATED [Memory]: ${pattern} (${memoryDeleted} keys)`);
+
+    } catch (error) {
+      console.error('❌ CACHE: Erro ao invalidar padrão:', error);
+    }
+
+    return deletedCount;
+  }
+
+  /**
+   * Limpar todo o cache
+   */
+  public async clear(): Promise<void> {
+    try {
+      // 1. Limpar Redis
+      if (this.redisAvailable && this.redis) {
+        await this.redis.flushdb();
+        console.log('🧹 CACHE CLEARED [Redis]: Todos os dados removidos');
+      }
+
+      // 2. Limpar Memory Cache
+      memoryCacheService.clear();
+      console.log('🧹 CACHE CLEARED [Memory]: Todos os dados removidos');
+
+    } catch (error) {
+      console.error('❌ CACHE: Erro ao limpar cache:', error);
+    }
+  }
+
+  /**
+   * Métodos específicos para conversas (compatibilidade)
+   */
+  public async getCachedConversations(clinicId: number): Promise<any> {
+    return await this.get(`conversations:clinic:${clinicId}`, 'conversation_lists');
+  }
+
+  public async cacheConversations(clinicId: number, conversations: any[]): Promise<void> {
+    await this.set(`conversations:clinic:${clinicId}`, conversations, {
+      ttl: 300, // 5 minutos
+      category: 'conversation_lists'
+    });
+  }
+
+  public async invalidateConversationCache(clinicId: number): Promise<void> {
+    await this.invalidatePattern(`*conversation*clinic*${clinicId}*`);
+    await this.invalidatePattern(`conversation_lists:conversations:clinic:${clinicId}`);
+  }
+
+  public async invalidateConversationDetail(conversationId: string | number): Promise<void> {
+    await this.invalidatePattern(`*conversation*${conversationId}*`);
+    await this.invalidatePattern(`conversation_details:conversation:${conversationId}:*`);
+  }
+
+  /**
+   * Status do sistema de cache
+   */
+  public getStatus(): { redis: boolean; memory: boolean; stats: any } {
+    return {
+      redis: this.redisAvailable,
+      memory: true, // Memory cache sempre disponível
+      stats: {
+        redisConnected: this.redisAvailable,
+        memoryEntries: memoryCacheService.getStats().memoryUsage
+      }
+    };
   }
 
   /**
@@ -76,7 +279,7 @@ export class AdvancedCacheService {
     
     try {
       // Try primary cache
-      const cachedData = await redisCacheService.get(key);
+      const cachedData = await this.get(key);
       if (cachedData) {
         const responseTime = Date.now() - startTime;
         console.log(`🎯 ETAPA 4: Cache HIT [${layer.name}] key: ${key} (${responseTime}ms)`);
@@ -99,7 +302,7 @@ export class AdvancedCacheService {
       // Dynamic TTL based on data freshness and size
       const optimizedTTL = this.calculateOptimalTTL(data, layer);
       
-      await redisCacheService.set(key, data, optimizedTTL);
+      await this.set(key, data);
       console.log(`💾 ETAPA 4: Cached [${layer.name}] key: ${key} TTL: ${optimizedTTL}s`);
     } catch (error) {
       console.warn(`⚠️ ETAPA 4: Cache set error for ${key}:`, error);
@@ -184,7 +387,7 @@ export class AdvancedCacheService {
       const nextPage = currentPage + 1;
       const nextPageKey = `conversation:${conversationId}:detail:page:${nextPage}:limit:25`;
       
-      const cachedNextPage = await redisCacheService.get(nextPageKey);
+      const cachedNextPage = await this.get(nextPageKey);
       if (!cachedNextPage) {
         console.log(`🔮 ETAPA 4: Prefetch opportunity for page ${nextPage} of conversation ${conversationId}`);
         // Note: Actual prefetch logic would be implemented in the route handler
@@ -254,5 +457,5 @@ export class AdvancedCacheService {
   }
 }
 
-// Singleton instance
-export const advancedCache = new AdvancedCacheService();
+// Export singleton instance
+export const advancedCacheService = AdvancedCacheService.getInstance();

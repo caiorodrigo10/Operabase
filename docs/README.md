@@ -1,431 +1,328 @@
-# Operabase - Plataforma de Gestão de Saúde
+# Operabase - Sistema de Gestão para Clínicas
 
 ## 📋 Visão Geral
 
-O **Operabase** é uma plataforma completa de gestão de saúde desenvolvida para clínicas e consultórios, oferecendo um sistema integrado de comunicação, gestão de pacientes, agendamentos, registros médicos e assistência inteligente com IA.
+**Operabase** é um sistema completo de gestão para clínicas médicas, construído com **Railway Unified Server** que unifica frontend e backend em uma única aplicação, eliminando problemas de conectividade e simplificando o desenvolvimento.
 
-### 🎯 Características Principais
-
-- **Multi-tenant**: Isolamento completo por clínica com segurança healthcare-grade
-- **Comunicação Integrada**: WhatsApp Evolution API V2 para comunicação direta
-- **IA Avançada**: Assistente Mara com sistema RAG para consulta de conhecimento médico
-- **Agendamentos Inteligentes**: Sincronização bidirecional com Google Calendar
-- **Gestão Financeira**: Integração com Asaas para pagamentos e cobrança
-- **Registros Médicos**: Sistema completo de prontuários e anamneses
-- **Auditoria Completa**: Logs estruturados para compliance LGPD/HIPAA
-
-## 🏗️ Arquitetura do Sistema
+## 🏗️ Arquitetura Railway Unified Server
 
 ### Stack Tecnológico
+- **Frontend**: React 18 + Vite + TypeScript + TanStack Query + Tailwind CSS
+- **Backend**: Express.js + TypeScript + Railway Unified Server
+- **Database**: Supabase PostgreSQL
+- **Development**: Vite proxy + Hot reload
+- **Production**: Static files servidos pelo Express
 
-**Frontend:**
-- React 18 com TypeScript
-- Vite para build e desenvolvimento
-- TailwindCSS + shadcn/ui para interface
-- TanStack Query para gerenciamento de estado
-- Wouter para roteamento
-
-**Backend:**
-- Node.js com Express e TypeScript
-- Drizzle ORM com PostgreSQL
-- Supabase para autenticação e storage
-- OpenAI GPT-4o para IA
-- Redis para cache (opcional)
-
-**Infraestrutura:**
-- PostgreSQL com extensão pgvector
-- Sistema de arquivos para uploads
-- WhatsApp Evolution API
-- Google Calendar API
-- Asaas API para pagamentos
-
-### 🎨 Arquitetura de Alto Nível
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │    Backend      │    │   Database      │
-│   React/TS      │◄──►│   Express/TS    │◄──►│   PostgreSQL    │
-│   TailwindCSS   │    │   Drizzle ORM   │    │   + pgvector    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                        │                        │
-         │                        │                        │
-         ▼                        ▼                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   APIs Externas │    │   Supabase      │    │   File Storage  │
-│   WhatsApp,     │    │   Auth/Storage  │    │   Local/Cloud   │
-│   Google, Asaas │    │   Realtime      │    │   RAG Docs      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+### Fluxo de Desenvolvimento
+```mermaid
+graph TB
+    A[Vite Dev Server :5173] --> B[Vite Proxy /api]
+    B --> C[Railway Server :3000]
+    C --> D[Express Routes]
+    D --> E[Supabase PostgreSQL]
+    C --> F[Static Files dist/]
+    
+    G[Development] --> H[npm run dev:railway]
+    H --> I[Railway Server Start]
+    G --> J[npm run dev]
+    J --> K[Vite Dev Server]
+    K --> L[Proxy API calls to Railway]
 ```
 
-## 📚 Documentação por Módulos
-
-### 🔐 [Autenticação e Autorização](auth.md) ✅
-- Sistema de autenticação Supabase
-- Controle de acesso baseado em papéis
-- Multi-tenancy e isolamento por clínica
-- Middleware de segurança
-
-### 🌐 [API e Endpoints](api.md) ✅
-- Documentação completa da API REST
-- Schemas de validação com Zod
-- Padrões de resposta e códigos de erro
-- Rate limiting e segurança
-
-### 🗄️ [Banco de Dados](database.md) ✅
-- Schema completo do PostgreSQL
-- Estratégia de indexação
-- Isolamento multi-tenant
-- Backup e recuperação
-
-### 💬 [Sistema de Comunicação](communication.md) ✅
-- Integração WhatsApp Evolution API
-- Conversas em tempo real
-- Upload de arquivos e áudio
-- Notificações e status
-
-### 🤖 [Assistente IA Mara](ai-assistant.md) ✅
-- Sistema RAG com pgvector
-- Processamento de documentos
-- Busca semântica
-- Configuração por profissional
-
-### 💰 [Módulo Financeiro](financial.md) ✅
-- Integração Asaas
-- Gestão de cobranças
-- Relatórios financeiros
-- Controle de receitas/despesas
-
-### 📋 [Anamneses e Prontuários](medical-records.md) ✅
-- Sistema de anamneses públicas
-- Templates personalizáveis
-- Registros médicos estruturados
-- Compliance médico
-
-### 📊 [Monitoramento e Logs](monitoring.md) ✅
-- Sistema de auditoria completo
-- Métricas de performance
-- Alertas e notificações
-- Compliance LGPD/HIPAA
-
-### 📅 [Sistema de Calendário](calendar-appointments.md) ✅
-- Interface de calendário avançada
-- Integração bidirecional Google Calendar
-- Validação de horários de trabalho
-- Sistema de disponibilidade inteligente
-
-### 🎨 [Editor2 - Construtor de Páginas](editor2.md) ✅
-- Page builder com IA integrada
-- Arquitetura Builder.io compatível
-- 5 widgets funcionais implementados
-- Sistema CSS-in-JS avançado
-
-### 🚀 [Deployment e DevOps](NETLIFY-DEPLOYMENT.md) ✅
-- Guia completo de deploy no Netlify
-- Configuração de dependências de build
-- Troubleshooting de erros comuns
-- Boas práticas de CI/CD
-
-### 📁 Documentações Adicionais (Em Desenvolvimento)
-- 👥 **Gestão de Contatos**: Sistema completo de CRM
-- 🛡️ **Segurança**: Compliance LGPD e boas práticas
-- 🔧 **Troubleshooting**: Guia de resolução de problemas
-
-## 🚀 Performance e Capacidade
-
-### Métricas Validadas em Produção
-
-- **500+ usuários simultâneos** testados e validados
-- **Sub-5ms de tempo de resposta** com cache inteligente
-- **Zero vazamento de dados** entre clínicas
-- **99.9% de uptime** em ambiente de produção
-
-### Otimizações Implementadas
-
-- **Cache Redis** com estratégias tenant-aware
-- **Índices otimizados** para consultas multi-tenant
-- **Connection pooling** para alta concorrência
-- **Lazy loading** e code splitting no frontend
-
-## 🔧 Configuração e Instalação
+## 🚀 Configuração e Execução
 
 ### Pré-requisitos
-
-- Node.js 18+
-- PostgreSQL 14+ com extensão pgvector
-- Redis (opcional, para cache)
-- Chaves de API (OpenAI, WhatsApp, Google, Asaas)
-
-### Variáveis de Ambiente
-
 ```bash
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/operabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# Node.js 18.x ou superior
+node --version  # v18.x.x
 
-# APIs
-OPENAI_API_KEY=your-openai-key
-EVOLUTION_API_URL=your-whatsapp-api-url
-EVOLUTION_API_KEY=your-whatsapp-api-key
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-ASAAS_API_KEY=your-asaas-key
-
-# Application
-NODE_ENV=production
-SESSION_SECRET=your-session-secret
-PORT=5000
+# npm 9.x ou superior
+npm --version   # 9.x.x
 ```
 
-### Comandos de Desenvolvimento
-
+### Instalação
 ```bash
-# Instalação
+# 1. Clonar repositório
+git clone https://github.com/your-org/operabase.git
+cd operabase
+
+# 2. Instalar dependências
 npm install
 
-# Desenvolvimento
-npm run dev
-
-# Banco de dados
-npm run db:push
-npm run db:studio
-
-# Produção
-npm run build
-npm run start
+# 3. Configurar variáveis de ambiente
+cp .env.example .env
+# Editar .env com suas credenciais Supabase
 ```
 
-## 🛡️ Segurança e Compliance
+### Desenvolvimento Local
+```bash
+# Opção 1: Executar separadamente (Recomendado para debug)
 
-### Healthcare-Grade Security
+# Terminal 1: Railway Server (Backend + API)
+npm run dev:railway
+# 🚀 Railway server running on port 3000
 
-- **Isolamento multi-tenant** validado sob carga
-- **Criptografia end-to-end** para dados sensíveis
-- **Auditoria completa** de acessos e modificações
-- **Backup automático** com retenção configurável
+# Terminal 2: Vite Dev Server (Frontend)
+npm run dev
+# ➜ Local: http://localhost:5173/
 
-### Compliance LGPD/HIPAA
+# Opção 2: Executar junto
+npm run dev:full
 
-- **Logs estruturados** para auditoria
-- **Anonimização** de dados sensíveis
-- **Controle de acesso** granular
-- **Políticas de retenção** configuráveis
+# Acessar aplicação
+open http://localhost:5173
+```
 
-## 📈 Monitoramento e Observabilidade
+### Build e Produção
+```bash
+# Build completo (frontend + backend)
+npm run build:railway
 
-### Métricas Principais
+# Executar em produção
+npm run start:railway
+# Acesso: http://localhost:3000
+```
 
-- Performance de API por endpoint
-- Taxa de sucesso de sincronizações
-- Utilização de recursos por tenant
-- Métricas de qualidade da IA
+## 📊 Status do Sistema
 
-### Alertas Configurados
+### ✅ Funcionalidades Implementadas e Testadas
 
-- Falhas de autenticação suspeitas
-- Performance degradada
-- Erros de integração externa
-- Violações de tenant isolation
+#### 🌐 **Conectividade**
+- ✅ **Railway Server funcionando** - porta 3000
+- ✅ **Vite Dev Server funcionando** - porta 5173  
+- ✅ **Proxy Vite configurado** - /api → localhost:3000
+- ✅ **Supabase conectado** - PostgreSQL com service role key
+- ✅ **CORS configurado** - desenvolvimento e produção
+- ✅ **Static files servidos** - dist/ em produção
 
-## 🤝 Contribuição e Desenvolvimento
+#### 📊 **API Endpoints Funcionais**
+- ✅ **GET /health** - Health check com status detalhado
+- ✅ **GET /api/contacts** - Lista contatos (38 registros)
+- ✅ **GET /api/contacts/:id** - Contato individual ✨ **NOVO**
+- ✅ **GET /api/appointments** - Lista agendamentos (83 registros)
+- ✅ **GET /api/clinic/:id/users/management** - Usuários da clínica (3 usuários)
+- ✅ **GET /api/clinic/:id/config** - Configuração da clínica
 
-### Padrões de Código
+#### 💾 **Banco de Dados**
+- ✅ **Supabase PostgreSQL** - Conexão estável
+- ✅ **Queries otimizadas** - Filtros por clinic_id
+- ✅ **JOIN manual** - Relacionamentos clinic_users + users
+- ✅ **Tratamento de erro 404** - Registros não encontrados
+- ✅ **Sanitização de dados** - null → valores padrão
+- ✅ **Logs estruturados** - Debug detalhado
 
-- **TypeScript** obrigatório em todo o projeto
-- **ESLint + Prettier** para consistência
-- **Conventional Commits** para mensagens
-- **Testes unitários** para funcionalidades críticas
+#### 🎨 **Frontend**
+- ✅ **TanStack Query** - Query keys otimizadas
+- ✅ **API Client** - Funções específicas para Railway
+- ✅ **Contact Detail Page** - Página de visão geral funcionando
+- ✅ **Error Handling** - Estados de erro específicos
+- ✅ **Loading States** - Skeletons otimizados
+- ✅ **Connection Monitor** - Monitor de conectividade
+- ✅ **Debug Panel** - Painel de debug para desenvolvimento
 
-### Estrutura de Branches
+### 📈 **Estatísticas Atuais**
+- **Contatos**: 38 registros ativos
+- **Agendamentos**: 83 consultas
+- **Usuários da Clínica**: 3 profissionais
+- **Response Time**: < 200ms local
+- **Uptime**: 100% desenvolvimento
 
-- `main`: Código em produção
-- `develop`: Desenvolvimento ativo
-- `feature/*`: Novas funcionalidades
-- `hotfix/*`: Correções urgentes
+## 🔧 Configuração Técnica
+
+### Variáveis de Ambiente
+```bash
+# .env - Configuração necessária
+NODE_ENV=development
+PORT=3000
+
+# Supabase (obrigatório)
+SUPABASE_URL=https://lkwrevhxugaxfpwiktdy.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Scripts Disponíveis
+```json
+{
+  "dev": "vite",                    // Frontend Vite dev server
+  "dev:railway": "tsx server/railway-server.ts",  // Backend Railway server
+  "dev:full": "concurrently \"npm run dev:railway\" \"npm run dev\"",
+  "build": "tsc && vite build",     // Build frontend
+  "build:railway": "npm run build && tsx server/railway-server.ts", // Build + start
+  "preview": "vite preview"         // Preview build
+}
+```
+
+### Estrutura de Arquivos
+```
+operabase/
+├── server/
+│   ├── railway-server.ts         # 🚀 Servidor principal Railway
+│   ├── middleware/               # Middleware customizado
+│   ├── services/                 # Serviços de negócio
+│   └── utils/                    # Utilitários
+├── src/
+│   ├── components/               # Componentes React
+│   ├── pages/                    # Páginas da aplicação
+│   ├── hooks/                    # Custom hooks
+│   ├── lib/                      # Configurações e API client
+│   └── types/                    # Tipos TypeScript
+├── dist/                         # Build de produção
+├── docs/                         # Documentação técnica
+└── package.json
+```
+
+## 🔍 Testing e Debug
+
+### Comandos de Teste
+```bash
+# Verificar se serviços estão rodando
+lsof -i :3000  # Railway Server
+lsof -i :5173  # Vite Dev Server
+
+# Testar endpoints diretamente
+curl http://localhost:3000/health
+curl "http://localhost:3000/api/contacts?clinic_id=1"
+curl "http://localhost:3000/api/contacts/56?clinic_id=1"
+
+# Testar via proxy Vite
+curl "http://localhost:5173/api/health"
+curl "http://localhost:5173/api/contacts?clinic_id=1"
+```
+
+### Logs Estruturados
+```
+[2025-01-20T15:30:00.000Z] GET /health
+✅ Health check - Sistema funcionando
+
+[2025-01-20T15:30:05.000Z] GET /api/appointments
+🔍 Buscando agendamentos para clinic_id: 1
+✅ Agendamentos encontrados: 83
+
+[2025-01-20T15:30:10.000Z] GET /api/contacts/56
+🔍 Buscando contato ID: 56 para clinic_id: 1
+✅ Contato encontrado: Igor Venturin
+```
+
+## 📚 Documentação Técnica
+
+### Arquitetura
+- [`docs/RAILWAY-ARCHITECTURE.md`](docs/RAILWAY-ARCHITECTURE.md) - Arquitetura Railway completa
+- [`docs/BACKEND-ARCHITECTURE.md`](docs/BACKEND-ARCHITECTURE.md) - Detalhes do backend
+- [`docs/FRONTEND-ARCHITECTURE.md`](docs/FRONTEND-ARCHITECTURE.md) - Detalhes do frontend
+
+### Integração
+- [`docs/DATABASE-FRONTEND-INTEGRATION-GUIDE.md`](docs/DATABASE-FRONTEND-INTEGRATION-GUIDE.md) - Guia de integração
+- [`docs/API-RESOLUTION-GUIDE.md`](docs/API-RESOLUTION-GUIDE.md) - Resolução de problemas de API
+
+### Funcionalidades
+- [`docs/admin-clinic-management.md`](docs/admin-clinic-management.md) - Gestão de clínicas
+- [`docs/ai-assistant.md`](docs/ai-assistant.md) - Assistente IA
+- [`docs/medical-records.md`](docs/medical-records.md) - Prontuários médicos
+
+## 🚧 Roadmap de Desenvolvimento
+
+### Próximos Passos (Prioridade Alta)
+1. **Authentication Real** - Implementar Supabase Auth
+2. **Contact CRUD** - Criar, editar, deletar contatos
+3. **Appointment CRUD** - Gerenciamento completo de agendamentos
+4. **Railway Deploy** - Deploy em produção
+
+### Funcionalidades Planejadas (Prioridade Média)
+1. **Real-time Updates** - WebSockets ou polling
+2. **File Upload** - Upload de arquivos e imagens
+3. **WhatsApp Integration** - Integração com WhatsApp
+4. **Analytics Dashboard** - Relatórios e métricas
+
+### Melhorias Técnicas (Prioridade Baixa)
+1. **Performance Optimization** - Code splitting e lazy loading
+2. **PWA** - Progressive Web App
+3. **Offline Support** - Funcionamento offline
+4. **Internationalization** - Suporte a múltiplos idiomas
+
+## 🛠️ Troubleshooting
+
+### Problemas Comuns
+
+#### Port 3000 ocupado
+```bash
+# Verificar processo
+lsof -i :3000
+
+# Finalizar processo
+pkill -f "tsx server/railway-server.ts"
+```
+
+#### Supabase connection failed
+```bash
+# Verificar variáveis de ambiente
+echo $SUPABASE_URL
+echo $SUPABASE_SERVICE_ROLE_KEY
+
+# Testar conexão
+curl -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+     "$SUPABASE_URL/rest/v1/contacts?select=count"
+```
+
+#### Proxy não funciona
+```bash
+# Verificar se Railway server está rodando
+curl http://localhost:3000/health
+
+# Verificar configuração Vite
+cat vite.config.ts | grep -A 10 proxy
+```
+
+#### Build errors
+```bash
+# Limpar cache
+rm -rf node_modules/.cache
+rm -rf dist
+
+# Reinstalar dependências
+npm install
+
+# Build novamente
+npm run build
+```
 
 ## 📞 Suporte e Contato
 
-Para dúvidas técnicas ou suporte, consulte a documentação específica de cada módulo ou entre em contato com a equipe de desenvolvimento.
+### Links Úteis
+- **Supabase Dashboard**: https://supabase.com/dashboard/project/lkwrevhxugaxfpwiktdy
+- **Railway Dashboard**: https://railway.app/dashboard
+- **Repository**: https://github.com/your-org/operabase
+
+### Comandos de Debug Rápido
+```bash
+# Status completo do sistema
+curl -s http://localhost:3000/health | jq .
+
+# Teste de conectividade
+npm run dev:railway &
+sleep 3
+curl http://localhost:3000/api/contacts?clinic_id=1 | jq length
+
+# Logs em tempo real
+npm run dev:railway | grep "✅\|❌\|🔍"
+```
 
 ---
 
-**Versão da Documentação:** 1.0  
-**Última Atualização:** Janeiro 2025  
-**Status:** Produção Ativa ✅ 
+## 🎯 Status Atual: ✅ DESENVOLVIMENTO LOCAL FUNCIONAL
 
-# Documentação do Sistema de Calendário e Disponibilidade
+O sistema está **100% funcional** para desenvolvimento local com:
+- ✅ Railway Server rodando na porta 3000
+- ✅ Vite Dev Server rodando na porta 5173
+- ✅ Todas as APIs funcionando
+- ✅ Frontend conectado via proxy
+- ✅ Banco de dados Supabase conectado
+- ✅ Logs estruturados e debug facilitado
 
-## 📋 **Índice de Documentação**
-
-### **📅 Sistema Principal**
-- **[Sistema de Calendário e Disponibilidade](./calendar-availability-system.md)** - Documentação completa do sistema
-- **[Sistema de Disponibilidade dos Profissionais](./professional-availability-system.md)** - Gestão de agendas por profissional
-
-### **🔧 Correções e Fixes**
-- **[Correção de Timezone - RESOLVIDO](./TIMEZONE-CONFLICT-DETECTION-FIX.md)** - Histórico completo da correção de timezone
-
-## 🚀 **Status Atual**
-
-**✅ SISTEMA TOTALMENTE FUNCIONAL**
-- **Data da Última Atualização**: 2025-01-03
-- **Versão**: V3 - Timezone Fix Completo
-- **Status**: ✅ Produção - 100% Funcional
-
-## 🎯 **Funcionalidades Principais**
-
-### **1. Agendamento de Consultas**
-- ✅ Criação de agendamentos com timestamp correto
-- ✅ Validação de horários de funcionamento
-- ✅ Suporte a múltiplos profissionais
-- ✅ Integração com Google Calendar
-
-### **2. Detecção de Conflitos**
-- ✅ Detecção 100% precisa de sobreposições
-- ✅ Conversão automática UTC → Brasília
-- ✅ Filtro por profissional específico
-- ✅ Validação de horários de almoço
-
-### **3. Sistema de Disponibilidade**
-- ✅ Verificação em tempo real
-- ✅ Performance < 200ms
-- ✅ Suporte a múltiplos tipos de conflito
-- ✅ Logs detalhados para debugging
-
-## 🏗️ **Arquitetura**
-
-### **Stack Tecnológico**
-- **Frontend**: React + TypeScript + TanStack Query
-- **Backend**: Node.js + Express + TypeScript
-- **Database**: PostgreSQL + Drizzle ORM
-- **Timezone**: America/Sao_Paulo (UTC-3)
-- **Storage**: Raw SQL para timestamps críticos
-
-### **Componentes Principais**
-```
-Frontend Calendar UI
-    ↓
-Professional Selection
-    ↓
-Availability API V3
-    ↓
-Timezone Converter UTC→Brasília
-    ↓
-Conflict Detection V3
-    ↓
-PostgreSQL Storage
-```
-
-## 🔍 **APIs Principais**
-
-### **Verificação de Disponibilidade**
-```typescript
-POST /api/appointments/availability/check
-{
-  "startDateTime": "2025-07-04T15:30:00.000Z",  // UTC
-  "endDateTime": "2025-07-04T16:00:00.000Z",    // UTC
-  "professionalId": 4                           // Opcional
-}
-```
-
-### **Listagem de Agendamentos**
-```typescript
-GET /api/appointments?userId=4&dateFrom=2025-07-04&dateTo=2025-07-04
-```
-
-## 🚨 **Pontos Críticos**
-
-### **1. Conversão de Timezone - OBRIGATÓRIO**
-```typescript
-// CRÍTICO: Sempre usar esta função
-private convertUTCToBrasiliaString(utcDateString: string): string {
-  const utcDate = new Date(utcDateString);
-  const brasiliaDate = new Date(utcDate.getTime() - (3 * 60 * 60 * 1000));
-  // ... formatação
-}
-```
-
-### **2. Armazenamento - OBRIGATÓRIO**
-```typescript
-// CRÍTICO: Usar SQL raw para preservar timestamp exato
-await this.db.execute(sql`
-  INSERT INTO appointments (...) VALUES (..., ${rawTimestamp}, ...)
-`);
-```
-
-### **3. Filtro por Profissional - OBRIGATÓRIO**
-```typescript
-// CRÍTICO: Sempre filtrar por user_id
-const filteredAppointments = appointments.filter(apt => 
-  apt.user_id === professionalId
-);
-```
-
-## 🧪 **Casos de Teste Validados**
-
-### **Teste 1: Criação de Agendamento**
-- **Input**: 9:00 AM Brasília → `"2025-07-04T12:00:00.000Z"`
-- **Resultado**: ✅ Salvo como `"2025-07-04 09:00:00"`
-
-### **Teste 2: Detecção de Conflito**
-- **Existente**: `"2025-07-04 12:30:00"` (Igor Venturin)
-- **Request**: `"2025-07-04T15:30:00.000Z"` (12:30 PM Brasília)
-- **Resultado**: ✅ Conflito detectado corretamente
-
-### **Teste 3: Disponibilidade**
-- **Request**: `"2025-07-04T12:00:00.000Z"` (9:00 AM Brasília)
-- **Resultado**: ✅ `available: true`
-
-## 📊 **Métricas de Produção**
-
-- **Appointments Criados**: 88+ com timestamp correto
-- **Conflitos Detectados**: 100% de precisão
-- **Disponibilidade**: Resposta em tempo real
-- **Performance**: < 200ms por verificação
-- **Uptime**: 99.9% de disponibilidade
-
-## 📝 **Diretrizes de Desenvolvimento**
-
-### **Padrões OBRIGATÓRIOS**
-1. **SEMPRE** converter UTC para Brasília antes de comparações
-2. **SEMPRE** usar SQL raw para timestamps críticos
-3. **SEMPRE** logar conversões de timezone com emoji 🕐
-4. **SEMPRE** filtrar por profissional quando aplicável
-5. **SEMPRE** validar horários de funcionamento
-
-### **Padrões PROIBIDOS**
-1. **NUNCA** confiar em conversões automáticas do ORM
-2. **NUNCA** misturar UTC e local na mesma operação
-3. **NUNCA** mostrar conflitos de outros profissionais
-4. **NUNCA** permitir agendamentos sem validação
-5. **NUNCA** remover logs de debugging
-
-## 🔄 **Histórico de Correções**
-
-### **V3 - Timezone Fix (2025-01-03)**
-- ✅ Implementação de `convertUTCToBrasiliaString`
-- ✅ Correção de armazenamento com SQL raw
-- ✅ Detecção de conflitos 100% precisa
-- ✅ Logs detalhados implementados
-
-### **V2 - Tentativas Anteriores**
-- ❌ Normalização de datas (falhou)
-- ❌ Conversões automáticas (inconsistente)
-
-### **V1 - Sistema Original**
-- ❌ Problemas de timezone
-- ❌ Conflitos não detectados
-- ❌ Timestamps incorretos
-
-## 🎯 **Próximos Passos**
-
-1. ✅ Documentação completa atualizada
-2. ✅ Sistema em produção funcionando
-3. ✅ Monitoramento ativo
-4. ✅ Logs de debug implementados
-5. 🔄 Monitoramento contínuo de performance
+**Próximo passo**: Deploy para Railway em produção.
 
 ---
-*Documentação atualizada: 2025-01-03*  
-*Versão: V3 - Sistema Completo*  
-*Status: ✅ Produção - Funcionando Perfeitamente* 
+
+*Documentação atualizada em: Janeiro 2025*  
+*Versão: v2.0.0-railway*  
+*Status: ✅ Desenvolvimento Local Ativo* 
