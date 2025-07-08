@@ -4,7 +4,7 @@ require('dotenv').config();
 const express = require('express');
 const { createSupabaseClient } = require('../utils/supabase');
 const multer = require('multer');
-const { ConversationUploadService } = require('../../services/conversation-upload.service');
+const { ConversationUploadService } = require('../../services/conversation-upload.service.ts');
 
 const router = express.Router();
 
