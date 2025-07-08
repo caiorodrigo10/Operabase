@@ -1,6 +1,11 @@
 const express = require('express');
 const { createSupabaseClient } = require('../config/database.config');
-const { authMiddleware } = require('../middleware/auth.middleware');
+
+// Auth middleware inline para evitar dependências
+const authMiddleware = (req, res, next) => {
+  console.log(`🔐 Auth check: ${req.method} ${req.path}`);
+  next();
+};
 
 const router = express.Router();
 

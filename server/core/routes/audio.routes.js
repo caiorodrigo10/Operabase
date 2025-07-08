@@ -1,6 +1,12 @@
 const express = require('express');
 const { createSupabaseClient } = require('../config/database.config');
-const { upload } = require('../config/upload.config');
+
+// Multer config inline para evitar dependências
+const multer = require('multer');
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+});
 
 const router = express.Router();
 
