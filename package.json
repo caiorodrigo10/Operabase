@@ -15,7 +15,8 @@
     "build:server:fix": "node -e \"const fs = require('fs'); const path = require('path'); const file = path.join('dist/server/core/middleware/auth.middleware.js'); if (!fs.existsSync(file)) { fs.writeFileSync(file, 'exports.authMiddleware = (req, res, next) => { console.log(\\\"Auth check: \\\" + req.method + \\\" \\\" + req.path); next(); };'); }\"",
     "build:railway": "vite build && npm run build:server:simple && npm run build:server:copy-all",
     "build:server:simple": "tsc server/railway-server.ts --outDir dist/server --esModuleInterop --allowSyntheticDefaultImports --target es2020 --module commonjs --skipLibCheck --noEmitOnError false",
-    "build:server:copy-all": "cp -r server/core dist/server/ && cp -r server/services dist/server/ && cp -r server/utils dist/server/",
+    "build:server:copy-all": "cp -r server/core dist/server/ && cp -r server/services dist/server/ && cp -r server/utils dist/server/ && npm run build:services",
+    "build:services": "npx tsc server/services/conversation-upload.service.ts --outDir server/services --esModuleInterop --allowSyntheticDefaultImports --target es2020 --module commonjs --skipLibCheck --noEmitOnError false",
     "start": "node dist/server/railway-server.js",
     "start:dev": "tsx server/railway-server.ts",
     "start:railway": "npm run start",
@@ -136,6 +137,6 @@
     "rollup": "npm:@rollup/wasm-node@^4.18.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
