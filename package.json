@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:railway": "tsx server/railway-server.ts",
     "dev:railway-fixed": "tsx server/railway-server-fixed.ts",
-    "build": "tsc && vite build",
+    "build": "vite build && npm run build:server:simple && npm run build:server:copy-all",
     "build:frontend": "vite build",
     "build:server": "npm run build:server:compile && npm run build:server:copy && npm run build:server:fix",
     "build:server:compile": "tsc server/railway-server.ts --outDir dist/server --esModuleInterop --allowSyntheticDefaultImports --target es2020 --module commonjs --skipLibCheck",
