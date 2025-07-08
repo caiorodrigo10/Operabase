@@ -55,10 +55,8 @@ router.get('/appointments', authMiddleware, async (req, res) => {
     
     console.log(`✅ Encontrados ${appointments?.length || 0} agendamentos`);
     
-    res.json({
-      success: true,
-      data: appointments
-    });
+    // Return array directly for frontend compatibility
+    res.json(appointments || []);
   } catch (error) {
     console.error('❌ Erro na busca de agendamentos:', error);
     res.status(500).json({
@@ -95,10 +93,8 @@ router.post('/appointments', authMiddleware, async (req, res) => {
     
     console.log('✅ Agendamento criado com sucesso:', appointment.id);
     
-    res.status(201).json({
-      success: true,
-      data: appointment
-    });
+    // Return appointment object directly
+    res.status(201).json(appointment);
   } catch (error) {
     console.error('❌ Erro na criação de agendamento:', error);
     res.status(500).json({
