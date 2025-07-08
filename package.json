@@ -13,7 +13,8 @@
     "build:server:compile": "tsc server/railway-server.ts --outDir dist/server --esModuleInterop --allowSyntheticDefaultImports --target es2020 --module commonjs --skipLibCheck",
     "build:server:copy": "cp -r server/core dist/server/",
     "build:server:fix": "node -e \"const fs = require('fs'); const path = require('path'); const file = path.join('dist/server/core/middleware/auth.middleware.js'); if (!fs.existsSync(file)) { fs.writeFileSync(file, 'exports.authMiddleware = (req, res, next) => { console.log(\\\"Auth check: \\\" + req.method + \\\" \\\" + req.path); next(); };'); }\"",
-    "build:railway": "npm run build",
+    "build:railway": "vite build && npm run build:server:simple",
+    "build:server:simple": "tsc server/railway-server.ts --outDir dist/server --esModuleInterop --allowSyntheticDefaultImports --target es2020 --module commonjs --skipLibCheck --noEmitOnError false",
     "start": "node dist/server/railway-server.js",
     "start:dev": "tsx server/railway-server.ts",
     "start:railway": "npm run start",
@@ -86,7 +87,7 @@
     "date-fns": "^2.30.0",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.44.2",
-    "drizzle-zod": "^0.8.2",
+    "drizzle-zod": "^0.5.1",
     "embla-carousel-react": "^8.0.0",
     "express": "^4.18.2",
     "express-session": "^1.18.1",
@@ -118,7 +119,7 @@
     "vite": "^5.3.5",
     "world-countries": "^4.0.0",
     "wouter": "^3.7.1",
-    "zod": "^3.25.75"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20.5.0",
