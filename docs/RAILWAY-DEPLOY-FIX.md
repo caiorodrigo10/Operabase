@@ -263,6 +263,42 @@ A correção foi **100% bem-sucedida**:
 
 ---
 
-**Commit:** `71cb0fd` - fix: corrigir package-lock.json para deploy no Railway  
-**Status:** ✅ **CORRIGIDO E TESTADO**  
+## 🚨 **SEGUNDA CORREÇÃO APLICADA**
+
+### **Novo Problema Identificado:**
+```
+Error: Cannot find module '/app/dist/server/core/routes/contacts.routes.js'
+```
+
+### **Causa:**
+- O build anterior só compilava `railway-server.ts`
+- Não copiava a estrutura `server/core/` para `dist/`
+- Módulos `.js` ficavam faltando no runtime
+
+### **Solução Aplicada:**
+```json
+{
+  "scripts": {
+    "build:server": "npm run build:server:compile && npm run build:server:copy",
+    "build:server:compile": "tsc server/railway-server.ts --outDir dist/server --esModuleInterop --allowSyntheticDefaultImports --target es2020 --module commonjs --skipLibCheck",
+    "build:server:copy": "cp -r server/core dist/server/"
+  }
+}
+```
+
+### **Validação Local:**
+```bash
+✅ npm run build - funcionando
+✅ node dist/server/railway-server.js - funcionando  
+✅ curl /health - 200 OK
+✅ Estrutura completa em dist/server/core/
+```
+
+---
+
+**Commits:** 
+- `71cb0fd` - fix: package-lock.json
+- `8b79ce2` - fix: build server modules
+
+**Status:** ✅ **TOTALMENTE CORRIGIDO E TESTADO**  
 **Data:** 08 de Janeiro de 2025 
