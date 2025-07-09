@@ -2,6 +2,11 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Configurar serialização de BigInt
+(BigInt.prototype as any).toJSON = function() {
+  return this.toString();
+};
+
 import { createExpressApp, serverConfig, logServerConfig } from './core/config/app.config';
 import { testSupabaseConnection } from './core/config/database.config';
 import healthRoutes from './core/routes/health.routes';
