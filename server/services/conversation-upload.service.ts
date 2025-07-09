@@ -826,18 +826,18 @@ export class ConversationUploadService {
       
       const attachmentData = {
         message_id: message.id,
+        clinic_id: clinicId,
         file_name: sanitizedFilename,
+        file_type: mimeType, // Use file_type instead of mime_type
         file_size: file.length,
-        mime_type: mimeType,
-        storage_path: storageResult.path,
-        signed_url: storageResult.signed_url,
-        expires_at: storageResult.expires_at.toISOString()
+        file_url: storageResult.signed_url // Use file_url instead of signed_url
+        // Note: storage_path, signed_url, expires_at don't exist in message_attachments table
       };
       
-      console.log('📎 Attachment data:', attachmentData);
+      console.log('📎 N8N Attachment data:', attachmentData);
       
       const { data: attachment, error: attachmentError } = await this.supabase
-        .from('attachments')
+        .from('message_attachments')
         .insert(attachmentData)
         .select()
         .single();
