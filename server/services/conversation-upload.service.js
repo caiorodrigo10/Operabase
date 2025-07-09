@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -539,6 +572,150 @@ class ConversationUploadService {
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    /**
+     * Método específico para receber arquivos do N8N (origem: pacientes via WhatsApp)
+     * Não envia via Evolution API - apenas armazena no Supabase Storage
+     */
+    async uploadFromN8N(params) {
+        const { file, filename, mimeType, conversationId, clinicId, caption, whatsappMessageId, whatsappMediaId, whatsappMediaUrl, timestamp, senderType // 🤖 Novo: identificação da origem (patient/ai)
+         } = params;
+        console.log(`📥 N8N Upload: ${filename} (${mimeType}) for conversation ${conversationId}`);
+        console.log(`🤖 Sender Type: ${senderType || 'patient (default)'}`); // Log identificação da origem
+        try {
+            // 1. Validar arquivo
+            this.validateFile(file, mimeType, filename);
+            // 2. Sanitizar filename 
+            const sanitizedFilename = this.sanitizeFilename(filename);
+            // 3. Upload para Supabase Storage
+            console.log('📁 Uploading N8N file to Supabase Storage...');
+            const storageResult = await this.uploadToSupabase({
+                file,
+                filename: sanitizedFilename,
+                mimeType,
+                conversationId,
+                clinicId
+            });
+            // 4. Validar conversation (mesmo código robusto do uploadFile)
+            console.log('🔍 Validating conversation exists...');
+            const { createClient } = await Promise.resolve().then(() => __importStar(require('@supabase/supabase-js')));
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+            let conversation;
+            const isScientificNotation = typeof conversationId === 'string' && conversationId.includes('e+');
+            if (isScientificNotation) {
+                console.log('🔬 Scientific notation ID detected, using robust lookup');
+                const { data: allConversations } = await supabase
+                    .from('conversations')
+                    .select('id, contact_id, clinic_id')
+                    .eq('clinic_id', clinicId);
+                const paramIdNum = parseFloat(conversationId);
+                conversation = allConversations?.find(conv => {
+                    const convIdNum = parseFloat(conv.id.toString());
+                    return Math.abs(convIdNum - paramIdNum) < 1;
+                });
+            }
+            else {
+                const { data } = await supabase
+                    .from('conversations')
+                    .select('id, contact_id, clinic_id')
+                    .eq('id', conversationId)
+                    .eq('clinic_id', clinicId)
+                    .single();
+                conversation = data;
+            }
+            if (!conversation) {
+                console.error(`❌ Conversation not found: ${conversationId} for clinic ${clinicId}`);
+                throw new Error(`Conversation ${conversationId} not found`);
+            }
+            console.log('✅ Conversation found:', { id: conversation.id, contact_id: conversation.contact_id });
+            // 5. Criar mensagem no banco com identificação correta baseada no senderType
+            console.log('💾 Creating N8N message in database...');
+            // 🤖 NOVA LÓGICA: Identificação da origem (patient/ai)
+            const isAIMessage = senderType === 'ai';
+            console.log(`🤖 Message identification: ${isAIMessage ? 'AI-generated' : 'Patient-sent'}`);
+            // Determinar sender_type baseado na origem
+            const finalSenderType = isAIMessage ? 'ai' : 'patient';
+            console.log(`📝 Using sender_type: '${finalSenderType}'`);
+            // Se cliente enviar caption, usar caption. Se não enviar, deixar mensagem vazia (só arquivo)
+            let messageContent = '';
+            if (caption !== undefined && caption !== null && caption.trim() !== '') {
+                messageContent = caption.trim();
+            }
+            // Deixar content vazio para arquivos sem caption do cliente
+            // Usar método específico para WhatsApp (audio_voice ao invés de audio_file)
+            const messageType = this.getWhatsAppMessageType(mimeType);
+            // Usar timestamp do WhatsApp se disponível, senão usar atual
+            const messageTimestamp = timestamp ? new Date(timestamp) : new Date();
+            console.log('🕐 Adjusting timestamp to GMT-3 (Brasília)...');
+            const brasiliaTimestamp = new Date(messageTimestamp.getTime() - 3 * 60 * 60 * 1000);
+            // Use only the fields that exist in the actual database schema
+            const { data: message, error: messageError } = await this.supabase
+                .from('messages')
+                .insert({
+                conversation_id: conversation.id.toString(),
+                content: messageContent,
+                sender_type: finalSenderType, // 'ai' ou 'patient' baseado na identificação
+                message_type: messageType,
+                timestamp: brasiliaTimestamp
+                // Removed: ai_generated, direction, whatsapp_message_id - these columns don't exist
+            })
+                .select()
+                .single();
+            if (messageError) {
+                console.error('❌ Error creating N8N message:', messageError);
+                throw new Error(`Error creating N8N message: ${messageError.message}`);
+            }
+            console.log('✅ N8N Message created:', message.id);
+            // 6. Criar attachment no banco com todos os campos necessários
+            console.log('📎 Creating N8N attachment...');
+            const { data: attachment, error: attachmentError } = await this.supabase
+                .from('attachments')
+                .insert({
+                message_id: message.id,
+                file_name: sanitizedFilename,
+                file_size: file.length,
+                mime_type: mimeType,
+                storage_path: storageResult.path,
+                signed_url: storageResult.signed_url,
+                expires_at: storageResult.expires_at.toISOString()
+            })
+                .select()
+                .single();
+            if (attachmentError) {
+                console.error('❌ Error creating N8N attachment:', attachmentError);
+                throw new Error(`Error creating N8N attachment: ${attachmentError.message}`);
+            }
+            console.log('✅ N8N Attachment created:', attachment.id);
+            return {
+                success: true,
+                message,
+                attachment,
+                signedUrl: storageResult.signed_url,
+                expiresAt: storageResult.expires_at.toISOString()
+            };
+        }
+        catch (error) {
+            console.error('❌ N8N Upload error:', error);
+            throw error;
+        }
+    }
+    getWhatsAppMessageType(mimeType) {
+        if (mimeType.startsWith('audio/'))
+            return 'audio_voice'; // Diferencia de audio_file
+        if (mimeType.startsWith('image/'))
+            return 'image';
+        if (mimeType.startsWith('video/'))
+            return 'video';
+        return 'document';
+    }
+    getMessageTypeFromMimeType(mimeType) {
+        if (mimeType.startsWith('image/'))
+            return 'image';
+        if (mimeType.startsWith('video/'))
+            return 'video';
+        if (mimeType.startsWith('audio/'))
+            return 'audio';
+        return 'document';
     }
 }
 exports.ConversationUploadService = ConversationUploadService;

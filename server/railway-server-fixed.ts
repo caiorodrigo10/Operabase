@@ -8,6 +8,7 @@ import healthRoutes from './core/routes/health.routes';
 import * as path from 'path';
 import express from 'express';
 import multer from 'multer';
+import { ConversationUploadService } from './services/conversation-upload.service';
 
 // Usar caminhos absolutos baseados na localização do arquivo
 const currentDir = path.dirname(__filename);
@@ -261,8 +262,7 @@ async function startServer() {
           whatsappMessageId
         });
 
-        // Importar e usar o ConversationUploadService
-        const { ConversationUploadService } = await import('./services/conversation-upload.service');
+        // Usar o ConversationUploadService importado estaticamente
         const uploadService = new ConversationUploadService();
         
         // Usar método específico para N8N (não envia via WhatsApp)
@@ -350,8 +350,7 @@ async function startServer() {
 
         console.log('✅ Audio file validation passed');
 
-        // Importar e usar o ConversationUploadService
-        const { ConversationUploadService } = await import('./services/conversation-upload.service');
+        // Usar o ConversationUploadService importado estaticamente
         const uploadService = new ConversationUploadService();
         
         const uploadResult = await uploadService.uploadFile({
