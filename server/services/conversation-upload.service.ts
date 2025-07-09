@@ -801,16 +801,20 @@ export class ConversationUploadService {
       const brasiliaTimestamp = new Date(messageTimestamp.getTime() - 3 * 60 * 60 * 1000);
       
       // Use only the fields that exist in the actual database schema
+      const messageData = {
+        conversation_id: conversation.id.toString(),
+        content: messageContent,
+        sender_type: finalSenderType, // 'ai' ou 'patient' baseado na identificação
+        message_type: messageType,
+        timestamp: brasiliaTimestamp.toISOString()
+        // Removed: ai_generated, direction, whatsapp_message_id - these columns don't exist
+      };
+
+      console.log('📋 N8N Message data:', messageData);
+
       const { data: message, error: messageError } = await this.supabase
         .from('messages')
-        .insert({
-          conversation_id: conversation.id.toString(),
-          content: messageContent,
-          sender_type: finalSenderType, // 'ai' ou 'patient' baseado na identificação
-          message_type: messageType,
-          timestamp: brasiliaTimestamp
-          // Removed: ai_generated, direction, whatsapp_message_id - these columns don't exist
-        })
+        .insert(messageData)
         .select()
         .single();
 
