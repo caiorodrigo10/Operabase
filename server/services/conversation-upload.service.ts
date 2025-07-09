@@ -823,23 +823,28 @@ export class ConversationUploadService {
 
       // 6. Criar attachment no banco com todos os campos necessários
       console.log('📎 Creating N8N attachment...');
+      
+      const attachmentData = {
+        message_id: message.id,
+        file_name: sanitizedFilename,
+        file_size: file.length,
+        mime_type: mimeType,
+        storage_path: storageResult.path,
+        signed_url: storageResult.signed_url,
+        expires_at: storageResult.expires_at.toISOString()
+      };
+      
+      console.log('📎 Attachment data:', attachmentData);
+      
       const { data: attachment, error: attachmentError } = await this.supabase
         .from('attachments')
-        .insert({
-          message_id: message.id,
-          file_name: sanitizedFilename,
-          file_size: file.length,
-          mime_type: mimeType,
-          storage_path: storageResult.path,
-          signed_url: storageResult.signed_url,
-          expires_at: storageResult.expires_at.toISOString()
-        })
+        .insert(attachmentData)
         .select()
         .single();
 
       if (attachmentError) {
         console.error('❌ Error creating N8N attachment:', attachmentError);
-        throw new Error(`Error creating N8N attachment: ${attachmentError.message}`);
+        throw new Error(`Error creating N8N attachment: ${attachmentError.message || 'Unknown attachment error'}`);
       }
 
       console.log('✅ N8N Attachment created:', attachment.id);
