@@ -215,6 +215,103 @@ async function startServer() {
 
     console.log('✅ Upload routes registered BEFORE middleware chain');
 
+    // ========== ENDPOINT N8N UPLOAD ==========
+    // Endpoint N8N para receber arquivos de pacientes (SEM validação de API key)
+    app.post('/api/n8n/upload', upload.single('file'), async (req: any, res: any) => {
+      console.log('🤖 ========== N8N UPLOAD ENDPOINT ==========');
+      console.log('🤖 Headers:', {
+        'x-conversation-id': req.headers['x-conversation-id'],
+        'x-clinic-id': req.headers['x-clinic-id'],
+        'x-caption': req.headers['x-caption'],
+        'x-whatsapp-message-id': req.headers['x-whatsapp-message-id'],
+        'x-sender-type': req.headers['x-sender-type']
+      });
+      console.log('🤖 File:', req.file ? `${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})` : 'No file');
+      
+      try {
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            error: 'Nenhum arquivo enviado'
+          });
+        }
+
+        // Extrair parâmetros dos headers
+        const conversationId = req.headers['x-conversation-id'];
+        const clinicId = parseInt(req.headers['x-clinic-id']) || 1;
+        const caption = req.headers['x-caption'];
+        const whatsappMessageId = req.headers['x-whatsapp-message-id'];
+        const senderType = req.headers['x-sender-type'] || 'patient';
+
+        if (!conversationId) {
+          return res.status(400).json({
+            success: false,
+            error: 'Header x-conversation-id é obrigatório'
+          });
+        }
+
+        console.log('🤖 Processing N8N upload:', {
+          conversationId,
+          clinicId,
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          mimeType: req.file.mimetype,
+          caption,
+          senderType,
+          whatsappMessageId
+        });
+
+        // Importar e usar o ConversationUploadService
+        const { ConversationUploadService } = await import('./services/conversation-upload.service');
+        const uploadService = new ConversationUploadService();
+        
+        // Usar método específico para N8N (não envia via WhatsApp)
+        const result = await uploadService.uploadFromN8N({
+          file: req.file.buffer,
+          filename: req.file.originalname,
+          mimeType: req.file.mimetype,
+          conversationId,
+          clinicId,
+          caption,
+          whatsappMessageId,
+          senderType
+        });
+
+        console.log('✅ N8N upload completed:', {
+          success: result.success,
+          messageId: result.message?.id,
+          attachmentId: result.attachment?.id
+        });
+
+        res.status(201).json({
+          success: true,
+          message: result.message,
+          attachment: result.attachment,
+          signedUrl: result.signedUrl,
+          expiresAt: result.expiresAt
+        });
+
+      } catch (error) {
+        console.error('❌ N8N upload error:', error);
+        
+        if (error.message.includes('Conversation') && error.message.includes('not found')) {
+          return res.status(404).json({
+            success: false,
+            error: 'Conversa não encontrada',
+            code: 'CONVERSATION_NOT_FOUND'
+          });
+        }
+        
+        res.status(500).json({
+          success: false,
+          error: 'Erro interno do servidor',
+          details: error.message
+        });
+      }
+    });
+
+    console.log('✅ N8N upload endpoint registered');
+
     // ========== ENDPOINT DE ÁUDIO DE VOZ ==========
     // Registrar endpoint específico para áudio de voz
     app.post('/api/audio/voice-message/:conversationId', upload.single('file'), async (req: any, res: any) => {

@@ -1,7 +1,9 @@
+import 'dotenv/config';
 import { createExpressApp, serverConfig, logServerConfig } from './core/config/app.config';
 import { testSupabaseConnection } from './core/config/database.config';
 import healthRoutes from './core/routes/health.routes';
 import { startAiPauseChecker } from './middleware/ai-pause-checker';
+import { createStorage } from './storage-factory';
 import * as path from 'path';
 
 // Usar caminhos absolutos baseados na localização do arquivo
@@ -28,6 +30,14 @@ async function startServer() {
 
     // Criar app Express
     const app = createExpressApp();
+
+    // Create storage instance
+    const storage = createStorage();
+
+    // Setup upload routes (includes N8N endpoint)
+    const { setupUploadRoutes } = await import('./routes/upload-routes');
+    setupUploadRoutes(app, storage);
+    console.log('✅ Upload routes registered (including N8N endpoint)');
 
     // Testar conexão com Supabase
     console.log('🔍 Testando conexões...');

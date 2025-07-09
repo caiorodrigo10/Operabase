@@ -9,20 +9,35 @@ const cors = require('cors');
 export function createExpressApp() {
   const app = express();
   const isProduction = process.env.NODE_ENV === 'production';
+  
+  // Configuração de portas customizáveis
+  const frontendPort = process.env.FRONTEND_PORT || process.env.VITE_PORT || '5173';
+  const backendPort = process.env.BACKEND_PORT || process.env.PORT || '3000';
 
   // Basic middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // CORS configuration - preservando lógica original
+  // CORS configuration - suporte a portas dinâmicas
+  const allowedOrigins = isProduction 
+    ? [process.env.FRONTEND_URL || 'https://operabase.railway.app']
+    : [
+        `http://localhost:${frontendPort}`,
+        `http://localhost:${backendPort}`,
+        'http://localhost:3000', // fallback
+        'http://localhost:5173', // fallback
+        'http://localhost:4000', // porta alternativa comum
+        'http://localhost:8080', // porta alternativa comum
+      ];
+
   app.use(cors({
-    origin: isProduction 
-      ? [process.env.FRONTEND_URL || 'https://operabase.railway.app']
-      : ['http://localhost:3000', 'http://localhost:5173'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
+
+  console.log(`🌐 CORS configurado para origens: ${allowedOrigins.join(', ')}`);
 
   return app;
 }
@@ -32,7 +47,7 @@ export function createExpressApp() {
  * Extraído de: railway-server.ts (linha 17)
  */
 export const serverConfig = {
-  port: process.env.PORT || 3000,
+  port: process.env.BACKEND_PORT || process.env.PORT || 3000,
   isProduction: process.env.NODE_ENV === 'production'
 };
 
@@ -43,7 +58,8 @@ export const serverConfig = {
 export function logServerConfig() {
   console.log('🚀 Iniciando Operabase Server...');
   console.log('📍 NODE_ENV:', process.env.NODE_ENV);
-  console.log('📍 PORT:', serverConfig.port);
+  console.log('📍 BACKEND_PORT:', serverConfig.port);
+  console.log('📍 FRONTEND_PORT:', process.env.FRONTEND_PORT || process.env.VITE_PORT || '5173');
   console.log('📍 SUPABASE_URL:', process.env.SUPABASE_URL ? 'configurado' : 'não configurado');
   console.log('📍 SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configurado' : 'não configurado');
 } 

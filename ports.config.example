@@ -1,0 +1,40 @@
+# Configuração de Portas Customizadas - Operabase
+# Copie este arquivo para .env.local ou .env e ajuste as portas conforme necessário
+
+# Porta do Frontend (Vite)
+FRONTEND_PORT=4000
+VITE_PORT=4000
+
+# Porta do Backend (Express)
+BACKEND_PORT=8000
+
+# Configuração do proxy (automaticamente configurado baseado nas portas acima)
+VITE_BACKEND_PORT=8000
+
+# Exemplos de combinações de portas:
+# Combinação 1: Frontend 4000, Backend 8000 (padrão)
+# FRONTEND_PORT=4000
+# BACKEND_PORT=8000
+
+# Combinação 2: Frontend 5000, Backend 9000  
+# FRONTEND_PORT=5000
+# BACKEND_PORT=9000
+
+# Combinação 3: Frontend 6000, Backend 7000
+# FRONTEND_PORT=6000
+# BACKEND_PORT=7000
+
+# Outras configurações do projeto (mantenha as existentes)
+NODE_ENV=development
+SUPABASE_URL=sua_url_supabase
+SUPABASE_SERVICE_ROLE_KEY=sua_chave_supabase
+
+# Como usar:
+# 1. Copie este arquivo para .env.local
+# 2. Ajuste as portas desejadas
+# 3. Execute: npm run dev:custom
+# 
+# Ou use os scripts pré-configurados:
+# npm run dev:4000-8000  (Frontend 4000, Backend 8000)
+# npm run dev:5000-9000  (Frontend 5000, Backend 9000)
+# npm run dev:6000-7000  (Frontend 6000, Backend 7000) 
