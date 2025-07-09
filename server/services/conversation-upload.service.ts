@@ -800,15 +800,16 @@ export class ConversationUploadService {
       console.log('🕐 Adjusting timestamp to GMT-3 (Brasília)...');
       const brasiliaTimestamp = new Date(messageTimestamp.getTime() - 3 * 60 * 60 * 1000);
       
-      // Use only the fields that exist in the painelespelho schema (simplified)
+      // Use only the fields that exist in the actual database schema
       const { data: message, error: messageError } = await this.supabase
         .from('messages')
         .insert({
           conversation_id: conversation.id.toString(),
           content: messageContent,
-          sender_type: finalSenderType, // 🤖 'ai' ou 'patient' baseado na identificação
+          sender_type: finalSenderType, // 'ai' ou 'patient' baseado na identificação
           message_type: messageType,
           timestamp: brasiliaTimestamp
+          // Removed: ai_generated, direction, whatsapp_message_id - these columns don't exist
         })
         .select()
         .single();
@@ -818,33 +819,20 @@ export class ConversationUploadService {
         throw new Error(`Error creating N8N message: ${messageError.message}`);
       }
 
-      console.log('🔍 Debug message response:', JSON.stringify(message, null, 2));
-      const messageId = message?.id;
-      console.log('✅ N8N Message created:', messageId);
+      console.log('✅ N8N Message created:', message.id);
 
       // 6. Criar attachment no banco com todos os campos necessários
       console.log('📎 Creating N8N attachment...');
-      console.log('📋 Storage result for attachment:', {
-        bucket: storageResult.bucket,
-        path: storageResult.path,
-        signedUrl: storageResult.signedUrl,
-        expiresAt: storageResult.expiresAt
-      });
-      
-      // Use only existing database columns (compatibility with current schema)
       const { data: attachment, error: attachmentError } = await this.supabase
-        .from('message_attachments')
+        .from('attachments')
         .insert({
-          message_id: messageId, // Use the extracted message ID
-          clinic_id: clinicId,
-          file_name: filename, // Nome original para exibição
-          file_type: mimeType, // MIME type original
+          message_id: message.id,
+          file_name: sanitizedFilename,
           file_size: file.length,
-          file_url: storageResult.signedUrl, // URL assinada para acesso direto
-          // Note: Supabase Storage columns (storage_bucket, storage_path, etc.) 
-          // are disabled in current schema per DATABASE-SCHEMA-GUIDE.md
-          whatsapp_media_id: whatsappMediaId || null,
-          whatsapp_media_url: whatsappMediaUrl || null
+          mime_type: mimeType,
+          storage_path: storageResult.path,
+          signed_url: storageResult.signed_url,
+          expires_at: storageResult.expires_at.toISOString()
         })
         .select()
         .single();
@@ -854,14 +842,14 @@ export class ConversationUploadService {
         throw new Error(`Error creating N8N attachment: ${attachmentError.message}`);
       }
 
-      console.log('✅ N8N Attachment created:', attachment?.id);
+      console.log('✅ N8N Attachment created:', attachment.id);
 
       return {
         success: true,
         message,
         attachment,
-        signedUrl: storageResult.signedUrl,
-        expiresAt: storageResult.expiresAt.toISOString()
+        signedUrl: storageResult.signed_url,
+        expiresAt: storageResult.expires_at.toISOString()
       };
 
     } catch (error) {
