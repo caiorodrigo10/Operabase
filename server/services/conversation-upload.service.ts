@@ -833,7 +833,7 @@ export class ConversationUploadService {
         clinic_id: clinicId,
         file_name: sanitizedFilename,
         file_type: mimeType, // Use file_type instead of mime_type
-        file_size: file.length,
+        file_size: file.length.toString(), // Convert to string to avoid BigInt issues
         file_url: storageResult.signed_url // Use file_url instead of signed_url
         // Note: storage_path, signed_url, expires_at don't exist in message_attachments table
       };
